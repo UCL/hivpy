@@ -2,7 +2,7 @@ from datetime import timedelta, date
 
 import pytest
 
-from hivpy import run_simulation, SimulationConfig
+from hivpy import run_simulation, SimulationConfig, SimulationException
 
 @pytest.fixture
 def sample_pop():
@@ -11,7 +11,7 @@ def sample_pop():
 def test_simulation_no_change(sample_pop):
     """Test that nothing happens when the end date is the same as the start."""
     date_bound = date.today()
-    config = SimulationConfig(start=date_bound, end=date_bound)
+    config = SimulationConfig(start_date=date_bound, stop_date=date_bound)
     last_pop = run_simulation(sample_pop, config)
     assert last_pop == sample_pop
 
@@ -20,8 +20,8 @@ def test_error_end_before_start():
     """Ensure that we throw an error if the end date is before the start."""
     today = date.today()
     yesterday = today - timedelta(days=1)
-    wrong_config = SimulationConfig(start=today, end=yesterday)
-    with pytest.raises(Exception):
+    wrong_config = SimulationConfig(start_date=today, stop_date=yesterday)
+    with pytest.raises(SimulationException):
         run_simulation(sample_pop, wrong_config)
 
 
@@ -30,6 +30,7 @@ def test_error_end_before_first_step():
     start = date.today()
     end = start + timedelta(days=30)
     step = timedelta(days=90)
-    wrong_config = SimulationConfig(start=start, end=end, step=step)
-    with pytest.raises(Exception):
+    wrong_config = SimulationConfig(start_date=start, stop_date=end,
+                                    time_step=step)
+    with pytest.raises(SimulationException):
         run_simulation(sample_pop, wrong_config)
