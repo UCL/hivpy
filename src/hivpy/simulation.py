@@ -5,5 +5,5 @@ def run_simulation(population, config):
     while date < config.stop_date:
         population = population.evolve(time_step)
         date = date + time_step
-
+    return population
 
