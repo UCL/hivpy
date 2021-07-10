@@ -1,2 +1,10 @@
+# Editors etc
 *.idea
 *.idea/*
+.vscode/*
+
+# Compiled and packaged files
+*.egg-info/
+*.egg
+__pycache__/
+.pytest_cache/
