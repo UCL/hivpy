@@ -37,6 +37,16 @@ class Population:
             'max_age': max_age.astype(int)
         })
 
+    def has_attribute(self, attribute_name):
+        """Return whether the named attribute exists in the population."""
+        # Currently never exists
+        return False
+
+    def get(self, attribute_name):
+        """Get the value of the named attribute at the current date."""
+        # Currently a dummy value
+        return 1
+
     def evolve(self, time_step):
         """Advance the population by one time step."""
         # Does nothing just yet except advance the current date

@@ -15,7 +15,10 @@ def test_simulation_no_change(sample_pop):
     date_bound = date.today()
     config = SimulationConfig(start_date=date_bound, stop_date=date_bound,
                               time_step=timedelta(days=0))
-    last_pop = run_simulation(sample_pop, config)
+    last_pop, _ = run_simulation(sample_pop, config)
+    # TODO The way the code is currentlywritten, this will always pass because
+    # we update the population in-place. For a meaningful test, we should
+    # copy the initial population or change the population evolution code.
     assert last_pop == sample_pop
 
 
@@ -42,5 +45,16 @@ def test_can_track(sample_pop):
     step = timedelta(days=30)
     end = start + step
     config = SimulationConfig(start, end, step)
-    result = run_simulation(sample_pop, config, ['num_alive'])
-    assert 'num_alive' in result
+    pop, results = run_simulation(sample_pop, config, ['num_alive'])
+    assert 'num_alive' in results
+
+
+def test_error_tracking_nonexistent(sample_pop):
+    """Check that we error if trying to track attributes that don't exist."""
+    start = sample_pop.date
+    step = timedelta(days=30)
+    end = start + step
+    config = SimulationConfig(start, end, step)
+    with pytest.raises(SimulationException,
+                       match="Unrecognised tracked attribute"):
+        run_simulation(sample_pop, config, ['NOT_AN_ATTR'])
