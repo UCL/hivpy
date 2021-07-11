@@ -23,7 +23,7 @@ class SimulationConfig:
         self._validate()
 
 
-def run_simulation(population, config):
+def run_simulation(population, config, tracked_attrs=[]):
     """Run a single simulation for the given population and time bounds."""
     date = config.start_date
     time_step = config.time_step
