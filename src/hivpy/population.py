@@ -1,3 +1,4 @@
+import datetime
 import random
 
 import numpy as np
@@ -8,10 +9,12 @@ class Population:
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
+    date: datetime.date  # current date
 
-    def __init__(self, size):
+    def __init__(self, size, start_date):
         """Initialise a population of the given size."""
         self.size = size
+        self.date = start_date
         self._sample_parameters()
         self._create_population_data()
 
@@ -36,8 +39,9 @@ class Population:
 
     def evolve(self, time_step):
         """Advance the population by one time step."""
-        # Does nothing just yet
+        # Does nothing just yet except advance the current date
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
+        self.date += time_step
         return self
         

@@ -12,7 +12,7 @@ class ExperimentConfig:
 
     def initialize_population(self):
         """Create an initial population for use in simulations."""
-        return Population(self.population_size)
+        return Population(self.population_size, self.simulation.start_date)
 
 
 def create_experiment_from_file(filename):
