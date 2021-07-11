@@ -44,8 +44,8 @@ def test_can_track(sample_pop):
     start = sample_pop.date
     step = timedelta(days=30)
     end = start + step
-    config = SimulationConfig(start, end, step)
-    pop, results = run_simulation(sample_pop, config, ['num_alive'])
+    config = SimulationConfig(start, end, step, ['num_alive'])
+    pop, results = run_simulation(sample_pop, config)
     assert 'num_alive' in results
 
 
@@ -54,7 +54,7 @@ def test_error_tracking_nonexistent(sample_pop):
     start = sample_pop.date
     step = timedelta(days=30)
     end = start + step
-    config = SimulationConfig(start, end, step)
+    config = SimulationConfig(start, end, step, ['NOT_AN_ATTR'])
     with pytest.raises(SimulationException,
                        match="Unrecognised tracked attribute"):
-        run_simulation(sample_pop, config, ['NOT_AN_ATTR'])
+        run_simulation(sample_pop, config)
