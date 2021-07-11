@@ -33,4 +33,11 @@ class Population:
         self.data = pd.DataFrame({
             'max_age': max_age.astype(int)
         })
+
+    def evolve(self, time_step):
+        """Advance the population by one time step."""
+        # Does nothing just yet
+        # We should think about whether we want to return a copy or evolve
+        # the population in-place. We will likely need a copy at some point.
+        return self
         
