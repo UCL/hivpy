@@ -1,0 +1,25 @@
+name: Run tests
+
+on:
+  push:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9']
+    name: Test on Python ${{ matrix.python-version }}
+    steps:
+      # Checkout the code we are testing
+      - uses: actions/checkout@v2
+      # Setup Python
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Install dependencies and package
+      - run: pip install .[tests]
+      # Run tests
+      - run: pytest
