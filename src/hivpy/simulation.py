@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List
-
+import logging
 import pandas as pd
 
-from common import SimulationException
+from exceptions import SimulationException
 from population import Population
 
 
@@ -66,6 +66,7 @@ class SimulationHandler:
         assert date == self.population.date
         time_step = self.config.time_step
         while date < self.config.stop_date:
+            logging.info("Timestep %s\n",date)
             # Advance the population
             self.population = self.population.evolve(time_step)
             date = date + time_step
@@ -74,6 +75,7 @@ class SimulationHandler:
                 results.loc[date] = {
                     attr: self.population.get(attr) for attr in tracked_attrs
                 }
+        logging.info("finished")
 
 
 def run_simulation(population, config):

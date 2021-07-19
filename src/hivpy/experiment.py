@@ -4,9 +4,14 @@ from population import Population
 from simulation import run_simulation, SimulationConfig
 import logging
 import os
-LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
-              '-35s %(lineno) -5d: %(message)s')
-LOGGER = logging.getLogger(__name__)
+
+LEVELS = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
 
 
 @dataclass
@@ -19,6 +24,11 @@ class ExperimentConfig:
         """Create an initial population for use in simulations."""
         return Population(self.population_size, self.simulation.start_date)
 
+@dataclass
+class ExperimentOutput:
+    output_dir: str
+    log_level : str
+    log_file : str
 
 def create_experiment_from_config(experiment_param):
     start_date = date(1980,1,1)
@@ -37,10 +47,17 @@ def create_experiment_from_config(experiment_param):
     sim_config = SimulationConfig(start_date, end_date, interval)
     return ExperimentConfig(population, sim_config)
 
-def create_experiment_setup(general_param):
+def create_output(general_param):
     outputdir = general_param['OUTPUT_DIRECTORY']
     logfilename = general_param['LOGOUTPUT_NAME']
     log_level = general_param['LOG_LEVEL']
+    pathname = os.path.join(outputdir, logfilename)
+
+
+    logging.basicConfig(filename=pathname, level=LEVELS[log_level])
+    logging.info("starting experiment")
+
+    return ExperimentOutput(outputdir, log_level, pathname)
 
 
 def run_experiment(experiment_config):

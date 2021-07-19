@@ -1,6 +1,6 @@
 import click
 import configparser
-from experiment import create_experiment_from_config, create_experiment_setup
+from experiment import create_experiment_from_config, create_output, run_experiment
 
 
 @click.command()
@@ -11,7 +11,8 @@ def submit(conf_filename):
     try:
         config.read(conf_filename)
         experiment_config = create_experiment_from_config(config['EXPERIMENT'])
-        general_config = create_experiment_setup(config['GENERAL'])
+        general_config = create_output(config['GENERAL'])
+        run_experiment(experiment_config)
 
     except configparser.Error as err:
         print('error parsing the config file {}'.format(err))
