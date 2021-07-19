@@ -1,7 +1,12 @@
 from dataclasses import dataclass
-
-from .population import Population
-from .simulation import run_simulation, SimulationConfig
+from datetime import date, timedelta
+from population import Population
+from simulation import run_simulation, SimulationConfig
+import logging
+import os
+LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
+              '-35s %(lineno) -5d: %(message)s')
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
@@ -15,12 +20,27 @@ class ExperimentConfig:
         return Population(self.population_size, self.simulation.start_date)
 
 
-def create_experiment_from_file(filename):
-    """Create an experiment config from a YAML file."""
+def create_experiment_from_config(experiment_param):
+    start_date = date(1980,1,1)
+    end_date = date(2040, 12, 31)
+    interval = timedelta(days=30)
+    population = 1000
+    try:
+        start_date = date(int(experiment_param['START_YEAR']),1 ,1 )
+        end_date = date(int(experiment_param['END_YEAR']),12, 31)
+        population = int(experiment_param['POPULATION'])
+        interval = timedelta(days = int(experiment_param['TIME_INTERVAL_DAYS']))
+    except RuntimeError as err:
+        print('Error parsing the experiment parameters {}'.format(err))
+
     # Dummy values for now
-    from datetime import date, timedelta
-    sim_config = SimulationConfig(date(1980, 1, 1), date(2040, 12, 31), timedelta(days=30))
-    return ExperimentConfig(1000, sim_config)
+    sim_config = SimulationConfig(start_date, end_date, interval)
+    return ExperimentConfig(population, sim_config)
+
+def create_experiment_setup(general_param):
+    outputdir = general_param['OUTPUT_DIRECTORY']
+    logfilename = general_param['LOGOUTPUT_NAME']
+    log_level = general_param['LOG_LEVEL']
 
 
 def run_experiment(experiment_config):
