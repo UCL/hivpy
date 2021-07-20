@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
-from population import Population
-from simulation import run_simulation, SimulationConfig
+from .population import Population
+from .simulation import run_simulation, SimulationConfig
 import logging
 import os
 

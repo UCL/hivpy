@@ -4,8 +4,8 @@ from typing import List
 import logging
 import pandas as pd
 
-from exceptions import SimulationException
-from population import Population
+from .exceptions import SimulationException
+from .population import Population
 
 
 @dataclass

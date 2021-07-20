@@ -1,12 +1,20 @@
-import click
 import configparser
-from experiment import create_experiment_from_config, create_output, run_experiment
+import argparse
+import pathlib
+from .experiment import create_experiment_from_config, create_output, run_experiment
 
+def register_parameters():
+    parser = argparse.ArgumentParser(description="register model parameters")
+    parser.add_argument("parameters", type=pathlib.Path, help="register_parameters parameters.csv")
+    args = parser.parse_args()
+    parameter_filepath = args.parameters
+    
 
-@click.command()
-@click.argument('conf_filename', type=click.Path(exists=True))
-def submit(conf_filename):
-    click.echo(click.format_filename(conf_filename))
+def run_model():
+    parser = argparse.ArgumentParser(description="submit a simulation")
+    parser.add_argument("input", type=pathlib.Path, help="run_model -i config.conf")
+    args = parser.parse_args()
+    conf_filename = args.input
     config = configparser.ConfigParser()
     try:
         config.read(conf_filename)
@@ -19,4 +27,5 @@ def submit(conf_filename):
 
 
 if __name__ == '__main__':
-    submit()
+    print('calling main')
+    run_model()
