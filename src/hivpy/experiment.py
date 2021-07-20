@@ -28,17 +28,17 @@ def create_experiment(experiment_param):
     start_date = date(1980,1,1)
     end_date = date(2040, 12, 31)
     interval = timedelta(days=30)
-    population = 1000
+    population_size = 1000
     try:
         start_date = date(int(experiment_param['START_YEAR']),1 ,1 )
         end_date = date(int(experiment_param['END_YEAR']),12, 31)
-        population = int(experiment_param['POPULATION'])
+        population_size = int(experiment_param['POPULATION'])
         interval = timedelta(days = int(experiment_param['TIME_INTERVAL_DAYS']))
     except RuntimeError as err:
         print('Error parsing the experiment parameters {}'.format(err))
 
     # Dummy values for now
-    return SimulationConfig(population, start_date, end_date, interval)
+    return SimulationConfig(population_size, start_date, end_date, interval)
 
 def create_output(output_param):
     outputdir = output_param['OUTPUT_DIRECTORY']

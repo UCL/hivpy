@@ -36,21 +36,21 @@ class SimulationConfig:
 
 class SimulationHandler:
     """A class for handling executing a simulation and accessing results."""
-    config: SimulationConfig
+    experiment_config: SimulationConfig
     population: Population
     results: pd.DataFrame
     
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, experiment_config):
+        self.experiment_config = experiment_config
         self.results = None
         self._initialise_population()
 
     def _initialise_population(self):
-        self.population = Population(self.config.population_size, self.config.start_date)
+        self.population = Population(self.experiment_config.population_size, self.experiment_config.start_date)
 
 
     def _validate_tracked(self, population):
-        for attribute in self.config.tracked:
+        for attribute in self.experiment_config.tracked:
             if not population.has_attribute(attribute):
                 raise SimulationException(
                     f"Unrecognised tracked attribute: {attribute}")
@@ -58,13 +58,13 @@ class SimulationHandler:
     def run(self):
         self._validate_tracked(self.population)
         # Store the tracking results in a dataframe, with one row per date
-        tracked_attrs = self.config.tracked
+        tracked_attrs = self.experiment_config.tracked
         results = pd.DataFrame(columns=tracked_attrs)
         # Start the simulation
-        date = self.config.start_date
+        date = self.experiment_config.start_date
         assert date == self.population.date
-        time_step = self.config.time_step
-        while date < self.config.stop_date:
+        time_step = self.experiment_config.time_step
+        while date < self.experiment_config.stop_date:
             logging.info("Timestep %s\n",date)
             # Advance the population
             self.population = self.population.evolve(time_step)
@@ -77,11 +77,11 @@ class SimulationHandler:
         logging.info("finished")
 
 
-def run_simulation(config):
+def run_simulation(experiment_config):
     """Run a single simulation for the given population and time bounds.
     
     This is a convenience method to avoid using SimulationHandler directly.
     """
-    handler = SimulationHandler(config)
+    handler = SimulationHandler(experiment_config)
     handler.run()
     return (handler.population, handler.results)
