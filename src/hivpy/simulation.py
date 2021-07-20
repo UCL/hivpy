@@ -11,6 +11,7 @@ from .population import Population
 @dataclass
 class SimulationConfig:
     """A class holding the parameters required for running a simulation."""
+    population_size: int
     start_date: date
     stop_date: date
     time_step: timedelta = timedelta(days=90)
@@ -41,14 +42,12 @@ class SimulationHandler:
     
     def __init__(self, config):
         self.config = config
-        self.population = None
         self.results = None
+        self._initialise_population()
 
-    def set_population(self, population):
-        """Specify what population the simulation should use."""
-        self.population = population
-        # Reset the results if another simulation had been run
-        self.results = None
+    def _initialise_population(self):
+        self.population = Population(self.config.population_size, self.config.start_date)
+
 
     def _validate_tracked(self, population):
         for attribute in self.config.tracked:
@@ -78,12 +77,11 @@ class SimulationHandler:
         logging.info("finished")
 
 
-def run_simulation(population, config):
+def run_simulation(config):
     """Run a single simulation for the given population and time bounds.
     
     This is a convenience method to avoid using SimulationHandler directly.
     """
     handler = SimulationHandler(config)
-    handler.set_population(population)
     handler.run()
     return (handler.population, handler.results)

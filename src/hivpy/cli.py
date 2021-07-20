@@ -1,14 +1,14 @@
 import configparser
 import argparse
 import pathlib
-from .experiment import create_experiment_from_config, create_output, run_experiment
+from .experiment import create_experiment, create_output, run_experiment
 
 def register_parameters():
     parser = argparse.ArgumentParser(description="register model parameters")
     parser.add_argument("parameters", type=pathlib.Path, help="register_parameters parameters.csv")
     args = parser.parse_args()
     parameter_filepath = args.parameters
-    
+
 
 def run_model():
     parser = argparse.ArgumentParser(description="submit a simulation")
@@ -18,9 +18,9 @@ def run_model():
     config = configparser.ConfigParser()
     try:
         config.read(conf_filename)
-        experiment_config = create_experiment_from_config(config['EXPERIMENT'])
-        general_config = create_output(config['GENERAL'])
-        run_experiment(experiment_config)
+        experiment_config = create_experiment(config['EXPERIMENT'])
+        output_config = create_output(config['OUTPUT'])
+        run_experiment(experiment_config, output_config)
 
     except configparser.Error as err:
         print('error parsing the config file {}'.format(err))
