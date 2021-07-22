@@ -112,6 +112,7 @@ class Specifiable:
 
 class Parameter(Specifiable):
     """Used to specify parameters for disease modules etc."""
+    '''Parameters are used on population as a whole. E.g. the risk of transmitting HIV from mother to child'''
 
 
 class Property(Specifiable):

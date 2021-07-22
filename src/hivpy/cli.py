@@ -3,6 +3,9 @@ import argparse
 import pathlib
 from .experiment import create_experiment, create_output, run_experiment
 
+'''
+Maybe we may want to register parameters/properties in future?
+'''
 def register_parameters():
     parser = argparse.ArgumentParser(description="register model parameters")
     parser.add_argument("parameters", type=pathlib.Path, help="register_parameters parameters.csv")
