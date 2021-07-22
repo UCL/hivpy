@@ -3,6 +3,7 @@ from datetime import timedelta, date
 import pytest
 
 from hivpy import run_simulation, SimulationConfig, SimulationException
+from hivpy import population
 from hivpy.population import Population
 
 @pytest.fixture
@@ -58,3 +59,18 @@ def test_error_tracking_nonexistent(sample_pop):
     with pytest.raises(SimulationException,
                        match="Unrecognised tracked attribute"):
         run_simulation(sample_pop, config)
+
+
+def test_death_occurs():
+    """Check that the number of people alive always decreases."""
+    # FIXME This will not necessarily be true once we add in births
+    population = Population(10000, date.today())
+    start = population.date
+    step = timedelta(days=30)
+    end = start + 100 * step
+    config = SimulationConfig(start, end, step, ['num_alive'])
+    pop, results = run_simulation(population, config)
+    # Check that the number alive never grows... (some steps may have 0 deaths)
+    assert all(results.num_alive.diff()[1:] <= 0)
+    # ...and that there is at least one death overall!
+    assert results.num_alive[-1] < results.num_alive[0]
