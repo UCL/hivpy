@@ -36,9 +36,13 @@ class Population:
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         max_age = self.params['avg_max_age'] + 2 * np.random.randn(self.size)
+        # For now, age will be between 0 and max_age for each person
+        # (i.e. we're assuming everyone is born at the start of the simulation)
+        age = np.random.random(self.size) * max_age
         date_of_death = [None] * self.size
         self.data = pd.DataFrame({
             'max_age': max_age.astype(int),
+            'age': age.astype(int),
             'date_of_death': date_of_death
         })
 
@@ -62,9 +66,14 @@ class Population:
         """Get the value of the named attribute at the current date."""
         return self.attributes[attribute_name](self.data)
 
-    def evolve(self, time_step):
+    def evolve(self, time_step: datetime.timedelta):
         """Advance the population by one time step."""
-        # Does nothing just yet except advance the current date
+        # Does nothing just yet except advance the current date, track ages
+        # and set death dates.
+        self.data.age += time_step.days / 365 # Very naive!
+        # Record who has reached their max age
+        died_this_period = self.data.age >= self.data.max_age
+        self.data.loc[died_this_period, "date_of_death"] = self.date
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
