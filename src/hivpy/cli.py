@@ -12,9 +12,13 @@ def register_parameters():
     args = parser.parse_args()
     parameter_filepath = args.parameters
 
-
+'''
+Running a HIV model simulation
+Assuming there is a hivpy.conf file the command is
+$run_model hivpy.conf
+'''
 def run_model():
-    parser = argparse.ArgumentParser(description="submit a simulation")
+    parser = argparse.ArgumentParser(description="run a simulation")
     parser.add_argument("input", type=pathlib.Path, help="run_model -i config.conf")
     args = parser.parse_args()
     conf_filename = args.input
