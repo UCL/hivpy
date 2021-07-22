@@ -25,9 +25,9 @@ def run_model():
     config = configparser.ConfigParser()
     try:
         config.read(conf_filename)
-        experiment_config = create_experiment(config['EXPERIMENT'])
+        simulation_config = create_experiment(config['EXPERIMENT'])
         output_config = create_output(config['OUTPUT'])
-        run_experiment(experiment_config, output_config)
+        run_experiment(simulation_config, output_config)
 
     except configparser.Error as err:
         print('error parsing the config file {}'.format(err))
