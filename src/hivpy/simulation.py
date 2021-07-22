@@ -49,6 +49,7 @@ class SimulationHandler:
                     attr: self.population.get(attr) for attr in tracked_attrs
                 }
         logging.info("finished")
+        self.results = results
 
 
 def run_simulation(simulation_config):
