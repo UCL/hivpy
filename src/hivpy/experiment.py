@@ -1,26 +1,31 @@
-from dataclasses import dataclass
-
-from .population import Population
-from .simulation import run_simulation, SimulationConfig
-
-
-@dataclass
-class ExperimentConfig:
-    """Configuration parameters covering all stages of an experiment."""
-    population_size: int
-    simulation: SimulationConfig
-
-    def initialize_population(self):
-        """Create an initial population for use in simulations."""
-        return Population(self.population_size, self.simulation.start_date)
+from datetime import date, timedelta
+from .simulation import run_simulation
+from .config import SimulationConfig, OutputConfig
+import os
 
 
-def create_experiment_from_file(filename):
-    """Create an experiment config from a YAML file."""
+def create_experiment(experiment_param):
+    try:
+        start_date = date(int(experiment_param['START_YEAR']),1 ,1 )
+        end_date = date(int(experiment_param['END_YEAR']),12, 31)
+        population_size = int(experiment_param['POPULATION'])
+        interval = timedelta(days = int(experiment_param['TIME_INTERVAL_DAYS']))
+        return SimulationConfig(population_size, start_date, end_date, interval)
+    except ValueError as err:
+        print('Error parsing the experiment parameters {}'.format(err))
+    except KeyError as kerr:
+        print('Error extracting values from the parameter set {}'.format(kerr))
+    return None
+
     # Dummy values for now
-    from datetime import date, timedelta
-    sim_config = SimulationConfig(date(1980, 1, 1), date(2040, 12, 31), timedelta(days=30))
-    return ExperimentConfig(1000, sim_config)
+
+def create_output(output_param):
+    outputdir = output_param['OUTPUT_DIRECTORY']
+    logfilename = output_param['LOGOUTPUT_NAME']
+    log_level = output_param['LOG_LEVEL']
+    logpath = os.path.join(outputdir, logfilename)
+    return OutputConfig(outputdir, logpath, log_level)
+
 
 
 def run_experiment(experiment_config):
@@ -29,6 +34,5 @@ def run_experiment(experiment_config):
     An experiment can consist of one or more simulation runs,
     as well as processing steps after those are completed.
     """
-    simulation_config = experiment_config.simulation
-    population = experiment_config.initialize_population()
-    result = run_simulation(population, simulation_config)
+    experiment_config.output_config.start_logging()
+    result = run_simulation(experiment_config.simulation_config)
