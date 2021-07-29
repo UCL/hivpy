@@ -1,37 +1,11 @@
 from dataclasses import dataclass, field
-from datetime import date, timedelta
-from typing import List
 import logging
 import pandas as pd
 
 from .exceptions import SimulationException
 from .population import Population
+from .config import SimulationConfig
 
-
-@dataclass
-class SimulationConfig:
-    """A class holding the parameters required for running a simulation."""
-    population_size: int
-    start_date: date
-    stop_date: date
-    time_step: timedelta = timedelta(days=90)
-    tracked: List[str] = field(default_factory=list)
-
-    def _validate(self):
-        """Make sure the values passed in make sense."""
-        try:
-            assert self.stop_date >= self.start_date + self.time_step
-        except AssertionError:
-            raise SimulationException("Invalid simulation configuration.")
-
-    def __post_init__(self):
-        """This is called automatically during construction."""
-        self._validate()
-
-    def track(self, attribute_name):
-        """Track an additional attribute during simulation."""
-        # TODO Check if already tracked (or conver tracked to a set?)
-        self.tracked.append(attribute_name)
 
 
 class SimulationHandler:

@@ -2,6 +2,7 @@ import configparser
 import argparse
 import pathlib
 from .experiment import create_experiment, create_output, run_experiment
+from .config import SimulationConfig, OutputConfig, ExperimentConfig
 
 '''
 Maybe we may want to register parameters/properties in future?
@@ -19,7 +20,7 @@ $run_model hivpy.conf
 '''
 def run_model():
     parser = argparse.ArgumentParser(description="run a simulation")
-    parser.add_argument("input", type=pathlib.Path, help="run_model -i config.conf")
+    parser.add_argument("input", type=pathlib.Path, help="run_model config.conf")
     args = parser.parse_args()
     conf_filename = args.input
     config = configparser.ConfigParser()
@@ -27,7 +28,8 @@ def run_model():
         config.read(conf_filename)
         simulation_config = create_experiment(config['EXPERIMENT'])
         output_config = create_output(config['OUTPUT'])
-        run_experiment(simulation_config, output_config)
+        experiment_config = ExperimentConfig(simulation_config=simulation_config, output_config=output_config)
+        run_experiment(experiment_config)
 
     except configparser.Error as err:
         print('error parsing the config file {}'.format(err))
