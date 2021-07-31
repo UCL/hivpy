@@ -1,8 +1,7 @@
 import configparser
 import argparse
 import pathlib
-from .experiment import create_experiment, create_output, run_experiment
-from .config import SimulationConfig, OutputConfig, ExperimentConfig
+from .experiment import create_experiment, run_experiment
 
 '''
 Maybe we may want to register parameters/properties in future?
@@ -26,9 +25,7 @@ def run_model():
     config = configparser.ConfigParser()
     try:
         config.read(conf_filename)
-        simulation_config = create_experiment(config['EXPERIMENT'])
-        output_config = create_output(config['OUTPUT'])
-        experiment_config = ExperimentConfig(simulation_config=simulation_config, output_config=output_config)
+        experiment_config = create_experiment(config)
         run_experiment(experiment_config)
 
     except configparser.Error as err:
