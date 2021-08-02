@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 from .simulation import run_simulation
-from .config import SimulationConfig, OutputConfig
+from .config import ExperimentConfig, SimulationConfig, OutputConfig
 import os
 
 
-def create_experiment(experiment_param):
+def create_simulation(experiment_param):
     try:
         start_date = date(int(experiment_param['START_YEAR']),1 ,1 )
         end_date = date(int(experiment_param['END_YEAR']),12, 31)
@@ -17,7 +17,6 @@ def create_experiment(experiment_param):
         print('Error extracting values from the parameter set {}'.format(kerr))
     return None
 
-    # Dummy values for now
 
 def create_output(output_param):
     outputdir = output_param['OUTPUT_DIRECTORY']
@@ -26,6 +25,11 @@ def create_output(output_param):
     logpath = os.path.join(outputdir, logfilename)
     return OutputConfig(outputdir, logpath, log_level)
 
+
+def create_experiment(all_params):
+    simulation_config = create_simulation(all_params['EXPERIMENT'])
+    output_config = create_output(all_params['OUTPUT'])
+    return ExperimentConfig(simulation_config, output_config)
 
 
 def run_experiment(experiment_config):
