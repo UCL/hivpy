@@ -1,5 +1,5 @@
-from configparser import ConfigParser
 import os.path
+from configparser import ConfigParser
 
 import pytest
 

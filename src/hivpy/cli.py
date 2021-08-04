@@ -1,8 +1,8 @@
-import configparser
 import argparse
+import configparser
 import pathlib
-from .experiment import create_experiment, run_experiment
 
+from .experiment import create_experiment, run_experiment
 
 '''
 Maybe we may want to register parameters/properties in future?

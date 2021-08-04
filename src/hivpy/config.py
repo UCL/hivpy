@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List
+
 from .exceptions import SimulationException
 
 LEVELS = {

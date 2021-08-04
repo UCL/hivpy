@@ -1,9 +1,10 @@
 import logging
+
 import pandas as pd
 
+from .config import SimulationConfig
 from .exceptions import SimulationException
 from .population import Population
-from .config import SimulationConfig
 
 
 class SimulationHandler:

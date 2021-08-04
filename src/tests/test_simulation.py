@@ -1,8 +1,8 @@
-from datetime import timedelta, date
+from datetime import date, timedelta
 
 import pytest
 
-from hivpy import run_simulation, SimulationConfig, SimulationException
+from hivpy import SimulationConfig, SimulationException, run_simulation
 from hivpy.population import Population
 
 
