@@ -5,6 +5,7 @@ from typing import Callable, Dict
 import numpy as np
 import pandas as pd
 
+
 class Population:
     """A set of individuals with particular characteristics."""
     size: int  # how many individuals to create in total
@@ -25,7 +26,7 @@ class Population:
         """Randomly determine the uncertain population-level parameters."""
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
-        # that distrubition is chosen randomly for each population. 
+        # that distrubition is chosen randomly for each population.
         avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
         self.params = {
             'avg_max_age': avg_max_age
@@ -70,7 +71,7 @@ class Population:
         """Advance the population by one time step."""
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
-        self.data.age += time_step.days / 365 # Very naive!
+        self.data.age += time_step.days / 365  # Very naive!
         # Record who has reached their max age
         died_this_period = self.data.age >= self.data.max_age
         self.data.loc[died_this_period, "date_of_death"] = self.date
@@ -78,4 +79,3 @@ class Population:
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
         return self
-        

@@ -3,7 +3,6 @@ from datetime import timedelta, date
 import pytest
 
 from hivpy import run_simulation, SimulationConfig, SimulationException
-from hivpy import population
 from hivpy.population import Population
 
 

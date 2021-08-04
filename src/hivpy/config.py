@@ -12,6 +12,7 @@ LEVELS = {
     'CRITICAL': logging.CRITICAL
 }
 
+
 @dataclass
 class OutputConfig:
     output_dir: str
@@ -22,6 +23,7 @@ class OutputConfig:
         logging.basicConfig(filename=self.logfile, level=LEVELS[self.loglevel])
         logging.info("starting experiment")
         print("Starting the simulation. Please, consult the logfile at "+self.logfile)
+
 
 @dataclass
 class SimulationConfig:
@@ -47,6 +49,7 @@ class SimulationConfig:
         """Track an additional attribute during simulation."""
         # TODO Check if already tracked (or conver tracked to a set?)
         self.tracked.append(attribute_name)
+
 
 @dataclass
 class ExperimentConfig:
