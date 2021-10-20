@@ -1,4 +1,5 @@
 import datetime
+import functools
 import random
 from typing import Callable, Dict
 
@@ -65,7 +66,16 @@ class Population:
             """Count how many people don't have a set date of death yet."""
             return self.size - population_data.date_of_death.count()
 
+        def count_sex_alive(population_data, sex):
+            """Count how many people of the given sex are alive."""
+            assert sex in SexType.categories
+            # Should also make sure they are alive! (always true for now)
+            alive = population_data.date_of_death != None
+            return population_data[alive].sex.value_counts()[sex]
+
         attributes["num_alive"] = count_alive
+        attributes["num_male"] = functools.partial(count_sex_alive, sex="male")
+        attributes["num_female"] = functools.partial(count_sex_alive, sex="female")
         self.attributes = attributes
 
     def has_attribute(self, attribute_name):
