@@ -4,6 +4,10 @@ from typing import Callable, Dict
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import CategoricalDtype
+
+
+SexType = CategoricalDtype(["female", "male"])
 
 
 class Population:
@@ -28,20 +32,25 @@ class Population:
         # which will come from a normal distribution. The mean of
         # that distrubition is chosen randomly for each population.
         avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
+        female_ratio = 0.52  # proportion of population that are female
         self.params = {
-            'avg_max_age': avg_max_age
+            'avg_max_age': avg_max_age,
+            'female_ratio': female_ratio
         }
 
     def _create_population_data(self):
         """Populate the data frame with initial values."""
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
+        sex_distribution = [self.params['female_ratio'], 1 - self.params['female_ratio']]
+        sex = np.random.choice(SexType.categories, self.size, sex_distribution)
         max_age = self.params['avg_max_age'] + 2 * np.random.randn(self.size)
         # For now, age will be between 0 and max_age for each person
         # (i.e. we're assuming everyone is born at the start of the simulation)
         age = np.random.random(self.size) * max_age
         date_of_death = [None] * self.size
         self.data = pd.DataFrame({
+            'sex': sex,
             'max_age': max_age.astype(int),
             'age': age.astype(int),
             'date_of_death': date_of_death
