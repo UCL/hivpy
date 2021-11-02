@@ -1,7 +1,6 @@
 import numpy as np
 from pandas.api.types import CategoricalDtype
 
-
 SexType = CategoricalDtype(["female", "male"])
 
 

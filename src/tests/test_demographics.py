@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hivpy.demographics import DemographicsModule, FEMALE_RATIO
+from hivpy.demographics import FEMALE_RATIO, DemographicsModule
 
 
 @pytest.fixture(scope="module")
