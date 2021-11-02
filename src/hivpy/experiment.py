@@ -1,15 +1,16 @@
-from datetime import date, timedelta
-from .simulation import run_simulation
-from .config import ExperimentConfig, SimulationConfig, OutputConfig
 import os
+from datetime import date, timedelta
+
+from .config import ExperimentConfig, OutputConfig, SimulationConfig
+from .simulation import run_simulation
 
 
 def create_simulation(experiment_param):
     try:
-        start_date = date(int(experiment_param['START_YEAR']),1 ,1 )
-        end_date = date(int(experiment_param['END_YEAR']),12, 31)
+        start_date = date(int(experiment_param['START_YEAR']), 1, 1)
+        end_date = date(int(experiment_param['END_YEAR']), 12, 31)
         population_size = int(experiment_param['POPULATION'])
-        interval = timedelta(days = int(experiment_param['TIME_INTERVAL_DAYS']))
+        interval = timedelta(days=int(experiment_param['TIME_INTERVAL_DAYS']))
         return SimulationConfig(population_size, start_date, end_date, interval)
     except ValueError as err:
         print('Error parsing the experiment parameters {}'.format(err))
@@ -40,3 +41,4 @@ def run_experiment(experiment_config):
     """
     experiment_config.output_config.start_logging()
     result = run_simulation(experiment_config.simulation_config)
+    return result

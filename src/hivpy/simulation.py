@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
 import logging
+
 import pandas as pd
 
+from .config import SimulationConfig
 from .exceptions import SimulationException
 from .population import Population
-from .config import SimulationConfig
-
 
 
 class SimulationHandler:
@@ -13,15 +12,15 @@ class SimulationHandler:
     simulation_config: SimulationConfig
     population: Population
     results: pd.DataFrame
-    
+
     def __init__(self, simulation_config):
         self.simulation_config = simulation_config
         self.results = None
         self._initialise_population()
 
     def _initialise_population(self):
-        self.population = Population(self.simulation_config.population_size, self.simulation_config.start_date)
-
+        self.population = Population(self.simulation_config.population_size,
+                                     self.simulation_config.start_date)
 
     def _validate_tracked(self, population):
         for attribute in self.simulation_config.tracked:
@@ -39,7 +38,7 @@ class SimulationHandler:
         assert date == self.population.date
         time_step = self.simulation_config.time_step
         while date < self.simulation_config.stop_date:
-            logging.info("Timestep %s\n",date)
+            logging.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
             date = date + time_step
@@ -54,7 +53,7 @@ class SimulationHandler:
 
 def run_simulation(simulation_config):
     """Run a single simulation for the given population and time bounds.
-    
+
     This is a convenience method to avoid using SimulationHandler directly.
     """
     handler = SimulationHandler(simulation_config)

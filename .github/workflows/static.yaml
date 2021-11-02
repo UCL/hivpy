@@ -1,0 +1,24 @@
+name: Static checks for style
+
+on:
+  push:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Style checks
+    steps:
+      # Checkout the code we are testing
+      - uses: actions/checkout@v2
+      # Setup Python
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      # Install dependencies and package
+      - run: pip install .[tests]
+      # Run linting and style check
+      - run: flake8 src/
+      # Check import order
+      - run: isort --check-only --verbose src/

@@ -1,7 +1,8 @@
-from dataclasses import dataclass, field
 import logging
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List
+
 from .exceptions import SimulationException
 
 LEVELS = {
@@ -11,6 +12,7 @@ LEVELS = {
     'ERROR': logging.ERROR,
     'CRITICAL': logging.CRITICAL
 }
+
 
 @dataclass
 class OutputConfig:
@@ -22,6 +24,7 @@ class OutputConfig:
         logging.basicConfig(filename=self.logfile, level=LEVELS[self.loglevel])
         logging.info("starting experiment")
         print("Starting the simulation. Please, consult the logfile at "+self.logfile)
+
 
 @dataclass
 class SimulationConfig:
@@ -47,6 +50,7 @@ class SimulationConfig:
         """Track an additional attribute during simulation."""
         # TODO Check if already tracked (or conver tracked to a set?)
         self.tracked.append(attribute_name)
+
 
 @dataclass
 class ExperimentConfig:
