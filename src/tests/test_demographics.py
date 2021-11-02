@@ -3,9 +3,11 @@ import pytest
 
 from hivpy.demographics import DemographicsModule, FEMALE_RATIO
 
+
 @pytest.fixture(scope="module")
 def default_module():
     return DemographicsModule()
+
 
 def test_sex_distribution(default_module):
     count = 100000

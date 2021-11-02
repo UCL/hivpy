@@ -65,7 +65,7 @@ class Population:
             """Count how many people of the given sex are alive."""
             assert sex in SexType.categories
             # Should also make sure they are alive! (always true for now)
-            alive = population_data.date_of_death != None
+            alive = population_data.date_of_death is not None
             return population_data[alive].sex.value_counts()[sex]
 
         attributes["num_alive"] = count_alive

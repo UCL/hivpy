@@ -9,6 +9,7 @@ SexType = CategoricalDtype(["female", "male"])
 # Can wrap those in something that ensures they have a description?
 FEMALE_RATIO = 0.52
 
+
 class DemographicsModule:
 
     def __init__(self, **kwargs):
