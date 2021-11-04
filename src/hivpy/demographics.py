@@ -120,7 +120,9 @@ class DemographicsModule:
 
     def __init__(self, **kwargs):
         params = {
-            "female_ratio": FEMALE_RATIO
+            "female_ratio": FEMALE_RATIO,
+            "use_stepwise_ages": USE_STEPWISE_AGES,
+            "inc_cat": INC_CAT
         }
         # allow setting some parameters explicitly
         # could be useful if we have another method for more complex initialization,
