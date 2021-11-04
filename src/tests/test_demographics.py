@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import scipy.integrate
 
-from hivpy.demographics import FEMALE_RATIO, DemographicsModule, ContinuousAgeDistribution
+from hivpy.demographics import FEMALE_RATIO, ContinuousAgeDistribution, DemographicsModule
 
 
 @pytest.fixture(scope="module")
