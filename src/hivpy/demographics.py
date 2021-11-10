@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from pandas.api.types import CategoricalDtype
 from scipy.interpolate import interp1d
@@ -39,10 +41,18 @@ class StepwiseAgeDistribution:
     # Generate cumulative probabilites from stepwise distribution
     def _genCumulativeProb(self):
         N = self.probability_list.size
+        print("IS THIS EVEN WORKING")
+        if(not np.isclose(sum(self.probability_list), 1.0, atol=1e-10, equal_nan=False)):
+            warnings.warn("Age probability distribution does not sum to one.")
         CP = np.array([0.0]*N)
         CP[0] = self.probability_list[0]
         for i in range(1, N):
             CP[i] = CP[i-1] + self.probability_list[i]
+            if(CP[i] > 1.0):
+                warnings.warn("Cumulative probability grown too large; capping at 1.0.")
+                CP[i] = 1.0
+        # make sure CP is exactly 1.0 in case of numerical error
+        CP[N-1] = 1.0
         return CP
 
     # Generate Age With Stepwise Distribution
@@ -67,11 +77,16 @@ class StepwiseAgeDistribution:
 
 
 class ContinuousAgeDistribution:
-    # example distribution: linexp
-    # y = (mx + x)*exp(A(x-B))
-    # This fits all three example cases quite neatly
-    # We only need the cumulative distribution i.e. the integral of the function
-    def integratedLinexp(x, m, c, A, B):
+    """
+    Class to handle age distributions using a continuous probability density.
+    Linear-Exponential function is used for the example distribution.
+
+    y = (mx + c)*exp(A(x-B))
+
+    This fits all three example cases quite neatly.
+    """
+
+    def _integratedLinexp(self, x, m, c, A, B):
         return np.exp(A*(x-B))*(m*x+c - m/A)/A
 
     # Example parameters
@@ -79,19 +94,25 @@ class ContinuousAgeDistribution:
     modelParams2 = [-1.03e-3, 7.45e-2, -1.12e-3, 8.47]
     modelParams3 = [-1.15e-3, 8.47e-2, 2.24e-3, 2.49e1]
 
-    def __init__(self, min_age, max_age, cpd):
+    def __init__(self, min_age, max_age, modelParams):
         self.min_age = min_age
-        self.max_age = max_age
-        self.cpd = cpd
+        model_age_limit = -modelParams[1]/modelParams[0]
+        if(max_age > model_age_limit):
+            warnings.warn("Max age exceeds the maximum age limit for this model (negative probability).\
+                            Adjusting max age to " + model_age_limit)
+            self.max_age = model_age_limit
+        else:
+            self.max_age = max_age
+        self.cpd = lambda x: self._integratedLinexp(x, *modelParams)
 
     @classmethod
     def selectModel(cls, inc_cat):
         if(inc_cat == 1):
-            return cls(-68, 65, lambda x: cls.integratedLinexp(x, *cls.modelParams1))
+            return cls(-68, 65, cls.modelParams1)
         elif(inc_cat == 2):
-            return cls(-68, 65, lambda x: cls.integratedLinexp(x, *cls.modelParams2))
+            return cls(-68, 65, cls.modelParams2)
         else:
-            return cls(-68, 65, lambda x: cls.integratedLinexp(x, *cls.modelParams3))
+            return cls(-68, 65, *cls.modelParams3)
 
     # Generate ages using a (non-normalised) continuous cumulative probability distribution
     # Given an analytic PD, this should also be analytically defined
@@ -107,7 +128,7 @@ class ContinuousAgeDistribution:
         NormX = np.linspace(self.min_age, self.max_age, 11)
         NormY = NormDist(NormX)
         NormY[0] = 0.0
-        NormY[10] = 1.0
+        NormY[10] = 1.0  # fix the start and end values in case of numerical errors
         NormInv = interp1d(NormY, NormX, kind='cubic')
 
         # generate N random numbers in (0,1) and convert to ages
