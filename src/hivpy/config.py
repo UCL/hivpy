@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List
@@ -20,6 +21,14 @@ class OutputConfig:
     logfile: str
     loglevel: str
 
+    @classmethod
+    def from_file(cls, output_section):
+        outputdir = output_section['OUTPUT_DIRECTORY']
+        logfilename = output_section['LOGOUTPUT_NAME']
+        log_level = output_section['LOG_LEVEL']
+        logpath = os.path.join(outputdir, logfilename)
+        return cls(outputdir, logpath, log_level)
+
     def start_logging(self):
         logging.basicConfig(filename=self.logfile, level=LEVELS[self.loglevel])
         logging.info("starting experiment")
@@ -34,6 +43,21 @@ class SimulationConfig:
     stop_date: date
     time_step: timedelta = timedelta(days=90)
     tracked: List[str] = field(default_factory=list)
+
+    @classmethod
+    def from_file(cls, simulation_section):
+        """Create a configuration from the contents of a file."""
+        try:
+            start_date = date(int(simulation_section['START_YEAR']), 1, 1)
+            end_date = date(int(simulation_section['END_YEAR']), 12, 31)
+            population_size = int(simulation_section['POPULATION'])
+            interval = timedelta(days=int(simulation_section['TIME_INTERVAL_DAYS']))
+            return cls(population_size, start_date, end_date, interval)
+        except ValueError as err:
+            print('Error parsing the experiment parameters {}'.format(err))
+        except KeyError as kerr:
+            print('Error extracting values from the parameter set {}'.format(kerr))
+        return None
 
     def _validate(self):
         """Make sure the values passed in make sense."""
