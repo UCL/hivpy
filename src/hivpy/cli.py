@@ -1,8 +1,8 @@
 import argparse
-import configparser
 import pathlib
 
 from .config import ExperimentConfig
+from .exceptions import ConfigException
 from .experiment import run_experiment
 
 '''
@@ -26,14 +26,11 @@ def run_model():
     parser.add_argument("input", type=pathlib.Path, help="run_model config.conf")
     args = parser.parse_args()
     conf_filename = args.input
-    config = configparser.ConfigParser()
     try:
-        config.read(conf_filename)
-        experiment_config = ExperimentConfig.from_file(config)
+        experiment_config = ExperimentConfig.from_file(conf_filename)
         run_experiment(experiment_config)
-
-    except configparser.Error as err:
-        print('error parsing the config file {}'.format(err))
+    except ConfigException as err:
+        print(err.args[0])
 
 
 if __name__ == '__main__':

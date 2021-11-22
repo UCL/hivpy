@@ -1,10 +1,11 @@
+import configparser
 import logging
 import os
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import List
 
-from .exceptions import SimulationException
+from .exceptions import ConfigException, SimulationException
 
 LEVELS = {
     'DEBUG': logging.DEBUG,
@@ -82,8 +83,13 @@ class ExperimentConfig:
     output_config: OutputConfig
 
     @classmethod
-    def from_file(cls, file_config):
+    def from_file(cls, filename):
         """Create a configuration from the contents of a file."""
+        file_config = configparser.ConfigParser()
+        try:
+            file_config.read(filename)
+        except configparser.Error as err:
+            raise ConfigException(f'Error parsing the config file: {err}')
         simulation_config = SimulationConfig.from_file(file_config['EXPERIMENT'])
         output_config = OutputConfig.from_file(file_config['OUTPUT'])
         return cls(simulation_config, output_config)
