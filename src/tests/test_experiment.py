@@ -1,26 +1,23 @@
 import os.path
-from configparser import ConfigParser
 
 import pytest
 
-from hivpy.experiment import create_experiment, run_experiment
+from hivpy.config import ExperimentConfig
+from hivpy.experiment import run_experiment
 
 
 @pytest.fixture
-def sample_experiment_params():
+def sample_config_file():
     """Sample experiment parameters for testing."""
-    parser = ConfigParser()
-    parser.read(
-        os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.conf'))
-    print(list(parser.items()))
-    return parser
+    config_file = os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.conf')
+    return config_file
 
 
-def test_dummy_workflow(sample_experiment_params):
+def test_dummy_workflow(sample_config_file):
     """Check that we can run a sample experiment from start to end.
 
     This is only a placeholder test and should be replaced when we have
     implemented actual functionality.
     """
-    dummy_config = create_experiment(sample_experiment_params)
+    dummy_config = ExperimentConfig.from_file(sample_config_file)
     run_experiment(dummy_config)
