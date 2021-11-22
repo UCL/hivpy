@@ -2,7 +2,8 @@ import argparse
 import configparser
 import pathlib
 
-from .experiment import create_experiment, run_experiment
+from .config import ExperimentConfig
+from .experiment import run_experiment
 
 '''
 Maybe we may want to register parameters/properties in future?
@@ -28,7 +29,7 @@ def run_model():
     config = configparser.ConfigParser()
     try:
         config.read(conf_filename)
-        experiment_config = create_experiment(config)
+        experiment_config = ExperimentConfig.from_file(config)
         run_experiment(experiment_config)
 
     except configparser.Error as err:

@@ -80,3 +80,10 @@ class SimulationConfig:
 class ExperimentConfig:
     simulation_config: SimulationConfig
     output_config: OutputConfig
+
+    @classmethod
+    def from_file(cls, file_config):
+        """Create a configuration from the contents of a file."""
+        simulation_config = SimulationConfig.from_file(file_config['EXPERIMENT'])
+        output_config = OutputConfig.from_file(file_config['OUTPUT'])
+        return cls(simulation_config, output_config)

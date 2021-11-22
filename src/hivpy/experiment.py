@@ -1,11 +1,4 @@
-from .config import ExperimentConfig, OutputConfig, SimulationConfig
 from .simulation import run_simulation
-
-
-def create_experiment(all_params):
-    simulation_config = SimulationConfig.from_file(all_params['EXPERIMENT'])
-    output_config = OutputConfig.from_file(all_params['OUTPUT'])
-    return ExperimentConfig(simulation_config, output_config)
 
 
 def run_experiment(experiment_config):
