@@ -3,6 +3,7 @@ from enum import IntEnum
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 from scipy.interpolate import interp1d
 
 from hivpy.exceptions import SimulationException
@@ -193,3 +194,7 @@ class DemographicsModule:
             age_distribution = ContinuousAgeDistribution.select_model(self.params['inc_cat'])
 
         return age_distribution.gen_ages(count)
+
+    def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
+        """Get which individuals die in a time step, as a boolean Series."""
+        return population_data.age >= population_data.max_age

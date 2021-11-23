@@ -45,8 +45,6 @@ class Population:
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         max_age = self.params['avg_max_age'] + 2 * np.random.randn(self.size)
-        # For now, age will be between 0 and max_age for each person
-        # (i.e. we're assuming everyone is born at the start of the simulation)
         date_of_death = [None] * self.size
         self.data = pd.DataFrame({
             'sex': self.demographics.initialize_sex(self.size),
@@ -94,7 +92,7 @@ class Population:
         # and set death dates.
         self.data.age += time_step.days / 365  # Very naive!
         # Record who has reached their max age
-        died_this_period = self.data.age >= self.data.max_age
+        died_this_period = self.demographics.determine_deaths(self.data)
         self.data.loc[died_this_period, "date_of_death"] = self.date
 
         # Get the number of sexual partners this time step
