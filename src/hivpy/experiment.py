@@ -1,29 +1,30 @@
 import os
 from datetime import date, datetime, timedelta
 
+import numpy as np
+import pandas as pd
+
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import SimulationException
 from .simulation import run_simulation
 
-import numpy as np
-import pandas as pd
 
 class OutputHandler:
     """
-    Handles output for the experiment. 
-    Could be used to just keep track of files and handle writing/reading 
+    Handles output for the experiment.
+    Could be used to just keep track of files and handle writing/reading
     Or could also be used to calculate summary statistics
     Although if that is going to be elaborate, a separate statistics module
-    could be useful. 
+    could be useful.
     """
-    files : dict
+    files: dict
     output_dir: str
     simulation_data: pd.DataFrame
     summary_stats: np.ndarray
 
-    def __init__(output_params):
-        output_dir = os.path.normpath(output_params['OUTPUT_DIR'])
-        files = {"Raw": "raw_data.out", "Stats": "summary_statistics.out"}
+    def __init__(self, output_params):
+        self.output_dir = os.path.normpath(output_params['OUTPUT_DIR'])
+        self.files = {"Raw": "raw_data.out", "Stats": "summary_statistics.out"}
 
     def set_file_name(self, fileId, filename):
         filepath = os.path.join(self.output_dir, filename)
@@ -47,9 +48,10 @@ class OutputHandler:
 
     def _gen_statistic(self, f_stat, field):
         return f_stat(self.simulation_data[field])
-    
+
     def gen_summary_stats(self):
         [self._gen_statistic(f_stat, field) for (f_stat, field) in self.summary_stats]
+
 
 def create_simulation(experiment_param):
     try:
@@ -71,7 +73,8 @@ def create_log(log_param):
     log_level = log_param['LOG_FILE_LEVEL']
     console_log_level = log_param['CONSOLE_LOG_LEVEL']
     logpath = os.path.join(log_dir, logfilename)
-    return LoggingConfig(log_dir, logpath, fileLogLevel=log_level, consoleLogLevel=console_log_level)
+    return LoggingConfig(log_dir, logpath, fileLogLevel=log_level,
+                         consoleLogLevel=console_log_level)
 
 
 def create_experiment(all_params):

@@ -1,19 +1,16 @@
 import logging
-from os import path
-
-import py
-import pytest
 
 from hivpy.config import LoggingConfig
+
 
 def test_logging_levels(tmp_path, capsys):
     d = tmp_path / "log"
     d.mkdir()
     print(d)
     print(str(d))
-    log_cfg = LoggingConfig(log_dir = d, logfile="hivpy.log")
+    log_cfg = LoggingConfig(log_dir=d, logfile="hivpy.log")
     log_cfg.start_logging()
-    logger = logging.getLogger("Testing");
+    logger = logging.getLogger("Testing")
     TEST_DEBUG = "Test debug."
     TEST_INFO = "Test info."
     TEST_WARNING = "Test warning."
@@ -26,10 +23,10 @@ def test_logging_levels(tmp_path, capsys):
     logger.critical(TEST_CRITICAL)
     console_out = capsys.readouterr().out
     print(type(console_out))
-    #file_out = open(path.normpath(path.join(d, "hivpy.log")),'r')
-    #file_text = file_out.read()
-    #file_out.close()
-    #assert TEST_DEBUG in file_out
+    # file_out = open(path.normpath(path.join(d, "hivpy.log")),'r')
+    # file_text = file_out.read()
+    # file_out.close()
+    # assert TEST_DEBUG in file_out
     assert not (TEST_DEBUG in console_out)
     assert not (TEST_INFO in console_out)
     assert TEST_WARNING in console_out

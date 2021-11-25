@@ -23,19 +23,18 @@ class LoggingConfig:
     consoleLogging: bool = True
     consoleLogLevel: str = 'WARNING'
     fileLogging: bool = True
-    fileLogLevel: str = 'DEBUG'    
+    fileLogLevel: str = 'DEBUG'
 
     def start_logging(self):
-        #File logging
+        # file logging
         file = path.join(self.log_dir, self.logfile)
-        print(file)
-        logging.basicConfig(filename=file, 
+        logging.basicConfig(filename=file,
                             level=LEVELS[self.fileLogLevel],
                             format='%(asctime)s %(name)-15s %(levelname)-10s %(message)s',
                             datefmt='%y-%d-%m %H:%M:%S',
                             filemode='w')
         logging.info("Starting experiment")
-        #console logging
+        # console logging
         console_logger = logging.StreamHandler(sys.stdout)
         console_formatter = logging.Formatter('%(name)-15s %(levelname)-10s %(message)s')
         console_logger.setFormatter(console_formatter)
