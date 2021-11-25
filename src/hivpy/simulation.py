@@ -1,5 +1,7 @@
 import logging
+import os
 
+import numpy as np
 import pandas as pd
 
 from .config import SimulationConfig
@@ -7,11 +9,37 @@ from .exceptions import SimulationException
 from .population import Population
 
 
+class OutputHandler:
+    files : dict
+    output_dir: str
+
+    def set_file_name(self, fileId, filename):
+        filepath = os.path.join(self.output_dir, filename)
+        self.files[fileId] = filepath
+
+    def _commit_data(self, fileId, data, write_mode):
+        if(not (fileId in self.files)):
+            raise SimulationException(f"File matching {fileId} does not exist.")
+        if(isinstance(data, pd.DataFrame)):
+            data.to_csv(self.files[fileId], mode=write_mode)
+        elif(isinstance(data, np.ndarray)):
+            outfile = open(self.files[fileId], write_mode)
+            np.savetxt(outfile, data)
+            outfile.close()
+
+    def append(self, fileId, data):
+        self._commit_data(self, fileId, data, 'a')
+
+    def overwrite(self, fileId, data):
+        self._commit_data(self, fileId, data, 'w')
+
+
 class SimulationHandler:
     """A class for handling executing a simulation and accessing results."""
     simulation_config: SimulationConfig
     population: Population
     results: pd.DataFrame
+    output: OutputHandler
 
     def __init__(self, simulation_config):
         self.simulation_config = simulation_config

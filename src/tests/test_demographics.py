@@ -1,8 +1,10 @@
+import logging
+
 import numpy as np
 import pytest
 import scipy.integrate
 
-from hivpy.demographics import (FEMALE_RATIO, ContinuousAgeDistribution,
+from hivpy.demographics import (FEMALE_RATIO, USE_STEPWISE_AGES, ContinuousAgeDistribution,
                                 DemographicsModule, StepwiseAgeDistribution)
 
 
@@ -39,6 +41,13 @@ def test_continuous_age_distribution(default_module):
         expectation = scipy.integrate.quad(prob, boundaries[i], boundaries[i+1])[0]*norm
         assert pytest.approx(num_pop, rel=0.1) == expectation*count
 
+
+def test_continous_age_logging(caplog):
+    caplog.set_level(logging.WARNING)
+    count = 100000
+    age_dist = ContinuousAgeDistribution(-65,200,ContinuousAgeDistribution.modelParams1)
+    assert "Max age exceeds the maximum age limit" in caplog.text
+    
 
 def test_stepwise_age_distribution(stepwise_age_module):
     count = 100000

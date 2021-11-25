@@ -1,7 +1,7 @@
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
-from .config import ExperimentConfig, OutputConfig, SimulationConfig
+from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .simulation import run_simulation
 
 
@@ -19,18 +19,19 @@ def create_simulation(experiment_param):
     return None
 
 
-def create_output(output_param):
-    outputdir = output_param['OUTPUT_DIRECTORY']
-    logfilename = output_param['LOGOUTPUT_NAME']
-    log_level = output_param['LOG_LEVEL']
-    logpath = os.path.join(outputdir, logfilename)
-    return OutputConfig(outputdir, logpath, log_level)
+def create_log(log_param):
+    log_dir = log_param['LOG_DIRECTORY']
+    logfilename = log_param['LOGFILE_PREFIX']+"."+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
+    log_level = log_param['LOG_FILE_LEVEL']
+    console_log_level = log_param['CONSOLE_LOG_LEVEL']
+    logpath = os.path.join(log_dir, logfilename)
+    return LoggingConfig(log_dir, logpath, fileLogLevel=log_level, consoleLogLevel=console_log_level)
 
 
 def create_experiment(all_params):
     simulation_config = create_simulation(all_params['EXPERIMENT'])
-    output_config = create_output(all_params['OUTPUT'])
-    return ExperimentConfig(simulation_config, output_config)
+    logging_config = create_log(all_params['LOGGING'])
+    return ExperimentConfig(simulation_config, logging_config)
 
 
 def run_experiment(experiment_config):
@@ -39,6 +40,6 @@ def run_experiment(experiment_config):
     An experiment can consist of one or more simulation runs,
     as well as processing steps after those are completed.
     """
-    experiment_config.output_config.start_logging()
+    experiment_config.logging_config.start_logging()
     result = run_simulation(experiment_config.simulation_config)
     return result

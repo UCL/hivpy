@@ -1,4 +1,4 @@
-import warnings
+import logging
 
 import numpy as np
 from pandas.api.types import CategoricalDtype
@@ -33,7 +33,7 @@ class StepwiseAgeDistribution:
         self.age_boundaries = ages
 
     @classmethod
-    def selectModel(cls, inc_cat):
+    def select_model(cls, inc_cat):
         assert inc_cat in [1, 2, 3]
         if(inc_cat == 1):
             return cls(cls.stepwise_boundaries, cls.stepwise_model1)
@@ -43,13 +43,13 @@ class StepwiseAgeDistribution:
             return cls(cls.stepwise_boundaries, cls.stepwise_model3)
 
     # Generate cumulative probabilites from stepwise distribution
-    def _genCumulativeProb(self):
+    def _gen_cumulative_prob(self):
         N = self.probability_list.size
         if(not np.isclose(sum(self.probability_list), 1.0, atol=1e-10, equal_nan=False)):
             raise SimulationException("Age probability distribution does not sum to one.")
         if(any(self.probability_list <= 0)):
-            raise SimulationException("Probability density cannot be negative anywhere: "
-                                      + np.array2string(self.probability_list))
+            raise SimulationException(f"Probability density cannot be negative anywhere: \
+                                      {self.probability_list}")
         CP = np.cumsum(self.probability_list)
         CP[N-1] = 1.0
         return CP
@@ -57,13 +57,13 @@ class StepwiseAgeDistribution:
     # Generate Age With Stepwise Distribution
     # the size of ages should be one larger than the cumulative probabilty
     # so that each bucket has an upper and lower bound.
-    def genAges(self, N):
+    def gen_ages(self, N):
         """Generate Age With Stepwise Distribution
 
         the size of ages should be one larger than the cumulative probabilty
         so that each bucket has an upper and lower bound.
         """
-        cpd = self._genCumulativeProb()
+        cpd = self._gen_cumulative_prob()
         p0 = 0.0
         rands = np.random.rand(N)
         ages_out = np.zeros(N)
@@ -95,7 +95,7 @@ class ContinuousAgeDistribution:
     B: offset of exponential part, scaling parameter
     """
 
-    def _integratedLinexp(self, x, m, c, A, B):
+    def _integrated_linexp(self, x, m, c, A, B):
         """Intregral of linear-exponential function
 
         Un-normalised cumulative probability distribution for age.
@@ -113,15 +113,16 @@ class ContinuousAgeDistribution:
         self.min_age = min_age
         model_age_limit = -modelParams[1]/modelParams[0]
         if(max_age > model_age_limit):
-            warnings.warn("Max age exceeds the maximum age limit for this model (negative probability).\
-                            Adjusting max age to " + model_age_limit)
+            logging.getLogger("Demographics").warning(f"Max age exceeds the maximum age limit for\
+                                                       this model (negative probability).\
+                                                       Adjusting max age to {model_age_limit}")
             self.max_age = model_age_limit
         else:
             self.max_age = max_age
-        self.cpd = lambda x: self._integratedLinexp(x, *modelParams)
+        self.cpd = lambda x: self._integrated_linexp(x, *modelParams)
 
     @classmethod
-    def selectModel(cls, inc_cat):
+    def select_model(cls, inc_cat):
         if(inc_cat == 1):
             return cls(-68, 65, cls.modelParams1)
         elif(inc_cat == 2):
@@ -129,7 +130,7 @@ class ContinuousAgeDistribution:
         else:
             return cls(-68, 65, *cls.modelParams3)
 
-    def genAges(self, N):
+    def gen_ages(self, N):
         """Generate ages using a (non-normalised) continuous cumulative probability distribution
 
         Given an analytic PD, this should also be analytically defined
@@ -139,12 +140,12 @@ class ContinuousAgeDistribution:
         C = self.cpd(self.min_age)
         M = 1/(self.cpd(self.max_age)-self.cpd(self.min_age))
 
-        def NormDist(x):
+        def norm_dist(x):
             return M*(self.cpd(x) - C)
 
         # sample and invert the normalised distribution (in case analytic inverse in impractical)
         NormX = np.linspace(self.min_age, self.max_age, self.n_inversion_points)
-        NormY = NormDist(NormX)
+        NormY = norm_dist(NormX)
 
         # fix the start and end values in case of numerical errors
         NormY[0] = 0.0
@@ -180,8 +181,8 @@ class DemographicsModule:
 
     def initialise_age(self, count):
         if(self.params['use_stepwise_ages'] is True):
-            age_distribution = StepwiseAgeDistribution.selectModel(self.params['inc_cat'])
+            age_distribution = StepwiseAgeDistribution.select_model(self.params['inc_cat'])
         else:
-            age_distribution = ContinuousAgeDistribution.selectModel(self.params['inc_cat'])
+            age_distribution = ContinuousAgeDistribution.select_model(self.params['inc_cat'])
 
-        return age_distribution.genAges(count)
+        return age_distribution.gen_ages(count)
