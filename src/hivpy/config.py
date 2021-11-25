@@ -1,6 +1,8 @@
 import logging
+import sys
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from os import path
 from typing import List
 
 from .exceptions import SimulationException
@@ -25,20 +27,22 @@ class LoggingConfig:
 
     def start_logging(self):
         #File logging
-        logging.basicConfig(filename=(self.log_dir+"/"+self.logfile), 
-                            level=LEVELS[self.consoleLogLevel],
+        file = path.join(self.log_dir, self.logfile)
+        print(file)
+        logging.basicConfig(filename=file, 
+                            level=LEVELS[self.fileLogLevel],
                             format='%(asctime)s %(name)-15s %(levelname)-10s %(message)s',
                             datefmt='%y-%d-%m %H:%M:%S',
                             filemode='w')
         logging.info("Starting experiment")
         #console logging
-        console_logger = logging.StreamHandler()
+        console_logger = logging.StreamHandler(sys.stdout)
         console_formatter = logging.Formatter('%(name)-15s %(levelname)-10s %(message)s')
         console_logger.setFormatter(console_formatter)
         console_logger.setLevel(LEVELS[self.consoleLogLevel])
         logging.getLogger(name=None).addHandler(console_logger)
 
-        print("Starting the simulation. Please, consult the logfile at "+self.logfile)
+        print("Starting the simulation. Please, consult the logfile at "+file)
 
 
 @dataclass

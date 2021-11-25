@@ -2,8 +2,54 @@ import os
 from datetime import date, datetime, timedelta
 
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
+from .exceptions import SimulationException
 from .simulation import run_simulation
 
+import numpy as np
+import pandas as pd
+
+class OutputHandler:
+    """
+    Handles output for the experiment. 
+    Could be used to just keep track of files and handle writing/reading 
+    Or could also be used to calculate summary statistics
+    Although if that is going to be elaborate, a separate statistics module
+    could be useful. 
+    """
+    files : dict
+    output_dir: str
+    simulation_data: pd.DataFrame
+    summary_stats: np.ndarray
+
+    def __init__(output_params):
+        output_dir = os.path.normpath(output_params['OUTPUT_DIR'])
+        files = {"Raw": "raw_data.out", "Stats": "summary_statistics.out"}
+
+    def set_file_name(self, fileId, filename):
+        filepath = os.path.join(self.output_dir, filename)
+        self.files[fileId] = filepath
+
+    def _commit_data(self, fileId, data, write_mode):
+        if(not (fileId in self.files)):
+            raise SimulationException(f"File matching {fileId} does not exist.")
+        if(isinstance(data, pd.DataFrame)):
+            data.to_csv(self.files[fileId], mode=write_mode)
+        elif(isinstance(data, np.ndarray)):
+            outfile = open(self.files[fileId], write_mode)
+            np.savetxt(outfile, data)
+            outfile.close()
+
+    def append(self, fileId, data):
+        self._commit_data(self, fileId, data, 'a')
+
+    def overwrite(self, fileId, data):
+        self._commit_data(self, fileId, data, 'w')
+
+    def _gen_statistic(self, f_stat, field):
+        return f_stat(self.simulation_data[field])
+    
+    def gen_summary_stats(self):
+        [self._gen_statistic(f_stat, field) for (f_stat, field) in self.summary_stats]
 
 def create_simulation(experiment_param):
     try:
