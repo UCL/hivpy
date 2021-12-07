@@ -113,9 +113,9 @@ class ContinuousAgeDistribution:
         self.min_age = min_age
         model_age_limit = -modelParams[1]/modelParams[0]
         if(max_age > model_age_limit):
-            logging.getLogger("Demographics").warning(f"Max age exceeds the maximum age limit for\
-                                                       this model (negative probability).\
-                                                       Adjusting max age to {model_age_limit}")
+            logging.getLogger("Demographics").warning(f"Max age exceeds the maximum age limit for "
+                                                      f"this model (negative probability). "
+                                                      f"Adjusting max age to {model_age_limit}")
             self.max_age = model_age_limit
         else:
             self.max_age = max_age

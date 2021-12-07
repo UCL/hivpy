@@ -32,13 +32,13 @@ class LoggingConfig:
         file_formatter = logging.Formatter('%(asctime)s %(name)-15s %(levelname)-10s %(message)s',
                                            datefmt='%y-%d-%m %H:%M:%S')
         file_logger.setFormatter(file_formatter)
-        file_logger.setLevel(logging.DEBUG)
+        file_logger.setLevel(self.fileLogLevel)
         logging.getLogger(name=None).addHandler(file_logger)
         # console logging
         console_logger = logging.StreamHandler()
         console_formatter = logging.Formatter('%(name)-15s %(levelname)-10s %(message)s')
         console_logger.setFormatter(console_formatter)
-        console_logger.setLevel(logging.WARNING)
+        console_logger.setLevel(self.consoleLogLevel)
         logging.getLogger(name=None).addHandler(console_logger)
 
         print("Starting the simulation. Please, consult the logfile at "+self.logfile)

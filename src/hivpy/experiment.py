@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
-from .exceptions import SimulationException
+from .exceptions import OutputException
 from .simulation import run_simulation
 
 
@@ -31,14 +31,13 @@ class OutputHandler:
         self.files[fileId] = filepath
 
     def _commit_data(self, fileId, data, write_mode):
-        if(not (fileId in self.files)):
-            raise SimulationException(f"File matching {fileId} does not exist.")
+        if fileId not in self.files:
+            raise OutputException(f"File matching {fileId} does not exist.")
         if(isinstance(data, pd.DataFrame)):
             data.to_csv(self.files[fileId], mode=write_mode)
         elif(isinstance(data, np.ndarray)):
-            outfile = open(self.files[fileId], write_mode)
-            np.savetxt(outfile, data)
-            outfile.close()
+            with open(self.files[fileId], write_mode) as outfile:
+                np.savetxt(outfile, data, delimiter=",")
 
     def append(self, fileId, data):
         self._commit_data(self, fileId, data, 'a')
@@ -50,7 +49,7 @@ class OutputHandler:
         return f_stat(self.simulation_data[field])
 
     def gen_summary_stats(self):
-        [self._gen_statistic(f_stat, field) for (f_stat, field) in self.summary_stats]
+        return [self._gen_statistic(f_stat, field) for (f_stat, field) in self.summary_stats]
 
 
 def create_simulation(experiment_param):

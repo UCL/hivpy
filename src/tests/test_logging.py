@@ -24,11 +24,13 @@ def test_logging_levels(tmp_path, capsys):
     file_out = open(path.normpath(path.join(d, "hivpy.log")), 'r')
     file_text = file_out.read()
     file_out.close()
+    # File Logging Checks
     assert TEST_DEBUG in file_text
     assert TEST_INFO in file_text
-    assert TEST_WARNING in console_out
-    assert TEST_ERROR in console_out
-    assert TEST_CRITICAL in console_out
+    assert TEST_WARNING in file_text
+    assert TEST_ERROR in file_text
+    assert TEST_CRITICAL in file_text
+    # Console Logging Checks
     assert not (TEST_DEBUG in console_out)
     assert not (TEST_INFO in console_out)
     assert TEST_WARNING in console_out
