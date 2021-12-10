@@ -16,11 +16,15 @@ def sample_experiment_params():
     return parser
 
 
-def test_dummy_workflow(sample_experiment_params):
+def test_dummy_workflow(tmp_path, sample_experiment_params):
     """Check that we can run a sample experiment from start to end.
 
     This is only a placeholder test and should be replaced when we have
     implemented actual functionality.
     """
+    d = tmp_path / "log"
+    d.mkdir()
+    # redirect file logging to tmp file (so it is deleted)
+    sample_experiment_params["LOGGING"]["LOG_DIRECTORY"] = str(d)
     dummy_config = create_experiment(sample_experiment_params)
     run_experiment(dummy_config)

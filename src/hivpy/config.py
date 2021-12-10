@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from datetime import date, timedelta
+from os import path
 from typing import List
 
 from .exceptions import SimulationException
@@ -15,14 +16,31 @@ LEVELS = {
 
 
 @dataclass
-class OutputConfig:
-    output_dir: str
+class LoggingConfig:
+    log_dir: str
     logfile: str
-    loglevel: str
+    consoleLogging: bool = True
+    consoleLogLevel: str = 'WARNING'
+    fileLogging: bool = True
+    fileLogLevel: str = 'DEBUG'
 
     def start_logging(self):
-        logging.basicConfig(filename=self.logfile, level=LEVELS[self.loglevel])
-        logging.info("starting experiment")
+        # file logging
+        file = path.join(self.log_dir, self.logfile)
+        logging.root.setLevel(logging.DEBUG)
+        file_logger = logging.FileHandler(file, 'w')
+        file_formatter = logging.Formatter('%(asctime)s %(name)-15s %(levelname)-10s %(message)s',
+                                           datefmt='%y-%d-%m %H:%M:%S')
+        file_logger.setFormatter(file_formatter)
+        file_logger.setLevel(self.fileLogLevel)
+        logging.getLogger(name=None).addHandler(file_logger)
+        # console logging
+        console_logger = logging.StreamHandler()
+        console_formatter = logging.Formatter('%(name)-15s %(levelname)-10s %(message)s')
+        console_logger.setFormatter(console_formatter)
+        console_logger.setLevel(self.consoleLogLevel)
+        logging.getLogger(name=None).addHandler(console_logger)
+
         print("Starting the simulation. Please, consult the logfile at "+self.logfile)
 
 
@@ -55,4 +73,4 @@ class SimulationConfig:
 @dataclass
 class ExperimentConfig:
     simulation_config: SimulationConfig
-    output_config: OutputConfig
+    logging_config: LoggingConfig

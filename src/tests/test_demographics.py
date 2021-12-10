@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pytest
 import scipy.integrate
@@ -38,6 +40,12 @@ def test_continuous_age_distribution(default_module):
         num_pop = np.count_nonzero((boundaries[i] < ages) & (ages < boundaries[i+1]))
         expectation = scipy.integrate.quad(prob, boundaries[i], boundaries[i+1])[0]*norm
         assert pytest.approx(num_pop, rel=0.1) == expectation*count
+
+
+def test_continous_age_logging(caplog):
+    caplog.set_level(logging.WARNING)
+    ContinuousAgeDistribution(-65, 200, ContinuousAgeDistribution.modelParams1)
+    assert "Max age exceeds the maximum age limit" in caplog.text
 
 
 def test_stepwise_age_distribution(stepwise_age_module):
