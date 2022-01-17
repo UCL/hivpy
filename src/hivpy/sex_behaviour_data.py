@@ -153,27 +153,27 @@ sex_behaviour_trans_female_options = np.array([
 # groups 15-24, 35-34, 45-54, 55-65
 # presumably no partners over 65?
 sex_mixing_matrix_male_options = np.array([[[0.865, 0.11, 0.025, 0.0,  0.0],
-                                   [0.47,  0.43, 0.10,  0.0,  0.0],
-                                   [0.3,   0.5,  0.2,   0.0,  0.0],
-                                   [0.43,  0.3,  0.23,  0.03, 0.01],
-                                   [0.18,  0.18, 0.27,  0.27, 0.1]]])
+                                            [0.47,  0.43, 0.10,  0.0,  0.0],
+                                            [0.3,   0.5,  0.2,   0.0,  0.0],
+                                            [0.43,  0.3,  0.23,  0.03, 0.01],
+                                            [0.18,  0.18, 0.27,  0.27, 0.1]]])
 
 sex_mixing_matrix_female_options = np.array([[[0.43, 0.34, 0.12, 0.1,  0.01],
-                                     [0.09, 0.49, 0.3,  0.1,  0.02],
-                                     [0.03, 0.25, 0.34, 0.25, 0.13],
-                                     [0.0,  0.0,  0.05, 0.7,  0.25],
-                                     [0.0,  0.0,  0.0,  0.1,  0.9]]])
+                                              [0.09, 0.49, 0.3,  0.1,  0.02],
+                                              [0.03, 0.25, 0.34, 0.25, 0.13],
+                                              [0.0,  0.0,  0.05, 0.7,  0.25],
+                                              [0.0,  0.0,  0.0,  0.1,  0.9]]])
 
 # Doesn't seem to be interpolation between 10,15,20,25,30,35 on high?
 short_term_partners_male_options = [[stat.rv_discrete(values=([0], [1.0])),
-                            stat.rv_discrete(values=([1, 2, 3], [0.5, 0.3, 0.2])),
-                            stat.rv_discrete(values=([4, 5, 6, 7, 8, 9], [
-                                             0.35, 0.21, 0.17, 0.13, 0.09, 0.05])),
-                            stat.rv_discrete(values=([10, 15, 20, 25, 30, 35],
-                                                     [0.6, 0.2, 0.1, 0.05, 0.04, 0.01]))]]
+                                     stat.rv_discrete(values=([1, 2, 3], [0.5, 0.3, 0.2])),
+                                     stat.rv_discrete(values=([4, 5, 6, 7, 8, 9], [
+                                         0.35, 0.21, 0.17, 0.13, 0.09, 0.05])),
+                                     stat.rv_discrete(values=([10, 15, 20, 25, 30, 35],
+                                                              [0.6, 0.2, 0.1, 0.05, 0.04, 0.01]))]]
 
 # need to add another distribution to handle over 25s as well
 short_term_partners_female_options = [[stat.rv_discrete(values=([0], [1.0])),
-                              stat.rv_discrete(values=([1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                                       [0.3, 0.2, 0.15, 0.12, 0.09,
+                                       stat.rv_discrete(values=([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                                                                [0.3, 0.2, 0.15, 0.12, 0.09,
                                                         0.06, 0.04, 0.02, 0.02]))]]

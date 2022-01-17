@@ -1,7 +1,7 @@
 import numpy as np
-import scipy.stats as stat
 
 from . import sex_behaviour_data as sb
+
 
 class SexualBehaviourModule:
 
@@ -9,12 +9,12 @@ class SexualBehaviourModule:
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans_male = np.random.choice(sb.sex_behaviour_trans_male_options)
         self.sex_behaviour_trans_female = np.random.choice(sb.sex_behaviour_trans_female_options)
-        self.baseline_risk = sb.baseline_risk # Baseline risk appears to only have one option
+        self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
         self.sex_mixing_matrix_female = np.random.choice(sb.sex_mixing_matrix_female_options)
         self.sex_mixing_matrix_male = np.random.choice(sb.sex_mixing_matrix_male_options)
         self.short_term_partners_male = np.random.choice(sb.short_term_partners_male_options)
         self.short_term_partners_female = np.random.choice(sb.short_term_partners_female_options)
-    
+
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the gender if statement
     def prob_transition(self, gender, age, i, j):
@@ -42,7 +42,7 @@ class SexualBehaviourModule:
 
     def num_short_term_partners(self, population):
         population["short_term_partners"] = np.where(population['gender'] == 'male',
-                                                    self.short_term_partners_male
-                                                    [population['sex_behaviour']].rvs(),
-                                                    self.short_term_partners_female
-                                                    [population['sex_behaviour']].rvs())
+                                                     self.short_term_partners_male
+                                                     [population['sex_behaviour']].rvs(),
+                                                     self.short_term_partners_female
+                                                     [population['sex_behaviour']].rvs())
