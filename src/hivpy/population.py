@@ -16,9 +16,9 @@ class Population:
     params: dict  # population-level parameters
     date: datetime.date  # current date
     attributes: Dict[str, Callable]  # aggregate measures across the population
-    hiv_a = -0.00016 # placeholder value for now
-    hiv_b = 0.0128   # placeholder value for now
-    hiv_c = -0.156   # placeholder value for now
+    hiv_a = -0.00016  # placeholder value for now
+    hiv_b = 0.0128    # placeholder value for now
+    hiv_c = -0.156    # placeholder value for now
 
     def __init__(self, size, start_date):
         """Initialise a population of the given size."""
