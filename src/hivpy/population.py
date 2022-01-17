@@ -16,9 +16,9 @@ class Population:
     params: dict  # population-level parameters
     date: datetime.date  # current date
     attributes: Dict[str, Callable]  # aggregate measures across the population
-    hiv_a = -0.00016
-    hiv_b = 0.0128
-    hiv_c = -0.156
+    hiv_a = -0.00016 # placeholder value for now
+    hiv_b = 0.0128   # placeholder value for now
+    hiv_c = -0.156   # placeholder value for now
 
     def __init__(self, size, start_date):
         """Initialise a population of the given size."""
@@ -34,7 +34,7 @@ class Population:
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
         # that distrubition is chosen randomly for each population.
-        avg_max_age = random.choices([68, 75, 80], [0.4, 0.4, 0.2])
+        avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
         self.params = {
             'avg_max_age': avg_max_age,
         }
