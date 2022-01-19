@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from .demographics import DemographicsModule, SexType
+from .sexual_behaviour import SexualBehaviourModule
 
 
 class Population:
@@ -25,6 +26,7 @@ class Population:
         self.size = size
         self.date = start_date
         self.demographics = DemographicsModule()
+        self.sexual_behaviour = SexualBehaviourModule()
         self._sample_parameters()
         self._create_population_data()
         self._create_attributes()
@@ -49,9 +51,6 @@ class Population:
         hiv_status = self._prob_HIV_initial(self.data["age"]) > np.random.rand(self.size)
         return hiv_status
 
-    def _initial_sex_behaviour(self):
-        """Assign people to sexual behaviour groups based on sex. Also arbitrary"""
-
     def _create_population_data(self):
         """Populate the data frame with initial values."""
         # NB This is a prototype. We should use the new numpy random interface:
@@ -67,6 +66,7 @@ class Population:
             'date_of_death': date_of_death
         })
         self.data['hiv_status'] = self._initial_HIV_status()
+        self.sexual_behaviour.init_sex_behaviour_groups(self.data)
 
     def _create_attributes(self):
         """Determine what aggregate measures can be computed and how."""
@@ -79,7 +79,7 @@ class Population:
 
         def count_sex_alive(population_data, sex):
             """Count how many people of the given sex are alive."""
-            assert sex in SexType.categories
+            assert sex in SexType
             # Should also make sure they are alive! (always true for now)
             alive = population_data.date_of_death is not None
             return population_data[alive].sex.value_counts()[sex]
@@ -108,6 +108,10 @@ class Population:
         # Record who has reached their max age
         died_this_period = self.data.age >= self.data.max_age
         self.data.loc[died_this_period, "date_of_death"] = self.date
+
+        # Get the number of sexual partners this time step
+        self.sexual_behaviour.num_short_term_partners(self.data)
+
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step

@@ -6,7 +6,11 @@ from scipy.interpolate import interp1d
 
 from hivpy.exceptions import SimulationException
 
-SexType = CategoricalDtype(["female", "male"])
+from enum import Enum
+
+class SexType(Enum):
+    Male = 0
+    Female = 1
 
 
 # Default values
@@ -177,7 +181,7 @@ class DemographicsModule:
     def initialize_sex(self, count):
         sex_distribution = (
             self.params['female_ratio'], 1 - self.params['female_ratio'])
-        return np.random.choice(SexType.categories, count, sex_distribution)
+        return np.random.choice(SexType, count, sex_distribution)
 
     def initialise_age(self, count):
         if(self.params['use_stepwise_ages'] is True):
