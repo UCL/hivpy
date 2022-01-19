@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
+
 from hivpy import sex_behaviour_data as sbd
-from hivpy import sexual_behaviour
 from hivpy.sexual_behaviour import SexualBehaviourModule
 
 
@@ -27,4 +26,3 @@ def test_transition_probabilities():
     for trans_matrix in sbd.sex_behaviour_trans_female_options:
         assert (trans_matrix.shape == (2, 2))
         check_prob_sums(1, trans_matrix)
-

@@ -1,9 +1,10 @@
 from enum import Enum
-import pytest
+
 import numpy as np
 
 from . import sex_behaviour_data as sb
 from .demographics import SexType
+
 
 class MaleSexBehaviour(Enum):
     ZERO = 0
@@ -29,7 +30,7 @@ class SexualBehaviourModule:
         self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
         self.sex_mixing_matrix_female = self.select_matrix(sb.sex_mixing_matrix_female_options)
         self.sex_mixing_matrix_male = self.select_matrix(sb.sex_mixing_matrix_male_options)
-        self.short_term_partners = [self.select_matrix(sb.short_term_partners_male_options), 
+        self.short_term_partners = [self.select_matrix(sb.short_term_partners_male_options),
                                     self.select_matrix(sb.short_term_partners_female_options)]
 
     # Haven't been able to locate the probabilities for this yet
@@ -65,4 +66,6 @@ class SexualBehaviourModule:
         return Probability
 
     def num_short_term_partners(self, population):
-        population["num_partners"] = [self.short_term_partners[s.value][b].rvs() for (s,b) in zip(population["sex"], population["sex_behaviour"])]
+        population["num_partners"] = [self.short_term_partners[s.value][b].rvs() for
+                                      (s, b) in zip(population["sex"],
+                                      population["sex_behaviour"])]

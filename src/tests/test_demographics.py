@@ -5,7 +5,8 @@ import pytest
 import scipy.integrate
 
 from hivpy.demographics import (FEMALE_RATIO, ContinuousAgeDistribution,
-                                DemographicsModule, SexType, StepwiseAgeDistribution)
+                                DemographicsModule, SexType,
+                                StepwiseAgeDistribution)
 
 
 @pytest.fixture(scope="module")

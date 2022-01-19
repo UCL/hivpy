@@ -1,12 +1,11 @@
 import logging
+from enum import Enum
 
 import numpy as np
-from pandas.api.types import CategoricalDtype
 from scipy.interpolate import interp1d
 
 from hivpy.exceptions import SimulationException
 
-from enum import Enum
 
 class SexType(Enum):
     Male = 0

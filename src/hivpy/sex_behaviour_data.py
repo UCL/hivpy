@@ -170,10 +170,13 @@ short_term_partners_male_options = np.array([[stat.rv_discrete(values=([0], [1.0
                                               stat.rv_discrete(values=([4, 5, 6, 7, 8, 9], [
                                                   0.35, 0.21, 0.17, 0.13, 0.09, 0.05])),
                                               stat.rv_discrete(values=([10, 15, 20, 25, 30, 35],
-                                                                       [0.6, 0.2, 0.1, 0.05, 0.04, 0.01]))]])
+                                                                       [0.6, 0.2, 0.1, 0.05,
+                                                                       0.04, 0.01]))]])
 
 # need to add another distribution to handle over 25s as well
 short_term_partners_female_options = np.array([[stat.rv_discrete(values=([0], [1.0])),
-                                                stat.rv_discrete(values=([1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                                                         [0.3, 0.2, 0.15, 0.12, 0.09,
-                                                                 0.06, 0.04, 0.02, 0.02]))]])
+                                                stat.rv_discrete(values=([1, 2, 3, 4, 5,
+                                                                          6, 7, 8, 9],
+                                                                         [0.3, 0.2, 0.15,
+                                                                         0.12, 0.09, 0.06,
+                                                                         0.04, 0.02, 0.02]))]])
