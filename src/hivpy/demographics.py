@@ -197,4 +197,5 @@ class DemographicsModule:
 
     def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
-        return population_data.age >= population_data.max_age
+        return (population_data.date_of_death.isnull()
+                & (population_data.age >= population_data.max_age))

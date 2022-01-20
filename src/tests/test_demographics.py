@@ -1,6 +1,8 @@
 import logging
+from datetime import datetime, timedelta
 
 import numpy as np
+import pandas as pd
 import pytest
 import scipy.integrate
 
@@ -59,3 +61,16 @@ def test_stepwise_age_distribution(stepwise_age_module):
     for i in range(0, N):
         age_count = sum((ages >= age_boundaries[i]) & (ages < age_boundaries[i+1]))
         assert pytest.approx(age_count, rel=0.1) == age_dist[i]*count
+
+
+def test_date_permanent(default_module):
+    """Check that that death is not recorded again in future steps."""
+    population_data = pd.DataFrame({
+        'date_of_death': [None, datetime.today(), datetime.today() - timedelta(days=1)],
+        'age': [30, 20, 50],
+        'max_age': [30, 21, 49]
+    })
+    new_deaths = default_module.determine_deaths(population_data)
+    # Find who already had a date of death, and check that they are not marked
+    # as having died in this time step.
+    assert not new_deaths[population_data.date_of_death.notnull()].any()
