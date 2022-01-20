@@ -1,6 +1,7 @@
 from enum import Enum
 
 import numpy as np
+import pandas as pd
 
 from . import sex_behaviour_data as sb
 from .demographics import SexType
@@ -16,6 +17,9 @@ class MaleSexBehaviour(Enum):
 class FemaleSexBehaviour(Enum):
     ZERO = 0
     ANY = 1
+
+
+SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
 
 
 class SexualBehaviourModule:
@@ -65,7 +69,19 @@ class SexualBehaviourModule:
 
         return Probability
 
-    def num_short_term_partners(self, population):
-        population["num_partners"] = [self.short_term_partners[s.value][b].rvs() for
-                                      (s, b) in zip(population["sex"],
-                                      population["sex_behaviour"])]
+    def _num_part(self, row):
+        self.short_term_partners[row['sex'].value][row['sex_behaviour']].rvs()
+
+    def num_short_term_partners(self, population: pd.DataFrame):
+        for sex in SexType:
+            for g in SexBehaviours[sex]:
+                index = (population["sex"] == sex) & (population["sex_behaviour"] == g.value)
+                population.loc[index, "num_partners"] = (
+                    self.short_term_partners[sex.value][g.value].rvs(sum(index)))
+
+
+def selector(population, **kwargs):
+    index = pd.Series([True]*len(population))
+    for kw, val in kwargs.items():
+        index = index & (population[kw] == val)
+    return index
