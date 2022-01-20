@@ -1,4 +1,6 @@
+import operator
 from enum import Enum
+from functools import reduce
 
 import numpy as np
 import pandas as pd
@@ -34,8 +36,10 @@ class SexualBehaviourModule:
         self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
         self.sex_mixing_matrix_female = self.select_matrix(sb.sex_mixing_matrix_female_options)
         self.sex_mixing_matrix_male = self.select_matrix(sb.sex_mixing_matrix_male_options)
-        self.short_term_partners = [self.select_matrix(sb.short_term_partners_male_options),
-                                    self.select_matrix(sb.short_term_partners_female_options)]
+        self.short_term_partners = {SexType.Male:
+                                    self.select_matrix(sb.short_term_partners_male_options),
+                                    SexType.Female:
+                                    self.select_matrix(sb.short_term_partners_female_options)}
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -69,19 +73,15 @@ class SexualBehaviourModule:
 
         return Probability
 
-    def _num_part(self, row):
-        self.short_term_partners[row['sex'].value][row['sex_behaviour']].rvs()
-
     def num_short_term_partners(self, population: pd.DataFrame):
         for sex in SexType:
             for g in SexBehaviours[sex]:
-                index = (population["sex"] == sex) & (population["sex_behaviour"] == g.value)
+                index = selector(population, sex=sex, sex_behaviour=g.value)
                 population.loc[index, "num_partners"] = (
-                    self.short_term_partners[sex.value][g.value].rvs(sum(index)))
+                    self.short_term_partners[sex][g.value].rvs(size=sum(index)))
 
 
 def selector(population, **kwargs):
-    index = pd.Series([True]*len(population))
-    for kw, val in kwargs.items():
-        index = index & (population[kw] == val)
+    index = reduce(operator.and_,
+                   (population[kw] == val for kw, val in kwargs.items()))
     return index

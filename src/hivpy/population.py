@@ -67,6 +67,7 @@ class Population:
         })
         self.data['hiv_status'] = self._initial_HIV_status()
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
+        self.sexual_behaviour.num_short_term_partners(self.data)
 
     def _create_attributes(self):
         """Determine what aggregate measures can be computed and how."""

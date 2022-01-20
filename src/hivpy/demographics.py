@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 
 import numpy as np
+import pandas as pd
 from scipy.interpolate import interp1d
 
 from hivpy.exceptions import SimulationException
@@ -10,6 +11,9 @@ from hivpy.exceptions import SimulationException
 class SexType(Enum):
     Male = 0
     Female = 1
+
+
+SexDType = pd.CategoricalDtype(iter(SexType))
 
 
 # Default values
@@ -180,7 +184,7 @@ class DemographicsModule:
     def initialize_sex(self, count):
         sex_distribution = (
             self.params['female_ratio'], 1 - self.params['female_ratio'])
-        return np.random.choice(SexType, count, sex_distribution)
+        return pd.Series(np.random.choice(SexType, count, sex_distribution)).astype(SexDType)
 
     def initialise_age(self, count):
         if(self.params['use_stepwise_ages'] is True):
