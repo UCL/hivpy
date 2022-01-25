@@ -1,11 +1,11 @@
 import datetime
 import functools
+import operator
 import random
 from typing import Callable, Dict
 
 import numpy as np
 import pandas as pd
-import operator
 
 from .demographics import DemographicsModule, SexType
 from .sexual_behaviour import SexualBehaviourModule, selector
@@ -59,8 +59,8 @@ class Population:
             Probability of each new partner not infecting you then is (1-Pr)\\
             Then prob of n partners independently not infecting you is (1-Pr)**n\\
             So probability of infection is 1-((1-Pr)**n)"""
-        HIV_neg_idx = selector(self.data, HIV_status=(operator.eq,False))
-        rands = np.random.uniform(0.0,1.0,sum(HIV_neg_idx))
+        HIV_neg_idx = selector(self.data, HIV_status=(operator.eq, False))
+        rands = np.random.uniform(0.0, 1.0, sum(HIV_neg_idx))
         HIV_prevalence = sum(self.data['HIV_status'])/self.size
         HIV_infection_risk = 0.005  # made up, based loosely on transmission probabilities
         n_partners = self.data.loc[HIV_neg_idx, "num_partners"]
