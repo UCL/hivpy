@@ -5,9 +5,10 @@ from typing import Callable, Dict
 
 import numpy as np
 import pandas as pd
+import operator
 
 from .demographics import DemographicsModule, SexType
-from .sexual_behaviour import SexualBehaviourModule
+from .sexual_behaviour import SexualBehaviourModule, selector
 
 
 class Population:
@@ -51,6 +52,21 @@ class Population:
         hiv_status = self._prob_HIV_initial(self.data["age"]) > np.random.rand(self.size)
         return hiv_status
 
+    def _update_HIV_status(self):
+        """Update HIV status for new transmissions in the last time period.\\
+            Super simple model where probability of being infected by a given person
+            is prevalence times transmission risk (P x r).\\
+            Probability of each new partner not infecting you then is (1-Pr)\\
+            Then prob of n partners independently not infecting you is (1-Pr)**n\\
+            So probability of infection is 1-((1-Pr)**n)"""
+        HIV_neg_idx = selector(self.data, HIV_status=(operator.eq,False))
+        rands = np.random.uniform(0.0,1.0,sum(HIV_neg_idx))
+        HIV_prevalence = sum(self.data['HIV_status'])/self.size
+        HIV_infection_risk = 0.005  # made up, based loosely on transmission probabilities
+        n_partners = self.data.loc[HIV_neg_idx, "num_partners"]
+        HIV_prob = 1-((1-HIV_prevalence*HIV_infection_risk)**n_partners)
+        self.data.loc[HIV_neg_idx, "HIV_status"] = (HIV_prob <= rands)
+
     def _create_population_data(self):
         """Populate the data frame with initial values."""
         # NB This is a prototype. We should use the new numpy random interface:
@@ -65,7 +81,7 @@ class Population:
             'age': self.demographics.initialise_age(self.size),
             'date_of_death': date_of_death
         })
-        self.data['hiv_status'] = self._initial_HIV_status()
+        self.data['HIV_status'] = self._initial_HIV_status()
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.num_short_term_partners(self.data)
 
@@ -98,9 +114,6 @@ class Population:
         """Get the value of the named attribute at the current date."""
         return self.attributes[attribute_name](self.data)
 
-    def _update_HIV_status(self):
-        """Update HIV status for new transmissions in the last time period"""
-
     def evolve(self, time_step: datetime.timedelta):
         """Advance the population by one time step."""
         # Does nothing just yet except advance the current date, track ages
@@ -113,6 +126,7 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.num_short_term_partners(self.data)
         self.sexual_behaviour.update_sex_groups(self.data)
+        self._update_HIV_status()
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
