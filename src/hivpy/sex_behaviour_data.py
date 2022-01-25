@@ -150,7 +150,7 @@ sex_behaviour_trans_female_options = np.array([
 ])
 
 # Sexual age mixing matrix
-# groups 15-24, 35-34, 45-54, 55-65
+# groups 15-24, 25-34, 35-44, 45-54, 55-65
 # presumably no partners over 65?
 sex_mixing_matrix_male_options = np.array([[[0.865, 0.11, 0.025, 0.0,  0.0],
                                             [0.47,  0.43, 0.10,  0.0,  0.0],
