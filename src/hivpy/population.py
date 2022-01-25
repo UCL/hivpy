@@ -112,7 +112,7 @@ class Population:
 
         # Get the number of sexual partners this time step
         self.sexual_behaviour.num_short_term_partners(self.data)
-
+        self.sexual_behaviour.update_sex_groups(self.data)
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
