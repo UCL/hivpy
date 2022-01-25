@@ -36,8 +36,10 @@ class SexualBehaviourModule:
                                     SexType.Female:
                                     self.select_matrix(sb.sex_behaviour_trans_female_options)}
         self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
-        self.sex_mixing_matrix_female = self.select_matrix(sb.sex_mixing_matrix_female_options)
-        self.sex_mixing_matrix_male = self.select_matrix(sb.sex_mixing_matrix_male_options)
+        self.sex_mixing_matrix = {SexType.Male:
+                                  self.select_matrix(sb.sex_mixing_matrix_male_options),
+                                  SexType.Female:
+                                  self.select_matrix(sb.sex_mixing_matrix_female_options)}
         self.short_term_partners = {SexType.Male:
                                     self.select_matrix(sb.short_term_partners_male_options),
                                     SexType.Female:
