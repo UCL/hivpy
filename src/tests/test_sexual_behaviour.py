@@ -24,9 +24,9 @@ def test_transition_probabilities():
     for trans_matrix in sbd.sex_behaviour_trans_male_options:
         assert (trans_matrix.shape == (4, 4))
         check_prob_sums(SexType.Male, trans_matrix)
-    # for trans_matrix in sbd.sex_behaviour_trans_female_options:
-    #     assert (trans_matrix.shape == (2, 2))
-    #     check_prob_sums(1, trans_matrix)
+    for trans_matrix in sbd.sex_behaviour_trans_female_options:
+        assert (trans_matrix.shape == (2, 2))
+        check_prob_sums(SexType.Female, trans_matrix)
 
 
 def check_num_partners(row):
