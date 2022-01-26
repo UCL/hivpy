@@ -34,4 +34,4 @@ class HIVStatusModule:
         HIV_infection_risk = 0.005  # made up, based loosely on transmission probabilities
         n_partners = population.loc[HIV_neg_idx, "num_partners"]
         HIV_prob = 1-((1-HIV_prevalence*HIV_infection_risk)**n_partners)
-        population.loc[HIV_neg_idx, "HIV_status"] = (HIV_prob <= rands)
+        population.loc[HIV_neg_idx, "HIV_status"] = (rands <= HIV_prob)
