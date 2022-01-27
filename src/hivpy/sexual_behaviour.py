@@ -88,24 +88,24 @@ class SexualBehaviourModule:
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        pop_size = len(population)
-
         for sex in SexType:
             for prev_group in SexBehaviours[sex]:
                 index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
                     operator.eq, prev_group.value), age=(operator.ge, 15))
-                rands = np.random.uniform(0.0, 1.0, pop_size)
-                ages = population.loc[index, "age"]
-                if any(ages):
+                if any(index):
+                    subpop_size = sum(index)
+                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    ages = population.loc[index, "age"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
-                    Pmin = pd.Series([0.]*pop_size)
-                    Pmax = pd.Series([0.]*pop_size)
+                    Pmin = np.zeros(subpop_size)
+                    Pmax = np.zeros(subpop_size)
                     for new_group in range(dim):
                         Pmin = Pmax
-                        Pmax.loc[index] += self.prob_transition(sex,
-                                                                ages, prev_group.value, new_group)
-                        population.loc[index & (rands >= Pmin) & (
-                            rands < Pmax), "sex_behaviour"] = new_group
+                        Pmax += self.prob_transition(sex, ages, prev_group.value, new_group)
+                        # This has to be a Series so it can be combined with index correctly
+                        jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
+                                                      index=ages.index)
+                        population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
 
 
 def selector(population, **kwargs):
