@@ -103,7 +103,7 @@ class SexualBehaviourModule:
                     Pmin = np.zeros(subpop_size)
                     Pmax = np.zeros(subpop_size)
                     for new_group in range(dim):
-                        Pmin = Pmax
+                        Pmin = Pmax.copy()
                         Pmax += self.prob_transition(sex, ages, prev_group, new_group)
                         # This has to be a Series so it can be combined with index correctly
                         jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),

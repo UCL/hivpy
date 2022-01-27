@@ -70,3 +70,11 @@ def test_sex_behaviour_groupings():
         for group in SexBehaviours[sex]:
             index = selector(pop_data, sex=(operator.eq, sex), sex_behaviour=(operator.eq, group))
             assert any(index)
+
+def test_behaviour_updates():
+    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    initial_groupings = pop.data["sex_behaviour"].copy()
+    for i in range(1):
+        pop.sexual_behaviour.update_sex_groups(pop.data)
+    subsequent_groupings = pop.data["sex_behaviour"]
+    assert(any(initial_groupings != subsequent_groupings))
