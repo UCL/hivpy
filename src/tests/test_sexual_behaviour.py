@@ -1,3 +1,4 @@
+import operator
 from datetime import date
 
 import numpy as np
@@ -5,7 +6,8 @@ import numpy as np
 from hivpy import sex_behaviour_data as sbd
 from hivpy.demographics import SexType
 from hivpy.population import Population
-from hivpy.sexual_behaviour import SexualBehaviourModule
+from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
+                                    selector)
 
 
 def check_prob_sums(sex, trans_matrix):
@@ -59,3 +61,12 @@ def test_num_partners():
     # Check the num_partners column
     checks = pop_data.apply(check_num_partners, axis=1)
     assert np.all(checks)
+
+
+def test_sex_behaviour_groupings():
+    """Check that people are assigned to all sex behaviour groups!"""
+    pop_data = Population(size=1000, start_date=date(1989, 1, 1)).data
+    for sex in SexType:
+        for group in SexBehaviours[sex]:
+            index = selector(pop_data, sex=(operator.eq, sex), sex_behaviour=(operator.eq, group))
+            assert any(index)
