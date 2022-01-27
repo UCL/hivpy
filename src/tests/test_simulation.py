@@ -71,7 +71,7 @@ def test_death_occurs():
     size = 10000
     start = date.today()
     step = timedelta(days=30)
-    end = start + 100 * step
+    end = start + 200 * step
     config = SimulationConfig(size, start, end, step, ['num_alive'])
     pop, results = run_simulation(config)
     # Check that the number alive never grows... (some steps may have 0 deaths)
