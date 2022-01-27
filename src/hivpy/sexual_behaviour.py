@@ -1,5 +1,5 @@
 import operator
-from enum import Enum
+from enum import IntEnum
 from functools import reduce
 
 import numpy as np
@@ -9,14 +9,14 @@ from . import sex_behaviour_data as sb
 from .demographics import SexType
 
 
-class MaleSexBehaviour(Enum):
+class MaleSexBehaviour(IntEnum):
     ZERO = 0
     LOW = 1
     MEDIUM = 2
     HIGH = 3
 
 
-class FemaleSexBehaviour(Enum):
+class FemaleSexBehaviour(IntEnum):
     ZERO = 0
     ANY = 1
 
@@ -51,9 +51,11 @@ class SexualBehaviourModule:
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
     def init_sex_behaviour_groups(self, population):
-        population["sex_behaviour"] = np.where(population['sex'] == SexType.Male,
-                                               np.random.choice(MaleSexBehaviour).value,
-                                               np.random.choice(FemaleSexBehaviour).value)
+        for sex in SexType:
+            index = selector(population, sex=(operator.eq, sex))
+            n_sex = sum(index)
+            population.loc[index, "sex_behaviour"] = np.random.choice(
+                SexBehaviours[sex], size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
@@ -65,7 +67,7 @@ class SexualBehaviourModule:
         age_index = np.minimum((age.astype(int)-self.risk_min_age)//self.risk_age_grouping,
                                self.risk_categories)
 
-        risk_factor = self.baseline_risk[age_index, sex.value]
+        risk_factor = self.baseline_risk[age_index, sex]
 
         denominator = transition_matrix[i][0] + risk_factor*sum(transition_matrix[i][1:])
 
@@ -80,9 +82,10 @@ class SexualBehaviourModule:
         for sex in SexType:
             for g in SexBehaviours[sex]:
                 index = selector(population, sex=(operator.eq, sex),
-                                 sex_behaviour=(operator.eq, g.value))
+                                 sex_behaviour=(operator.eq, g),
+                                 age=(operator.gt, 15))
                 population.loc[index, "num_partners"] = (
-                    self.short_term_partners[sex][g.value].rvs(size=sum(index)))
+                    self.short_term_partners[sex][g].rvs(size=sum(index)))
 
     def update_sex_groups(self, population: pd.DataFrame):
         """Determine changes to sexual behaviour groups.
@@ -91,7 +94,7 @@ class SexualBehaviourModule:
         for sex in SexType:
             for prev_group in SexBehaviours[sex]:
                 index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
-                    operator.eq, prev_group.value), age=(operator.ge, 15))
+                    operator.eq, prev_group), age=(operator.ge, 15))
                 if any(index):
                     subpop_size = sum(index)
                     rands = np.random.uniform(0.0, 1.0, subpop_size)
@@ -101,7 +104,7 @@ class SexualBehaviourModule:
                     Pmax = np.zeros(subpop_size)
                     for new_group in range(dim):
                         Pmin = Pmax
-                        Pmax += self.prob_transition(sex, ages, prev_group.value, new_group)
+                        Pmax += self.prob_transition(sex, ages, prev_group, new_group)
                         # This has to be a Series so it can be combined with index correctly
                         jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
                                                       index=ages.index)

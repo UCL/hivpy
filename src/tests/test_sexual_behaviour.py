@@ -33,6 +33,9 @@ def check_num_partners(row):
     sex = row["sex"]
     group = row["sex_behaviour"]
     n = row["num_partners"]
+    age = row["age"]
+    if age <= 15:
+        return n == 0
     if sex == SexType.Male:
         if group == 0:
             return n == 0
@@ -52,7 +55,7 @@ def check_num_partners(row):
 def test_num_partners():
     """Check that number of partners are reasonable"""
     pop_data = Population(size=1000, start_date=date(1989, 1, 1)).data
-    print(pop_data)
+    assert(any(pop_data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop_data.apply(check_num_partners, axis=1)
     assert np.all(checks)

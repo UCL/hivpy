@@ -22,16 +22,18 @@ def test_initial_hiv():
 
 
 def test_hiv_update():
+    pd.set_option('display.max_columns', None)
     pop_size = 100000
-    pop = Population(size=pop_size, start_date=date(1989, 1, 1)).data
-    HIV_module = HIVStatusModule()
-    pop["HIV_status"] = HIV_module.initial_HIV_status(pop)
-    # to keep this independent just creating partners for everyone
+    pop = Population(size=pop_size, start_date=date(1989, 1, 1))
+    data = pop.data
+    prev_status = data["HIV_status"].copy()
+
     for i in range(10):
-        prev_status = pop["HIV_status"].copy()
-        pop["num_partners"] = pd.Series([2]*pop_size)
-        HIV_module.update_HIV_status(pop)
-        new_cases = pop["HIV_status"] & (~ prev_status)
-        miracles = (~ pop["HIV_status"]) & (prev_status)
-        assert not any(miracles)
-        assert any(new_cases)
+        pop.hiv_status.update_HIV_status(pop.data)
+
+    new_cases = data["HIV_status"] & (~ prev_status)
+    miracles = (~ data["HIV_status"]) & (prev_status)
+    under_15s_idx = selector(data, HIV_status=(operator.eq, True), age=(operator.le, 15))
+    assert not any(miracles)
+    assert any(new_cases)
+    assert not any(under_15s_idx)
