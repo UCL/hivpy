@@ -36,6 +36,9 @@ class SexualBehaviourModule:
                                     SexType.Female:
                                     self.select_matrix(sb.sex_behaviour_trans_female_options)}
         self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
+        self.risk_categories = len(self.baseline_risk)-1
+        self.risk_min_age = 15  # This should come out of config somewhere
+        self.risk_age_grouping = 5  # ditto
         self.sex_mixing_matrix = {SexType.Male:
                                   self.select_matrix(sb.sex_mixing_matrix_male_options),
                                   SexType.Female:
@@ -59,9 +62,10 @@ class SexualBehaviourModule:
         group i to group j, based on sex and age."""
         transition_matrix = self.sex_behaviour_trans[sex]
 
-        age_index = np.minimum((age.astype(int)-15)//5, 9)
+        age_index = np.minimum((age.astype(int)-self.risk_min_age)//self.risk_age_grouping,
+                               self.risk_categories)
 
-        risk_factor = (self.baseline_risk[age_index]).transpose()[sex.value]
+        risk_factor = self.baseline_risk[age_index, sex.value]
 
         denominator = transition_matrix[i][0] + risk_factor*sum(transition_matrix[i][1:])
 
@@ -84,23 +88,24 @@ class SexualBehaviourModule:
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        pop_size = len(population)
-
         for sex in SexType:
-            for i in SexBehaviours[sex]:
+            for prev_group in SexBehaviours[sex]:
                 index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
-                    operator.eq, i.value), age=(operator.ge, 15))
-                rands = np.random.uniform(0.0, 1.0, pop_size)
-                ages = population.loc[index, "age"]
-                if(len(ages) > 0):
+                    operator.eq, prev_group.value), age=(operator.ge, 15))
+                if any(index):
+                    subpop_size = sum(index)
+                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    ages = population.loc[index, "age"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
-                    Pmin = pd.Series([0.]*pop_size)
-                    Pmax = pd.Series([0.]*pop_size)
-                    for j in range(dim):
+                    Pmin = np.zeros(subpop_size)
+                    Pmax = np.zeros(subpop_size)
+                    for new_group in range(dim):
                         Pmin = Pmax
-                        Pmax.loc[index] += self.prob_transition(sex, ages, i.value, j)
-                        population.loc[index & (rands >= Pmin) & (
-                            rands < Pmax), "sex_behaviour"] = j
+                        Pmax += self.prob_transition(sex, ages, prev_group.value, new_group)
+                        # This has to be a Series so it can be combined with index correctly
+                        jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
+                                                      index=ages.index)
+                        population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
 
 
 def selector(population, **kwargs):
