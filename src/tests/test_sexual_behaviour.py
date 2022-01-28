@@ -36,7 +36,7 @@ def check_num_partners(row):
     group = row["sex_behaviour"]
     n = row["num_partners"]
     age = row["age"]
-    if age <= 15:
+    if age <= 15:  # no sexual partners for under 16s
         return n == 0
     if sex == SexType.Male:
         if group == 0:
@@ -67,12 +67,12 @@ def test_sex_behaviour_groupings():
     """Check that people are assigned to all sex behaviour groups!"""
     pop_data = Population(size=1000, start_date=date(1989, 1, 1)).data
     for sex in SexType:
-        for group in SexBehaviours[sex]:
-            index = selector(pop_data, sex=(operator.eq, sex), sex_behaviour=(operator.eq, group))
-            assert any(index)
+        groups_in_data = pop_data[pop_data.sex == sex].sex_behaviour.unique()
+        assert sorted(groups_in_data) == sorted(SexBehaviours[sex])
 
 
 def test_behaviour_updates():
+    """Check that at least one person changes sexual behaviour groups"""
     pop = Population(size=1000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
     for i in range(1):
