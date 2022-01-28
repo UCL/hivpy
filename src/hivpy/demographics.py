@@ -1,5 +1,5 @@
 import logging
-from enum import Enum
+from enum import IntEnum
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 from hivpy.exceptions import SimulationException
 
 
-class SexType(Enum):
+class SexType(IntEnum):
     Male = 0
     Female = 1
 
