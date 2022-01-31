@@ -5,11 +5,10 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
+from .common import SexType, selector
 from .config import SimulationConfig
-from .demographics import SexType
 from .exceptions import SimulationException
 from .population import Population
-from .sexual_behaviour import selector
 
 
 class SimulationOutput:

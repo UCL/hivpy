@@ -6,8 +6,9 @@ import pandas as pd
 import pytest
 import scipy.integrate
 
+from hivpy.common import SexType
 from hivpy.demographics import (FEMALE_RATIO, ContinuousAgeDistribution,
-                                DemographicsModule, SexType,
+                                DemographicsModule,
                                 StepwiseAgeDistribution)
 
 

@@ -1,12 +1,11 @@
 import operator
 from enum import IntEnum
-from functools import reduce
 
 import numpy as np
 import pandas as pd
 
 from . import sex_behaviour_data as sb
-from .demographics import SexType
+from .common import SexType, selector
 
 
 class MaleSexBehaviour(IntEnum):
@@ -109,9 +108,3 @@ class SexualBehaviourModule:
                         jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
                                                       index=ages.index)
                         population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
-
-
-def selector(population, **kwargs):
-    index = reduce(operator.and_,
-                   (op(population[kw], val) for kw, (op, val) in kwargs.items()))
-    return index

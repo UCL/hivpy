@@ -3,7 +3,7 @@ from datetime import date
 import numpy as np
 
 from hivpy import sex_behaviour_data as sbd
-from hivpy.demographics import SexType
+from hivpy.common import SexType
 from hivpy.population import Population
 from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
 

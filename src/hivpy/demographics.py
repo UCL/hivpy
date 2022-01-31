@@ -1,17 +1,11 @@
 import logging
-from enum import IntEnum
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 from scipy.interpolate import interp1d
 
+from hivpy.common import SexType
 from hivpy.exceptions import SimulationException
-
-
-class SexType(IntEnum):
-    Male = 0
-    Female = 1
 
 
 SexDType = pd.CategoricalDtype(iter(SexType))
