@@ -1,7 +1,6 @@
 import logging
 import operator
 import string
-from asyncio.windows_events import NULL
 from datetime import datetime
 
 import numpy as np
@@ -48,7 +47,7 @@ class SimulationOutput:
         if sum(pop) != 0:
             return sum(subpop)/sum(pop)
         else:
-            return NULL
+            return 0
 
     def _update_HIV_prevalence(self, pop_data):
         # Update total HIV cases and population
