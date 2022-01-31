@@ -68,9 +68,19 @@ def test_date_permanent(default_module):
     population_data = pd.DataFrame({
         'date_of_death': [None, datetime.today(), datetime.today() - timedelta(days=1)],
         'age': [30, 20, 50],
-        'max_age': [30, 21, 49]
     })
     new_deaths = default_module.determine_deaths(population_data)
     # Find who already had a date of death, and check that they are not marked
     # as having died in this time step.
     assert not new_deaths[population_data.date_of_death.notnull()].any()
+
+
+# def test_death_rate():
+#     module = DemographicsModule(death_rate=1/20)
+#     N =  1000
+#     # For annual death rate of 1/20,  we expect 5 death per 3-month period.
+#     population_data = pd.DataFrame({
+#         'date_of_death': [None] * N
+#     })
+#     deaths = module.determine_deaths(population_data)
+#     assert pytest.approx(5) == deaths.sum()

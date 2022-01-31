@@ -1,9 +1,7 @@
 import datetime
 import functools
-import random
 from typing import Callable, Dict
 
-import numpy as np
 import pandas as pd
 
 from .demographics import DemographicsModule, SexType
@@ -35,20 +33,18 @@ class Population:
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
         # that distrubition is chosen randomly for each population.
-        avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
-        self.params = {
-            'avg_max_age': avg_max_age,
-        }
+        # avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
+        # self.params = {
+        #     'avg_max_age': avg_max_age,
+        # }
 
     def _create_population_data(self):
         """Populate the data frame with initial values."""
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-        max_age = self.params['avg_max_age'] + 2 * np.random.randn(self.size)
         date_of_death = [None] * self.size
         self.data = pd.DataFrame({
             'sex': self.demographics.initialize_sex(self.size),
-            'max_age': max_age.astype(int),
             'age': self.demographics.initialise_age(self.size),
             'date_of_death': date_of_death
         })

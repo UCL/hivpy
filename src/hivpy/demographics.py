@@ -23,6 +23,7 @@ FEMALE_RATIO = 0.52
 USE_STEPWISE_AGES = False
 INC_CAT = 1
 
+DEATH_RATE = 0.024  # annual death rate (simplistic for now)
 
 class StepwiseAgeDistribution:
     # stepwise distributions
@@ -172,7 +173,8 @@ class DemographicsModule:
         params = {
             "female_ratio": FEMALE_RATIO,
             "use_stepwise_ages": USE_STEPWISE_AGES,
-            "inc_cat": INC_CAT
+            "inc_cat": INC_CAT,
+            "death_rate": DEATH_RATE
         }
         # allow setting some parameters explicitly
         # could be useful if we have another method for more complex initialization,
@@ -197,5 +199,9 @@ class DemographicsModule:
 
     def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
+        # rates = np.ones(len(population_data)) * self.params["death_rate"]
+        # Assuming time step of 3 months
+        # probs = np.exp(-rates / 4)
+        probs = 1 - np.exp(-self.params["death_rate"] / 4)
         return (population_data.date_of_death.isnull()
-                & (population_data.age >= population_data.max_age))
+                & np.random.choice([True, False], size=len(population_data), p=[probs, 1-probs]))
