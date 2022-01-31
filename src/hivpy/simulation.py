@@ -1,6 +1,5 @@
 import logging
 import operator
-import string
 from datetime import datetime
 
 import numpy as np
@@ -14,8 +13,6 @@ from .sexual_behaviour import selector
 
 
 class SimulationOutput:
-    file_path: string
-    output_stats: dict
 
     def _init_output_field(self, key, default):
         self.output_stats[key] = np.array([default]*self.num_steps)
@@ -33,8 +30,8 @@ class SimulationOutput:
                                   ("HIV prevalence (female)", 0.0),
                                   ("HIV infections (tot)", 0),
                                   ("Population (over 15)", 0)])
-        self.file_path = "output/simulation_output." + \
-            str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv"
+        self.file_path = simulation_config.output_dir / (
+            "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
         self.age_min = 15
         self.age_max = 100
         self.age_step = 10

@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from os import path
+from pathlib import Path
 from typing import List
 
 from .exceptions import SimulationException
@@ -50,6 +51,7 @@ class SimulationConfig:
     population_size: int
     start_date: date
     stop_date: date
+    output_dir: Path
     time_step: timedelta = timedelta(days=90)
     tracked: List[str] = field(default_factory=list)
 
