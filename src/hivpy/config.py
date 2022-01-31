@@ -57,6 +57,7 @@ class SimulationConfig:
         """Make sure the values passed in make sense."""
         try:
             assert self.stop_date >= self.start_date + self.time_step
+            assert self.time_step > timedelta(days=0)
         except AssertionError:
             raise SimulationException("Invalid simulation configuration.")
 

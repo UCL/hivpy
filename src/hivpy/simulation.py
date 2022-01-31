@@ -26,7 +26,7 @@ class SimulationOutput:
 
     def __init__(self, simulation_config: SimulationConfig):
         self.num_steps = int((simulation_config.stop_date -
-                             simulation_config.start_date) / simulation_config.time_step)
+                             simulation_config.start_date) / simulation_config.time_step) + 1
         self.output_stats = {"Date": np.array([simulation_config.start_date]*self.num_steps)}
         self._init_output_fields([("HIV prevalence (tot)", 0.0),
                                   ("HIV prevalence (male)", 0.0),
@@ -115,7 +115,7 @@ class SimulationHandler:
         date = self.simulation_config.start_date
         assert date == self.population.date
         time_step = self.simulation_config.time_step
-        while date < self.simulation_config.stop_date:
+        while date <= self.simulation_config.stop_date:
             logging.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
