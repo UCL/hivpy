@@ -29,7 +29,8 @@ class SimulationOutput:
                                   ("HIV prevalence (male)", 0.0),
                                   ("HIV prevalence (female)", 0.0),
                                   ("HIV infections (tot)", 0),
-                                  ("Population (over 15)", 0)])
+                                  ("Population (over 15)", 0),
+                                  ("Deaths (tot)", 0.0)])
         self.file_path = simulation_config.output_dir / (
             "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
         self.age_min = 15
@@ -38,7 +39,8 @@ class SimulationOutput:
         self.step = 0
 
     def _update_date(self, date):
-        self.output_stats["Date"][self.step] = date
+        self.latest_date = date
+        self.output_stats["Date"][self.step] = self.latest_date
 
     def _ratio(self, subpop, pop):
         if sum(pop) != 0:
@@ -71,9 +73,14 @@ class SimulationOutput:
                 self._init_output_field(key, 0.0)
             self.output_stats[key][self.step] = self._ratio(HIV_pos_idx & age_idx, age_idx)
 
+    def _update_deaths(self, pop_data):
+        died_this_step = selector(pop_data, date_of_death=(operator.eq, self.latest_date))
+        self.output_stats["Deaths (tot)"][self.step] = sum(died_this_step)
+
     def update_summary_stats(self, date, pop_data):
         self._update_date(date)
         self._update_HIV_prevalence(pop_data)
+        self._update_deaths(pop_data)
         self.step += 1
 
     def write_output(self):
@@ -116,8 +123,8 @@ class SimulationHandler:
             logging.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
-            date = date + time_step
             self.output.update_summary_stats(date, self.population.data)
+            date = date + time_step
             # Record the values of the tracked attributes
             if tracked_attrs:  # we need this because we can't set an empty row
                 results.loc[date] = {
