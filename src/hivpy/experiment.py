@@ -1,5 +1,6 @@
 import os
 from datetime import date, datetime, timedelta
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -58,7 +59,10 @@ def create_simulation(experiment_param):
         end_date = date(int(experiment_param['END_YEAR']), 12, 31)
         population_size = int(experiment_param['POPULATION'])
         interval = timedelta(days=int(experiment_param['TIME_INTERVAL_DAYS']))
-        return SimulationConfig(population_size, start_date, end_date, interval)
+        output_dir = Path(experiment_param['SIMULATION_OUTPUT_DIR'])
+        if not output_dir.exists():
+            output_dir.mkdir()
+        return SimulationConfig(population_size, start_date, end_date, output_dir, interval)
     except ValueError as err:
         print('Error parsing the experiment parameters {}'.format(err))
     except KeyError as kerr:

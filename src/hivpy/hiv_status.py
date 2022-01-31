@@ -13,7 +13,7 @@ class HIVStatusModule:
 
     def _prob_HIV_initial(self, age):
         """Completely arbitrary placeholder function for initial HIV presence in population"""
-        return np.clip(self.hiv_a*age**2 + self.hiv_b*age + self.hiv_c, 0.0, 1.0)
+        return 2*np.clip(self.hiv_a*age**2 + self.hiv_b*age + self.hiv_c, 0.0, 1.0)
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """Initialise HIV status based on age (& sex?)"""
@@ -31,7 +31,7 @@ class HIVStatusModule:
         HIV_neg_idx = selector(population, HIV_status=(operator.eq, False))
         rands = np.random.uniform(0.0, 1.0, sum(HIV_neg_idx))
         HIV_prevalence = sum(population['HIV_status'])/len(population)
-        HIV_infection_risk = 0.005  # made up, based loosely on transmission probabilities
+        HIV_infection_risk = 0.1  # made up, based loosely on transmission probabilities
         n_partners = population.loc[HIV_neg_idx, "num_partners"]
         HIV_prob = 1-((1-HIV_prevalence*HIV_infection_risk)**n_partners)
         population.loc[HIV_neg_idx, "HIV_status"] = (rands <= HIV_prob)
