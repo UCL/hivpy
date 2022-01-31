@@ -64,7 +64,7 @@ class SimulationOutput:
 
         # Update HIV prevalence by age
         for age_bound in range(self.age_min, self.age_max, self.age_step):
-            key = "HIV prevalence (" + str(age_bound) + "-" + str(age_bound+(self.age_step-1)) + ")"
+            key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             age_idx = (pop_data["age"] >= age_bound) & (
                 pop_data["age"] < (age_bound + self.age_step))
             if(key not in self.output_stats.keys()):
