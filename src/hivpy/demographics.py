@@ -1,6 +1,6 @@
 import logging
-from math import exp, inf
 import operator
+from math import exp, inf
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,6 @@ from scipy.interpolate import interp1d
 
 from hivpy.common import SexType, between, selector
 from hivpy.exceptions import SimulationException
-
 
 SexDType = pd.CategoricalDtype(iter(SexType))
 
