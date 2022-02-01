@@ -69,6 +69,7 @@ def test_date_permanent(default_module):
     population_data = pd.DataFrame({
         'date_of_death': [None, datetime.today(), datetime.today() - timedelta(days=1)],
         'age': [30, 20, 50],
+        'sex': [SexType.Female, SexType.Female, SexType.Male]
     })
     new_deaths = default_module.determine_deaths(population_data)
     # Find who already had a date of death, and check that they are not marked
