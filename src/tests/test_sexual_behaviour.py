@@ -1,3 +1,4 @@
+import operator
 from datetime import date
 
 import numpy as np
@@ -5,7 +6,8 @@ import numpy as np
 from hivpy import sex_behaviour_data as sbd
 from hivpy.demographics import SexType
 from hivpy.population import Population
-from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
+from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
+                                    selector)
 
 
 def check_prob_sums(sex, trans_matrix):
@@ -77,3 +79,21 @@ def test_behaviour_updates():
         pop.sexual_behaviour.update_sex_groups(pop.data)
     subsequent_groupings = pop.data["sex_behaviour"]
     assert(any(initial_groupings != subsequent_groupings))
+
+
+def test_initial_sex_behaviour_groups():
+    N = 10000
+    pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
+    probs = sbd.init_sex_behaviour
+    for sex in SexType:
+        index_sex = selector(pop_data, sex=(operator.eq, sex))
+        n_sex = sum(index_sex)
+        Prob_sex = probs[sex].copy()
+        Prob_sex /= sum(Prob_sex)
+        for g in SexBehaviours[sex]:
+            index_group = selector(pop_data, sex_behaviour=(operator.eq, g))
+            p = Prob_sex[g]
+            sigma = np.sqrt(p*(1-p)*float(n_sex))
+            E = float(n_sex)*p
+            N_g = sum(index_sex & index_group)
+            assert(((E - sigma*3) <= N_g) and (N_g <= (E + sigma*5)))
