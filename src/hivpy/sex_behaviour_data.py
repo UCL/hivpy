@@ -1,6 +1,19 @@
 import numpy as np
 import scipy.stats as stat
 
+from .demographics import SexType
+
+# Initial sexual behaviour group probabilities
+# Taken from the SAS code Section 2
+# Need to be normalised
+init_sex_behaviour = {SexType.Male: np.array([0.85, 0.1, 0.05, 0.003]),
+                      SexType.Female: np.array([0.97, 0.03])}
+
+
+# initial probability of being a sex worker
+init_sex_worker = {"Ages": np.array([15, 20, 25, 40, 50]),
+                   "Probability": np.array([0.04, 0.02, 0.01, 0.002])}
+
 # Baseline sexual risk for age and sex
 # age groups 15 <= age < 20
 #            20 <= age < 25
