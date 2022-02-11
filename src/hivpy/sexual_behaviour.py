@@ -29,9 +29,11 @@ class SexualBehaviourModule:
     def select_matrix(self, matrix_list):
         return matrix_list[np.random.choice(matrix_list.shape[0])]
 
-    def norm_probs(self, prob_dict: dict):
-        for key, data in prob_dict.items():
-            data /= sum(data)
+    def _norm_probs(self, prob_dict: dict):
+        return {
+            key: data / sum(data)
+            for key, data in prob_dict.items()
+        }
 
     def __init__(self, **kwargs):
         # Randomly initialise sexual behaviour group transitions
@@ -39,8 +41,7 @@ class SexualBehaviourModule:
                                     self.select_matrix(sb.sex_behaviour_trans_male_options),
                                     SexType.Female:
                                     self.select_matrix(sb.sex_behaviour_trans_female_options)}
-        self.init_sex_behaviour_probs = sb.init_sex_behaviour
-        self.norm_probs(self.init_sex_behaviour_probs)
+        self.init_sex_behaviour_probs = self._norm_probs(sb.init_sex_behaviour)
         self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
         self.risk_categories = len(self.baseline_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
