@@ -82,6 +82,8 @@ def test_behaviour_updates():
 
 
 def test_initial_sex_behaviour_groups():
+    """Check that the number of people initialised into each sexual behaviour group
+    is close to the expectation value for their sex and grouping."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
     probs = sbd.init_sex_behaviour
@@ -96,4 +98,4 @@ def test_initial_sex_behaviour_groups():
             sigma = np.sqrt(p*(1-p)*float(n_sex))
             E = float(n_sex)*p
             N_g = sum(index_sex & index_group)
-            assert(((E - sigma*3) <= N_g) and (N_g <= (E + sigma*5)))
+            assert E - sigma*3 <= N_g <= E + sigma*3
