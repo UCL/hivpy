@@ -83,7 +83,7 @@ def test_behaviour_updates():
 
 def test_initial_sex_behaviour_groups():
     """Check that the number of people initialised into each sexual behaviour group
-    is close to the expectation value for their sex and grouping."""
+    is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
     probs = sbd.init_sex_behaviour
@@ -96,6 +96,6 @@ def test_initial_sex_behaviour_groups():
             index_group = selector(pop_data, sex_behaviour=(operator.eq, g))
             p = Prob_sex[g]
             sigma = np.sqrt(p*(1-p)*float(n_sex))
-            E = float(n_sex)*p
+            Expectation = float(n_sex)*p
             N_g = sum(index_sex & index_group)
-            assert E - sigma*3 <= N_g <= E + sigma*3
+            assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
