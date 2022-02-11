@@ -63,14 +63,6 @@ def test_num_partners():
     assert np.all(checks)
 
 
-def test_sex_behaviour_groupings():
-    """Check that people are assigned to all sex behaviour groups!"""
-    pop_data = Population(size=1000, start_date=date(1989, 1, 1)).data
-    for sex in SexType:
-        groups_in_data = pop_data[pop_data.sex == sex].sex_behaviour.unique()
-        assert sorted(groups_in_data) == sorted(SexBehaviours[sex])
-
-
 def test_behaviour_updates():
     """Check that at least one person changes sexual behaviour groups"""
     pop = Population(size=1000, start_date=date(1989, 1, 1))
