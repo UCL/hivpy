@@ -4,7 +4,7 @@ import scipy.stats as stat
 from .demographics import SexType
 
 # Initial sexual behaviour group probabilities
-# Taken from the SAS code lines 1249 and 1283
+# Taken from the SAS code Section 2
 # Need to be normalised
 init_sex_behaviour = {SexType.Male: np.array([0.85, 0.1, 0.05, 0.003]),
                       SexType.Female: np.array([0.97, 0.03])}
