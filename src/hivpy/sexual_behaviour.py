@@ -39,19 +39,19 @@ class SexualBehaviourModule:
                                     SexType.Female:
                                     self.select_matrix(self.sb_data.sex_behaviour_transition_options
                                                        ["Female"])}
-        self.init_sex_behaviour_probs = self._norm_probs(self.sb_data.init_sex_behaviour)
+        self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.baseline_risk = self.sb_data.baseline_risk
         self.risk_categories = len(self.baseline_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
         self.sex_mixing_matrix = {SexType.Male:
-                                  self.select_matrix(sb.sex_mixing_matrix_male_options),
+                                  self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
                                   SexType.Female:
-                                  self.select_matrix(sb.sex_mixing_matrix_female_options)}
+                                  self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)}
         self.short_term_partners = {SexType.Male:
-                                    self.select_matrix(sb.short_term_partners_male_options),
+                                    self.select_matrix(self.sb_data.short_term_partners_male_options),
                                     SexType.Female:
-                                    self.select_matrix(sb.short_term_partners_female_options)}
+                                    self.select_matrix(self.sb_data.short_term_partners_female_options)}
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -59,8 +59,7 @@ class SexualBehaviourModule:
         for sex in SexType:
             index = selector(population, sex=(operator.eq, sex))
             n_sex = sum(index)
-            population.loc[index, "sex_behaviour"] = np.random.choice(
-                SexBehaviours[sex], p=self.init_sex_behaviour_probs[sex], size=n_sex)
+            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex](size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
