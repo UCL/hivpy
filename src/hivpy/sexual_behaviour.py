@@ -5,7 +5,7 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 
-from . import sex_behaviour_data as sb
+from .sex_behaviour_data import SexualBehaviourData
 from .demographics import SexType
 
 
@@ -29,20 +29,17 @@ class SexualBehaviourModule:
     def select_matrix(self, matrix_list):
         return matrix_list[np.random.choice(matrix_list.shape[0])]
 
-    def _norm_probs(self, prob_dict: dict):
-        return {
-            key: data / sum(data)
-            for key, data in prob_dict.items()
-        }
-
     def __init__(self, **kwargs):
+        # init sexual behaviour data
+        self.sb_data = SexualBehaviourData(kwargs["data_file"])
+
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {SexType.Male:
-                                    self.select_matrix(sb.sex_behaviour_trans_male_options),
+                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options["Male"]),
                                     SexType.Female:
-                                    self.select_matrix(sb.sex_behaviour_trans_female_options)}
-        self.init_sex_behaviour_probs = self._norm_probs(sb.init_sex_behaviour)
-        self.baseline_risk = sb.baseline_risk  # Baseline risk appears to only have one option
+                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options["Female"])}
+        self.init_sex_behaviour_probs = self._norm_probs(self.sb_data.init_sex_behaviour)
+        self.baseline_risk = self.sb_data.baseline_risk  # Baseline risk appears to only have one option
         self.risk_categories = len(self.baseline_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
