@@ -1,12 +1,11 @@
 import operator
 from enum import IntEnum
-from functools import reduce
 
 import numpy as np
 import pandas as pd
 
+from .common import SexType, selector
 from .sex_behaviour_data import SexualBehaviourData
-from .demographics import SexType
 
 
 class MaleSexBehaviour(IntEnum):
@@ -35,11 +34,13 @@ class SexualBehaviourModule:
 
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {SexType.Male:
-                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options["Male"]),
+                                    self.select_matrix(
+                                        self.sb_data.sex_behaviour_transition_options["Male"]),
                                     SexType.Female:
-                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options["Female"])}
+                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options
+                                                       ["Female"])}
         self.init_sex_behaviour_probs = self._norm_probs(self.sb_data.init_sex_behaviour)
-        self.baseline_risk = self.sb_data.baseline_risk  # Baseline risk appears to only have one option
+        self.baseline_risk = self.sb_data.baseline_risk
         self.risk_categories = len(self.baseline_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
@@ -113,9 +114,3 @@ class SexualBehaviourModule:
                         jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
                                                       index=ages.index)
                         population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
-
-
-def selector(population, **kwargs):
-    index = reduce(operator.and_,
-                   (op(population[kw], val) for kw, (op, val) in kwargs.items()))
-    return index

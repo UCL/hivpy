@@ -2,7 +2,7 @@ import numpy as np
 import scipy.stats as stat
 import yaml
 
-from .demographics import SexType
+from .common import SexType
 
 class SexualBehaviourData:
     """Class to hold and interpret sexual behaviour data loaded from the yaml file"""
