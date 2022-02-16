@@ -4,7 +4,6 @@ from datetime import date
 import numpy as np
 import yaml
 
-from hivpy.sex_behaviour_data import SexualBehaviourData
 from hivpy.common import SexType
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
@@ -24,7 +23,7 @@ def check_prob_sums(sex, trans_matrix):
 
 
 def test_transition_probabilities():
-    with open("data/sex_behaviour.yaml",'r') as file:
+    with open("data/sex_behaviour.yaml", 'r') as file:
         yaml_data = yaml.safe_load(file)
     for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
         assert (trans_matrix.shape == (4, 4))

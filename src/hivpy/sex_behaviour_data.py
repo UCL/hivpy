@@ -52,5 +52,5 @@ class SexualBehaviourData:
         self.sex_mixing_matrix_female_options = self.data["sex_age_mixing_matrices"]["Female"]
         self.short_term_partners_male_options = self.data["sex_behaviour_transition_options"]["Male"]
         self.short_term_partners_female_options = self.data["sex_behaviour_transition_options"]["Female"]
-        self.init_sex_behaviour_probs = {SexType.Male: self._get_discrete_dist(["initial_sex_behaviour_probabilities","Male"]),
-                                         SexType.Female: self._get_discrete_dist(["initial_sex_behaviour_probabilities","Female"])}
+        self.init_sex_behaviour_probs = {SexType.Male: self._get_discrete_dist(["initial_sex_behaviour_probabilities", "Male"]),
+                                         SexType.Female: self._get_discrete_dist(["initial_sex_behaviour_probabilities", "Female"])}

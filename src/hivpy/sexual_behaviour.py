@@ -38,7 +38,7 @@ class SexualBehaviourModule:
                                         self.sb_data.sex_behaviour_transition_options["Male"])),
                                     SexType.Female:
                                     np.array(self.select_matrix(self.sb_data.sex_behaviour_transition_options
-                                                       ["Female"]))}
+                                                                ["Female"]))}
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.baseline_risk = self.sb_data.baseline_risk
         self.risk_categories = len(self.baseline_risk)-1
@@ -57,7 +57,8 @@ class SexualBehaviourModule:
         for sex in SexType:
             index = selector(population, sex=(operator.eq, sex))
             n_sex = sum(index)
-            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].rvs(size=n_sex)
+            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].rvs(
+                size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
