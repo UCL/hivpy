@@ -26,19 +26,19 @@ SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehavi
 class SexualBehaviourModule:
 
     def select_matrix(self, matrix_list):
-        return matrix_list[np.random.choice(matrix_list.shape[0])]
+        return matrix_list[np.random.choice(len(matrix_list))]
 
     def __init__(self, **kwargs):
         # init sexual behaviour data
-        self.sb_data = SexualBehaviourData(kwargs["data_file"])
+        self.sb_data = SexualBehaviourData("data/sex_behaviour.yaml")
 
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {SexType.Male:
-                                    self.select_matrix(
-                                        self.sb_data.sex_behaviour_transition_options["Male"]),
+                                    np.array(self.select_matrix(
+                                        self.sb_data.sex_behaviour_transition_options["Male"])),
                                     SexType.Female:
-                                    self.select_matrix(self.sb_data.sex_behaviour_transition_options
-                                                       ["Female"])}
+                                    np.array(self.select_matrix(self.sb_data.sex_behaviour_transition_options
+                                                       ["Female"]))}
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.baseline_risk = self.sb_data.baseline_risk
         self.risk_categories = len(self.baseline_risk)-1
@@ -48,10 +48,8 @@ class SexualBehaviourModule:
                                   self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
                                   SexType.Female:
                                   self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)}
-        self.short_term_partners = {SexType.Male:
-                                    self.select_matrix(self.sb_data.short_term_partners_male_options),
-                                    SexType.Female:
-                                    self.select_matrix(self.sb_data.short_term_partners_female_options)}
+        self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
+                                    SexType.Female: self.sb_data.female_stp_u25_dists}
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -59,7 +57,7 @@ class SexualBehaviourModule:
         for sex in SexType:
             index = selector(population, sex=(operator.eq, sex))
             n_sex = sum(index)
-            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex](size=n_sex)
+            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].rvs(size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement

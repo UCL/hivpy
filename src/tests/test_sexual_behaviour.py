@@ -2,8 +2,9 @@ import operator
 from datetime import date
 
 import numpy as np
+import yaml
 
-from hivpy import sex_behaviour_data as sbd
+from hivpy.sex_behaviour_data import SexualBehaviourData
 from hivpy.common import SexType
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
@@ -23,10 +24,12 @@ def check_prob_sums(sex, trans_matrix):
 
 
 def test_transition_probabilities():
-    for trans_matrix in sbd.sex_behaviour_trans_male_options:
+    with open("data/sex_behaviour.yaml",'r') as file:
+        yaml_data = yaml.safe_load(file)
+    for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
         assert (trans_matrix.shape == (4, 4))
         check_prob_sums(SexType.Male, trans_matrix)
-    for trans_matrix in sbd.sex_behaviour_trans_female_options:
+    for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Female"]):
         assert (trans_matrix.shape == (2, 2))
         check_prob_sums(SexType.Female, trans_matrix)
 
@@ -78,11 +81,14 @@ def test_initial_sex_behaviour_groups():
     is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
-    probs = sbd.init_sex_behaviour
+    with open("data/sex_behaviour.yaml", 'r') as file:
+        yaml_data = yaml.safe_load(file)
+    probs = {SexType.Male: yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probs"],
+             SexType.Female: yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probs"]}
     for sex in SexType:
         index_sex = selector(pop_data, sex=(operator.eq, sex))
         n_sex = sum(index_sex)
-        Prob_sex = probs[sex].copy()
+        Prob_sex = np.array(probs[sex].copy())
         Prob_sex /= sum(Prob_sex)
         for g in SexBehaviours[sex]:
             index_group = selector(pop_data, sex_behaviour=(operator.eq, g))
