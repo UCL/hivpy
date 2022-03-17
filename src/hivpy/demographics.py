@@ -246,10 +246,3 @@ class DemographicsModule:
                 # Mark those who died from this group
                 all_died |= pd.Series(died, index=group.index)
         return population_data.date_of_death.isnull() & all_died
-
-        # rates = np.ones(len(population_data)) * self.params["death_rate"]
-        # Assuming time step of 3 months
-        # probs = np.exp(-rates / 4)
-        probs = 1 - np.exp(-self.params["death_rate"] / 4)
-        return (population_data.date_of_death.isnull()
-                & np.random.choice([True, False], size=len(population_data), p=[probs, 1-probs]))
