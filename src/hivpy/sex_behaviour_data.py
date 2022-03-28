@@ -46,7 +46,7 @@ class SexualBehaviourData:
             ["short_term_partner_distributions", "Female", "Under_25"])
         self.female_stp_o25_dists = self._get_discrete_dist_list(
             ["short_term_partner_distributions", "Female", "Over_25"])
-        self.baseline_risk = np.array(self._select_matrix(self.data["baseline_risk_options"]))
+        self.baseline_risk = np.array(self._select_matrix(self.data["baseline_risk_options"]["risk_factor"]))
         self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
         self.sex_mixing_matrix_male_options = self.data["sex_age_mixing_matrices"]["Male"]
         self.sex_mixing_matrix_female_options = self.data["sex_age_mixing_matrices"]["Female"]
