@@ -60,24 +60,45 @@ class SexualBehaviourModule:
             population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].rvs(
                 size=n_sex)
 
+    def init_risk_factors(self, population):
+        n_pop = len(population)
+        self.init_rred_personal(population, n_pop)
+        self.init_new_partner_factor(population, n_pop)
+        self.init_rred_age(population)
+        population["rred"] = population["new_partner_factor"] * \
+                             population["rred_age"] * \
+                             population["rred_personal"]
+
+    def init_rred_age(self, population):
+        age = population["age"]
+        sex = population["sex"]
+        age_index = np.minimum((age.astype(int)-self.risk_min_age)//self.risk_age_grouping,
+                               self.risk_categories)
+        population["rred_age"] = self.baseline_risk[age_index, sex]
+
+    def init_new_partner_factor(self, population, n_pop):
+        population["new_partner_factor"] = self.sb_data.new_partner_factor.rvs(size=n_pop)
+
+    def init_rred_personal(self, population, n_pop):
+        p_rred_p = self.sb_data.p_rred_p_dist.rvs(size=len(population))
+        population["rred_personal"] = np.ones(n_pop)
+        r = np.random.uniform(size=n_pop)
+        mask = r < p_rred_p
+        population["rred_personal"][mask] = 1e-5
+
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
-    def prob_transition(self, sex, age, i, j):
+    def prob_transition(self, sex, rred, i, j):
         """Calculates the probability of transitioning from sexual behaviour
         group i to group j, based on sex and age."""
         transition_matrix = self.sex_behaviour_trans[sex]
 
-        age_index = np.minimum((age.astype(int)-self.risk_min_age)//self.risk_age_grouping,
-                               self.risk_categories)
-
-        risk_factor = self.baseline_risk[age_index, sex]
-
-        denominator = transition_matrix[i][0] + risk_factor*sum(transition_matrix[i][1:])
+        denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
 
         if(j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
-            Probability = risk_factor*transition_matrix[i][j] / denominator
+            Probability = rred*transition_matrix[i][j] / denominator
 
         return Probability
 
@@ -101,14 +122,14 @@ class SexualBehaviourModule:
                 if any(index):
                     subpop_size = sum(index)
                     rands = np.random.uniform(0.0, 1.0, subpop_size)
-                    ages = population.loc[index, "age"]
+                    rred = population.loc[index, "rred"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
                     Pmin = np.zeros(subpop_size)
                     Pmax = np.zeros(subpop_size)
                     for new_group in range(dim):
                         Pmin = Pmax.copy()
-                        Pmax += self.prob_transition(sex, ages, prev_group, new_group)
+                        Pmax += self.prob_transition(sex, rred, prev_group, new_group)
                         # This has to be a Series so it can be combined with index correctly
                         jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax),
-                                                      index=ages.index)
+                                                      index)
                         population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
