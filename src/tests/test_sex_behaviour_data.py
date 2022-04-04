@@ -1,7 +1,5 @@
-import yaml
-import numpy as np
-
 from hivpy.sex_behaviour_data import SexualBehaviourData
+
 
 def test_probability_loading():
     # Load example file
@@ -19,14 +17,12 @@ def test_probability_loading():
         E_count = p * N
         var = N * p * (1-p)
         assert E_count - 2*var <= count <= E_count + 2*var
-    
+
     # uniform over range
     d1 = dists[1]
     pop1 = d1.rvs(size=N)
-    for i in range(1,11):
+    for i in range(1, 11):
         count = sum(pop1 == i)
         E_count = 0.1 * N
         var = N * 0.09
         assert E_count - 2*var <= count <= E_count + 2*var
-    
-    

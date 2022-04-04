@@ -65,9 +65,9 @@ class SexualBehaviourModule:
         self.init_rred_personal(population, n_pop)
         self.init_new_partner_factor(population, n_pop)
         self.init_rred_age(population)
-        population["rred"] = population["new_partner_factor"] * \
-                             population["rred_age"] * \
-                             population["rred_personal"]
+        population["rred"] = (population["new_partner_factor"] *
+                              population["rred_age"] *
+                              population["rred_personal"])
 
     def init_rred_age(self, population):
         age = population["age"]
