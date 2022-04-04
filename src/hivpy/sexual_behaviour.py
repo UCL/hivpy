@@ -33,21 +33,21 @@ class SexualBehaviourModule:
         self.sb_data = SexualBehaviourData("data/sex_behaviour.yaml")
 
         # Randomly initialise sexual behaviour group transitions
-        self.sex_behaviour_trans = {SexType.Male:
-                                    np.array(self.select_matrix(
-                                        self.sb_data.sex_behaviour_transition_options["Male"])),
-                                    SexType.Female:
-                                    np.array(self.select_matrix(self.sb_data.sex_behaviour_transition_options
-                                                                ["Female"]))}
+        self.sex_behaviour_trans = {
+            SexType.Male: np.array(
+                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Male"])),
+            SexType.Female: np.array(
+                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Female"]))
+        }
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.baseline_risk = self.sb_data.baseline_risk
         self.risk_categories = len(self.baseline_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
-        self.sex_mixing_matrix = {SexType.Male:
-                                  self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
-                                  SexType.Female:
-                                  self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)}
+        self.sex_mixing_matrix = {
+            SexType.Male: self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
+            SexType.Female: self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)
+        }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
 

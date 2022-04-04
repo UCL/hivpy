@@ -55,23 +55,43 @@ class SexualBehaviourData:
         try:
             self.male_stp_dists = self._get_discrete_dist_list(
                 ["short_term_partner_distributions", "Male"])
+
             self.female_stp_u25_dists = self._get_discrete_dist_list(
                 ["short_term_partner_distributions", "Female", "Under_25"])
+
             self.female_stp_o25_dists = self._get_discrete_dist_list(
                 ["short_term_partner_distributions", "Female", "Over_25"])
+
             self.sexworker_stp_dists = self._get_discrete_dist_list(
                 ["short_term_partner_distributions", "Sex_Worker"])
-            self.age_based_risk = np.array(self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
+
+            self.age_based_risk = np.array(
+                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
+
             self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
+
             self.sex_mixing_matrix_male_options = self.data["sex_age_mixing_matrices"]["Male"]
+
             self.sex_mixing_matrix_female_options = self.data["sex_age_mixing_matrices"]["Female"]
-            self.short_term_partners_male_options = self.data["sex_behaviour_transition_options"]["Male"]
-            self.short_term_partners_female_options = self.data["sex_behaviour_transition_options"]["Female"]
-            self.init_sex_behaviour_probs = {SexType.Male: self._get_discrete_dist(["initial_sex_behaviour_probabilities", "Male"]),
-                                            SexType.Female: self._get_discrete_dist(["initial_sex_behaviour_probabilities", "Female"])}
+
+            self.short_term_partners_male_options = self.data[
+                "sex_behaviour_transition_options"]["Male"]
+
+            self.short_term_partners_female_options = self.data[
+                "sex_behaviour_transition_options"]["Female"]
+
+            self.init_sex_behaviour_probs = {
+                SexType.Male: self._get_discrete_dist(
+                    ["initial_sex_behaviour_probabilities", "Male"]),
+                SexType.Female: self._get_discrete_dist(
+                    ["initial_sex_behaviour_probabilities", "Female"])}
+
             self.rred_initial = self.data["rred_initial"]
+
             self.new_partner_factor = self._get_discrete_dist(["new_partner_factor"])
+
             self.p_rred_p_dist = self._get_discrete_dist(["population_rred_personal"])
+
         except KeyError as ke:
             print(ke.args)
             raise ke
