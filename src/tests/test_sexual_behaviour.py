@@ -82,8 +82,10 @@ def test_initial_sex_behaviour_groups():
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
     with open("data/sex_behaviour.yaml", 'r') as file:
         yaml_data = yaml.safe_load(file)
-    probs = {SexType.Male: yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probs"],
-             SexType.Female: yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probs"]}
+    probs = {SexType.Male:
+             yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
+             SexType.Female:
+             yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probability"]}
     for sex in SexType:
         index_sex = selector(pop_data, sex=(operator.eq, sex))
         n_sex = sum(index_sex)
