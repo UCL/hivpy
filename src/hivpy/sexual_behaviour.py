@@ -66,7 +66,7 @@ class SexualBehaviourModule:
         self.init_new_partner_factor(population, n_pop)
         population["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
         population["rred"] = (population["new_partner_factor"] *
-                              population["rred_personal"])
+                              population["rred_personal"])  # needs * rred_age at each step
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]

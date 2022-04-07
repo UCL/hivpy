@@ -19,13 +19,13 @@ class SexualBehaviourData:
             probs /= sum(probs)
             return DiscreteChoice(values, probs)
 
-    def _get_discrete_dist_list(self, keys):
+    def _get_discrete_dist_list(self, *keys):
         dist_list = self.data
         for k in keys:
             dist_list = dist_list[k]
         return np.array([self._setup_probabilty_dist(x) for x in dist_list])
 
-    def _get_discrete_dist(self, keys):
+    def _get_discrete_dist(self, *keys):
         dist_data = self.data
         for k in keys:
             dist_data = dist_data[k]
@@ -53,16 +53,16 @@ class SexualBehaviourData:
             self.data = yaml.safe_load(file)
         try:
             self.male_stp_dists = self._get_discrete_dist_list(
-                ["short_term_partner_distributions", "Male"])
+                "short_term_partner_distributions", "Male")
 
             self.female_stp_u25_dists = self._get_discrete_dist_list(
-                ["short_term_partner_distributions", "Female", "Under_25"])
+                "short_term_partner_distributions", "Female", "Under_25")
 
             self.female_stp_o25_dists = self._get_discrete_dist_list(
-                ["short_term_partner_distributions", "Female", "Over_25"])
+                "short_term_partner_distributions", "Female", "Over_25")
 
             self.sexworker_stp_dists = self._get_discrete_dist_list(
-                ["short_term_partner_distributions", "Sex_Worker"])
+                "short_term_partner_distributions", "Sex_Worker")
 
             self.age_based_risk = np.array(
                 self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
@@ -81,15 +81,15 @@ class SexualBehaviourData:
 
             self.init_sex_behaviour_probs = {
                 SexType.Male: self._get_discrete_dist(
-                    ["initial_sex_behaviour_probabilities", "Male"]),
+                    "initial_sex_behaviour_probabilities", "Male"),
                 SexType.Female: self._get_discrete_dist(
-                    ["initial_sex_behaviour_probabilities", "Female"])}
+                    "initial_sex_behaviour_probabilities", "Female")}
 
             self.rred_initial = self.data["rred_initial"]
 
-            self.new_partner_dist = self._get_discrete_dist(["new_partner_factor"])
+            self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 
-            self.p_rred_p_dist = self._get_discrete_dist(["population_rred_personal"])
+            self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
 
         except KeyError as ke:
             print(ke.args)
