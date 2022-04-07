@@ -9,7 +9,7 @@ def test_probability_loading():
     # explicit distribution
     d0 = dists[0]
     N = 10000
-    pop0 = d0.rvs(size=N)
+    pop0 = d0.sample(size=N)
     for i in range(5):
         v = i + 1
         p = 0.1*i
@@ -20,7 +20,7 @@ def test_probability_loading():
 
     # uniform over range
     d1 = dists[1]
-    pop1 = d1.rvs(size=N)
+    pop1 = d1.sample(size=N)
     for i in range(1, 11):
         count = sum(pop1 == i)
         E_count = 0.1 * N

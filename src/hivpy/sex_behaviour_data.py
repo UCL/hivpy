@@ -1,8 +1,7 @@
 import numpy as np
-import scipy.stats as stat
 import yaml
 
-from .common import SexType
+from .common import DiscreteChoice, SexType
 
 
 class SexualBehaviourData:
@@ -13,12 +12,12 @@ class SexualBehaviourData:
             min = prob_dict["Range"][0]
             max = prob_dict["Range"][1]
             N = max - min + 1
-            return stat.rv_discrete(values=(np.arange(min, max+1, 1), np.array([1./N]*N)))
+            return DiscreteChoice(np.arange(min, max+1, 1), np.array([1./N]*N))
         else:
             values = np.array(prob_dict["Value"])
             probs = np.array(prob_dict["Probability"])
             probs /= sum(probs)
-            return stat.rv_discrete(values=(values, probs))
+            return DiscreteChoice(values, probs)
 
     def _get_discrete_dist_list(self, keys):
         dist_list = self.data
@@ -30,10 +29,10 @@ class SexualBehaviourData:
         dist_data = self.data
         for k in keys:
             dist_data = dist_data[k]
-        values = np.array(dist_data["Value"])
+        vals = np.array(dist_data["Value"])
         probs = np.array(dist_data["Probability"])
         probs /= sum(probs)
-        return stat.rv_discrete(values=(values, probs))
+        return DiscreteChoice(vals, probs)
 
     def _get_stepwise_dist(self, keys):
         dist_data = self.data
@@ -88,7 +87,7 @@ class SexualBehaviourData:
 
             self.rred_initial = self.data["rred_initial"]
 
-            self.new_partner_factor = self._get_discrete_dist(["new_partner_factor"])
+            self.new_partner_dist = self._get_discrete_dist(["new_partner_factor"])
 
             self.p_rred_p_dist = self._get_discrete_dist(["population_rred_personal"])
 

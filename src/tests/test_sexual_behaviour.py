@@ -2,6 +2,7 @@ import operator
 from datetime import date
 
 import numpy as np
+import pandas as pd
 import yaml
 
 from hivpy.common import SexType
@@ -16,9 +17,16 @@ def check_prob_sums(sex, trans_matrix):
     (dim, _) = trans_matrix.shape
     for i in range(0, dim):
         ages = np.array([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65])
+        sexes = np.array([sex]*len(ages))
+        pop = pd.DataFrame({"age": ages, "sex": sexes})
+        SBM.init_risk_factors(pop)
+        assert len(pop["rred"]) == 11
+        print(pop["new_partner_factor"])
+        for r in pop["new_partner_factor"]:
+            assert 0 < r <= 2
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
-            tot_prob += SBM.prob_transition(sex, ages, i, j)
+            tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)
         assert(np.allclose(tot_prob, 1.0))
 
 
