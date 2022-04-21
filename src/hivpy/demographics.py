@@ -52,9 +52,13 @@ DEATH_RATE_FEMALE = {
     (80, 85): 0.07,
     (85, inf): 0.15
 }
+# DEATH_RATES = {  # annual death rates per sex
+#     SexType.Male: DEATH_RATE_MALE,
+#     SexType.Female: DEATH_RATE_FEMALE
+# }
 DEATH_RATES = {  # annual death rates per sex
-    SexType.Male: DEATH_RATE_MALE,
-    SexType.Female: DEATH_RATE_FEMALE
+    SexType.Male: [0] + list(DEATH_RATE_MALE.values()),
+    SexType.Female: [0] + list(DEATH_RATE_FEMALE.values())
 }
 
 
@@ -230,7 +234,7 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
-    def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
+    def determine_deaths_old(self, population_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
         all_died = pd.Series([False] * len(population_data))
         for sex in SexType:
@@ -246,3 +250,21 @@ class DemographicsModule:
                 # Mark those who died from this group
                 all_died |= pd.Series(died, index=group.index)
         return population_data.date_of_death.isnull() & all_died
+
+    def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
+        """Get which individuals die in a time step, as a boolean Series."""
+        # This binning should perhaps happen when the date advances
+        # Age groups are the same regardless of sex
+        age_limits = [lower for (lower, upper) in DEATH_RATE_MALE] + [inf]
+        population_data["age_group"] = np.digitize(population_data.age, age_limits)
+
+        death_probs = np.full(len(population_data), np.nan)
+        groups = population_data.groupby(["sex", "age_group"])
+        for (sex, age_group), entries in groups.groups.items():
+            rate = self.params["death_rates"][sex][age_group]
+            # Probability of dying, assuming time step of 3 months
+            prob_of_death = 1 - exp(-rate / 4)
+            death_probs[entries] = prob_of_death
+            # Mark those who died from this group and sex
+        rands = np.random.random_sample(len(population_data))
+        return population_data.date_of_death.isnull() & (rands < death_probs)
