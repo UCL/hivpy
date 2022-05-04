@@ -259,8 +259,8 @@ class DemographicsModule:
         population_data["age_group"] = np.digitize(population_data.age, age_limits)
 
         death_probs = np.full(len(population_data), np.nan)
-        groups = population_data.groupby(["sex", "age_group"])
-        for (sex, age_group), entries in groups.groups.items():
+        age_groups = population_data.groupby(["sex", "age_group"])
+        for (sex, age_group), entries in age_groups.groups.items():
             rate = self.params["death_rates"][sex][age_group]
             # Probability of dying, assuming time step of 3 months
             prob_of_death = 1 - exp(-rate / 4)
