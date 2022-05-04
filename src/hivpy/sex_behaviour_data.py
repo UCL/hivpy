@@ -1,6 +1,8 @@
 import numpy as np
 import yaml
 
+from hivpy.exceptions import DataLoadException
+
 from .common import DiscreteChoice, SexType
 
 
@@ -93,4 +95,4 @@ class SexualBehaviourData:
 
         except KeyError as ke:
             print(ke.args)
-            raise ke
+            raise DataLoadException

@@ -21,9 +21,7 @@ def check_prob_sums(sex, trans_matrix):
         pop = pd.DataFrame({"age": ages, "sex": sexes})
         SBM.init_risk_factors(pop)
         assert len(pop["rred"]) == 11
-        print(pop["new_partner_factor"])
-        for r in pop["new_partner_factor"]:
-            assert 0 < r <= 2
+        assert all((0 < pop["new_partner_factor"]) & (pop["new_partner_factor"] <= 2))
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
             tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)
@@ -97,7 +95,7 @@ def test_initial_sex_behaviour_groups():
     for sex in SexType:
         index_sex = selector(pop_data, sex=(operator.eq, sex))
         n_sex = sum(index_sex)
-        Prob_sex = np.array(probs[sex].copy())
+        Prob_sex = np.array(probs[sex])
         Prob_sex /= sum(Prob_sex)
         for g in SexBehaviours[sex]:
             index_group = selector(pop_data, sex_behaviour=(operator.eq, g))

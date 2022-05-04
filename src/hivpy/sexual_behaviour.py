@@ -130,5 +130,6 @@ class SexualBehaviourModule:
                         Pmin = Pmax.copy()
                         Pmax += self.prob_transition(sex, rred, prev_group, new_group)
                         # This has to be a Series so it can be combined with index correctly
-                        jump_to_new_group = pd.Series((rands >= Pmin) & (rands < Pmax))
+                        jump_to_new_group = pd.Series(
+                            (rands >= Pmin) & (rands < Pmax), index=rred.index)
                         population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
