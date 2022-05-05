@@ -1,195 +1,98 @@
 import numpy as np
-import scipy.stats as stat
+import yaml
 
-from .demographics import SexType
+from hivpy.exceptions import DataLoadException
 
-# Initial sexual behaviour group probabilities
-# Taken from the SAS code Section 2
-# Need to be normalised
-init_sex_behaviour = {SexType.Male: np.array([0.85, 0.1, 0.05, 0.003]),
-                      SexType.Female: np.array([0.97, 0.03])}
+from .common import DiscreteChoice, SexType
 
 
-# initial probability of being a sex worker
-init_sex_worker = {"Ages": np.array([15, 20, 25, 40, 50]),
-                   "Probability": np.array([0.04, 0.02, 0.01, 0.002])}
+class SexualBehaviourData:
+    """Class to hold and interpret sexual behaviour data loaded from the yaml file"""
 
-# Baseline sexual risk for age and sex
-# age groups 15 <= age < 20
-#            20 <= age < 25
-#            ...
-#            60 <= age
-baseline_risk = np.array([[0.3,   1.8],
-                          [0.4,   1.8],
-                          [0.85,  1.0],
-                          [1.0,   0.8],
-                          [0.85,  0.5],
-                          [0.5,   0.35],
-                          [0.4,   0.3],
-                          [0.35,  0.1],
-                          [0.2,   0.03],
-                          [0.15,  0.02]])
+    def _setup_probabilty_dist(self, prob_dict):
+        if("Range" in prob_dict):
+            min = prob_dict["Range"][0]
+            max = prob_dict["Range"][1]
+            N = max - min + 1
+            return DiscreteChoice(np.arange(min, max+1, 1), np.array([1./N]*N))
+        else:
+            values = np.array(prob_dict["Value"])
+            probs = np.array(prob_dict["Probability"])
+            probs /= sum(probs)
+            return DiscreteChoice(values, probs)
 
-# Sexual behaviour transition matrices
+    def _get_discrete_dist_list(self, *keys):
+        dist_list = self.data
+        for k in keys:
+            dist_list = dist_list[k]
+        return np.array([self._setup_probabilty_dist(x) for x in dist_list])
 
-# Male
-# Probability of transitions between male sexual behaviour groups
-# 0 = Zero, 1 = Low, 2 = Medium, 3 = High
-sex_behaviour_trans_male_options = np.array([
-    [[0.995, 0.005, 0.005, 0.00005],
-     [0.95,  0.03,  0.02,  0.00005],
-     [0.03,  0.07,  0.90,  0.00025],
-     [0.0,   0.0,   0.05,  0.95]],
+    def _get_discrete_dist(self, *keys):
+        dist_data = self.data
+        for k in keys:
+            dist_data = dist_data[k]
+        vals = np.array(dist_data["Value"])
+        probs = np.array(dist_data["Probability"])
+        probs /= sum(probs)
+        return DiscreteChoice(vals, probs)
 
-    [[0.98, 0.01, 0.01, 0.00025],
-     [0.98, 0.01, 0.01, 0.00025],
-     [0.05, 0.15, 0.80, 0.00125],
-     [0.0,  0.0,  0.2,  0.8]],
+    def _get_stepwise_dist(self, keys):
+        dist_data = self.data
+        for k in keys:
+            dist_data = dist_data[k]
 
-    [[0.95, 0.03, 0.02, 0.0005],
-     [0.93, 0.05, 0.02, 0.0005],
-     [0.2,  0.2,  0.6,  0.0025],
-     [0.0,  0.0,  0.4,  0.6]],
+    def _norm_probs(self, prob_dict: dict):
+        return {
+            key: data / sum(data)
+            for key, data in prob_dict.items()
+        }
 
-    [[0.995, 0.005, 0.005, 0.0001],
-     [0.95,  0.03,  0.02,  0.0001],
-     [0.03,  0.07,  0.9,   0.0005],
-     [0.04,  0.04,  0.09,  0.83]],
+    def _select_matrix(self, matrix_list):
+        return matrix_list[np.random.choice(len(matrix_list))]
 
-    [[0.98,  0.01, 0.01, 0.005],
-     [0.98,  0.01, 0.01, 0.005],
-     [0.05,  0.15, 0.8,  0.0025],
-     [0.025, 0.06, 0.17, 0.75]],
+    def __init__(self, filename):
+        with open(filename, 'r') as file:
+            self.data = yaml.safe_load(file)
+        try:
+            self.male_stp_dists = self._get_discrete_dist_list(
+                "short_term_partner_distributions", "Male")
 
-    [[0.95, 0.03, 0.02, 0.001],
-     [0.93, 0.05, 0.02, 0.001],
-     [0.2,  0.2,  0.6,  0.005],
-     [0.04, 0.08, 0.21, 0.67]],
+            self.female_stp_u25_dists = self._get_discrete_dist_list(
+                "short_term_partner_distributions", "Female", "Under_25")
 
-    [[0.995, 0.005, 0.005, 0.000025],
-     [0.95,  0.03,  0.02,  0.000025],
-     [0.03,  0.07,  0.90,  0.000125],
-     [0.0,   0.0,   0.05,  0.95]],
+            self.female_stp_o25_dists = self._get_discrete_dist_list(
+                "short_term_partner_distributions", "Female", "Over_25")
 
-    [[0.98, 0.01, 0.01, 0.000125],
-     [0.98, 0.01, 0.01, 0.000125],
-     [0.05, 0.15, 0.8,  0.000625],
-     [0.0,  0.0,  0.2,  0.8]],
+            self.sexworker_stp_dists = self._get_discrete_dist_list(
+                "short_term_partner_distributions", "Sex_Worker")
 
-    [[0.95, 0.03, 0.02, 0.00025],
-     [0.93, 0.05, 0.02, 0.00025],
-     [0.2,  0.2,  0.6,  0.00125],
-     [0.0,  0.0,  0.4,  0.6]],
+            self.age_based_risk = np.array(
+                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
 
-    [[0.9,  0.06,  0.04,  0.0005],
-     [0.99, 0.005, 0.005, 0.0005],
-     [0.2,  0.2,   0.6,   0.0025],
-     [0.0,  0.0,   0.4,   0.6]],
+            self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
 
-    [[0.9,  0.06,  0.04,  0.001],
-     [0.99, 0.005, 0.005, 0.001],
-     [0.2,  0.2,   0.6,   0.005],
-     [0.04, 0.08,  0.21,  0.67]],
+            self.sex_mixing_matrix_male_options = self.data["sex_age_mixing_matrices"]["Male"]
 
-    [[0.9,  0.06,  0.04,  0.00025],
-     [0.99, 0.005, 0.005, 0.00025],
-     [0.2,  0.2,   0.6,   0.00125],
-     [0.0,  0.0,   0.0,   1.0]],
+            self.sex_mixing_matrix_female_options = self.data["sex_age_mixing_matrices"]["Female"]
 
-    [[0.75, 0.15,  0.10,  0.0005],
-     [0.99, 0.005, 0.005, 0.0005],
-     [0.9,  0.05,  0.03,  0.02],
-     [0.9,  0.05,  0.03,  0.02]],
+            self.short_term_partners_male_options = self.data[
+                "sex_behaviour_transition_options"]["Male"]
 
-    [[0.75, 0.15, 0.1,  0.001],
-     [0.99, 0.05, 0.02, 0.001],
-     [0.95, 0.03, 0.01, 0.01],
-     [0.95, 0.03, 0.01, 0.01]],
+            self.short_term_partners_female_options = self.data[
+                "sex_behaviour_transition_options"]["Female"]
 
-    [[0.75, 0.15, 0.1,  0.00025],
-     [0.93, 0.05, 0.02, 0.00025],
-     [0.8,  0.1,  0.05, 0.05],
-     [0.8,  0.1,  0.05, 0.05]]
-])
+            self.init_sex_behaviour_probs = {
+                SexType.Male: self._get_discrete_dist(
+                    "initial_sex_behaviour_probabilities", "Male"),
+                SexType.Female: self._get_discrete_dist(
+                    "initial_sex_behaviour_probabilities", "Female")}
 
-# Female (not sex worker)
-# Probability of transitions between female sexual behaviour groups
-# 0 = Zero, 1= Any
-sex_behaviour_trans_female_options = np.array([
-    [[0.995, 0.005],
-     [0.99,  0.01]],
+            self.rred_initial = self.data["rred_initial"]
 
-    [[0.995, 0.005],
-     [0.98,  0.02]],
+            self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 
-    [[0.995, 0.005],
-     [0.95,  0.05]],
+            self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
 
-    [[0.995, 0.005],
-     [0.85,  0.15]],
-
-    [[0.995, 0.005],
-     [0.75,  0.25]],
-
-    [[0.99, 0.01],
-     [0.99, 0.01]],
-
-    [[0.99, 0.01],
-     [0.98, 0.02]],
-
-    [[0.99, 0.01],
-     [0.95, 0.05]],
-
-    [[0.99, 0.01],
-     [0.85, 0.15]],
-
-    [[0.99, 0.01],
-     [0.75, 0.25]],
-
-    [[0.98, 0.02],
-     [0.99, 0.01]],
-
-    [[0.98, 0.02],
-     [0.98, 0.02]],
-
-    [[0.98, 0.02],
-     [0.95, 0.05]],
-
-    [[0.98, 0.02],
-     [0.85, 0.15]],
-
-    [[0.98, 0.02],
-     [0.75, 0.25]]
-])
-
-# Sexual age mixing matrix
-# groups 15-24, 25-34, 35-44, 45-54, 55-65
-# presumably no partners over 65?
-sex_mixing_matrix_male_options = np.array([[[0.865, 0.11, 0.025, 0.0,  0.0],
-                                            [0.47,  0.43, 0.10,  0.0,  0.0],
-                                            [0.3,   0.5,  0.2,   0.0,  0.0],
-                                            [0.43,  0.3,  0.23,  0.03, 0.01],
-                                            [0.18,  0.18, 0.27,  0.27, 0.1]]])
-
-sex_mixing_matrix_female_options = np.array([[[0.43, 0.34, 0.12, 0.1,  0.01],
-                                              [0.09, 0.49, 0.3,  0.1,  0.02],
-                                              [0.03, 0.25, 0.34, 0.25, 0.13],
-                                              [0.0,  0.0,  0.05, 0.7,  0.25],
-                                              [0.0,  0.0,  0.0,  0.1,  0.9]]])
-
-# Doesn't seem to be interpolation between 10,15,20,25,30,35 on high?
-short_term_partners_male_options = np.array([[stat.rv_discrete(values=([0], [1.0])),
-                                              stat.rv_discrete(values=([1, 2, 3], [0.5, 0.3, 0.2])),
-                                              stat.rv_discrete(values=([4, 5, 6, 7, 8, 9], [
-                                                  0.35, 0.21, 0.17, 0.13, 0.09, 0.05])),
-                                              stat.rv_discrete(values=([10, 15, 20, 25, 30, 35],
-                                                                       [0.6, 0.2, 0.1, 0.05,
-                                                                       0.04, 0.01]))]])
-
-# need to add another distribution to handle over 25s as well
-short_term_partners_female_options = np.array([[stat.rv_discrete(values=([0], [1.0])),
-                                                stat.rv_discrete(values=([1, 2, 3, 4, 5,
-                                                                          6, 7, 8, 9],
-                                                                         [0.3, 0.2, 0.15,
-                                                                         0.12, 0.09, 0.06,
-                                                                         0.04, 0.02, 0.02]))]])
+        except KeyError as ke:
+            print(ke.args)
+            raise DataLoadException

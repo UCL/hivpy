@@ -13,3 +13,8 @@ class SimulationException(HIVpyException):
 class OutputException(HIVpyException):
     """A class for exceptions thrown by the Output module"""
     pass
+
+
+class DataLoadException(HIVpyException):
+    """A class for exceptions thrown by modules which are loading data"""
+    pass

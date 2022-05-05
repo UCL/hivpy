@@ -4,6 +4,23 @@ import operator
 from enum import IntEnum
 from functools import reduce
 
+import numpy as np
+import scipy.stats as stat
+
+
+class DiscreteChoice:
+    def __init__(self, vals, probs):
+        N = len(vals)
+        if(len(probs) != N):
+            raise Exception
+        index_range = np.arange(0, N, 1)
+        self.data = vals
+        self.dist = stat.rv_discrete(values=(index_range, probs))
+
+    def sample(self, size=1):
+        indices = self.dist.rvs(size=size)
+        return self.data[indices]
+
 
 class SexType(IntEnum):
     Male = 0

@@ -2,8 +2,9 @@ import operator
 from datetime import date
 
 import numpy as np
+import pandas as pd
+import yaml
 
-from hivpy import sex_behaviour_data as sbd
 from hivpy.common import SexType
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
@@ -16,17 +17,24 @@ def check_prob_sums(sex, trans_matrix):
     (dim, _) = trans_matrix.shape
     for i in range(0, dim):
         ages = np.array([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65])
+        sexes = np.array([sex]*len(ages))
+        pop = pd.DataFrame({"age": ages, "sex": sexes})
+        SBM.init_risk_factors(pop)
+        assert len(pop["rred"]) == 11
+        assert all((0 < pop["new_partner_factor"]) & (pop["new_partner_factor"] <= 2))
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
-            tot_prob += SBM.prob_transition(sex, ages, i, j)
+            tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)
         assert(np.allclose(tot_prob, 1.0))
 
 
 def test_transition_probabilities():
-    for trans_matrix in sbd.sex_behaviour_trans_male_options:
+    with open("data/sex_behaviour.yaml", 'r') as file:
+        yaml_data = yaml.safe_load(file)
+    for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
         assert (trans_matrix.shape == (4, 4))
         check_prob_sums(SexType.Male, trans_matrix)
-    for trans_matrix in sbd.sex_behaviour_trans_female_options:
+    for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Female"]):
         assert (trans_matrix.shape == (2, 2))
         check_prob_sums(SexType.Female, trans_matrix)
 
@@ -78,11 +86,16 @@ def test_initial_sex_behaviour_groups():
     is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
-    probs = sbd.init_sex_behaviour
+    with open("data/sex_behaviour.yaml", 'r') as file:
+        yaml_data = yaml.safe_load(file)
+    probs = {SexType.Male:
+             yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
+             SexType.Female:
+             yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probability"]}
     for sex in SexType:
         index_sex = selector(pop_data, sex=(operator.eq, sex))
         n_sex = sum(index_sex)
-        Prob_sex = probs[sex].copy()
+        Prob_sex = np.array(probs[sex])
         Prob_sex /= sum(Prob_sex)
         for g in SexBehaviours[sex]:
             index_group = selector(pop_data, sex_behaviour=(operator.eq, g))
