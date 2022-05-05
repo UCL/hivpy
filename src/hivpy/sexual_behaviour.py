@@ -26,7 +26,7 @@ SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehavi
 class SexualBehaviourModule:
 
     def select_matrix(self, matrix_list):
-        return matrix_list[rng.choice(len(matrix_list))]
+        return rng.choice(matrix_list)
 
     def __init__(self, **kwargs):
         # init sexual behaviour data

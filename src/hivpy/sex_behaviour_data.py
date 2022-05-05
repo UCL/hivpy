@@ -48,7 +48,7 @@ class SexualBehaviourData:
         }
 
     def _select_matrix(self, matrix_list):
-        return matrix_list[rng.choice(len(matrix_list))]
+        return rng.choice(matrix_list)
 
     def __init__(self, filename):
         with open(filename, 'r') as file:
