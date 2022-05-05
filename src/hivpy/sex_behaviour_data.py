@@ -3,7 +3,7 @@ import yaml
 
 from hivpy.exceptions import DataLoadException
 
-from .common import DiscreteChoice, SexType
+from .common import DiscreteChoice, SexType, rng
 
 
 class SexualBehaviourData:
@@ -48,7 +48,7 @@ class SexualBehaviourData:
         }
 
     def _select_matrix(self, matrix_list):
-        return matrix_list[np.random.choice(len(matrix_list))]
+        return matrix_list[rng.choice(len(matrix_list))]
 
     def __init__(self, filename):
         with open(filename, 'r') as file:

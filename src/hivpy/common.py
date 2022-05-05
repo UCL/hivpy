@@ -43,3 +43,8 @@ def between(values, limits):
     # def _is_in_range(values):
     return (min_value <= values) & (values < max_value)
     # return _is_in_range
+
+
+# A shared random number generator to be used from different modules.
+# Will be initialised at first import.
+rng = np.random.default_rng()

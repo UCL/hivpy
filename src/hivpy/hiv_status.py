@@ -3,6 +3,7 @@ import operator
 import numpy as np
 import pandas as pd
 
+from .common import rng
 from .sexual_behaviour import selector
 
 
@@ -18,7 +19,7 @@ class HIVStatusModule:
     def initial_HIV_status(self, population: pd.DataFrame):
         """Initialise HIV status based on age (& sex?)"""
         """Assume zero prevalence for age < 15"""
-        hiv_status = self._prob_HIV_initial(population["age"]) > np.random.rand(len(population))
+        hiv_status = self._prob_HIV_initial(population["age"]) > rng.random(len(population))
         return hiv_status
 
     def update_HIV_status(self, population: pd.DataFrame):
@@ -29,7 +30,7 @@ class HIVStatusModule:
             Then prob of n partners independently not infecting you is (1-Pr)**n\\
             So probability of infection is 1-((1-Pr)**n)"""
         HIV_neg_idx = selector(population, HIV_status=(operator.eq, False))
-        rands = np.random.uniform(0.0, 1.0, sum(HIV_neg_idx))
+        rands = rng.uniform(0.0, 1.0, sum(HIV_neg_idx))
         HIV_prevalence = sum(population['HIV_status'])/len(population)
         HIV_infection_risk = 0.1  # made up, based loosely on transmission probabilities
         n_partners = population.loc[HIV_neg_idx, "num_partners"]

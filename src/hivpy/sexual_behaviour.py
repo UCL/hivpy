@@ -4,7 +4,7 @@ from enum import IntEnum
 import numpy as np
 import pandas as pd
 
-from .common import SexType, selector
+from .common import SexType, rng, selector
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -26,7 +26,7 @@ SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehavi
 class SexualBehaviourModule:
 
     def select_matrix(self, matrix_list):
-        return matrix_list[np.random.choice(len(matrix_list))]
+        return matrix_list[rng.choice(len(matrix_list))]
 
     def __init__(self, **kwargs):
         # init sexual behaviour data
@@ -81,7 +81,7 @@ class SexualBehaviourModule:
     def init_rred_personal(self, population, n_pop):
         p_rred_p = self.sb_data.p_rred_p_dist.sample(size=len(population))
         population["rred_personal"] = np.ones(n_pop)
-        r = np.random.uniform(size=n_pop)
+        r = rng.uniform(size=n_pop)
         mask = r < p_rred_p
         population.loc[mask, "rred_personal"] = 1e-5
 
@@ -120,7 +120,7 @@ class SexualBehaviourModule:
                     operator.eq, prev_group), age=(operator.ge, 15))
                 if any(index):
                     subpop_size = sum(index)
-                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    rands = rng.uniform(0.0, 1.0, subpop_size)
                     self.calc_rred_age(population, index)
                     rred = population.loc[index, "rred"] * population.loc[index, "rred_age"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
