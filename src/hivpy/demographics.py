@@ -223,7 +223,7 @@ class DemographicsModule:
 
     def initialize_sex(self, count):
         sex_distribution = (
-            self.params['female_ratio'], 1 - self.params['female_ratio'])
+            1 - self.params['female_ratio'], self.params['female_ratio'])
         return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
 
     def initialise_age(self, count):
