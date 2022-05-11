@@ -21,7 +21,7 @@ def test_seed_reproduce():
 
 
 def test_seed_context():
-    """Check that the context manager sets the seed correctly."""
+    """Check that setting the temporary seed has the correct effect."""
     sample_size = 10
     # Get samples with a particular seed
     rng.set_seed(50)
@@ -33,7 +33,7 @@ def test_seed_context():
 
 
 def test_seed_context_switching():
-    """Check that the right state is restored after exiting a context."""
+    """Check that the right state is restored after using a temporary seed."""
     sample_size = 10
     rng.set_seed(50)
     samples_base = rng.random(size=2*sample_size)

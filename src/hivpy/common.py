@@ -47,7 +47,20 @@ def between(values, limits):
 
 
 class ResettableRandomState:
+    """A convenience class for using the NumPy random number generator.
+
+    This is meant to be used as: `from hivpy.common import rng`
+
+    For most things, this can be used exactly as NumPy's `Generator`. All the
+    methods like `random`, `normal`, `choice` are supported and called in
+    exactly the same way.
+
+    The primary purpose of this is to share the `Generator` across multiple files,
+    while allowing anyone to set the seed, whether in tests or the main code.
+    It also offers the ability to use a temporary seed.
+    """
     def __init__(self):
+        """Create a new wrapper around a NumPy Generator."""
         self.rng = np.random.default_rng()
 
     def __getattr__(self, name):
@@ -72,9 +85,10 @@ class ResettableRandomState:
         forget about it.
 
         The temporary seed can be used in a with-statement, like:
-        with rng.set_temp_seed(n):
-            rng.random(...)
-
+        ```
+        with rng.set_temp_seed(17):
+            rng.random(...)  # any calls to random methods here
+        ```
         When the with-block is ended, the old random state is restored, as if
         the temporary seed had never been set.
         """
