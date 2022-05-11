@@ -45,6 +45,22 @@ def between(values, limits):
     # return _is_in_range
 
 
+class ResettableRandomState:
+    def __init__(self):
+        self.rng = np.random.default_rng()
+
+    def __getattr__(self, name):
+        """Delegate method calls and attribute lookups to the Generator."""
+        return getattr(self.rng, name)
+
+    def set_seed(self, seed):
+        """Set the seed that controls the sequence of values generated.
+
+        Generating samples from the same seed should always return the same
+        results.
+        """
+        self.rng = np.random.default_rng(seed)
+
 # A shared random number generator to be used from different modules.
 # Will be initialised at first import.
-rng = np.random.default_rng()
+rng = ResettableRandomState()
