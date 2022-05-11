@@ -47,9 +47,6 @@ class SexualBehaviourData:
             for key, data in prob_dict.items()
         }
 
-    def _select_matrix(self, matrix_list):
-        return rng.choice(matrix_list)
-
     def __init__(self, filename):
         with open(filename, 'r') as file:
             self.data = yaml.safe_load(file)
@@ -67,7 +64,7 @@ class SexualBehaviourData:
                 "short_term_partner_distributions", "Sex_Worker")
 
             self.age_based_risk = np.array(
-                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
+                rng.choice(self.data["age_based_risk_options"]["risk_factor"]))
 
             self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
 

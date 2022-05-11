@@ -25,9 +25,6 @@ SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehavi
 
 class SexualBehaviourModule:
 
-    def select_matrix(self, matrix_list):
-        return rng.choice(matrix_list)
-
     def __init__(self, **kwargs):
         # init sexual behaviour data
         self.sb_data = SexualBehaviourData("data/sex_behaviour.yaml")
@@ -35,9 +32,9 @@ class SexualBehaviourModule:
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {
             SexType.Male: np.array(
-                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Male"])),
+                rng.choice(self.sb_data.sex_behaviour_transition_options["Male"])),
             SexType.Female: np.array(
-                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Female"]))
+                rng.choice(self.sb_data.sex_behaviour_transition_options["Female"]))
         }
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.age_based_risk = self.sb_data.age_based_risk
@@ -45,8 +42,8 @@ class SexualBehaviourModule:
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
         self.sex_mixing_matrix = {
-            SexType.Male: self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
-            SexType.Female: self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)
+            SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
+            SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
         }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
