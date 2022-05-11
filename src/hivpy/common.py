@@ -1,6 +1,7 @@
 """Functionality shared between multiple parts of the framework."""
 
 import operator
+from contextlib import contextmanager
 from enum import IntEnum
 from functools import reduce
 
@@ -60,6 +61,28 @@ class ResettableRandomState:
         results.
         """
         self.rng = np.random.default_rng(seed)
+
+    @contextmanager
+    def set_temp_seed(self, temp_seed):
+        """Allow setting the seed temporarily and restoring it automatically.
+
+        This can be useful if we want to generate a sequence of numbers
+        without affecting the underlying random state. This allows us to use
+        a particular seed only in a given block of code, and then effectively
+        forget about it.
+
+        The temporary seed can be used in a with-statement, like:
+        with rng.set_temp_seed(n):
+            rng.random(...)
+
+        When the with-block is ended, the old random state is restored, as if
+        the temporary seed had never been set.
+        """
+        old_generator = self.rng
+        self.rng = np.random.default_rng(temp_seed)
+        yield self.rng  # we don't use this, but yielding a value is required
+        self.rng = old_generator
+
 
 # A shared random number generator to be used from different modules.
 # Will be initialised at first import.
