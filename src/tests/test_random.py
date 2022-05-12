@@ -42,8 +42,10 @@ def test_seed_context_switching():
     samples_partial1 = rng.random(size=sample_size)
     # Interrupt with a temporary, different seed
     with rng.set_temp_seed(42):
-        _ = rng.random(size=sample_size)
+        samples_temp = rng.random(size=sample_size)
     # Get some more samples from the initial seed
     samples_partial2 = rng.random(size=sample_size)
     # Check that the interruption had no effect
     assert all(samples_base == np.concatenate((samples_partial1, samples_partial2)))
+    # And also that the temporary seed produced different values
+    assert not all(samples_temp == samples_partial2)
