@@ -50,9 +50,9 @@ class Population:
             'date_of_death': date_of_death
         })
         self.data['HIV_status'] = self.hiv_status.initial_HIV_status(self.data)
+        self.data['num_partners'] = 0
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
-        self.data['num_partners'] = 0
         self.sexual_behaviour.num_short_term_partners(self.data)
 
     def _create_attributes(self):
@@ -94,8 +94,7 @@ class Population:
         self.data.loc[died_this_period, "date_of_death"] = self.date
 
         # Get the number of sexual partners this time step
-        self.sexual_behaviour.num_short_term_partners(self.data)
-        self.sexual_behaviour.update_sex_groups(self.data)
+        self.sexual_behaviour.update_sex_behaviour(self.data)
         self.hiv_status.update_HIV_status(self.data)
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.

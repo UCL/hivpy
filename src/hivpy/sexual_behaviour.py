@@ -50,6 +50,13 @@ class SexualBehaviourModule:
         }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
+        self.ltp_risk_factor = self.sb_data.rred_long_term_partnered
+
+    def update_sex_behaviour(self, population_data):
+        self.num_short_term_partners(population_data)
+        self.update_sex_groups(population_data)
+        self.update_rred_adc(population_data)
+        self.update_rred_balance(population_data)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -67,6 +74,7 @@ class SexualBehaviourModule:
         population["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
         population["rred"] = (population["new_partner_factor"] *
                               population["rred_personal"])  # needs * rred_age at each step
+        self.init_rred_adc(population)
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]
@@ -78,12 +86,76 @@ class SexualBehaviourModule:
     def init_new_partner_factor(self, population, n_pop):
         population["new_partner_factor"] = self.sb_data.new_partner_dist.sample(size=n_pop)
 
+    def calc_rred_long_term_partnered(self, population):
+        population["rred_long_term_partnered"] = 1  # Unpartnered people
+        partnered_idx = selector(population, partnered=(operator.eq, True))
+        population.loc[partnered_idx, "rred_long_term_partnered"] = self.ltp_risk_factor
+        # This might be more efficient, but is also a bit obscure
+        # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
+        # population["rred_ltp"] = population["ltp"]*self.ltp_risk_factor + (1-population["ltp"])
+
     def init_rred_personal(self, population, n_pop):
         p_rred_p = self.sb_data.p_rred_p_dist.sample(size=len(population))
         population["rred_personal"] = np.ones(n_pop)
         r = np.random.uniform(size=n_pop)
         mask = r < p_rred_p
         population.loc[mask, "rred_personal"] = 1e-5
+
+    def init_rred_adc(self, population):
+        population["rred_adc"] = 1.0
+
+    def update_rred_adc(self, population):
+        """Updates risk reduction for AIDS defining condition"""
+        indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
+        population.loc[indices, "rred_adc"] = 0.2
+
+    def init_rred_balance(self, population):
+        """Initialise risk reduction factor for balancing sex ratios"""
+        population["rred_balance"] = 1.0
+
+    def update_rred_balance(self, population):
+        """Update balance of new partners for consistency between sexes.
+           Integral discrepancies have been replaced with fractional discrepancy."""
+        # We first need the difference of new partners between men and women
+        men = population["sex"] == SexType.Male
+        mens_partners = sum(population.loc[men, "num_partners"])
+        womens_partners = sum(population.loc[(1 - men), "num_partners"])
+        partner_discrepancy = (mens_partners - womens_partners) / len(population)
+        if partner_discrepancy >= 0.1:
+            rred_balance = 0.1
+        elif partner_discrepancy >= 0.03:
+            rred_balance = 0.7
+        elif partner_discrepancy >= 0.005:
+            rred_balance = 0.7
+        elif partner_discrepancy >= 0.004:
+            rred_balance = 0.75
+        elif partner_discrepancy >= 0.003:
+            rred_balance = 0.8
+        elif partner_discrepancy >= 0.002:
+            rred_balance = 0.9
+        elif partner_discrepancy >= 0.001:
+            rred_balance = 0.97
+        elif partner_discrepancy >= -0.001:
+            rred_balance = 1
+        elif partner_discrepancy >= -0.002:
+            rred_balance = 1/0.97
+        elif partner_discrepancy >= -0.003:
+            rred_balance = 1/0.9
+        elif partner_discrepancy >= -0.004:
+            rred_balance = 1/0.8
+        elif partner_discrepancy >= -0.005:
+            rred_balance = 1/0.75
+        elif partner_discrepancy >= -0.03:
+            rred_balance = 1/0.7
+        elif partner_discrepancy >= -0.1:
+            rred_balance = 1/0.7
+        else:
+            rred_balance = 10
+        self.rred_balance = {SexType.Male: rred_balance,
+                             SexType.Female: 1/rred_balance}
+
+    def calc_newp_by_age_group(self, population):
+        ages = np.linspace(self.risk_min_age, self.risk_min_age + self.risk_age_grouping*self.risk_categories, self.risk_age_grouping)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement

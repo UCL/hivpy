@@ -109,6 +109,7 @@ age_based_risk_options:
       [0.25, 0.01],
       [0.15, 0.01]
     ]
+  Probability: [0.15, 0.15, 0.35, 0.35]
 
 sex_behaviour_transition_options:
   Male:

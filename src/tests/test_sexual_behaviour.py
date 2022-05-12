@@ -1,5 +1,6 @@
 import operator
 from datetime import date
+from random import randint
 
 import numpy as np
 import pandas as pd
@@ -104,3 +105,16 @@ def test_initial_sex_behaviour_groups():
             Expectation = float(n_sex)*p
             N_g = sum(index_sex & index_group)
             assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
+
+
+def test_rred_long_term_partner():
+    N = 1000
+    pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
+    # pick some indices and give those people LTPs
+    indices = [randint(0, N-1) for i in range(15)]
+    pop_data["partnered"] = False
+    pop_data.loc[indices, "partnered"] = True
+    SBM = SexualBehaviourModule()
+    SBM.calc_rred_long_term_partnered(pop_data)
+    for i in indices:
+        assert pop_data.loc[i, "rred_long_term_partnered"] == SBM.ltp_risk_factor

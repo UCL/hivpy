@@ -47,8 +47,8 @@ class SexualBehaviourData:
             for key, data in prob_dict.items()
         }
 
-    def _select_matrix(self, matrix_list):
-        return matrix_list[np.random.choice(len(matrix_list))]
+    def _select_matrix(self, matrix_list, probabilities):
+        return matrix_list[np.random.choice(len(matrix_list), p=probabilities)]
 
     def __init__(self, filename):
         with open(filename, 'r') as file:
@@ -67,7 +67,8 @@ class SexualBehaviourData:
                 "short_term_partner_distributions", "Sex_Worker")
 
             self.age_based_risk = np.array(
-                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"]))
+                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"],
+                                    self.data["age_based_risk_options"]["Probability"]))
 
             self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
 
@@ -90,6 +91,8 @@ class SexualBehaviourData:
             self.rred_initial = self.data["rred_initial"]
 
             self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
+
+            self.rred_long_term_partnered = self._get_discrete_dist("rred_partnered")
 
             self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
 
