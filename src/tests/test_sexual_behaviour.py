@@ -23,7 +23,7 @@ def check_prob_sums(sex, trans_matrix):
                            "HIV_Diagnosis_Date": None})
         SBM.init_risk_factors(pop)
         assert len(pop["rred"]) == 11
-        assert all((0 < pop["new_partner_factor"]) & (pop["new_partner_factor"] <= 2))
+        assert (0 < SBM.new_partner_factor <= 2)
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
             tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)

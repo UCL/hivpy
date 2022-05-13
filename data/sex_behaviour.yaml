@@ -42,11 +42,11 @@ rred_diagnosis:
   Period: 0.5
 
 # rred_rc
-yearly_risk_behaviour_change_90s:
+yearly_risk_change_90s:
   Value: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
   Probability: [0.05, 0.4, 0.3, 0.15, 0.05, 0.05]
 
-yearly_risk_behaviour_change_10s:
+yearly_risk_change_10s:
   Value: [0.975, 0.99, 0.995, 1, 1.005, 1.01, 1.025]
   Probability: [0.05, 0.05, 0.15, 0.5, 0.15, 0.05, 0.05]
 

@@ -54,10 +54,11 @@ class SexualBehaviourModule:
         self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
         self.rred_diagnosis = self.sb_data.rred_diagnosis.sample()
         self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
-        self.yearly_risk_behaviour_change = {"1990s": self.sb_data.yearly_risk_behaviour_change["1990s"].sample(),
-                                             "2010s": self.sb_data.yearly_risk_behaviour_change["2010s"].sample()}
-        # only need to calculate rred_art_adherence in fraction of runs 
-        self.rred_art_adherence_flag = (np.random.rand() < self.sb_data.rred_art_adherence_probability)
+        self.yearly_risk_change = {"1990s": self.sb_data.yearly_risk_change["1990s"].sample(),
+                                   "2010s": self.sb_data.yearly_risk_change["2010s"].sample()}
+        # only need to calculate rred_art_adherence in fraction of runs
+        self.rred_art_adherence_flag = (
+            np.random.rand() < self.sb_data.rred_art_adherence_probability)
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
@@ -150,8 +151,9 @@ class SexualBehaviourModule:
         pop_data["rred_art_adherence"] = 1
 
     def update_rred_art_adherence(self, pop_data):
-        indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
-        pop_data.loc[indices, "rred_art_adherence"] = self.rred_art_adherence
+        if("art_adherence" in pop_data.columns):
+            indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
+            pop_data.loc[indices, "rred_art_adherence"] = self.rred_art_adherence
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]
@@ -191,14 +193,14 @@ class SexualBehaviourModule:
         self.rred_population = 1
 
     def update_rred_population(self, pop_data, date):
-        date1995 = datetime.date(1995,1,1)
-        date2000 = datetime.date(2000,1,1)
-        date2010 = datetime.date(2010,1,1)
-        date2021 = datetime.date(2021,1,1)
-        yearly_change_90s = self.yearly_risk_behaviour_change["1990s"]
-        yearly_change_10s = self.yearly_risk_behaviour_change["2010s"]
+        date1995 = datetime.date(1995, 1, 1)
+        date2000 = datetime.date(2000, 1, 1)
+        date2010 = datetime.date(2010, 1, 1)
+        date2021 = datetime.date(2021, 1, 1)
+        yearly_change_90s = self.yearly_risk_change["1990s"]
+        yearly_change_10s = self.yearly_risk_change["2010s"]
         if(date1995 < date <= date2000):
-            # there ought to be a better way to get the fractional number of years 
+            # there ought to be a better way to get the fractional number of years
             dt = (date - date1995) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**dt
         elif(date2000 < date < date2010):
@@ -262,6 +264,3 @@ class SexualBehaviourModule:
             rred_balance = 10
         self.rred_balance = {SexType.Male: rred_balance,
                              SexType.Female: 1/rred_balance}
-
-    def calc_newp_by_age_group(self, population):
-        ages = np.linspace(self.risk_min_age, self.risk_min_age + self.risk_age_grouping*self.risk_categories, self.risk_age_grouping)

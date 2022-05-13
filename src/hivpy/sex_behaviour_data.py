@@ -100,10 +100,8 @@ class SexualBehaviourData:
             self.rred_diagnosis = self._get_discrete_dist("rred_diagnosis")
             self.rred_diagnosis_period = self.data["rred_diagnosis"]["Period"]
 
-            self.yearly_risk_behaviour_change = {"1990s": self._get_discrete_dist(
-                                                            "yearly_risk_behaviour_change_90s"),
-                                                 "2010s": self._get_discrete_dist(
-                                                            "yearly_risk_behaviour_change_10s")}
+            self.yearly_risk_change = {"1990s": self._get_discrete_dist("yearly_risk_change_90s"),
+                                       "2010s": self._get_discrete_dist("yearly_risk_change_10s")}
 
             self.rred_art_adherence = self.data["rred_art_adherence"]["Value"]
             self.adherence_threshold = self.data["rred_art_adherence"]["Adherence_Threshold"]
