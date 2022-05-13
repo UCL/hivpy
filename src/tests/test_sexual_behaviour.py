@@ -116,7 +116,7 @@ def test_rred_long_term_partner():
     pop.data["partnered"] = False
     pop.data.loc[indices, "partnered"] = True
     SBM = SexualBehaviourModule()
-    SBM.calc_rred_long_term_partnered(pop.data)
+    SBM.update_rred_long_term_partnered(pop.data)
     for i in indices:
         assert pop.data.loc[i, "rred_long_term_partnered"] == SBM.ltp_risk_factor
 

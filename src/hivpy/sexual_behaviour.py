@@ -74,8 +74,19 @@ class SexualBehaviourModule:
         self.update_rred_balance(population.data)
         self.update_rred_diagnosis(population.data, population.date)
         self.update_rred_population(population.data, population.date)
+        self.update_rred_age(population.data)
+        self.update_rred_long_term_partnered(population.data)
         if(self.rred_art_adherence_flag):
             self.update_rred_art_adherence(population.data)
+        population.data["rred"] = (self.new_partner_factor *
+                                   population.data["rred_age"] *
+                                   population.data["rred_adc"] *
+                                   population.data["rred_balance"] *
+                                   population.data["rred_diagnosis"] *
+                                   population.data["rred_personal"] *
+                                   self.rred_population *
+                                   population.data["rred_long_term_partnered"] *
+                                   population.data["rred_art_adherence"])
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -122,8 +133,7 @@ class SexualBehaviourModule:
                 if any(index):
                     subpop_size = sum(index)
                     rands = np.random.uniform(0.0, 1.0, subpop_size)
-                    self.calc_rred_age(population, index)
-                    rred = population.loc[index, "rred"] * population.loc[index, "rred_age"]
+                    rred = population.loc[index, "rred"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
                     Pmin = np.zeros(subpop_size)
                     Pmax = np.zeros(subpop_size)
@@ -146,6 +156,7 @@ class SexualBehaviourModule:
         self.init_rred_diagnosis(pop_data)
         self.init_rred_population(pop_data)
         self.init_rred_art_adherence(pop_data)
+        self.init_rred_balance(pop_data)
 
     def init_rred_art_adherence(self, pop_data):
         pop_data["rred_art_adherence"] = 1
@@ -155,19 +166,21 @@ class SexualBehaviourModule:
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, "rred_art_adherence"] = self.rred_art_adherence
 
-    def calc_rred_age(self, population, index):
-        age = population.loc[index, "age"]
-        sex = population.loc[index, "sex"]
+    def update_rred_age(self, pop_data):
+        over_15s = selector(pop_data, age=(operator.ge, 15))
+        age = pop_data.loc[over_15s, "age"]
+        sex = pop_data.loc[over_15s, "sex"]
         age_index = self.age_index(age)
-        population.loc[index, "rred_age"] = self.age_based_risk[age_index, sex]
+        pop_data.loc[over_15s, "rred_age"] = self.age_based_risk[age_index, sex]
 
-    def calc_rred_long_term_partnered(self, population):
-        population["rred_long_term_partnered"] = 1  # Unpartnered people
-        partnered_idx = selector(population, partnered=(operator.eq, True))
-        population.loc[partnered_idx, "rred_long_term_partnered"] = self.ltp_risk_factor
-        # This might be more efficient, but is also a bit obscure
-        # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
-        # population["rred_ltp"] = population["ltp"]*self.ltp_risk_factor + (1-population["ltp"])
+    def update_rred_long_term_partnered(self, pop_data):
+        pop_data["rred_long_term_partnered"] = 1  # Unpartnered people
+        if("partnered" in pop_data.columns):
+            partnered_idx = selector(pop_data, partnered=(operator.eq, True))
+            pop_data.loc[partnered_idx, "rred_long_term_partnered"] = self.ltp_risk_factor
+            # This might be more efficient, but is also a bit obscure
+            # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
+            # pop_data["rred_ltp"] = pop_data["ltp"]*self.ltp_risk_factor+(1-pop_data["ltp"])
 
     def init_rred_personal(self, population, n_pop):
         p_rred_p = self.sb_data.p_rred_p_dist.sample()
