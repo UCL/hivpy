@@ -70,6 +70,9 @@ class SexualBehaviourModule:
     def update_sex_behaviour(self, population):
         self.num_short_term_partners(population.data)
         self.update_sex_groups(population.data)
+        self.update_rred(population)
+
+    def update_rred(self, population):
         self.update_rred_adc(population.data)
         self.update_rred_balance(population.data)
         self.update_rred_diagnosis(population.data, population.date)
@@ -242,9 +245,12 @@ class SexualBehaviourModule:
            Integral discrepancies have been replaced with fractional discrepancy."""
         # We first need the difference of new partners between men and women
         men = population["sex"] == SexType.Male
+        women = population["sex"] == SexType.Female
         mens_partners = sum(population.loc[men, "num_partners"])
-        womens_partners = sum(population.loc[(1 - men), "num_partners"])
+        womens_partners = sum(population.loc[women, "num_partners"])
         partner_discrepancy = (mens_partners - womens_partners) / len(population)
+        print(mens_partners, womens_partners)
+        print("Discrepancy = ", partner_discrepancy)
         if partner_discrepancy >= 0.1:
             rred_balance = 0.1
         elif partner_discrepancy >= 0.03:
@@ -275,5 +281,5 @@ class SexualBehaviourModule:
             rred_balance = 1/0.7
         else:
             rred_balance = 10
-        self.rred_balance = {SexType.Male: rred_balance,
-                             SexType.Female: 1/rred_balance}
+        population.loc[men, "rred_balance"] = rred_balance
+        population.loc[women, "rred_balance"] = 1/rred_balance
