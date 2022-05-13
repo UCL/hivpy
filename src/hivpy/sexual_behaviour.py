@@ -60,6 +60,7 @@ class SexualBehaviourModule:
         self.rred_art_adherence_flag = (np.random.rand() < self.sb_data.rred_art_adherence_probability)
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
+        self.new_partner_factor = self.sb_data.new_partner_dist.sample()
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -137,9 +138,8 @@ class SexualBehaviourModule:
     def init_risk_factors(self, pop_data):
         n_pop = len(pop_data)
         self.init_rred_personal(pop_data, n_pop)
-        self.init_new_partner_factor(pop_data, n_pop)
         pop_data["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
-        pop_data["rred"] = (pop_data["new_partner_factor"] *
+        pop_data["rred"] = (self.new_partner_factor *
                             pop_data["rred_personal"])  # needs * rred_age at each step
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
@@ -158,9 +158,6 @@ class SexualBehaviourModule:
         sex = population.loc[index, "sex"]
         age_index = self.age_index(age)
         population.loc[index, "rred_age"] = self.age_based_risk[age_index, sex]
-
-    def init_new_partner_factor(self, population, n_pop):
-        population["new_partner_factor"] = self.sb_data.new_partner_dist.sample(size=n_pop)
 
     def calc_rred_long_term_partnered(self, population):
         population["rred_long_term_partnered"] = 1  # Unpartnered people
