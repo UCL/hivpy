@@ -56,6 +56,10 @@ class SexualBehaviourModule:
         self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
         self.yearly_risk_behaviour_change = {"1990s": self.sb_data.yearly_risk_behaviour_change["1990s"].sample(),
                                              "2010s": self.sb_data.yearly_risk_behaviour_change["2010s"].sample()}
+        # only need to calculate rred_art_adherence in fraction of runs 
+        self.rred_art_adherence_flag = (np.random.rand() < self.sb_data.rred_art_adherence_probability)
+        self.rred_art_adherence = self.sb_data.rred_art_adherence
+        self.adherence_threshold = self.sb_data.adherence_threshold
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -68,6 +72,8 @@ class SexualBehaviourModule:
         self.update_rred_balance(population.data)
         self.update_rred_diagnosis(population.data, population.date)
         self.update_rred_population(population.data, population.date)
+        if(self.rred_art_adherence_flag):
+            self.update_rred_art_adherence(population.data)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -137,7 +143,15 @@ class SexualBehaviourModule:
                             pop_data["rred_personal"])  # needs * rred_age at each step
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
-        self.init_rred_population
+        self.init_rred_population(pop_data)
+        self.init_rred_art_adherence(pop_data)
+
+    def init_rred_art_adherence(self, pop_data):
+        pop_data["rred_art_adherence"] = 1
+
+    def update_rred_art_adherence(self, pop_data):
+        indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
+        pop_data.loc[indices, "rred_art_adherence"] = self.rred_art_adherence
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]
