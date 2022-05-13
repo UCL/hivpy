@@ -1,3 +1,4 @@
+import datetime
 import operator
 from enum import IntEnum
 
@@ -50,13 +51,20 @@ class SexualBehaviourModule:
         }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
-        self.ltp_risk_factor = self.sb_data.rred_long_term_partnered
+        self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
+        self.rred_diagnosis = self.sb_data.rred_diagnosis.sample()
+        self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
 
-    def update_sex_behaviour(self, population_data):
-        self.num_short_term_partners(population_data)
-        self.update_sex_groups(population_data)
-        self.update_rred_adc(population_data)
-        self.update_rred_balance(population_data)
+    def age_index(self, age):
+        return np.minimum((age.astype(int)-self.risk_min_age) //
+                          self.risk_age_grouping, self.risk_categories)
+
+    def update_sex_behaviour(self, population):
+        self.num_short_term_partners(population.data)
+        self.update_sex_groups(population.data)
+        self.update_rred_adc(population.data)
+        self.update_rred_balance(population.data)
+        self.update_rred_diagnosis(population.data, population.date)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -67,20 +75,20 @@ class SexualBehaviourModule:
             population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].sample(
                 size=n_sex)
 
-    def init_risk_factors(self, population):
-        n_pop = len(population)
-        self.init_rred_personal(population, n_pop)
-        self.init_new_partner_factor(population, n_pop)
-        population["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
-        population["rred"] = (population["new_partner_factor"] *
-                              population["rred_personal"])  # needs * rred_age at each step
-        self.init_rred_adc(population)
+    def init_risk_factors(self, pop_data):
+        n_pop = len(pop_data)
+        self.init_rred_personal(pop_data, n_pop)
+        self.init_new_partner_factor(pop_data, n_pop)
+        pop_data["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
+        pop_data["rred"] = (pop_data["new_partner_factor"] *
+                            pop_data["rred_personal"])  # needs * rred_age at each step
+        self.init_rred_adc(pop_data)
+        self.init_rred_diagnosis(pop_data)
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]
         sex = population.loc[index, "sex"]
-        age_index = np.minimum((age.astype(int)-self.risk_min_age)//self.risk_age_grouping,
-                               self.risk_categories)
+        age_index = self.age_index(age)
         population.loc[index, "rred_age"] = self.age_based_risk[age_index, sex]
 
     def init_new_partner_factor(self, population, n_pop):
@@ -103,11 +111,26 @@ class SexualBehaviourModule:
 
     def init_rred_adc(self, population):
         population["rred_adc"] = 1.0
+        self.update_rred_adc(population)
 
     def update_rred_adc(self, population):
         """Updates risk reduction for AIDS defining condition"""
+        # We don't need the rred_adc==1 condition (since they are all set to rred_adc = 1 to start)
+        # It prevents needless assignments but requires checking more conditions
+        # Not sure which is more efficient or if it matters.
         indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
         population.loc[indices, "rred_adc"] = 0.2
+
+    def init_rred_diagnosis(self, population):
+        population["rred_diagnosis"] = 1
+
+    def update_rred_diagnosis(self, population, date):
+        HIV_idx_new = selector(population, HIV_status=(operator.eq, True),
+                               HIV_Diagnosis_Date=(operator.ge, date-self.rred_diagnosis_period))
+        population.loc[HIV_idx_new, "rred_diagnosis"] = self.rred_diagnosis
+        HIV_idx_old = selector(population, HIV_status=(operator.eq, True),
+                               HIV_Diagnosis_Date=(operator.lt, date-self.rred_diagnosis_period))
+        population.loc[HIV_idx_old, "rred_diagnosis"] = np.sqrt(self.rred_diagnosis)
 
     def init_rred_balance(self, population):
         """Initialise risk reduction factor for balancing sex ratios"""

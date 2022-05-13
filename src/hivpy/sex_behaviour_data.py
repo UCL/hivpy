@@ -66,10 +66,6 @@ class SexualBehaviourData:
             self.sexworker_stp_dists = self._get_discrete_dist_list(
                 "short_term_partner_distributions", "Sex_Worker")
 
-            self.age_based_risk = np.array(
-                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"],
-                                    self.data["age_based_risk_options"]["Probability"]))
-
             self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
 
             self.sex_mixing_matrix_male_options = self.data["sex_age_mixing_matrices"]["Male"]
@@ -88,13 +84,21 @@ class SexualBehaviourData:
                 SexType.Female: self._get_discrete_dist(
                     "initial_sex_behaviour_probabilities", "Female")}
 
+            # risk reduction factors
             self.rred_initial = self.data["rred_initial"]
+
+            self.age_based_risk = np.array(
+                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"],
+                                    self.data["age_based_risk_options"]["Probability"]))
 
             self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 
             self.rred_long_term_partnered = self._get_discrete_dist("rred_partnered")
 
             self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
+
+            self.rred_diagnosis = self._get_discrete_dist("rred_diagnosis")
+            self.rred_diagnosis_period = self.data["rred_diagnosis"]["Period"]
 
         except KeyError as ke:
             print(ke.args)

@@ -1,5 +1,5 @@
 import operator
-from datetime import date
+from datetime import date, timedelta
 from random import randint
 
 import numpy as np
@@ -19,7 +19,8 @@ def check_prob_sums(sex, trans_matrix):
     for i in range(0, dim):
         ages = np.array([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65])
         sexes = np.array([sex]*len(ages))
-        pop = pd.DataFrame({"age": ages, "sex": sexes})
+        pop = pd.DataFrame({"age": ages, "sex": sexes, "HIV_status": False,
+                           "HIV_Diagnosis_Date": None})
         SBM.init_risk_factors(pop)
         assert len(pop["rred"]) == 11
         assert all((0 < pop["new_partner_factor"]) & (pop["new_partner_factor"] <= 2))
@@ -109,12 +110,60 @@ def test_initial_sex_behaviour_groups():
 
 def test_rred_long_term_partner():
     N = 1000
-    pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
+    pop = Population(size=N, start_date=date(1989, 1, 1))
     # pick some indices and give those people LTPs
     indices = [randint(0, N-1) for i in range(15)]
-    pop_data["partnered"] = False
-    pop_data.loc[indices, "partnered"] = True
+    pop.data["partnered"] = False
+    pop.data.loc[indices, "partnered"] = True
     SBM = SexualBehaviourModule()
-    SBM.calc_rred_long_term_partnered(pop_data)
+    SBM.calc_rred_long_term_partnered(pop.data)
     for i in indices:
-        assert pop_data.loc[i, "rred_long_term_partnered"] == SBM.ltp_risk_factor
+        assert pop.data.loc[i, "rred_long_term_partnered"] == SBM.ltp_risk_factor
+
+
+def test_rred_adc():
+    N = 20
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data["HIV_status"] = False  # make test independent of how HIV is initialised
+    init_HIV_idx = [randint(0, N-1) for i in range(5)]
+    pop.data.loc[init_HIV_idx, "HIV_status"] = True
+    expected_rred = np.ones(N)
+    expected_rred[init_HIV_idx] = 0.2
+    SBM = SexualBehaviourModule()
+    # initialise rred_adc
+    SBM.init_risk_factors(pop.data)
+    # Check only people with HIV have rred_adc = 0.2
+    assert np.all(pop.data["rred_adc"] == expected_rred)
+    # Assign more people with HIV
+    add_HIV_idx = [randint(0, N-1) for i in range(5)]
+    pop.data.loc[add_HIV_idx, "HIV_status"] = True
+    # Update rred factors
+    SBM.update_sex_behaviour(pop)
+    expected_rred[add_HIV_idx] = 0.2
+    assert np.all(pop.data["rred_adc"] == expected_rred)
+
+
+def test_rred_diagnosis():
+    N = 20
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data["HIV_status"] = False  # init everyone HIV negative
+    SBM = SexualBehaviourModule()
+    SBM.rred_diagnosis = 4
+    SBM.rred_diagnosis_period = timedelta(700)
+    SBM.update_rred_diagnosis(pop.data, pop.date)
+    assert np.all(pop.data["rred_diagnosis"] == 1)
+    # give up some people HIV and advance the date
+    HIV_idx = [randint(0, N-1) for i in range(5)]
+    pop.data.loc[HIV_idx, "HIV_status"] = True
+    pop.data.loc[HIV_idx, "HIV_Diagnosis_Date"] = pop.date
+    SBM.update_rred_diagnosis(pop.data, pop.date)
+    for i in HIV_idx:
+        assert pop.data.loc[i, "rred_diagnosis"] == 4
+    pop.date += timedelta(days=365)
+    SBM.update_rred_diagnosis(pop.data, pop.date)
+    for i in HIV_idx:
+        assert pop.data.loc[i, "rred_diagnosis"] == 4
+    pop.date += timedelta(days=500)
+    SBM.update_rred_diagnosis(pop.data, pop.date)
+    for i in HIV_idx:
+        assert pop.data.loc[i, "rred_diagnosis"] == 2

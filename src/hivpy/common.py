@@ -18,8 +18,12 @@ class DiscreteChoice:
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
     def sample(self, size=1):
-        indices = self.dist.rvs(size=size)
-        return self.data[indices]
+        if(size == 1):
+            index = self.dist.rvs()
+            return self.data[index]
+        else:
+            indices = self.dist.rvs(size=size)
+            return self.data[indices]
 
 
 class SexType(IntEnum):
