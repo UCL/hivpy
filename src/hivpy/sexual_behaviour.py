@@ -54,6 +54,8 @@ class SexualBehaviourModule:
         self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
         self.rred_diagnosis = self.sb_data.rred_diagnosis.sample()
         self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
+        self.yearly_risk_behaviour_change = {"1990s": self.sb_data.yearly_risk_behaviour_change["1990s"].sample(),
+                                             "2010s": self.sb_data.yearly_risk_behaviour_change["2010s"].sample()}
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -65,6 +67,7 @@ class SexualBehaviourModule:
         self.update_rred_adc(population.data)
         self.update_rred_balance(population.data)
         self.update_rred_diagnosis(population.data, population.date)
+        self.update_rred_population(population.data, population.date)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -75,6 +78,56 @@ class SexualBehaviourModule:
             population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].sample(
                 size=n_sex)
 
+    # Here we need to figure out how to vectorise this which is currently blocked
+    # by the sex if statement
+    def prob_transition(self, sex, rred, i, j):
+        """Calculates the probability of transitioning from sexual behaviour
+        group i to group j, based on sex and age."""
+        transition_matrix = self.sex_behaviour_trans[sex]
+
+        denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
+
+        if(j == 0):
+            Probability = transition_matrix[i][0] / denominator
+        else:
+            Probability = rred*transition_matrix[i][j] / denominator
+
+        return Probability
+
+    def num_short_term_partners(self, population: pd.DataFrame):
+        for sex in SexType:
+            for g in SexBehaviours[sex]:
+                index = selector(population, sex=(operator.eq, sex),
+                                 sex_behaviour=(operator.eq, g),
+                                 age=(operator.gt, 15))
+                population.loc[index, "num_partners"] = (
+                    self.short_term_partners[sex][g].sample(size=sum(index)))
+
+    def update_sex_groups(self, population: pd.DataFrame):
+        """Determine changes to sexual behaviour groups.
+           Loops over sex, and behaviour groups within each sex.
+           Within each group it then loops over groups again to check all transition pairs (i,j)."""
+        for sex in SexType:
+            for prev_group in SexBehaviours[sex]:
+                index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
+                    operator.eq, prev_group), age=(operator.ge, 15))
+                if any(index):
+                    subpop_size = sum(index)
+                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    self.calc_rred_age(population, index)
+                    rred = population.loc[index, "rred"] * population.loc[index, "rred_age"]
+                    dim = self.sex_behaviour_trans[sex].shape[0]
+                    Pmin = np.zeros(subpop_size)
+                    Pmax = np.zeros(subpop_size)
+                    for new_group in range(dim):
+                        Pmin = Pmax.copy()
+                        Pmax += self.prob_transition(sex, rred, prev_group, new_group)
+                        # This has to be a Series so it can be combined with index correctly
+                        jump_to_new_group = pd.Series(
+                            (rands >= Pmin) & (rands < Pmax), index=rred.index)
+                        population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
+
+    # risk reduction factors
     def init_risk_factors(self, pop_data):
         n_pop = len(pop_data)
         self.init_rred_personal(pop_data, n_pop)
@@ -84,6 +137,7 @@ class SexualBehaviourModule:
                             pop_data["rred_personal"])  # needs * rred_age at each step
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
+        self.init_rred_population
 
     def calc_rred_age(self, population, index):
         age = population.loc[index, "age"]
@@ -103,7 +157,7 @@ class SexualBehaviourModule:
         # population["rred_ltp"] = population["ltp"]*self.ltp_risk_factor + (1-population["ltp"])
 
     def init_rred_personal(self, population, n_pop):
-        p_rred_p = self.sb_data.p_rred_p_dist.sample(size=len(population))
+        p_rred_p = self.sb_data.p_rred_p_dist.sample()
         population["rred_personal"] = np.ones(n_pop)
         r = np.random.uniform(size=n_pop)
         mask = r < p_rred_p
@@ -120,6 +174,27 @@ class SexualBehaviourModule:
         # Not sure which is more efficient or if it matters.
         indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
         population.loc[indices, "rred_adc"] = 0.2
+
+    def init_rred_population(self, pop_data):
+        """Initialise general population risk reduction w.r.t. condomless sex with new partners"""
+        self.rred_population = 1
+
+    def update_rred_population(self, pop_data, date):
+        date1995 = datetime.date(1995,1,1)
+        date2000 = datetime.date(2000,1,1)
+        date2010 = datetime.date(2010,1,1)
+        date2021 = datetime.date(2021,1,1)
+        yearly_change_90s = self.yearly_risk_behaviour_change["1990s"]
+        yearly_change_10s = self.yearly_risk_behaviour_change["2010s"]
+        if(date1995 < date <= date2000):
+            # there ought to be a better way to get the fractional number of years 
+            dt = (date - date1995) / datetime.timedelta(days=365.25)
+            self.rred_population = yearly_change_90s**dt
+        elif(date2000 < date < date2010):
+            self.rred_population = yearly_change_90s**5
+        elif(date2010 < date < date2021):
+            dt = (date - date2010) / datetime.timedelta(days=365.25)
+            self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
 
     def init_rred_diagnosis(self, population):
         population["rred_diagnosis"] = 1
@@ -179,52 +254,3 @@ class SexualBehaviourModule:
 
     def calc_newp_by_age_group(self, population):
         ages = np.linspace(self.risk_min_age, self.risk_min_age + self.risk_age_grouping*self.risk_categories, self.risk_age_grouping)
-
-    # Here we need to figure out how to vectorise this which is currently blocked
-    # by the sex if statement
-    def prob_transition(self, sex, rred, i, j):
-        """Calculates the probability of transitioning from sexual behaviour
-        group i to group j, based on sex and age."""
-        transition_matrix = self.sex_behaviour_trans[sex]
-
-        denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
-
-        if(j == 0):
-            Probability = transition_matrix[i][0] / denominator
-        else:
-            Probability = rred*transition_matrix[i][j] / denominator
-
-        return Probability
-
-    def num_short_term_partners(self, population: pd.DataFrame):
-        for sex in SexType:
-            for g in SexBehaviours[sex]:
-                index = selector(population, sex=(operator.eq, sex),
-                                 sex_behaviour=(operator.eq, g),
-                                 age=(operator.gt, 15))
-                population.loc[index, "num_partners"] = (
-                    self.short_term_partners[sex][g].sample(size=sum(index)))
-
-    def update_sex_groups(self, population: pd.DataFrame):
-        """Determine changes to sexual behaviour groups.
-           Loops over sex, and behaviour groups within each sex.
-           Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        for sex in SexType:
-            for prev_group in SexBehaviours[sex]:
-                index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
-                    operator.eq, prev_group), age=(operator.ge, 15))
-                if any(index):
-                    subpop_size = sum(index)
-                    rands = np.random.uniform(0.0, 1.0, subpop_size)
-                    self.calc_rred_age(population, index)
-                    rred = population.loc[index, "rred"] * population.loc[index, "rred_age"]
-                    dim = self.sex_behaviour_trans[sex].shape[0]
-                    Pmin = np.zeros(subpop_size)
-                    Pmax = np.zeros(subpop_size)
-                    for new_group in range(dim):
-                        Pmin = Pmax.copy()
-                        Pmax += self.prob_transition(sex, rred, prev_group, new_group)
-                        # This has to be a Series so it can be combined with index correctly
-                        jump_to_new_group = pd.Series(
-                            (rands >= Pmin) & (rands < Pmax), index=rred.index)
-                        population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group

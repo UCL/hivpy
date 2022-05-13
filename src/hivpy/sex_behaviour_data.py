@@ -100,6 +100,11 @@ class SexualBehaviourData:
             self.rred_diagnosis = self._get_discrete_dist("rred_diagnosis")
             self.rred_diagnosis_period = self.data["rred_diagnosis"]["Period"]
 
+            self.yearly_risk_behaviour_change = {"1990s": self._get_discrete_dist(
+                                                            "yearly_risk_behaviour_change_90s"),
+                                                 "2010s": self._get_discrete_dist(
+                                                            "yearly_risk_behaviour_change_10s")}
+
         except KeyError as ke:
             print(ke.args)
             raise DataLoadException
