@@ -216,3 +216,65 @@ def test_rred_balance():
     SBM.update_rred_balance(pop.data)
     assert np.all(pop.data.loc[men, "rred_balance"] == 0.1)
     assert np.all(pop.data.loc[women, "rred_balance"] == 10)
+
+
+def test_rred_art_adherence():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    SBM = SexualBehaviourModule()
+    SBM.init_risk_factors(pop.data)
+    #art adherence flag off
+    SBM.rred_art_adherence_flag = False
+    pop.data["art_adherence"] = rng.random(size=N)
+    above_idx = selector(pop.data, art_adherence=(operator.ge, 0.8))
+    below_idx = selector(pop.data, art_adherence=(operator.lt, 0.8))
+    SBM.update_rred(pop)
+    for i in range(N):
+        if (pop.data["rred_art_adherence"][i] != 1):
+            print(i, pop.data["rred_art_adherence"][i])
+    assert np.allclose(pop.data["rred_art_adherence"], 1)
+    
+    #art adherence flag on
+    SBM.rred_art_adherence_flag = True
+    SBM.update_rred(pop)
+    assert np.all(pop.data.loc[above_idx, "rred_art_adherence"] == 1)
+    assert np.all(pop.data.loc[below_idx, "rred_art_adherence"] == 2)
+
+    count = 0
+    for i in range(100):
+        SBM_temp = SexualBehaviourModule()
+        count += SBM_temp.rred_art_adherence_flag
+    assert 0.1 < count/100 < 0.3
+
+
+def test_rred_population():
+    N = 100
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    SBM = SexualBehaviourModule()
+    SBM.init_risk_factors(pop.data)
+    assert(SBM.rred_population == 1)
+    pop.date = date(1995, 1, 1)
+    SBM.update_rred(pop)
+    print(SBM.rred_population)
+    assert np.isclose(SBM.rred_population, 1)
+    pop.date = date(1996,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"], 0.001)
+    pop.date = date(1998,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**3, 0.001)
+    pop.date = date(2000,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    pop.date = date(2010,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    pop.date = date(2011,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"], 0.001)
+    pop.date = date(2020,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"]**10, 0.001)
+    pop.date = date(2022,1,1)
+    SBM.update_rred(pop)
+    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"]**11, 0.001)

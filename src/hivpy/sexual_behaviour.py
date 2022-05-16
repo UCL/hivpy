@@ -221,6 +221,8 @@ class SexualBehaviourModule:
         elif(date2010 < date < date2021):
             dt = (date - date2010) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
+        elif(date2021 < date):
+            self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_rred_diagnosis(self, population):
         population["rred_diagnosis"] = 1
@@ -246,8 +248,6 @@ class SexualBehaviourModule:
         mens_partners = sum(population.loc[men, "num_partners"])
         womens_partners = sum(population.loc[women, "num_partners"])
         partner_discrepancy = (mens_partners - womens_partners) / len(population)
-        print(mens_partners, womens_partners)
-        print("Discrepancy = ", partner_discrepancy)
         if partner_discrepancy >= 0.1:
             rred_balance = 0.1
         elif partner_discrepancy >= 0.03:
