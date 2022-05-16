@@ -303,3 +303,28 @@ def test_rred_personal():
     assert(1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
     assert(1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
     assert(1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
+
+
+def test_rred_age():
+    N = 11
+    pop = Population(size=2*N, start_date=date(1989, 1, 1))
+    ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
+    pop.data["age"] = ages
+    pop.data["sex"] = np.array([SexType.Male]*N + [SexType.Female]*N)
+    pop.sexual_behaviour.init_risk_factors(pop.data)
+    # select a particular risk matrix
+    risk_factors = np.array(pop.data["rred_age"])
+    print(risk_factors)
+    assert risk_factors[0] == 1  # no update for under 15
+    assert risk_factors[11] == 1
+    expected_risk_male = pop.sexual_behaviour.age_based_risk.transpose()[0]
+    expected_risk_female = pop.sexual_behaviour.age_based_risk.transpose()[1]
+    assert np.allclose(risk_factors[1:11], expected_risk_male)
+    assert np.allclose(risk_factors[12:22], expected_risk_female)
+    dt = timedelta(days=90)
+    for i in range(20):
+        pop.evolve(dt)
+    risk_factors = np.array(pop.data["rred_age"])
+    expected_risk_male = np.append(expected_risk_male, expected_risk_male[-1])
+    expected_risk_female = np.append(expected_risk_female, expected_risk_female[-1])
+    assert np.allclose(risk_factors, np.append(expected_risk_male, expected_risk_female))

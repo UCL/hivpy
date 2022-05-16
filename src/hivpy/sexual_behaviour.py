@@ -150,8 +150,9 @@ class SexualBehaviourModule:
         n_pop = len(pop_data)
         self.init_rred_personal(pop_data, n_pop)
         pop_data["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
+        self.update_rred_age(pop_data)
         pop_data["rred"] = (self.new_partner_factor *
-                            pop_data["rred_personal"])  # needs * rred_age at each step
+                            pop_data["rred_personal"])
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
         self.init_rred_population(pop_data)
@@ -171,7 +172,10 @@ class SexualBehaviourModule:
         age = pop_data.loc[over_15s, "age"]
         sex = pop_data.loc[over_15s, "sex"]
         age_index = self.age_index(age)
+        print(self.age_based_risk)
+        print(np.array(age_index), np.array(sex))
         pop_data.loc[over_15s, "rred_age"] = self.age_based_risk[age_index, sex]
+        print(pop_data["rred_age"])
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data["rred_long_term_partnered"] = 1  # Unpartnered people
