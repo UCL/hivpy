@@ -223,7 +223,7 @@ def test_rred_art_adherence():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     SBM.init_risk_factors(pop.data)
-    #art adherence flag off
+    # art adherence flag off
     SBM.rred_art_adherence_flag = False
     pop.data["art_adherence"] = rng.random(size=N)
     above_idx = selector(pop.data, art_adherence=(operator.ge, 0.8))
@@ -233,8 +233,8 @@ def test_rred_art_adherence():
         if (pop.data["rred_art_adherence"][i] != 1):
             print(i, pop.data["rred_art_adherence"][i])
     assert np.allclose(pop.data["rred_art_adherence"], 1)
-    
-    #art adherence flag on
+
+    # art adherence flag on
     SBM.rred_art_adherence_flag = True
     SBM.update_rred(pop)
     assert np.all(pop.data.loc[above_idx, "rred_art_adherence"] == 1)
@@ -257,24 +257,49 @@ def test_rred_population():
     SBM.update_rred(pop)
     print(SBM.rred_population)
     assert np.isclose(SBM.rred_population, 1)
-    pop.date = date(1996,1,1)
+    pop.date = date(1996, 1, 1)
     SBM.update_rred(pop)
     assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"], 0.001)
-    pop.date = date(1998,1,1)
+    pop.date = date(1998, 1, 1)
     SBM.update_rred(pop)
     assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**3, 0.001)
-    pop.date = date(2000,1,1)
+    pop.date = date(2000, 1, 1)
     SBM.update_rred(pop)
     assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
-    pop.date = date(2010,1,1)
+    pop.date = date(2010, 1, 1)
     SBM.update_rred(pop)
     assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
-    pop.date = date(2011,1,1)
+    pop.date = date(2011, 1, 1)
     SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"], 0.001)
-    pop.date = date(2020,1,1)
+    assert np.isclose(SBM.rred_population,
+                      SBM.yearly_risk_change["1990s"]**5 *
+                      SBM.yearly_risk_change["2010s"], 0.001)
+    pop.date = date(2020, 1, 1)
     SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"]**10, 0.001)
-    pop.date = date(2022,1,1)
+    assert np.isclose(SBM.rred_population,
+                      SBM.yearly_risk_change["1990s"]**5 *
+                      SBM.yearly_risk_change["2010s"]**10, 0.001)
+    pop.date = date(2022, 1, 1)
     SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5 * SBM.yearly_risk_change["2010s"]**11, 0.001)
+    assert np.isclose(SBM.rred_population,
+                      SBM.yearly_risk_change["1990s"]**5 *
+                      SBM.yearly_risk_change["2010s"]**11, 0.001)
+
+
+def test_rred_personal():
+    N = 100
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    # Count how many times we initialise with each threshold 0.3, 0.5, 0.7
+    count03, count05, count07 = (0, 0, 0)
+    for i in range(100):
+        SBM = SexualBehaviourModule()
+        SBM.init_risk_factors(pop.data)
+        risk_count = sum(selector(pop.data, rred_personal=(operator.lt, 1)))
+        count03 += (0.2 < (risk_count/N) < 0.4)  # check consistency with threshold
+        count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
+        count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold
+        checks = np.array([x == 1 or x == 1e-5 for x in pop.data["rred_personal"]])
+        assert np.all(checks)  # Check that we only get valid rred values
+    assert(1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
+    assert(1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
+    assert(1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
