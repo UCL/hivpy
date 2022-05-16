@@ -85,8 +85,8 @@ class SexualBehaviourData:
             self.rred_initial = self.data["rred_initial"]
 
             self.age_based_risk = np.array(
-                self._select_matrix(self.data["age_based_risk_options"]["risk_factor"],
-                                    self.data["age_based_risk_options"]["Probability"]))
+                rng.choice(self.data["age_based_risk_options"]["risk_factor"],
+                           p=self.data["age_based_risk_options"]["Probability"]))
 
             self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 

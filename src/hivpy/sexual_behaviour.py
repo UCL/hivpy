@@ -55,7 +55,7 @@ class SexualBehaviourModule:
                                    "2010s": self.sb_data.yearly_risk_change["2010s"].sample()}
         # only need to calculate rred_art_adherence in fraction of runs
         self.rred_art_adherence_flag = (
-            np.random.rand() < self.sb_data.rred_art_adherence_probability)
+            rng.random() < self.sb_data.rred_art_adherence_probability)
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
@@ -132,7 +132,7 @@ class SexualBehaviourModule:
                     operator.eq, prev_group), age=(operator.ge, 15))
                 if any(index):
                     subpop_size = sum(index)
-                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    rands = rng.uniform(0.0, 1.0, subpop_size)
                     rred = population.loc[index, "rred"]
                     dim = self.sex_behaviour_trans[sex].shape[0]
                     Pmin = np.zeros(subpop_size)
@@ -185,7 +185,7 @@ class SexualBehaviourModule:
     def init_rred_personal(self, population, n_pop):
         p_rred_p = self.sb_data.p_rred_p_dist.sample()
         population["rred_personal"] = np.ones(n_pop)
-        r = np.random.uniform(size=n_pop)
+        r = rng.uniform(size=n_pop)
         mask = r < p_rred_p
         population.loc[mask, "rred_personal"] = 1e-5
 

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from hivpy.common import SexType
+from hivpy.common import SexType, rng
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
                                     selector)
@@ -186,9 +186,9 @@ def test_rred_balance():
     men_idx = pop.data.loc[men].index
     women_idx = pop.data.loc[women].index
     for i in range(n_partners_men):
-        pop.data.loc[np.random.choice(men_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
     for i in range(n_partners_women):
-        pop.data.loc[np.random.choice(women_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
     SBM.update_rred_balance(pop.data)
     assert np.all(pop.data.loc[men, "rred_balance"] == 1)
     assert np.all(pop.data.loc[women, "rred_balance"] == 1)
@@ -198,9 +198,9 @@ def test_rred_balance():
     n_partners_men = int(n_partners * 0.495)
     n_partners_women = int(n_partners * 0.505)
     for i in range(n_partners_men):
-        pop.data.loc[np.random.choice(men_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
     for i in range(n_partners_women):
-        pop.data.loc[np.random.choice(women_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
     SBM.update_rred_balance(pop.data)
     assert np.allclose(pop.data.loc[men, "rred_balance"], 1/0.7)
     assert np.allclose(pop.data.loc[women, "rred_balance"], 0.7)
@@ -210,9 +210,9 @@ def test_rred_balance():
     n_partners_men = int(n_partners * 0.6)
     n_partners_women = int(n_partners * 0.45)
     for i in range(n_partners_men):
-        pop.data.loc[np.random.choice(men_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
     for i in range(n_partners_women):
-        pop.data.loc[np.random.choice(women_idx), "num_partners"] += 1
+        pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
     SBM.update_rred_balance(pop.data)
     assert np.all(pop.data.loc[men, "rred_balance"] == 0.1)
     assert np.all(pop.data.loc[women, "rred_balance"] == 10)
