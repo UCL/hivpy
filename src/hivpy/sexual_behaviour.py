@@ -4,7 +4,7 @@ from enum import IntEnum
 import numpy as np
 import pandas as pd
 
-from .common import SexType, selector
+from .common import SexType, rng, selector
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -25,9 +25,6 @@ SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehavi
 
 class SexualBehaviourModule:
 
-    def select_matrix(self, matrix_list):
-        return matrix_list[np.random.choice(len(matrix_list))]
-
     def __init__(self, **kwargs):
         # init sexual behaviour data
         self.sb_data = SexualBehaviourData("data/sex_behaviour.yaml")
@@ -35,9 +32,9 @@ class SexualBehaviourModule:
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {
             SexType.Male: np.array(
-                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Male"])),
+                rng.choice(self.sb_data.sex_behaviour_transition_options["Male"])),
             SexType.Female: np.array(
-                self.select_matrix(self.sb_data.sex_behaviour_transition_options["Female"]))
+                rng.choice(self.sb_data.sex_behaviour_transition_options["Female"]))
         }
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.age_based_risk = self.sb_data.age_based_risk
@@ -45,8 +42,8 @@ class SexualBehaviourModule:
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
         self.sex_mixing_matrix = {
-            SexType.Male: self.select_matrix(self.sb_data.sex_mixing_matrix_male_options),
-            SexType.Female: self.select_matrix(self.sb_data.sex_mixing_matrix_female_options)
+            SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
+            SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
         }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
@@ -81,7 +78,7 @@ class SexualBehaviourModule:
     def init_rred_personal(self, population, n_pop):
         p_rred_p = self.sb_data.p_rred_p_dist.sample(size=len(population))
         population["rred_personal"] = np.ones(n_pop)
-        r = np.random.uniform(size=n_pop)
+        r = rng.uniform(size=n_pop)
         mask = r < p_rred_p
         population.loc[mask, "rred_personal"] = 1e-5
 
@@ -120,7 +117,7 @@ class SexualBehaviourModule:
                     operator.eq, prev_group), age=(operator.ge, 15))
                 if any(index):
                     subpop_size = sum(index)
-                    rands = np.random.uniform(0.0, 1.0, subpop_size)
+                    rands = rng.uniform(0.0, 1.0, subpop_size)
                     self.calc_rred_age(population, index)
                     rred = population.loc[index, "rred"] * population.loc[index, "rred_age"]
                     dim = self.sex_behaviour_trans[sex].shape[0]

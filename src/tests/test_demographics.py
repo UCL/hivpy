@@ -25,7 +25,7 @@ def test_sex_distribution(default_module):
     count = 100000
     sex = default_module.initialize_sex(count)
     female = np.sum(sex == SexType.Female)
-    assert pytest.approx(female/count, rel=0.05) == FEMALE_RATIO
+    assert pytest.approx(female/count, rel=0.01) == FEMALE_RATIO
 
 
 def test_continuous_age_distribution(default_module):
