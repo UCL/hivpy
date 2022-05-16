@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from hivpy.common import SexType, between, selector
+from hivpy.common import SexType, between, rng, selector
 from hivpy.exceptions import SimulationException
 
 SexDType = pd.CategoricalDtype(iter(SexType))
@@ -111,7 +111,7 @@ class StepwiseAgeDistribution:
         """
         cpd = self._gen_cumulative_prob()
         p0 = 0.0
-        rands = np.random.rand(N)
+        rands = rng.random(N)
         ages_out = np.zeros(N)
         for i in range(0, cpd.size):
             # in order to vectorise this method we create a mask of values
@@ -199,7 +199,7 @@ class ContinuousAgeDistribution:
         NormInv = interp1d(NormY, NormX, kind='cubic')
 
         # generate N random numbers in (0,1) and convert to ages
-        R = np.random.rand(N)
+        R = rng.random(N)
         Ages = NormInv(R)
         return Ages
 
@@ -223,8 +223,8 @@ class DemographicsModule:
 
     def initialize_sex(self, count):
         sex_distribution = (
-            self.params['female_ratio'], 1 - self.params['female_ratio'])
-        return pd.Series(np.random.choice(SexType, count, sex_distribution)).astype(SexDType)
+            1 - self.params['female_ratio'], self.params['female_ratio'])
+        return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
 
     def initialise_age(self, count):
         if(self.params['use_stepwise_ages'] is True):
@@ -245,8 +245,8 @@ class DemographicsModule:
                 group = population_data[index]
                 # Probability of dying, assuming time step of 3 months
                 prob_of_death = 1 - exp(-rate / 4)
-                died = np.random.choice([True, False], size=len(group),
-                                        p=[prob_of_death, 1 - prob_of_death])
+                died = rng.choice([True, False], size=len(group),
+                                  p=[prob_of_death, 1 - prob_of_death])
                 # Mark those who died from this group
                 all_died |= pd.Series(died, index=group.index)
         return population_data.date_of_death.isnull() & all_died
@@ -266,5 +266,5 @@ class DemographicsModule:
             prob_of_death = 1 - exp(-rate / 4)
             death_probs[entries] = prob_of_death
             # Mark those who died from this group and sex
-        rands = np.random.random_sample(len(population_data))
+        rands = rng.random(len(population_data))
         return population_data.date_of_death.isnull() & (rands < death_probs)

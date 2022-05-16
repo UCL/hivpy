@@ -3,7 +3,7 @@ import yaml
 
 from hivpy.exceptions import DataLoadException
 
-from .common import DiscreteChoice, SexType
+from .common import DiscreteChoice, SexType, rng
 
 
 class SexualBehaviourData:
@@ -46,9 +46,6 @@ class SexualBehaviourData:
             key: data / sum(data)
             for key, data in prob_dict.items()
         }
-
-    def _select_matrix(self, matrix_list, probabilities):
-        return matrix_list[np.random.choice(len(matrix_list), p=probabilities)]
 
     def __init__(self, filename):
         with open(filename, 'r') as file:
