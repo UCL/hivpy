@@ -24,6 +24,12 @@ class FemaleSexBehaviour(IntEnum):
 SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
 
 
+date1995 = datetime.date(1995, 1, 1)
+date2000 = datetime.date(2000, 1, 1)
+date2010 = datetime.date(2010, 1, 1)
+date2021 = datetime.date(2021, 1, 1)
+
+
 class SexualBehaviourModule:
 
     def __init__(self, **kwargs):
@@ -53,12 +59,16 @@ class SexualBehaviourModule:
         self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
         self.yearly_risk_change = {"1990s": self.sb_data.yearly_risk_change["1990s"].sample(),
                                    "2010s": self.sb_data.yearly_risk_change["2010s"].sample()}
-        # only need to calculate rred_art_adherence in fraction of runs
-        self.rred_art_adherence_flag = (
+
+        # rred_art_adherence is only incorporated into the model in a fraction of the runs
+        # usage of rred_art_adherence is randomly selected to be on or off for this simulation here
+        self.use_rred_art_adherence = (
             rng.random() < self.sb_data.rred_art_adherence_probability)
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
+        self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
+        self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -68,25 +78,6 @@ class SexualBehaviourModule:
         self.num_short_term_partners(population.data)
         self.update_sex_groups(population.data)
         self.update_rred(population)
-
-    def update_rred(self, population):
-        self.update_rred_adc(population.data)
-        self.update_rred_balance(population.data)
-        self.update_rred_diagnosis(population.data, population.date)
-        self.update_rred_population(population.data, population.date)
-        self.update_rred_age(population.data)
-        self.update_rred_long_term_partnered(population.data)
-        if(self.rred_art_adherence_flag):
-            self.update_rred_art_adherence(population.data)
-        population.data["rred"] = (self.new_partner_factor *
-                                   population.data["rred_age"] *
-                                   population.data["rred_adc"] *
-                                   population.data["rred_balance"] *
-                                   population.data["rred_diagnosis"] *
-                                   population.data["rred_personal"] *
-                                   self.rred_population *
-                                   population.data["rred_long_term_partnered"] *
-                                   population.data["rred_art_adherence"])
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -152,12 +143,32 @@ class SexualBehaviourModule:
         pop_data["rred_age"] = np.ones(n_pop)  # Placeholder to be changed each time step
         self.update_rred_age(pop_data)
         pop_data["rred"] = (self.new_partner_factor *
-                            pop_data["rred_personal"])
+                            pop_data["rred_personal"] *
+                            pop_data["rred_age"])
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
-        self.init_rred_population(pop_data)
+        self.init_rred_population()
         self.init_rred_art_adherence(pop_data)
         self.init_rred_balance(pop_data)
+
+    def update_rred(self, population):
+        self.update_rred_adc(population.data)
+        self.update_rred_balance(population.data)
+        self.update_rred_diagnosis(population.data, population.date)
+        self.update_rred_population(population.date)
+        self.update_rred_age(population.data)
+        self.update_rred_long_term_partnered(population.data)
+        if(self.use_rred_art_adherence):
+            self.update_rred_art_adherence(population.data)
+        population.data["rred"] = (self.new_partner_factor *
+                                   population.data["rred_age"] *
+                                   population.data["rred_adc"] *
+                                   population.data["rred_balance"] *
+                                   population.data["rred_diagnosis"] *
+                                   population.data["rred_personal"] *
+                                   self.rred_population *
+                                   population.data["rred_long_term_partnered"] *
+                                   population.data["rred_art_adherence"])
 
     def init_rred_art_adherence(self, pop_data):
         pop_data["rred_art_adherence"] = 1
@@ -172,10 +183,7 @@ class SexualBehaviourModule:
         age = pop_data.loc[over_15s, "age"]
         sex = pop_data.loc[over_15s, "sex"]
         age_index = self.age_index(age)
-        print(self.age_based_risk)
-        print(np.array(age_index), np.array(sex))
         pop_data.loc[over_15s, "rred_age"] = self.age_based_risk[age_index, sex]
-        print(pop_data["rred_age"])
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data["rred_long_term_partnered"] = 1  # Unpartnered people
@@ -205,15 +213,11 @@ class SexualBehaviourModule:
         indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
         population.loc[indices, "rred_adc"] = 0.2
 
-    def init_rred_population(self, pop_data):
+    def init_rred_population(self):
         """Initialise general population risk reduction w.r.t. condomless sex with new partners"""
         self.rred_population = 1
 
-    def update_rred_population(self, pop_data, date):
-        date1995 = datetime.date(1995, 1, 1)
-        date2000 = datetime.date(2000, 1, 1)
-        date2010 = datetime.date(2010, 1, 1)
-        date2021 = datetime.date(2021, 1, 1)
+    def update_rred_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
         if(date1995 < date <= date2000):
@@ -251,36 +255,17 @@ class SexualBehaviourModule:
         women = population["sex"] == SexType.Female
         mens_partners = sum(population.loc[men, "num_partners"])
         womens_partners = sum(population.loc[women, "num_partners"])
-        partner_discrepancy = (mens_partners - womens_partners) / len(population)
-        if partner_discrepancy >= 0.1:
-            rred_balance = 0.1
-        elif partner_discrepancy >= 0.03:
-            rred_balance = 0.7
-        elif partner_discrepancy >= 0.005:
-            rred_balance = 0.7
-        elif partner_discrepancy >= 0.004:
-            rred_balance = 0.75
-        elif partner_discrepancy >= 0.003:
-            rred_balance = 0.8
-        elif partner_discrepancy >= 0.002:
-            rred_balance = 0.9
-        elif partner_discrepancy >= 0.001:
-            rred_balance = 0.97
-        elif partner_discrepancy >= -0.001:
-            rred_balance = 1
-        elif partner_discrepancy >= -0.002:
-            rred_balance = 1/0.97
-        elif partner_discrepancy >= -0.003:
-            rred_balance = 1/0.9
-        elif partner_discrepancy >= -0.004:
-            rred_balance = 1/0.8
-        elif partner_discrepancy >= -0.005:
-            rred_balance = 1/0.75
-        elif partner_discrepancy >= -0.03:
-            rred_balance = 1/0.7
-        elif partner_discrepancy >= -0.1:
-            rred_balance = 1/0.7
+        partner_discrepancy = abs(mens_partners - womens_partners) / len(population)
+
+        rred_balance = 1
+        for (t, b) in zip(self.balance_thresholds, self.balance_factors):
+            if partner_discrepancy >= t:
+                rred_balance = b
+                break
+
+        if (mens_partners > womens_partners):
+            population.loc[men, "rred_balance"] = rred_balance
+            population.loc[women, "rred_balance"] = 1/rred_balance
         else:
-            rred_balance = 10
-        population.loc[men, "rred_balance"] = rred_balance
-        population.loc[women, "rred_balance"] = 1/rred_balance
+            population.loc[men, "rred_balance"] = 1/rred_balance
+            population.loc[women, "rred_balance"] = rred_balance

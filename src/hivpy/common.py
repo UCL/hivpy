@@ -18,13 +18,16 @@ class DiscreteChoice:
         self.data = vals
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
-    def sample(self, size=1):
-        if(size == 1):
+    def sample(self, **kwargs):
+        """Samples from a random discrete distribution.
+        Used without an argument it will return a single object.
+        Used with the "size" argument it will return an array of that size."""
+        if "size" in kwargs:
+            indices = self.dist.rvs(size=kwargs["size"])
+            return self.data[indices]
+        else:
             index = self.dist.rvs()
             return self.data[index]
-        else:
-            indices = self.dist.rvs(size=size)
-            return self.data[indices]
 
 
 class SexType(IntEnum):
