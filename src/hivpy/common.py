@@ -22,7 +22,7 @@ class DiscreteChoice:
         """Samples from a random discrete distribution.
         Used without an argument it will return a single object.
         Used with the "size" argument it will return an array of that size."""
-        if "size" is None:
+        if size is None:
             indices = self.dist.rvs()
             return self.data[indices]
         else:
