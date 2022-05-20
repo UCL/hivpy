@@ -10,7 +10,7 @@ import scipy.stats as stat
 
 
 class DiscreteChoice:
-    def __init__(self, vals, probs):
+    def __init__(self, vals: np.ndarray, probs):
         N = len(vals)
         if(len(probs) != N):
             raise Exception
@@ -18,9 +18,16 @@ class DiscreteChoice:
         self.data = vals
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
-    def sample(self, size=1):
-        indices = self.dist.rvs(size=size)
-        return self.data[indices]
+    def sample(self, size=None):
+        """Samples from a random discrete distribution.
+        Used without an argument it will return a single object.
+        Used with the "size" argument it will return an array of that size."""
+        if size is None:
+            index = self.dist.rvs()
+            return self.data[index]
+        else:
+            indices = np.array(self.dist.rvs(size=size))
+            return self.data[indices]
 
 
 class SexType(IntEnum):

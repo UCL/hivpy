@@ -63,9 +63,6 @@ class SexualBehaviourData:
             self.sexworker_stp_dists = self._get_discrete_dist_list(
                 "short_term_partner_distributions", "Sex_Worker")
 
-            self.age_based_risk = np.array(
-                rng.choice(self.data["age_based_risk_options"]["risk_factor"]))
-
             self.sex_behaviour_transition_options = self.data["sex_behaviour_transition_options"]
 
             self.sex_mixing_matrix_male_options = self.data["sex_age_mixing_matrices"]["Male"]
@@ -84,11 +81,28 @@ class SexualBehaviourData:
                 SexType.Female: self._get_discrete_dist(
                     "initial_sex_behaviour_probabilities", "Female")}
 
+            # risk reduction factors
             self.rred_initial = self.data["rred_initial"]
+
+            self.age_based_risk = np.array(
+                rng.choice(self.data["age_based_risk_options"]["risk_factor"],
+                           p=self.data["age_based_risk_options"]["Probability"]))
 
             self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 
+            self.rred_long_term_partnered = self._get_discrete_dist("rred_partnered")
+
             self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
+
+            self.rred_diagnosis = self._get_discrete_dist("rred_diagnosis")
+            self.rred_diagnosis_period = self.data["rred_diagnosis"]["Period"]
+
+            self.yearly_risk_change = {"1990s": self._get_discrete_dist("yearly_risk_change_90s"),
+                                       "2010s": self._get_discrete_dist("yearly_risk_change_10s")}
+
+            self.rred_art_adherence = self.data["rred_art_adherence"]["Value"]
+            self.adherence_threshold = self.data["rred_art_adherence"]["Adherence_Threshold"]
+            self.rred_art_adherence_probability = self.data["rred_art_adherence"]["Probability"]
 
         except KeyError as ke:
             print(ke.args)
