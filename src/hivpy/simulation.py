@@ -113,4 +113,3 @@ class SimulationHandler:
             date = date + time_step
         logging.info("finished")
         self.output.write_output()
-
