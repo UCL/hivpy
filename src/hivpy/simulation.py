@@ -29,8 +29,6 @@ class SimulationOutput:
                                   ("HIV infections (tot)", 0),
                                   ("Population (over 15)", 0),
                                   ("Deaths (tot)", 0.0)])
-        self.file_path = simulation_config.output_dir / (
-            "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
         self.age_min = 15
         self.age_max = 100
         self.age_step = 10
@@ -81,9 +79,9 @@ class SimulationOutput:
         self._update_deaths(pop_data)
         self.step += 1
 
-    def write_output(self):
+    def write_output(self, output_path):
         df = pd.DataFrame(self.output_stats)
-        df.to_csv(self.file_path, mode='w')
+        df.to_csv(output_path, mode='w')
 
 
 class SimulationHandler:
@@ -95,6 +93,8 @@ class SimulationHandler:
         self.simulation_config = simulation_config
         self._initialise_population()
         self.output = SimulationOutput(self.simulation_config)
+        self.output_path = simulation_config.output_dir / (
+            "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
 
     def _initialise_population(self):
         self.population = Population(self.simulation_config.population_size,
@@ -112,4 +112,4 @@ class SimulationHandler:
             self.output.update_summary_stats(date, self.population.data)
             date = date + time_step
         logging.info("finished")
-        self.output.write_output()
+        self.output.write_output(self.output_path)
