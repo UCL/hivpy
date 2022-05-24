@@ -3,7 +3,7 @@ EXPERIMENT:
   start_year: 1989
   end_year: 2021
   time_interval_days: 90
-  simulations_output_dir: output
+  simulation_output_dir: output
 
 LOGGING:
   log_directory: log

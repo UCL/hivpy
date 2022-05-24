@@ -26,7 +26,6 @@ def run_model():
     parser.add_argument("input", type=pathlib.Path, help="run_model config.yaml")
     args = parser.parse_args()
     config_filename = args.input
-    config = yaml.load(config_filename)
     try:
         with open(config_filename, 'r') as file:
             config = yaml.safe_load(file)
