@@ -2,7 +2,8 @@ from datetime import date, timedelta
 
 import pytest
 
-from hivpy import SimulationConfig, SimulationException, run_simulation
+from hivpy import SimulationConfig, SimulationException
+from hivpy.simulation import SimulationHandler
 
 # from hivpy.population import Population
 
@@ -51,7 +52,9 @@ def test_death_occurs(tmp_path):
     step = timedelta(days=90)
     end = start + 200 * step
     config = SimulationConfig(size, start, end, tmp_path, step)
-    pop = run_simulation(config)
+    simulation_handler = SimulationHandler(config)
+    simulation_handler.run()
+    pop = simulation_handler.population
     # Check that the number alive never grows... (some steps may have 0 deaths)
     # assert all(results.num_alive.diff()[1:] <= 0)
     num_not_dead = sum(pop.data.date_of_death.isnull())

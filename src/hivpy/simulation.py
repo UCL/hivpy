@@ -114,12 +114,3 @@ class SimulationHandler:
         logging.info("finished")
         self.output.write_output()
 
-
-def run_simulation(simulation_config):
-    """Run a single simulation for the given population and time bounds.
-
-    This is a convenience method to avoid using SimulationHandler directly.
-    """
-    handler = SimulationHandler(simulation_config)
-    handler.run()
-    return (handler.population)

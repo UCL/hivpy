@@ -7,7 +7,7 @@ import pandas as pd
 
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import OutputException
-from .simulation import run_simulation
+from .simulation import SimulationHandler
 
 
 class OutputHandler:
@@ -92,5 +92,6 @@ def run_experiment(experiment_config):
     as well as processing steps after those are completed.
     """
     experiment_config.logging_config.start_logging()
-    result = run_simulation(experiment_config.simulation_config)
-    return result
+    simulation_handler = SimulationHandler(experiment_config.simulation_config)
+    simulation_handler.run()
+    return (simulation_handler.population)
