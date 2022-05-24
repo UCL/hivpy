@@ -1,6 +1,7 @@
 import argparse
-import configparser
 import pathlib
+
+import yaml
 
 from .experiment import create_experiment, run_experiment
 
@@ -18,21 +19,25 @@ Maybe we may want to register parameters/properties in future?
 def run_model():
     '''
     Running a HIV model simulation
-    Assuming there is a hivpy.conf file the command is
-    $run_model hivpy.conf
+    Assuming there is a hivpy.yaml file the command is
+    $run_model hivpy.yaml
     '''
     parser = argparse.ArgumentParser(description="run a simulation")
-    parser.add_argument("input", type=pathlib.Path, help="run_model config.conf")
+    parser.add_argument("input", type=pathlib.Path, help="run_model config.yaml")
     args = parser.parse_args()
-    conf_filename = args.input
-    config = configparser.ConfigParser()
+    config_filename = args.input
+    config = yaml.load(config_filename)
     try:
-        config.read(conf_filename)
+        with open(config_filename, 'r') as file:
+            config = yaml.safe_load(file)
+    except yaml.YAMLError as err:
+        print("Error parsing yaml file {}".format(err))
+
+    try:
         experiment_config = create_experiment(config)
         run_experiment(experiment_config)
-
-    except configparser.Error as err:
-        print('error parsing the config file {}'.format(err))
+    except KeyError as err:
+        print('Error finding necessary configuration parameter or section {}'.format(err))
 
 
 if __name__ == '__main__':
