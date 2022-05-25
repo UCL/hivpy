@@ -1,12 +1,11 @@
 import logging
-import operator
 from math import exp, inf
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from hivpy.common import SexType, between, rng, selector
+from hivpy.common import SexType, rng
 from hivpy.exceptions import SimulationException
 
 SexDType = pd.CategoricalDtype(iter(SexType))
@@ -52,10 +51,7 @@ DEATH_RATE_FEMALE = {
     (80, 85): 0.07,
     (85, inf): 0.15
 }
-# DEATH_RATES = {  # annual death rates per sex
-#     SexType.Male: DEATH_RATE_MALE,
-#     SexType.Female: DEATH_RATE_FEMALE
-# }
+
 DEATH_RATES = {  # annual death rates per sex
     SexType.Male: [0] + list(DEATH_RATE_MALE.values()),
     SexType.Female: [0] + list(DEATH_RATE_FEMALE.values())
@@ -233,23 +229,6 @@ class DemographicsModule:
             age_distribution = ContinuousAgeDistribution.select_model(self.params['inc_cat'])
 
         return age_distribution.gen_ages(count)
-
-    def determine_deaths_old(self, population_data: pd.DataFrame) -> pd.Series:
-        """Get which individuals die in a time step, as a boolean Series."""
-        all_died = pd.Series([False] * len(population_data))
-        for sex in SexType:
-            for (low_age, high_age), rate in self.params["death_rates"][sex].items():
-                # Find everyone in the relevant age range
-                index = selector(population_data, sex=(operator.eq, sex),
-                                 age=(between, (low_age, high_age)))
-                group = population_data[index]
-                # Probability of dying, assuming time step of 3 months
-                prob_of_death = 1 - exp(-rate / 4)
-                died = rng.choice([True, False], size=len(group),
-                                  p=[prob_of_death, 1 - prob_of_death])
-                # Mark those who died from this group
-                all_died |= pd.Series(died, index=group.index)
-        return population_data.date_of_death.isnull() & all_died
 
     def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
