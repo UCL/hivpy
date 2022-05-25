@@ -21,11 +21,13 @@ def stepwise_age_module():
     return DemographicsModule(use_stepwise_ages=True)
 
 
-def test_sex_distribution(default_module):
+@pytest.mark.parametrize("ratio", [0.4, 0.52, 0.8])
+def test_sex_distribution(ratio):
+    module = DemographicsModule(female_ratio=ratio)
     count = 100000
-    sex = default_module.initialize_sex(count)
+    sex = module.initialize_sex(count)
     female = np.sum(sex == SexType.Female)
-    assert pytest.approx(female/count, rel=0.01) == default_module.data.female_ratio
+    assert female/count == pytest.approx(ratio, rel=0.01)
 
 
 def test_continuous_age_distribution(default_module):
