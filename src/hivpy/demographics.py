@@ -1,11 +1,12 @@
 import logging
-from math import exp, inf
+from math import exp
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
 from hivpy.common import SexType, rng
+from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
 SexDType = pd.CategoricalDtype(iter(SexType))
@@ -13,49 +14,8 @@ SexDType = pd.CategoricalDtype(iter(SexType))
 
 # Default values
 # Can wrap those in something that ensures they have a description?
-FEMALE_RATIO = 0.52
 USE_STEPWISE_AGES = False
 INC_CAT = 1
-
-DEATH_RATE_MALE = {
-    (15, 20): 0.002,
-    (20, 25): 0.0032,
-    (25, 30): 0.0058,
-    (30, 35): 0.0075,
-    (35, 40): 0.008,
-    (40, 45): 0.01,
-    (45, 50): 0.012,
-    (50, 55): 0.019,
-    (55, 60): 0.025,
-    (60, 65): 0.035,
-    (65, 70): 0.045,
-    (70, 75): 0.055,
-    (75, 80): 0.065,
-    (80, 85): 0.1,
-    (85, inf): 0.4
-}
-DEATH_RATE_FEMALE = {
-    (15, 20): 0.0015,
-    (20, 25): 0.0028,
-    (25, 30): 0.004,
-    (30, 35): 0.004,
-    (35, 40): 0.0042,
-    (40, 45): 0.0055,
-    (45, 50): 0.0075,
-    (50, 55): 0.011,
-    (55, 60): 0.015,
-    (60, 65): 0.021,
-    (65, 70): 0.03,
-    (70, 75): 0.038,
-    (75, 80): 0.05,
-    (80, 85): 0.07,
-    (85, inf): 0.15
-}
-
-DEATH_RATES = {  # annual death rates per sex
-    SexType.Male: [0] + list(DEATH_RATE_MALE.values()),
-    SexType.Female: [0] + list(DEATH_RATE_FEMALE.values())
-}
 
 
 class StepwiseAgeDistribution:
@@ -203,11 +163,13 @@ class ContinuousAgeDistribution:
 class DemographicsModule:
 
     def __init__(self, **kwargs):
+        self.data = DemographicsData("data/demographics.yaml")
+
         params = {
-            "female_ratio": FEMALE_RATIO,
+            "female_ratio": self.data.female_ratio,
             "use_stepwise_ages": USE_STEPWISE_AGES,
             "inc_cat": INC_CAT,
-            "death_rates": DEATH_RATES
+            "death_rates": self.data.death_rates
         }
         # allow setting some parameters explicitly
         # could be useful if we have another method for more complex initialization,
@@ -234,7 +196,7 @@ class DemographicsModule:
         """Get which individuals die in a time step, as a boolean Series."""
         # This binning should perhaps happen when the date advances
         # Age groups are the same regardless of sex
-        age_limits = [lower for (lower, upper) in DEATH_RATE_MALE] + [inf]
+        age_limits = self.data.death_age_limits
         population_data["age_group"] = np.digitize(population_data.age, age_limits)
 
         death_probs = np.full(len(population_data), np.nan)

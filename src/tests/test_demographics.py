@@ -7,8 +7,8 @@ import pytest
 import scipy.integrate
 
 from hivpy.common import SexType
-from hivpy.demographics import (FEMALE_RATIO, ContinuousAgeDistribution,
-                                DemographicsModule, StepwiseAgeDistribution)
+from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
+                                StepwiseAgeDistribution)
 
 
 @pytest.fixture(scope="module")
@@ -25,7 +25,7 @@ def test_sex_distribution(default_module):
     count = 100000
     sex = default_module.initialize_sex(count)
     female = np.sum(sex == SexType.Female)
-    assert pytest.approx(female/count, rel=0.01) == FEMALE_RATIO
+    assert pytest.approx(female/count, rel=0.01) == default_module.data.female_ratio
 
 
 def test_continuous_age_distribution(default_module):
