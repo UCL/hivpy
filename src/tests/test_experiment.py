@@ -12,7 +12,6 @@ def sample_experiment_params():
     filepath = os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.yaml')
     with open(filepath, 'r') as sample_file:
         sample_config = yaml.safe_load(sample_file)
-    print(sample_config)
     return sample_config
 
 

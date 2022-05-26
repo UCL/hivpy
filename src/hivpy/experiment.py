@@ -72,7 +72,7 @@ def create_simulation(experiment_param):
 
 def create_log(log_param):
     log_dir = log_param['log_directory']
-    log_file = log_param['logfile_prefix']+"."+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
+    log_file = log_param['logfile_prefix']+"_"+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
     log_level = log_param['log_file_level']
     console_log_level = log_param['console_log_level']
     return LoggingConfig(log_dir, log_file, fileLogLevel=log_level,

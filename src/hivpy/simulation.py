@@ -94,7 +94,7 @@ class SimulationHandler:
         self._initialise_population()
         self.output = SimulationOutput(self.simulation_config)
         self.output_path = simulation_config.output_dir / (
-            "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
+            "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
 
     def _initialise_population(self):
         self.population = Population(self.simulation_config.population_size,
