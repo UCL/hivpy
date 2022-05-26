@@ -1,9 +1,8 @@
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, timedelta
 from os import path
 from pathlib import Path
-from typing import List
 
 from .exceptions import SimulationException
 
@@ -53,7 +52,6 @@ class SimulationConfig:
     stop_date: date
     output_dir: Path
     time_step: timedelta = timedelta(days=90)
-    tracked: List[str] = field(default_factory=list)
 
     def _validate(self):
         """Make sure the values passed in make sense."""
@@ -66,11 +64,6 @@ class SimulationConfig:
     def __post_init__(self):
         """This is called automatically during construction."""
         self._validate()
-
-    def track(self, attribute_name):
-        """Track an additional attribute during simulation."""
-        # TODO Check if already tracked (or conver tracked to a set?)
-        self.tracked.append(attribute_name)
 
 
 @dataclass

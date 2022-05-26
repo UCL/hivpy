@@ -1,7 +1,7 @@
 import os.path
-from configparser import ConfigParser
 
 import pytest
+import yaml
 
 from hivpy.experiment import create_experiment, run_experiment
 
@@ -9,11 +9,10 @@ from hivpy.experiment import create_experiment, run_experiment
 @pytest.fixture
 def sample_experiment_params():
     """Sample experiment parameters for testing."""
-    parser = ConfigParser()
-    parser.read(
-        os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.conf'))
-    print(list(parser.items()))
-    return parser
+    filepath = os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.yaml')
+    with open(filepath, 'r') as sample_file:
+        sample_config = yaml.safe_load(sample_file)
+    return sample_config
 
 
 def test_dummy_workflow(tmp_path, sample_experiment_params):
@@ -25,6 +24,6 @@ def test_dummy_workflow(tmp_path, sample_experiment_params):
     d = tmp_path / "log"
     d.mkdir()
     # redirect file logging to tmp file (so it is deleted)
-    sample_experiment_params["LOGGING"]["LOG_DIRECTORY"] = str(d)
+    sample_experiment_params["LOGGING"]["log_directory"] = str(d)
     dummy_config = create_experiment(sample_experiment_params)
     run_experiment(dummy_config)

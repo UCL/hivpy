@@ -7,7 +7,7 @@ import pandas as pd
 
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import OutputException
-from .simulation import run_simulation
+from .simulation import SimulationHandler
 
 
 class OutputHandler:
@@ -55,11 +55,11 @@ class OutputHandler:
 
 def create_simulation(experiment_param):
     try:
-        start_date = date(int(experiment_param['START_YEAR']), 1, 1)
-        end_date = date(int(experiment_param['END_YEAR']), 12, 31)
-        population_size = int(experiment_param['POPULATION'])
-        interval = timedelta(days=int(experiment_param['TIME_INTERVAL_DAYS']))
-        output_dir = Path(experiment_param['SIMULATION_OUTPUT_DIR'])
+        start_date = date(int(experiment_param['start_year']), 1, 1)
+        end_date = date(int(experiment_param['end_year']), 12, 31)
+        population_size = int(experiment_param['population'])
+        interval = timedelta(days=int(experiment_param['time_interval_days']))
+        output_dir = Path(experiment_param['simulation_output_dir'])
         if not output_dir.exists():
             output_dir.mkdir()
         return SimulationConfig(population_size, start_date, end_date, output_dir, interval)
@@ -71,10 +71,10 @@ def create_simulation(experiment_param):
 
 
 def create_log(log_param):
-    log_dir = log_param['LOG_DIRECTORY']
-    log_file = log_param['LOGFILE_PREFIX']+"."+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
-    log_level = log_param['LOG_FILE_LEVEL']
-    console_log_level = log_param['CONSOLE_LOG_LEVEL']
+    log_dir = log_param['log_directory']
+    log_file = log_param['logfile_prefix']+"_"+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
+    log_level = log_param['log_file_level']
+    console_log_level = log_param['console_log_level']
     return LoggingConfig(log_dir, log_file, fileLogLevel=log_level,
                          consoleLogLevel=console_log_level)
 
@@ -92,5 +92,6 @@ def run_experiment(experiment_config):
     as well as processing steps after those are completed.
     """
     experiment_config.logging_config.start_logging()
-    result = run_simulation(experiment_config.simulation_config)
-    return result
+    simulation_handler = SimulationHandler(experiment_config.simulation_config)
+    simulation_handler.run()
+    return (simulation_handler.population)

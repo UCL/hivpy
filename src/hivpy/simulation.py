@@ -7,7 +7,6 @@ import pandas as pd
 
 from .common import SexType, selector
 from .config import SimulationConfig
-from .exceptions import SimulationException
 from .population import Population
 
 
@@ -30,8 +29,6 @@ class SimulationOutput:
                                   ("HIV infections (tot)", 0),
                                   ("Population (over 15)", 0),
                                   ("Deaths (tot)", 0.0)])
-        self.file_path = simulation_config.output_dir / (
-            "simulation_output." + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
         self.age_min = 15
         self.age_max = 100
         self.age_step = 10
@@ -82,38 +79,28 @@ class SimulationOutput:
         self._update_deaths(pop_data)
         self.step += 1
 
-    def write_output(self):
+    def write_output(self, output_path):
         df = pd.DataFrame(self.output_stats)
-        df.to_csv(self.file_path, mode='w')
+        df.to_csv(output_path, mode='w')
 
 
 class SimulationHandler:
-    """A class for handling executing a simulation and accessing results."""
+    """A class for handling executing a simulation and outputting results."""
     simulation_config: SimulationConfig
     population: Population
-    results: pd.DataFrame
 
     def __init__(self, simulation_config):
         self.simulation_config = simulation_config
-        self.results = None
         self._initialise_population()
         self.output = SimulationOutput(self.simulation_config)
+        self.output_path = simulation_config.output_dir / (
+            "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
 
     def _initialise_population(self):
         self.population = Population(self.simulation_config.population_size,
                                      self.simulation_config.start_date)
 
-    def _validate_tracked(self, population):
-        for attribute in self.simulation_config.tracked:
-            if not population.has_attribute(attribute):
-                raise SimulationException(
-                    f"Unrecognised tracked attribute: {attribute}")
-
     def run(self):
-        self._validate_tracked(self.population)
-        # Store the tracking results in a dataframe, with one row per date
-        tracked_attrs = self.simulation_config.tracked
-        results = pd.DataFrame(columns=tracked_attrs)
         # Start the simulation
         date = self.simulation_config.start_date
         assert date == self.population.date
@@ -124,21 +111,5 @@ class SimulationHandler:
             self.population = self.population.evolve(time_step)
             self.output.update_summary_stats(date, self.population.data)
             date = date + time_step
-            # Record the values of the tracked attributes
-            if tracked_attrs:  # we need this because we can't set an empty row
-                results.loc[date] = {
-                    attr: self.population.get(attr) for attr in tracked_attrs
-                }
         logging.info("finished")
-        self.output.write_output()
-        self.results = results
-
-
-def run_simulation(simulation_config):
-    """Run a single simulation for the given population and time bounds.
-
-    This is a convenience method to avoid using SimulationHandler directly.
-    """
-    handler = SimulationHandler(simulation_config)
-    handler.run()
-    return (handler.population, handler.results)
+        self.output.write_output(self.output_path)
