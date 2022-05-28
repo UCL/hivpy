@@ -9,6 +9,7 @@ import scipy.integrate
 from hivpy.common import SexType
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
+from hivpy.demographics_data import DemographicsData
 
 
 @pytest.fixture(scope="module")
@@ -78,12 +79,36 @@ def test_date_permanent(default_module):
     assert not new_deaths[population_data.date_of_death.notnull()].any()
 
 
-# def test_death_rate():
-#     module = DemographicsModule(death_rate=1/20)
-#     N =  1000
-#     # For annual death rate of 1/20,  we expect 5 death per 3-month period.
-#     population_data = pd.DataFrame({
-#         'date_of_death': [None] * N
-#     })
-#     deaths = module.determine_deaths(population_data)
-#     assert pytest.approx(5) == deaths.sum()
+def test_death_rate():
+    """Check that we record the expected number of deaths."""
+    # Set up the population to have equal-sized age groups and balanced sexes
+    data_path = "src/tests/test_data/demographics_testing.yaml"
+    data = DemographicsData(data_path)
+    module = DemographicsModule(death_rates=data.death_rates)
+    N = 300000
+    ages_to_try = [10, 23, 33]
+    age_groups = [0, 2, 4]
+    group_size = N // 2 // len(ages_to_try)
+    ages = sum(([age] * group_size for age in ages_to_try), []) * 2
+    sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
+    population_data = pd.DataFrame({
+        'date_of_death': [None] * N,
+        'age': ages,
+        'sex': sexes
+    })
+    # The rates in the data file are annualised
+    expected_annual_deaths = {
+        (sex, age_group): group_size * data.death_rates[sex][age_group]
+        for sex in SexType
+        for age_group in age_groups
+    }
+    # Simulate for a year
+    n_steps = 4  # currently death determination assumes 3-month step
+    for _ in range(n_steps):
+        deaths = module.determine_deaths(population_data)
+        # We only care about recording the death here, not its date
+        population_data.loc[deaths, "date_of_death"] = datetime.today()
+    recorded_deaths = population_data.groupby(
+        ["sex", "age_group"]
+        ).date_of_death.count().to_dict()
+    assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.05)

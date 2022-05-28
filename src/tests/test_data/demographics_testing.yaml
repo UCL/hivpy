@@ -1,0 +1,8 @@
+female_ratio: 0.52
+
+death_rates:
+  # The lower end of each age group: (ages below the first group assumed to have 0 death rate)
+  Age_limits: [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85]
+  # The corresponding annual death rates for those groups, for each sex:
+  Male: [0.002, 0.03, 0.0058, 0.08, 0.008, 0.01, 0.012, 0.019, 0.025, 0.035, 0.045, 0.055, 0.065, 0.1, 0.4]
+  Female: [0.0015, 0.05, 0.004, 0.04, 0.0042, 0.0055, 0.0075, 0.011, 0.015, 0.021, 0.03, 0.038, 0.05, 0.07, 0.15]
