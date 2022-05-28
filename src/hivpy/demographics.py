@@ -192,6 +192,12 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
+    def _probability_of_death(self, sex: SexType, age_group: int) -> float:
+        rate = self.params["death_rates"][sex][age_group]
+        # Probability of dying, assuming time step of 3 months
+        prob_of_death = 1 - exp(-rate / 4)
+        return prob_of_death
+
     def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
         # This binning should perhaps happen when the date advances
@@ -199,13 +205,7 @@ class DemographicsModule:
         age_limits = self.data.death_age_limits
         population_data["age_group"] = np.digitize(population_data.age, age_limits)
 
-        death_probs = np.full(len(population_data), np.nan)
-        age_groups = population_data.groupby(["sex", "age_group"])
-        for (sex, age_group), entries in age_groups.groups.items():
-            rate = self.params["death_rates"][sex][age_group]
-            # Probability of dying, assuming time step of 3 months
-            prob_of_death = 1 - exp(-rate / 4)
-            death_probs[entries] = prob_of_death
-            # Mark those who died from this group and sex
+        death_probs = population_data.groupby(["sex", "age_group"]).age.transform(
+            lambda group: self._probability_of_death(group.name[0], group.name[1]))
         rands = rng.random(len(population_data))
         return population_data.date_of_death.isnull() & (rands < death_probs)
