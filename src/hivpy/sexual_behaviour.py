@@ -1,4 +1,5 @@
 import datetime
+import importlib.resources
 import operator
 from enum import IntEnum
 
@@ -34,7 +35,8 @@ class SexualBehaviourModule:
 
     def __init__(self, **kwargs):
         # init sexual behaviour data
-        self.sb_data = SexualBehaviourData("data/sex_behaviour.yaml")
+        with importlib.resources.path("hivpy", "data") as data_path:
+            self.sb_data = SexualBehaviourData(data_path / "sex_behaviour.yaml")
 
         # Randomly initialise sexual behaviour group transitions
         self.sex_behaviour_trans = {

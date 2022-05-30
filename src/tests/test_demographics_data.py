@@ -1,3 +1,5 @@
+import importlib.resources
+
 import pytest
 
 from hivpy.common import SexType
@@ -6,7 +8,8 @@ from hivpy.demographics_data import DemographicsData
 
 @pytest.fixture(scope="module")
 def default_data():
-    path = "data/demographics.yaml"
+    with importlib.resources.path("hivpy", "data") as data_path:
+        path = data_path / "demographics.yaml"
     return DemographicsData(path)
 
 

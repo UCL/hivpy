@@ -1,3 +1,4 @@
+import importlib.resources
 import operator
 from datetime import date, timedelta
 
@@ -30,8 +31,9 @@ def check_prob_sums(sex, trans_matrix):
 
 
 def test_transition_probabilities():
-    with open("data/sex_behaviour.yaml", 'r') as file:
-        yaml_data = yaml.safe_load(file)
+    with importlib.resources.path("hivpy", "data") as data_path:
+        with open(data_path / "sex_behaviour.yaml") as file:
+            yaml_data = yaml.safe_load(file)
     for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
         assert (trans_matrix.shape == (4, 4))
         check_prob_sums(SexType.Male, trans_matrix)
@@ -87,8 +89,9 @@ def test_initial_sex_behaviour_groups():
     is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
-    with open("data/sex_behaviour.yaml", 'r') as file:
-        yaml_data = yaml.safe_load(file)
+    with importlib.resources.path("hivpy", "data") as data_path:
+        with open(data_path / "sex_behaviour.yaml") as file:
+            yaml_data = yaml.safe_load(file)
     probs = {SexType.Male:
              yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
              SexType.Female:
