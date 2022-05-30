@@ -4,12 +4,20 @@ from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
+import pytest
 import yaml
 
 from hivpy.common import SexType, rng
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
                                     selector)
+
+
+@pytest.fixture(scope="module")
+def yaml_data():
+    with importlib.resources.path("hivpy", "data") as data_path:
+        with open(data_path / "sex_behaviour.yaml") as file:
+            return yaml.safe_load(file)
 
 
 def check_prob_sums(sex, trans_matrix):
@@ -30,10 +38,7 @@ def check_prob_sums(sex, trans_matrix):
         assert(np.allclose(tot_prob, 1.0))
 
 
-def test_transition_probabilities():
-    with importlib.resources.path("hivpy", "data") as data_path:
-        with open(data_path / "sex_behaviour.yaml") as file:
-            yaml_data = yaml.safe_load(file)
+def test_transition_probabilities(yaml_data):
     for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
         assert (trans_matrix.shape == (4, 4))
         check_prob_sums(SexType.Male, trans_matrix)
@@ -84,14 +89,11 @@ def test_behaviour_updates():
     assert(any(initial_groupings != subsequent_groupings))
 
 
-def test_initial_sex_behaviour_groups():
+def test_initial_sex_behaviour_groups(yaml_data):
     """Check that the number of people initialised into each sexual behaviour group
     is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
-    with importlib.resources.path("hivpy", "data") as data_path:
-        with open(data_path / "sex_behaviour.yaml") as file:
-            yaml_data = yaml.safe_load(file)
     probs = {SexType.Male:
              yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
              SexType.Female:
