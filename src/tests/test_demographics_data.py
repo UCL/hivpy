@@ -8,9 +8,8 @@ from hivpy.demographics_data import DemographicsData
 
 @pytest.fixture(scope="module")
 def default_data():
-    with importlib.resources.path("hivpy", "data") as data_path:
-        path = data_path / "demographics.yaml"
-    return DemographicsData(path)
+    with importlib.resources.path("hivpy.data", "demographics.yaml") as data_path:
+        return DemographicsData(data_path)
 
 
 def test_death_rate_ages(default_data):

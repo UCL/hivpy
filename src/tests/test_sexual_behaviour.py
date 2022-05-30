@@ -15,9 +15,8 @@ from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
 
 @pytest.fixture(scope="module")
 def yaml_data():
-    with importlib.resources.path("hivpy", "data") as data_path:
-        with open(data_path / "sex_behaviour.yaml") as file:
-            return yaml.safe_load(file)
+    with importlib.resources.open_text("hivpy.data", "sex_behaviour.yaml") as file:
+        return yaml.safe_load(file)
 
 
 def check_prob_sums(sex, trans_matrix):
