@@ -111,4 +111,4 @@ def test_death_rate():
     recorded_deaths = population_data.groupby(
         ["sex", "age_group"]
         ).date_of_death.count().to_dict()
-    assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.05)
+    assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)
