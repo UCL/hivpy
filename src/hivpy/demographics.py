@@ -1,3 +1,4 @@
+import importlib.resources
 import logging
 from math import exp
 
@@ -163,7 +164,8 @@ class ContinuousAgeDistribution:
 class DemographicsModule:
 
     def __init__(self, **kwargs):
-        self.data = DemographicsData("data/demographics.yaml")
+        with importlib.resources.path("hivpy.data", "demographics.yaml") as data_path:
+            self.data = DemographicsData(data_path)
 
         params = {
             "female_ratio": self.data.female_ratio,

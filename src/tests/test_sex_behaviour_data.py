@@ -1,9 +1,12 @@
+from pathlib import Path
+
 from hivpy.sex_behaviour_data import SexualBehaviourData
 
 
 def test_probability_loading():
     # Load example file
-    SBD = SexualBehaviourData("src/tests/test_data/sbd_testing.yaml")
+    data_path = Path(__file__).parent / "test_data" / "sbd_testing.yaml"
+    SBD = SexualBehaviourData(data_path)
     dists = SBD._get_discrete_dist_list("Test_Example_List")
 
     # explicit distribution
