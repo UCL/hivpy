@@ -6,9 +6,12 @@ from enum import IntEnum
 import numpy as np
 import pandas as pd
 
+from .column_names import (AGE, NUM_PARTNERS, RRED, RRED_ADC, RRED_AGE,
+                           RRED_ART_ADHERENCE, RRED_BALANCE, RRED_DIAGNOSIS,
+                           RRED_LTP, RRED_PERSONAL, SEX)
 from .common import SexType, rng, selector
 from .sex_behaviour_data import SexualBehaviourData
-from .column_names import SEX, AGE, RRED, RRED_AGE, RRED_ADC, RRED_ART_ADHERENCE, RRED_BALANCE, RRED_DIAGNOSIS, RRED_LTP, RRED_PERSONAL, NUM_PARTNERS
+
 
 class MaleSexBehaviour(IntEnum):
     ZERO = 0
