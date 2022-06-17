@@ -4,9 +4,8 @@ from typing import Callable, Dict
 
 import pandas as pd
 
-from hivpy.column_names import (AGE, DATE_OF_DEATH, HIV_DIAGNOSIS_DATE,
-                                HIV_STATUS, NUM_PARTNERS, SEX)
-
+from .column_names import (AGE, DATE_OF_DEATH, HIV_DIAGNOSIS_DATE, HIV_STATUS,
+                           NUM_PARTNERS, SEX)
 from .common import SexType
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
