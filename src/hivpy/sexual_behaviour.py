@@ -71,6 +71,7 @@ class SexualBehaviourModule:
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
         self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
+        self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -197,10 +198,9 @@ class SexualBehaviourModule:
             # pop_data["rred_ltp"] = pop_data["ltp"]*self.ltp_risk_factor+(1-pop_data["ltp"])
 
     def init_rred_personal(self, population, n_pop):
-        p_rred_p = self.sb_data.p_rred_p_dist.sample()
         population[RRED_PERSONAL] = np.ones(n_pop)
         r = rng.uniform(size=n_pop)
-        mask = r < p_rred_p
+        mask = r < self.p_rred_p
         population.loc[mask, RRED_PERSONAL] = 1e-5
 
     def init_rred_adc(self, population):
