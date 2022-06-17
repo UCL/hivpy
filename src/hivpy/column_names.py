@@ -2,6 +2,7 @@
 
 SEX = "sex"                                 # common.SexType: SexType.Male for male and SexType.Female for female
 AGE = "age"                                 # float: age at the current date
+AGE_GROUP = "age_group"                     # int: discrete age grouping based on age
 
 RRED = "rred"                               # float: overall rred value from combined factors
 RRED_AGE = "rred_age"                       # float: risk reduction factor based on age

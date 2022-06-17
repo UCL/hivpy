@@ -4,8 +4,8 @@ from typing import Callable, Dict
 
 import pandas as pd
 
-from .column_names import (AGE, DATE_OF_DEATH, HIV_DIAGNOSIS_DATE, HIV_STATUS,
-                           NUM_PARTNERS, SEX)
+import hivpy.column_names as col
+
 from .common import SexType
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
@@ -47,13 +47,13 @@ class Population:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         date_of_death = [None] * self.size
         self.data = pd.DataFrame({
-            SEX: self.demographics.initialize_sex(self.size),
-            AGE: self.demographics.initialise_age(self.size),
-            DATE_OF_DEATH: date_of_death
+            col.SEX: self.demographics.initialize_sex(self.size),
+            col.AGE: self.demographics.initialise_age(self.size),
+            col.DATE_OF_DEATH: date_of_death
         })
-        self.data[HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
-        self.data[HIV_DIAGNOSIS_DATE] = None
-        self.data[NUM_PARTNERS] = 0
+        self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
+        self.data[col.HIV_DIAGNOSIS_DATE] = None
+        self.data[col.NUM_PARTNERS] = 0
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self.data)
@@ -94,7 +94,7 @@ class Population:
         self.data.age += time_step.days / 365  # Very naive!
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self.data)
-        self.data.loc[died_this_period, DATE_OF_DEATH] = self.date
+        self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
