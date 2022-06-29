@@ -148,8 +148,8 @@ class SexualBehaviourModule:
         pop_data[col.RRED_AGE] = np.ones(n_pop)  # Placeholder to be changed each time step
         self.update_rred_age(pop_data)
         pop_data[col.RRED] = (self.new_partner_factor *
-                            pop_data[col.RRED_PERSONAL] *
-                            pop_data[col.RRED_AGE])
+                              pop_data[col.RRED_PERSONAL] *
+                              pop_data[col.RRED_AGE])
         self.init_rred_adc(pop_data)
         self.init_rred_diagnosis(pop_data)
         self.init_rred_population()
@@ -166,14 +166,14 @@ class SexualBehaviourModule:
         if(self.use_rred_art_adherence):
             self.update_rred_art_adherence(population.data)
         population.data[col.RRED] = (self.new_partner_factor *
-                                   population.data[col.RRED_AGE] *
-                                   population.data[col.RRED_ADC] *
-                                   population.data[col.RRED_BALANCE] *
-                                   population.data[col.RRED_DIAGNOSIS] *
-                                   population.data[col.RRED_PERSONAL] *
-                                   self.rred_population *
-                                   population.data[col.RRED_LTP] *
-                                   population.data[col.RRED_ART_ADHERENCE])
+                                     population.data[col.RRED_AGE] *
+                                     population.data[col.RRED_ADC] *
+                                     population.data[col.RRED_BALANCE] *
+                                     population.data[col.RRED_DIAGNOSIS] *
+                                     population.data[col.RRED_PERSONAL] *
+                                     self.rred_population *
+                                     population.data[col.RRED_LTP] *
+                                     population.data[col.RRED_ART_ADHERENCE])
 
     def init_rred_art_adherence(self, pop_data):
         pop_data[col.RRED_ART_ADHERENCE] = 1

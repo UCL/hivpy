@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 
-from hivpy.column_names import AGE_GROUP, SEX
+import hivpy.column_names as col
 from hivpy.common import SexType, rng
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
@@ -206,9 +206,9 @@ class DemographicsModule:
         # This binning should perhaps happen when the date advances
         # Age groups are the same regardless of sex
         age_limits = self.data.death_age_limits
-        population_data[AGE_GROUP] = np.digitize(population_data.age, age_limits)
+        population_data[col.AGE_GROUP] = np.digitize(population_data.age, age_limits)
 
-        death_probs = population_data.groupby([SEX, AGE_GROUP]).age.transform(
+        death_probs = population_data.groupby([col.SEX, col.AGE_GROUP]).age.transform(
             lambda group: self._probability_of_death(group.name[0], group.name[1]))
         rands = rng.random(len(population_data))
         return population_data.date_of_death.isnull() & (rands < death_probs)
