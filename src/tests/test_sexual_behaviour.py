@@ -1,5 +1,6 @@
 import importlib.resources
 import operator
+import time
 from datetime import date, timedelta
 
 import numpy as np
@@ -7,6 +8,7 @@ import pandas as pd
 import pytest
 import yaml
 
+import hivpy.column_names as col
 from hivpy.common import SexType, rng
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule,
@@ -46,12 +48,34 @@ def test_transition_probabilities(yaml_data):
         check_prob_sums(SexType.Female, trans_matrix)
 
 
+def test_sex_behaviour_transition(yaml_data):
+    N = 100000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.AGE] = 25  # make whole population active
+    pop.data[col.RRED] = 1  # rred factors can be tested elsewhere
+    # set population to each group
+    trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
+    print(trans_matrix[SexType.Male], trans_matrix[SexType.Female])
+    sex_ratio = {SexType.Male: 0.48, SexType.Female: 0.52}
+    for s in SexType:
+        for g in SexBehaviours[s]:
+            pop.data.loc[pop.data[col.SEX] == s, col.SEX_BEHAVIOUR] = g
+            pop.sexual_behaviour.update_sex_groups(pop.data)
+            for g2 in SexBehaviours[s]:
+                num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2) & (pop.data[col.SEX] == s)])
+                p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
+                E = p * N * sex_ratio[s]
+                sig = np.sqrt(E * (1-p))
+                print(g, g2, num, E, sig)
+                assert(E - 10*sig <= num <= E + 10*sig)
+
+
 def check_num_partners(row):
     sex = row["sex"]
     group = row["sex_behaviour"]
     n = row["num_partners"]
     age = row["age"]
-    if age <= 15:  # no sexual partners for under 16s
+    if age < 15 or age >= 65:  # no sexual partners for under 16s
         return n == 0
     if sex == SexType.Male:
         if group == 0:
@@ -71,10 +95,18 @@ def check_num_partners(row):
 
 def test_num_partners():
     """Check that number of partners are reasonable"""
-    pop_data = Population(size=1000, start_date=date(1989, 1, 1)).data
-    assert(any(pop_data["num_partners"] > 0))
+    pop = Population(size=100000, start_date=date(1989, 1, 1))
+    t1 = time.perf_counter()
+    for x in range(0, 500):
+        pop.sexual_behaviour.num_short_term_partners(pop.data)
+    t2 = time.perf_counter()
+    print("Time for iterations = ", t2-t1)
+    assert(any(pop.data["num_partners"] > 0))
     # Check the num_partners column
-    checks = pop_data.apply(check_num_partners, axis=1)
+    checks = pop.data.apply(check_num_partners, axis=1)
+    for i, row in pop.data.iterrows():
+        if not check_num_partners(row):
+            print(i, row)
     assert np.all(checks)
 
 
@@ -82,7 +114,7 @@ def test_behaviour_updates():
     """Check that at least one person changes sexual behaviour groups"""
     pop = Population(size=1000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
-    for i in range(1):
+    for i in range(500):
         pop.sexual_behaviour.update_sex_groups(pop.data)
     subsequent_groupings = pop.data["sex_behaviour"]
     assert(any(initial_groupings != subsequent_groupings))

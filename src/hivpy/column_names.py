@@ -9,11 +9,12 @@ RRED_AGE = "rred_age"                       # float: risk reduction factor based
 RRED_ADC = "rred_adc"                       # float: risk reduction for AIDS defining condition
 RRED_BALANCE = "rred_balance"               # float: risk reduction factor to re-balance male & female partner numbers
 RRED_DIAGNOSIS = "rred_diagnosis"           # float: risk reduction associated with recent HIV diagnosis
-RRED_PERSONAL = "rred_personal"             # float: individual risk reduction applied with a certain probability  
+RRED_PERSONAL = "rred_personal"             # float: individual risk reduction applied with a certain probability
 RRED_LTP = "rred_long_term_partnered"       # float: risk reduction for people in long term partnerships
-RRED_ART_ADHERENCE = "rred_art_adherence"   # float: risk reduction associated with low ART adherence 
+RRED_ART_ADHERENCE = "rred_art_adherence"   # float: risk reduction associated with low ART adherence
 RRED_INTIIAL = "rred_initial"               # float: initial risk reduction factor
-NUM_PARTNERS = "num_partners"               # float: number of short term condomless sex partners during the current time step 
+NUM_PARTNERS = "num_partners"               # float: number of short term condomless sex partners during the current time step
+SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
 
 HIV_STATUS = "HIV_status"                   # bool: true if person if HIV positive, o/w false
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
