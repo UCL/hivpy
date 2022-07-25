@@ -4,11 +4,10 @@ import operator
 from enum import IntEnum
 
 import numpy as np
-import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, rng, selector, transform_group
+from .common import SexType, rng, selector
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -80,8 +79,8 @@ class SexualBehaviourModule:
                           self.risk_age_grouping, self.risk_categories)
 
     def update_sex_behaviour(self, population):
-        self.num_short_term_partners(population.data)
-        self.update_sex_groups(population.data)
+        self.num_short_term_partners(population)
+        self.update_sex_groups(population)
         self.update_rred(population)
 
     # Haven't been able to locate the probabilities for this yet
@@ -116,14 +115,13 @@ class SexualBehaviourModule:
         group = int(group)
         return self.short_term_partners[sex][group].sample(size)
 
-    def num_short_term_partners(self, population: pd.DataFrame):
+    def num_short_term_partners(self, population):
         """Calculate the number of short term partners for the whole population"""
         # can we avoid doing population.loc[active_pop] twice? Does it waste time?
-        active_pop = population.index[(15 <= population.age) & (population.age < 65)]
-        num_partners = transform_group(
-            population.loc[active_pop], [
-                col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group)
-        population.loc[active_pop, col.NUM_PARTNERS] = num_partners
+        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        num_partners = population.transform_group(
+            [col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group, sub_pop=active_pop)
+        population.data.loc[active_pop, col.NUM_PARTNERS] = num_partners
 
     def _assign_new_sex_group(self, sex, group, rred, size):
         group = int(group)
@@ -138,15 +136,14 @@ class SexualBehaviourModule:
             new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
         return new_groups
 
-    def update_sex_groups(self, population: pd.DataFrame):
+    def update_sex_groups(self, population):
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        active_pop = population.index[(15 <= population.age) & (population.age < 65)]
-        new_groups = transform_group(
-            population.loc[active_pop], [
-                col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group)
-        population.loc[active_pop, col.SEX_BEHAVIOUR] = new_groups
+        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        new_groups = population.transform_group(
+            [col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group, sub_pop=active_pop)
+        population.data.loc[active_pop, col.SEX_BEHAVIOUR] = new_groups
 
     # risk reduction factors
     def init_risk_factors(self, pop_data):

@@ -56,7 +56,7 @@ class Population:
         self.data[col.NUM_PARTNERS] = 0
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
-        self.sexual_behaviour.num_short_term_partners(self.data)
+        self.sexual_behaviour.num_short_term_partners(self)
 
     def _create_attributes(self):
         """Determine what aggregate measures can be computed and how."""
@@ -87,15 +87,19 @@ class Population:
         """Get the value of the named attribute at the current date."""
         return self.attributes[attribute_name](self.data)
 
-    def transform_group(self, param_list, func, use_size=True):
+    def transform_group(self, param_list, func, use_size=True, **kwargs):
         """Groups the data by a list of parameters and applies a function to each grouping"""
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
-            args = [n for n in g.name] # list(g.name)
+            args = list(g.name)
             if(use_size):
                 args.append(g.size)
             return func(*args)
-        return self.data.groupby(param_list)[col.HIV_STATUS].transform(general_func)
+        if "sub_pop" in kwargs.keys():
+            df = self.data.loc[kwargs["sub_pop"]]
+        else:
+            df = self.data
+        return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
 
     def evolve(self, time_step: datetime.timedelta):
         """Advance the population by one time step."""
@@ -103,7 +107,7 @@ class Population:
         # and set death dates.
         self.data.age += time_step.days / 365  # Very naive!
         # Record who has reached their max age
-        died_this_period = self.demographics.determine_deaths(self.data)
+        died_this_period = self.demographics.determine_deaths(self)
         self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
         # Get the number of sexual partners this time step

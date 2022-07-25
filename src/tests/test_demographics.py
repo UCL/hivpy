@@ -74,7 +74,7 @@ def test_date_permanent(default_module):
     pop.data['age'] = [30, 20, 50]
     pop.data['sex'] = [SexType.Female, SexType.Female, SexType.Male]
 
-    new_deaths = default_module.determine_deaths(pop.data)
+    new_deaths = default_module.determine_deaths(pop)
     # Find who already had a date of death, and check that they are not marked
     # as having died in this time step.
     assert not new_deaths[pop.data.date_of_death.notnull()].any()
@@ -106,7 +106,7 @@ def test_death_rate():
     # Simulate for a year
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
-        deaths = module.determine_deaths(pop.data)
+        deaths = module.determine_deaths(pop)
         # We only care about recording the death here, not its date
         pop.data.loc[deaths, "date_of_death"] = datetime.today()
     recorded_deaths = pop.data.groupby(
