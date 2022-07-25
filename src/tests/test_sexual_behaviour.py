@@ -55,7 +55,6 @@ def test_sex_behaviour_transition(yaml_data):
     pop.data[col.RRED] = 1  # rred factors can be tested elsewhere
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
-    print(trans_matrix[SexType.Male], trans_matrix[SexType.Female])
     sex_ratio = {SexType.Male: 0.48, SexType.Female: 0.52}
     for s in SexType:
         for g in SexBehaviours[s]:
@@ -66,7 +65,6 @@ def test_sex_behaviour_transition(yaml_data):
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
                 E = p * N * sex_ratio[s]
                 sig = np.sqrt(E * (1-p))
-                print(g, g2, num, E, sig)
                 assert(E - 10*sig <= num <= E + 10*sig)
 
 
@@ -100,13 +98,10 @@ def test_num_partners():
     for x in range(0, 500):
         pop.sexual_behaviour.num_short_term_partners(pop.data)
     t2 = time.perf_counter()
-    print("Time for iterations = ", t2-t1)
+    #print("Time for iterations = ", t2-t1)
     assert(any(pop.data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
-    for i, row in pop.data.iterrows():
-        if not check_num_partners(row):
-            print(i, row)
     assert np.all(checks)
 
 

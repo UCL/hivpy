@@ -110,12 +110,10 @@ class SexualBehaviourModule:
 
         return Probability
 
-    def get_partners_for_group(self, args):
+    def get_partners_for_group(self, sex, group, size):
         """Calculates the number of short term partners for people in a given intersection of
         sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group]"""
-        sex = args[0]
-        group = int(args[1])
-        size = args[2]
+        group = int(group)
         return self.short_term_partners[sex][group].sample(size)
 
     def num_short_term_partners(self, population: pd.DataFrame):
@@ -127,11 +125,8 @@ class SexualBehaviourModule:
                 col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group)
         population.loc[active_pop, col.NUM_PARTNERS] = num_partners
 
-    def _assign_new_sex_group(self, args):
-        sex = args[0]
-        group = int(args[1])
-        rred = args[2]
-        size = args[3]
+    def _assign_new_sex_group(self, sex, group, rred, size):
+        group = int(group)
         rands = rng.uniform(0.0, 1.0, size)
         dim = self.sex_behaviour_trans[sex].shape[0]
         Pmin = np.zeros(size)

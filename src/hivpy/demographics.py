@@ -195,9 +195,7 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
-    def _probability_of_death(self, args) -> float:
-        sex = args[0]
-        age_group = args[1]
+    def _probability_of_death(self, sex, age_group) -> float:
         rate = self.params["death_rates"][sex][age_group]
         # Probability of dying, assuming time step of 3 months
         prob_of_death = 1 - exp(-rate / 4)
@@ -211,6 +209,6 @@ class DemographicsModule:
         pop_data[col.AGE_GROUP] = np.digitize(pop_data[col.AGE], age_limits)
 
         death_probs = transform_group(pop_data, [col.SEX, col.AGE_GROUP],
-                                      self._probability_of_death)
+                                      self._probability_of_death, use_size=False)
         rands = rng.random(len(pop_data))
         return pop_data.date_of_death.isnull() & (rands < death_probs)
