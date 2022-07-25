@@ -1,6 +1,6 @@
 import importlib.resources
 import operator
-import time
+# import time
 from datetime import date, timedelta
 
 import numpy as np
@@ -94,11 +94,11 @@ def check_num_partners(row):
 def test_num_partners():
     """Check that number of partners are reasonable"""
     pop = Population(size=100000, start_date=date(1989, 1, 1))
-    t1 = time.perf_counter()
-    for x in range(0, 500):
-        pop.sexual_behaviour.num_short_term_partners(pop.data)
-    t2 = time.perf_counter()
-    #print("Time for iterations = ", t2-t1)
+    # t1 = time.perf_counter()
+    # for x in range(0, 500):
+    pop.sexual_behaviour.num_short_term_partners(pop.data)
+    # t2 = time.perf_counter()
+    # print("Time for iterations = ", t2-t1)
     assert(any(pop.data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
