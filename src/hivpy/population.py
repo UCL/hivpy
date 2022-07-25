@@ -87,6 +87,16 @@ class Population:
         """Get the value of the named attribute at the current date."""
         return self.attributes[attribute_name](self.data)
 
+    def transform_group(self, param_list, func, use_size=True):
+        """Groups the data by a list of parameters and applies a function to each grouping"""
+        # HIV_STATUS is just a dummy column to allow us to use the transform method
+        def general_func(g):
+            args = [n for n in g.name] # list(g.name)
+            if(use_size):
+                args.append(g.size)
+            return func(*args)
+        return self.data.groupby(param_list)[col.HIV_STATUS].transform(general_func)
+
     def evolve(self, time_step: datetime.timedelta):
         """Advance the population by one time step."""
         # Does nothing just yet except advance the current date, track ages
