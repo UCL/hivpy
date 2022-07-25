@@ -51,7 +51,7 @@ def transform_group(df, param_list, func, use_size=True):
     """Groups the data by a list of parameters and applies a function to each grouping"""
     # HIV_STATUS is just a dummy column to allow us to use the transform method
     def general_func(g):
-        args = [n for n in g.name] # list(g.name)
+        args = list(g.name)
         if(use_size):
             args.append(g.size)
         return func(*args)
