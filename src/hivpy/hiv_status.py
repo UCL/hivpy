@@ -16,7 +16,7 @@ class HIVStatusModule:
 
     def __init__(self):
         self.stp_risk_vectors = {SexType.Male: np.zeros(10),
-                                     SexType.Female: np.zeros(10)}  # FIXME
+                                 SexType.Female: np.zeros(10)}  # FIXME
 
     def _prob_HIV_initial(self, age):
         """Completely arbitrary placeholder function for initial HIV presence in population"""
@@ -28,7 +28,7 @@ class HIVStatusModule:
         hiv_status = self._prob_HIV_initial(population[col.AGE]) > rng.random(len(population))
         return hiv_status
 
-    def calculate_partner_risk_vectors(self, population):
+    def update_partner_risk_vectors(self, population):
         """calculate the risk factor associated with each sex and age group"""
         # Should we be using for loops here or can we do better? 
         for sex in SexType:
@@ -39,8 +39,11 @@ class HIVStatusModule:
                 n_infected = sum(sub_pop[col.HIV_STATUS == True])
                 self.stp_risk_vectors[sex][age_group] = n_total/n_infected  # need to double check this definition
 
-    def num_infected_partners(self, num_partners, sex, partner_age_groups):
-        """Calculates the number of infected short term partners"""
+    def num_infected_partners(self, sex, partner_age_groups):
+        """Calculates the number of infected short term partners for an individual"""
+        # if we allow we partners to be different ages, then partner_age_groups can be very individualised 
+        # and thus might not be able to see the speed up benefit that we've had from using groupby and transform
+        # We could use this function with apply but it might be on the slow side 
         infected_partners = sum([rng.random() < self.stp_risk_vectors[sex, age] for age in partner_age_groups])
         return infected_partners
 
