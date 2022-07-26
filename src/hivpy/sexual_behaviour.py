@@ -52,6 +52,8 @@ class SexualBehaviourModule:
         self.risk_categories = len(self.age_based_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
+        self.risk_max_age = 65
+        self.age_limits = [self.risk_min_age + n*self.risk_age_grouping for n in range((self.risk_max_age - self.risk_min_age)/self.risk_age_grouping)]
         self.sex_mixing_matrix = {
             SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
             SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
@@ -273,3 +275,16 @@ class SexualBehaviourModule:
         else:
             population.loc[men, col.RRED_BALANCE] = 1/rred_balance
             population.loc[women, col.RRED_BALANCE] = rred_balance
+
+    def get_stp_ages(self, sex, age, num_stp):
+        """Calculate the ages of a persons short term partners
+        from the mixing matrices."""
+        mixing_matrix = self.sex_mixing_matrix[sex]
+        age_group = np.digitize(age, self.age_limits)  # should we centralise age grouping so we know it's available for different modules
+        stp_age_probs = mixing_matrix[age_group]
+        # Do we want: indices, lower limits, or real ages? 
+        age_indices = rng.choice(range(len(self.age_limits)), num_stp, p=stp_age_probs)  # get age index of partners
+        low_lims = self.age_limits[age_indices]
+        # low_lims = rng.choice(self.age_limits, num_stp, p=stp_age_probs)  # get the lower age limit of each partner
+        stp_ages = [lim + rng.random()*self.risk_age_grouping for lim in low_lims]  # linearly interpolate to real ages 
+        return (low_lims, stp_ages)
