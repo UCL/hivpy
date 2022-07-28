@@ -48,7 +48,14 @@ def selector(population, **kwargs):
 
 
 def transform_group(df, param_list, func, use_size=True):
-    """Groups the data by a list of parameters and applies a function to each grouping"""
+    """Groups the data by a list of parameters and applies a function to each grouping. \n
+    `param_list` is a list of names of columns by which you want to group the data. The order must
+    match the order of arguments taken by the function `func` \n
+    `func` is a function which takes the values of those columns for a group (and optionally the
+    size of the group, which should be the last argument) and returns a value or array of values of
+    the size of the group. \n
+    `use_size` is true by default, but should be set to false if `func` does not take the size of
+    the group as an argument."""
     # HIV_STATUS is just a dummy column to allow us to use the transform method
     def general_func(g):
         args = list(g.name)
