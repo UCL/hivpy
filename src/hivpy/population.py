@@ -1,12 +1,9 @@
 import datetime
-import functools
-from typing import Callable, Dict
 
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
