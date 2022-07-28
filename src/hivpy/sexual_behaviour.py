@@ -7,7 +7,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import SexType, rng, selector
+from .common import SexType, rng, selector, diff_years
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -73,6 +73,10 @@ class SexualBehaviourModule:
         self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
         self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
+
+        self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
+        self.annual_ltp_rate_change = rng.choice([0.8, 0.9, 0.95, 1.0])
+        self.ltp_rate_change = 1.0
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -229,13 +233,12 @@ class SexualBehaviourModule:
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
         if(date1995 < date <= date2000):
-            # there ought to be a better way to get the fractional number of years
-            dt = (date - date1995) / datetime.timedelta(days=365.25)
+            dt = diff_years(date1995, date)
             self.rred_population = yearly_change_90s**dt
         elif(date2000 < date < date2010):
             self.rred_population = yearly_change_90s**5
         elif(date2010 < date < date2021):
-            dt = (date - date2010) / datetime.timedelta(days=365.25)
+            dt = diff_years(date2010, date)
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
         elif(date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
@@ -277,3 +280,58 @@ class SexualBehaviourModule:
         else:
             population.loc[men, col.RRED_BALANCE] = 1/rred_balance
             population.loc[women, col.RRED_BALANCE] = rred_balance
+
+    def update_ltp_rate_change(self, date):
+        if date1995 < date < date2000:
+            dt = diff_years(date1995, date)
+            self.ltp_rate_change = self.annual_ltp_rate_change**(dt)
+        elif date >= date2000:
+            self.ltp_rate_change = self.annual_ltp_rate_change**5
+            # don't really need to keep updating after 2000
+
+    def start_new_ltp(self, date, age, size):
+        ltp_rands = rng.random(size=size)
+        rate_modifier = 1
+        if(35 <= age < 45):
+            rate_modifier = 0.5
+        elif(45 <= age < 55):
+            rate_modifier = 1/3
+        else: 
+            rate_modifier = 0.2
+        new_relationship = ltp_rands < (self.new_ltp_rate * rate_modifier)
+        num_new_ltp = sum(new_relationship)
+        
+        longevity = np.zeros(sum(num_new_ltp))  # ecah new relationship needs a longevity
+        longevity_rands = rng.random(size=num_new_ltp)
+        if(age < 45):
+            longevity = ((longevity_rands < 0.3) * 1 +
+                        (0.3 <= longevity_rands & longevity_rands < 0.6) * 2 +
+                        (0.6 <= longevity_rands) * 3)
+        elif(age < 55):
+            longevity = ((longevity_rands < 0.3) * 1 +
+                       (0.3 <= longevity_rands & longevity_rands < 0.8) * 2 +
+                        (0.8 <= longevity_rands) * 3)
+        else:
+            longevity = ((longevity_rands < 0.3) * 1 +
+                        (0.3 <= longevity_rands) * 2)
+        return (new_relationship, longevity)
+    
+    def end_ltp(self, age, longevity):
+        return
+
+    def update_long_term_partners(self, population):
+        partnerless_idx = population.data[(population.data[col.LONG_TERM_PARTNER] == False) &
+                                          (population.data[col.AGE] >=15) &
+                                          (population.data[col.AGE] < 65)] 
+
+        partnered_idx = population.data[(population.data[col.LONG_TERM_PARTNER] == True) &
+                                          (population.data[col.AGE] >=15) &
+                                          (population.data[col.AGE] < 65)] 
+
+        # new relationships
+        (new_relationships, longevity) = population.transform_group([col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
+        population.data.loc[partnerless_idx] = new_relationships
+        population.data.loc[partnerless_idx, col.LONG_TERM_PARTNER==True] = longevity  # indexing here might be wrong?
+
+        # ending relationships
+        end_relationships = population.transform_group()
