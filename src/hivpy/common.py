@@ -8,13 +8,11 @@ from functools import reduce
 import numpy as np
 import scipy.stats as stat
 
-import hivpy.column_names as col
-
 
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
         N = len(vals)
-        if(len(probs) != N):
+        if (len(probs) != N):
             raise Exception
         index_range = np.arange(0, N, 1)
         self.data = vals

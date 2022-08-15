@@ -10,7 +10,7 @@ class SexualBehaviourData:
     """Class to hold and interpret sexual behaviour data loaded from the yaml file"""
 
     def _setup_probabilty_dist(self, prob_dict):
-        if("Range" in prob_dict):
+        if ("Range" in prob_dict):
             min = prob_dict["Range"][0]
             max = prob_dict["Range"][1]
             N = max - min + 1

@@ -39,9 +39,9 @@ class StepwiseAgeDistribution:
     @classmethod
     def select_model(cls, inc_cat):
         assert inc_cat in [1, 2, 3]
-        if(inc_cat == 1):
+        if (inc_cat == 1):
             return cls(cls.stepwise_boundaries, cls.stepwise_model1)
-        elif(inc_cat == 2):
+        elif (inc_cat == 2):
             return cls(cls.stepwise_boundaries, cls.stepwise_model2)
         else:
             return cls(cls.stepwise_boundaries, cls.stepwise_model3)
@@ -49,9 +49,9 @@ class StepwiseAgeDistribution:
     # Generate cumulative probabilites from stepwise distribution
     def _gen_cumulative_prob(self):
         N = self.probability_list.size
-        if(not np.isclose(sum(self.probability_list), 1.0, atol=1e-10, equal_nan=False)):
+        if (not np.isclose(sum(self.probability_list), 1.0, atol=1e-10, equal_nan=False)):
             raise SimulationException("Age probability distribution does not sum to one.")
-        if(any(self.probability_list <= 0)):
+        if (any(self.probability_list <= 0)):
             raise SimulationException(f"Probability density cannot be negative anywhere: \
                                       {self.probability_list}")
         CP = np.cumsum(self.probability_list)
@@ -116,7 +116,7 @@ class ContinuousAgeDistribution:
     def __init__(self, min_age, max_age, modelParams):
         self.min_age = min_age
         model_age_limit = -modelParams[1]/modelParams[0]
-        if(max_age > model_age_limit):
+        if (max_age > model_age_limit):
             logging.getLogger("Demographics").warning(f"Max age exceeds the maximum age limit for "
                                                       f"this model (negative probability). "
                                                       f"Adjusting max age to {model_age_limit}")
@@ -127,9 +127,9 @@ class ContinuousAgeDistribution:
 
     @classmethod
     def select_model(cls, inc_cat):
-        if(inc_cat == 1):
+        if (inc_cat == 1):
             return cls(-68, 65, cls.modelParams1)
-        elif(inc_cat == 2):
+        elif (inc_cat == 2):
             return cls(-68, 65, cls.modelParams2)
         else:
             return cls(-68, 65, *cls.modelParams3)
@@ -188,14 +188,14 @@ class DemographicsModule:
         return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
 
     def initialise_age(self, count):
-        if(self.params['use_stepwise_ages'] is True):
+        if (self.params['use_stepwise_ages'] is True):
             age_distribution = StepwiseAgeDistribution.select_model(self.params['inc_cat'])
         else:
             age_distribution = ContinuousAgeDistribution.select_model(self.params['inc_cat'])
 
         return age_distribution.gen_ages(count)
 
-    def _probability_of_death(self, sex, age_group) -> float:
+    def _probability_of_death(self, sex: SexType, age_group: int) -> float:
         rate = self.params["death_rates"][sex][age_group]
         # Probability of dying, assuming time step of 3 months
         prob_of_death = 1 - exp(-rate / 4)

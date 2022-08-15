@@ -1,6 +1,5 @@
 import datetime
 import functools
-from typing import Callable, Dict
 
 import pandas as pd
 
@@ -18,7 +17,6 @@ class Population:
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
     date: datetime.date  # current date
-    attributes: Dict[str, Callable]  # aggregate measures across the population
 
     def __init__(self, size, start_date):
         """Initialise a population of the given size."""
@@ -29,7 +27,6 @@ class Population:
         self.hiv_status = HIVStatusModule()
         self._sample_parameters()
         self._create_population_data()
-        self._create_attributes()
 
     def _sample_parameters(self):
         """Randomly determine the uncertain population-level parameters."""
@@ -92,7 +89,7 @@ class Population:
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
             args = list(g.name)
-            if(use_size):
+            if (use_size):
                 args.append(g.size)
             return func(*args)
         if "sub_pop" in kwargs.keys():

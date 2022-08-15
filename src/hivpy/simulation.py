@@ -65,7 +65,7 @@ class SimulationOutput:
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             age_idx = (pop_data["age"] >= age_bound) & (
                 pop_data["age"] < (age_bound + self.age_step))
-            if(key not in self.output_stats.keys()):
+            if (key not in self.output_stats.keys()):
                 self._init_output_field(key, 0.0)
             self.output_stats[key][self.step] = self._ratio(HIV_pos_idx & age_idx, age_idx)
 
