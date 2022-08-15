@@ -35,7 +35,7 @@ def check_prob_sums(sex, trans_matrix):
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
             tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)
-        assert(np.allclose(tot_prob, 1.0))
+        assert (np.allclose(tot_prob, 1.0))
 
 
 def test_transition_probabilities(yaml_data):
@@ -107,7 +107,7 @@ def test_behaviour_updates():
     for i in range(500):
         pop.sexual_behaviour.update_sex_groups(pop.data)
     subsequent_groupings = pop.data["sex_behaviour"]
-    assert(any(initial_groupings != subsequent_groupings))
+    assert (any(initial_groupings != subsequent_groupings))
 
 
 def test_initial_sex_behaviour_groups(yaml_data):
@@ -275,7 +275,7 @@ def test_rred_population():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     SBM.init_risk_factors(pop.data)
-    assert(SBM.rred_population == 1)
+    assert (SBM.rred_population == 1)
     pop.date = date(1995, 1, 1)
     SBM.update_rred(pop)
     assert np.isclose(SBM.rred_population, 1)
@@ -321,9 +321,9 @@ def test_rred_personal():
         count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
         count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold
         assert all([x == 1 or x == 1e-5 for x in pop.data["rred_personal"]])
-    assert(1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
-    assert(1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
-    assert(1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
+    assert (1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
+    assert (1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
+    assert (1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
 
 
 def test_rred_age():
