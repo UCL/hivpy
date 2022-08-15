@@ -59,7 +59,7 @@ def transform_group(df, param_list, func, use_size=True):
     # HIV_STATUS is just a dummy column to allow us to use the transform method
     def general_func(g):
         args = list(g.name)
-        if(use_size):
+        if (use_size):
             args.append(g.size)
         return func(*args)
     return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)

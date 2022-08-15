@@ -64,7 +64,7 @@ def test_sex_behaviour_transition(yaml_data):
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
                 E = p * N * sex_ratio[s]
                 sig = np.sqrt(E * (1-p))
-                assert(E - 10*sig <= num <= E + 10*sig)
+                assert (E - 10*sig <= num <= E + 10*sig)
 
 
 def check_num_partners(row):
@@ -94,7 +94,7 @@ def test_num_partners():
     """Check that number of partners are reasonable"""
     pop = Population(size=100000, start_date=date(1989, 1, 1))
     pop.sexual_behaviour.num_short_term_partners(pop.data)
-    assert(any(pop.data["num_partners"] > 0))
+    assert (any(pop.data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
     assert np.all(checks)
