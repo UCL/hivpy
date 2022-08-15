@@ -1,11 +1,9 @@
 import datetime
-import functools
 
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
@@ -54,35 +52,6 @@ class Population:
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
-
-    def _create_attributes(self):
-        """Determine what aggregate measures can be computed and how."""
-        attributes = {}
-
-        # Helper functions
-        def count_alive(population_data):
-            """Count how many people don't have a set date of death yet."""
-            return self.size - population_data.date_of_death.count()
-
-        def count_sex_alive(population_data, sex):
-            """Count how many people of the given sex are alive."""
-            assert sex in SexType
-            # Should also make sure they are alive! (always true for now)
-            alive = population_data.date_of_death is not None
-            return population_data[alive].sex.value_counts()[sex]
-
-        attributes["num_alive"] = count_alive
-        attributes["num_male"] = functools.partial(count_sex_alive, sex="male")
-        attributes["num_female"] = functools.partial(count_sex_alive, sex="female")
-        self.attributes = attributes
-
-    def has_attribute(self, attribute_name):
-        """Return whether the named attribute exists in the population."""
-        return attribute_name in self.attributes
-
-    def get(self, attribute_name):
-        """Get the value of the named attribute at the current date."""
-        return self.attributes[attribute_name](self.data)
 
     def transform_group(self, param_list, func, use_size=True, **kwargs):
         """Groups the data by a list of parameters and applies a function to each grouping"""
