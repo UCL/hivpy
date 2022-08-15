@@ -102,7 +102,7 @@ class SexualBehaviourModule:
 
         denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
 
-        if(j == 0):
+        if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
             Probability = rred*transition_matrix[i][j] / denominator
@@ -163,7 +163,7 @@ class SexualBehaviourModule:
         self.update_rred_population(population.date)
         self.update_rred_age(population.data)
         self.update_rred_long_term_partnered(population.data)
-        if(self.use_rred_art_adherence):
+        if (self.use_rred_art_adherence):
             self.update_rred_art_adherence(population.data)
         population.data[col.RRED] = (self.new_partner_factor *
                                      population.data[col.RRED_AGE] *
@@ -179,7 +179,7 @@ class SexualBehaviourModule:
         pop_data[col.RRED_ART_ADHERENCE] = 1
 
     def update_rred_art_adherence(self, pop_data):
-        if("art_adherence" in pop_data.columns):
+        if ("art_adherence" in pop_data.columns):
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, col.RRED_ART_ADHERENCE] = self.rred_art_adherence
 
@@ -192,7 +192,7 @@ class SexualBehaviourModule:
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data[col.RRED_LTP] = 1  # Unpartnered people
-        if("partnered" in pop_data.columns):
+        if ("partnered" in pop_data.columns):
             partnered_idx = selector(pop_data, partnered=(operator.eq, True))
             pop_data.loc[partnered_idx, col.RRED_LTP] = self.ltp_risk_factor
             # This might be more efficient, but is also a bit obscure
@@ -224,16 +224,16 @@ class SexualBehaviourModule:
     def update_rred_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
-        if(date1995 < date <= date2000):
+        if (date1995 < date <= date2000):
             # there ought to be a better way to get the fractional number of years
             dt = (date - date1995) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**dt
-        elif(date2000 < date < date2010):
+        elif (date2000 < date < date2010):
             self.rred_population = yearly_change_90s**5
-        elif(date2010 < date < date2021):
+        elif (date2010 < date < date2021):
             dt = (date - date2010) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
-        elif(date2021 < date):
+        elif (date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_rred_diagnosis(self, population):
