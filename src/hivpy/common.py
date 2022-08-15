@@ -8,6 +8,8 @@ from functools import reduce
 import numpy as np
 import scipy.stats as stat
 
+import hivpy.column_names as col
+
 
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
@@ -43,6 +45,24 @@ def selector(population, **kwargs):
     index = reduce(operator.and_,
                    (op(population[kw], val) for kw, (op, val) in kwargs.items()))
     return index
+
+
+def transform_group(df, param_list, func, use_size=True):
+    """Groups the data by a list of parameters and applies a function to each grouping. \n
+    `param_list` is a list of names of columns by which you want to group the data. The order must
+    match the order of arguments taken by the function `func` \n
+    `func` is a function which takes the values of those columns for a group (and optionally the
+    size of the group, which should be the last argument) and returns a value or array of values of
+    the size of the group. \n
+    `use_size` is true by default, but should be set to false if `func` does not take the size of
+    the group as an argument."""
+    # HIV_STATUS is just a dummy column to allow us to use the transform method
+    def general_func(g):
+        args = list(g.name)
+        if (use_size):
+            args.append(g.size)
+        return func(*args)
+    return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
 
 
 def between(values, limits):

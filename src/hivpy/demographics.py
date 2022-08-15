@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng
+from hivpy.common import SexType, rng, transform_group
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
@@ -201,14 +201,14 @@ class DemographicsModule:
         prob_of_death = 1 - exp(-rate / 4)
         return prob_of_death
 
-    def determine_deaths(self, population_data: pd.DataFrame) -> pd.Series:
+    def determine_deaths(self, pop_data: pd.DataFrame) -> pd.Series:
         """Get which individuals die in a time step, as a boolean Series."""
         # This binning should perhaps happen when the date advances
         # Age groups are the same regardless of sex
         age_limits = self.data.death_age_limits
-        population_data[col.AGE_GROUP] = np.digitize(population_data.age, age_limits)
+        pop_data[col.AGE_GROUP] = np.digitize(pop_data[col.AGE], age_limits)
 
-        death_probs = population_data.groupby([col.SEX, col.AGE_GROUP]).age.transform(
-            lambda group: self._probability_of_death(group.name[0], group.name[1]))
-        rands = rng.random(len(population_data))
-        return population_data.date_of_death.isnull() & (rands < death_probs)
+        death_probs = transform_group(pop_data, [col.SEX, col.AGE_GROUP],
+                                      self._probability_of_death, use_size=False)
+        rands = rng.random(len(pop_data))
+        return pop_data.date_of_death.isnull() & (rands < death_probs)
