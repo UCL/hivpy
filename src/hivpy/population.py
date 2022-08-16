@@ -53,16 +53,26 @@ class Population:
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
 
-    def transform_group(self, param_list, func, use_size=True, **kwargs):
-        """Groups the data by a list of parameters and applies a function to each grouping"""
+    def transform_group(self, param_list, func, use_size=True, sub_pop=None):
+        """Groups the data by a list of parameters and applies a function to each grouping. \n
+        `param_list` is a list of names of columns by which you want to group the data. The order
+        must match the order of arguments taken by the function `func` \n
+        `func` is a function which takes the values of those columns for a group (and optionally
+        the size of the group, which should be the last argument) and returns a value or array of
+        values of the size of the group. \n
+        `use_size` is true by default, but should be set to false if `func` does not take the size
+        of the group as an argument. \n
+        `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
+        If `sub_pop` is defined, then it acts only on the part of the dataframe defined
+        by `data.loc[sub_pop]`"""
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
             args = list(g.name)
             if (use_size):
                 args.append(g.size)
             return func(*args)
-        if "sub_pop" in kwargs.keys():
-            df = self.data.loc[kwargs["sub_pop"]]
+        if sub_pop is not None:
+            df = self.data.loc[sub_pop]
         else:
             df = self.data
         return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
