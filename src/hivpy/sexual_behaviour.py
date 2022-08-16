@@ -4,7 +4,6 @@ import operator
 from enum import IntEnum
 
 import numpy as np
-import pandas as pd
 
 import hivpy.column_names as col
 
@@ -82,17 +81,18 @@ class SexualBehaviourModule:
                           self.risk_age_grouping, self.risk_categories)
 
     def update_sex_behaviour(self, population):
-        self.num_short_term_partners(population.data)
-        self.update_sex_groups(population.data)
+        self.num_short_term_partners(population)
+        self.update_sex_groups(population)
         self.update_rred(population)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
     def init_sex_behaviour_groups(self, population):
+        population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
         for sex in SexType:
             index = selector(population, sex=(operator.eq, sex))
             n_sex = sum(index)
-            population.loc[index, "sex_behaviour"] = self.init_sex_behaviour_probs[sex].sample(
+            population.loc[index, col.SEX_BEHAVIOUR] = self.init_sex_behaviour_probs[sex].sample(
                 size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
@@ -104,44 +104,48 @@ class SexualBehaviourModule:
 
         denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
 
-        if(j == 0):
+        if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
             Probability = rred*transition_matrix[i][j] / denominator
 
         return Probability
 
-    def num_short_term_partners(self, population: pd.DataFrame):
-        for sex in SexType:
-            for g in SexBehaviours[sex]:
-                index = selector(population, sex=(operator.eq, sex),
-                                 sex_behaviour=(operator.eq, g),
-                                 age=(operator.gt, 15))
-                population.loc[index, col.NUM_PARTNERS] = (
-                    self.short_term_partners[sex][g].sample(size=sum(index)))
+    def get_partners_for_group(self, sex, group, size):
+        """Calculates the number of short term partners for people in a given intersection of
+        sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group]"""
+        group = int(group)
+        return self.short_term_partners[sex][group].sample(size)
 
-    def update_sex_groups(self, population: pd.DataFrame):
+    def num_short_term_partners(self, population):
+        """Calculate the number of short term partners for the whole population"""
+        # can we avoid doing population.loc[active_pop] twice? Does it waste time?
+        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        num_partners = population.transform_group(
+            [col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group, sub_pop=active_pop)
+        population.data.loc[active_pop, col.NUM_PARTNERS] = num_partners
+
+    def _assign_new_sex_group(self, sex, group, rred, size):
+        group = int(group)
+        rands = rng.uniform(0.0, 1.0, size)
+        dim = self.sex_behaviour_trans[sex].shape[0]
+        Pmin = np.zeros(size)
+        Pmax = np.zeros(size)
+        new_groups = np.zeros(size)
+        for new_group in range(dim):
+            Pmin = Pmax.copy()
+            Pmax += self.prob_transition(sex, rred, group, new_group)
+            new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
+        return new_groups
+
+    def update_sex_groups(self, population):
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        for sex in SexType:
-            for prev_group in SexBehaviours[sex]:
-                index = selector(population, sex=(operator.eq, sex), sex_behaviour=(
-                    operator.eq, prev_group), age=(operator.ge, 15))
-                if any(index):
-                    subpop_size = sum(index)
-                    rands = rng.uniform(0.0, 1.0, subpop_size)
-                    rred = population.loc[index, col.RRED]
-                    dim = self.sex_behaviour_trans[sex].shape[0]
-                    Pmin = np.zeros(subpop_size)
-                    Pmax = np.zeros(subpop_size)
-                    for new_group in range(dim):
-                        Pmin = Pmax.copy()
-                        Pmax += self.prob_transition(sex, rred, prev_group, new_group)
-                        # This has to be a Series so it can be combined with index correctly
-                        jump_to_new_group = pd.Series(
-                            (rands >= Pmin) & (rands < Pmax), index=rred.index)
-                        population.loc[index & jump_to_new_group, "sex_behaviour"] = new_group
+        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        new_groups = population.transform_group(
+            [col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group, sub_pop=active_pop)
+        population.data.loc[active_pop, col.SEX_BEHAVIOUR] = new_groups
 
     # risk reduction factors
     def init_risk_factors(self, pop_data):
@@ -165,7 +169,7 @@ class SexualBehaviourModule:
         self.update_rred_population(population.date)
         self.update_rred_age(population.data)
         self.update_rred_long_term_partnered(population.data)
-        if(self.use_rred_art_adherence):
+        if (self.use_rred_art_adherence):
             self.update_rred_art_adherence(population.data)
         population.data[col.RRED] = (self.new_partner_factor *
                                      population.data[col.RRED_AGE] *
@@ -181,7 +185,7 @@ class SexualBehaviourModule:
         pop_data[col.RRED_ART_ADHERENCE] = 1
 
     def update_rred_art_adherence(self, pop_data):
-        if("art_adherence" in pop_data.columns):
+        if ("art_adherence" in pop_data.columns):
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, col.RRED_ART_ADHERENCE] = self.rred_art_adherence
 
@@ -194,7 +198,7 @@ class SexualBehaviourModule:
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data[col.RRED_LTP] = 1  # Unpartnered people
-        if("partnered" in pop_data.columns):
+        if ("partnered" in pop_data.columns):
             partnered_idx = selector(pop_data, partnered=(operator.eq, True))
             pop_data.loc[partnered_idx, col.RRED_LTP] = self.ltp_risk_factor
             # This might be more efficient, but is also a bit obscure
@@ -226,16 +230,16 @@ class SexualBehaviourModule:
     def update_rred_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
-        if(date1995 < date <= date2000):
+        if (date1995 < date <= date2000):
             # there ought to be a better way to get the fractional number of years
             dt = (date - date1995) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**dt
-        elif(date2000 < date < date2010):
+        elif (date2000 < date < date2010):
             self.rred_population = yearly_change_90s**5
-        elif(date2010 < date < date2021):
+        elif (date2010 < date < date2021):
             dt = (date - date2010) / datetime.timedelta(days=365.25)
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
-        elif(date2021 < date):
+        elif (date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_rred_diagnosis(self, population):

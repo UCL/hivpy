@@ -34,9 +34,9 @@ class OutputHandler:
     def _commit_data(self, fileId, data, write_mode):
         if fileId not in self.files:
             raise OutputException(f"File matching {fileId} does not exist.")
-        if(isinstance(data, pd.DataFrame)):
+        if (isinstance(data, pd.DataFrame)):
             data.to_csv(self.files[fileId], mode=write_mode)
-        elif(isinstance(data, np.ndarray)):
+        elif (isinstance(data, np.ndarray)):
             with open(self.files[fileId], write_mode) as outfile:
                 np.savetxt(outfile, data, delimiter=",")
 
