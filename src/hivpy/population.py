@@ -8,6 +8,8 @@ from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
 
+HIV_APPEARANCE = datetime.date(1989, 1, 1)
+
 
 class Population:
     """A set of individuals with particular characteristics."""
@@ -15,6 +17,7 @@ class Population:
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
     date: datetime.date  # current date
+    HIV_introduced: bool  # whether HIV has been introduced yet
 
     def __init__(self, size, start_date):
         """Initialise a population of the given size."""
@@ -23,6 +26,7 @@ class Population:
         self.demographics = DemographicsModule()
         self.sexual_behaviour = SexualBehaviourModule()
         self.hiv_status = HIVStatusModule()
+        self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
 
@@ -89,6 +93,12 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self.data)
+
+        # If we are at the start of the epidemic, introduce HIV into the population.
+        if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
+            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.HIV_introduced = True
+
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step

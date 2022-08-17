@@ -1,6 +1,5 @@
 import operator
 
-import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
@@ -10,18 +9,24 @@ from .sexual_behaviour import selector
 
 
 class HIVStatusModule:
-    hiv_a = -0.00016  # placeholder value for now
-    hiv_b = 0.0128    # placeholder value for now
-    hiv_c = -0.156    # placeholder value for now
-
-    def _prob_HIV_initial(self, age):
-        """Completely arbitrary placeholder function for initial HIV presence in population"""
-        return 2*np.clip(self.hiv_a*age**2 + self.hiv_b*age + self.hiv_c, 0.0, 1.0)
+    initial_hiv_newp_threshold = 7  # lower limit for HIV infection at start of epidemic
+    initial_hiv_prob = 0.8  # for those with enough partners at start of epidemic
 
     def initial_HIV_status(self, population: pd.DataFrame):
-        """Initialise HIV status based on age (& sex?)"""
-        """Assume zero prevalence for age < 15"""
-        hiv_status = self._prob_HIV_initial(population[col.AGE]) > rng.random(len(population))
+        """Initialise HIV status at the start of the simulation to no infections."""
+        # This may be useful as a separate method if we end up representing status
+        # as something more complex than a boolean, e.g. an enum.
+        return pd.Series(False, population.index)
+
+    def introduce_HIV(self, population: pd.DataFrame):
+        """Initialise HIV status at the start of the pandemic."""
+        # At the start of the epidemic, we consider only people with short-term partners over
+        # the threshold as potentially infected.
+        initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
+        # Each of them has the same probability of being infected.
+        initial_infection = rng.uniform(size=initial_candidates.sum()) < self.initial_hiv_prob
+        hiv_status = pd.Series(False, index=population.index)
+        hiv_status.loc[initial_candidates] = initial_infection
         return hiv_status
 
     def update_HIV_status(self, population: pd.DataFrame):
