@@ -2,23 +2,34 @@ import operator
 from datetime import date
 
 import pandas as pd
+import pytest
 
+import hivpy.column_names as col
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 from hivpy.sexual_behaviour import selector
 
 
-def test_initial_hiv():
-    """Check no one under 15 or over 65 has HIV initially, but some people do"""
+def test_initial_hiv_threshold():
+    """Check that HIV is initially introduced only to those with high enough newp."""
     pop = Population(size=1000, start_date=date(1989, 1, 1)).data
     HIV_module = HIVStatusModule()
-    pop["HIV_status"] = HIV_module.initial_HIV_status(pop)
-    index_young = selector(pop, HIV_status=(operator.eq, True), age=(operator.le, 15))
-    assert not any(index_young)
-    index_old = selector(pop, HIV_status=(operator.eq, True), age=(operator.ge, 65))
-    assert not any(index_old)
-    index_pos = selector(pop, HIV_status=(operator.eq, True))
-    assert any(index_pos)
+    HIV_module.initial_hiv_prob = 1  # all candidates would be seeded with HIV
+    pop[col.NUM_PARTNERS] = HIV_module.initial_hiv_newp_threshold - 1
+    initial_status = HIV_module.introduce_HIV(pop)
+    assert not any(initial_status)
+
+
+def test_initial_hiv_probability():
+    """Check that HIV is initially assigned with the specified probability."""
+    pop = Population(size=1000, start_date=date(1989, 1, 1)).data
+    HIV_module = HIVStatusModule()
+    # Have everyone be a candidate for initial introduction
+    pop[col.NUM_PARTNERS] = HIV_module.initial_hiv_newp_threshold
+    expected_infections = HIV_module.initial_hiv_prob * len(pop)
+    initial_status = HIV_module.introduce_HIV(pop)
+    # TODO Could check against variance of binomial distribution, see issue #45
+    assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)
 
 
 def test_hiv_update():
