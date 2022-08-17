@@ -39,7 +39,7 @@ class HIVStatusModule:
         HIV_neg_idx = selector(population, HIV_status=(operator.eq, False))
         rands = rng.uniform(0.0, 1.0, sum(HIV_neg_idx))
         HIV_prevalence = sum(population[col.HIV_STATUS])/len(population)
-        HIV_infection_risk = 0.1  # made up, based loosely on transmission probabilities
+        HIV_infection_risk = 0.2  # made up, based loosely on transmission probabilities
         n_partners = population.loc[HIV_neg_idx, col.NUM_PARTNERS]
         HIV_prob = 1-((1-HIV_prevalence*HIV_infection_risk)**n_partners)
         population.loc[HIV_neg_idx, col.HIV_STATUS] = (rands <= HIV_prob)

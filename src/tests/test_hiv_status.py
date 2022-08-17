@@ -10,6 +10,16 @@ from hivpy.population import Population
 from hivpy.sexual_behaviour import selector
 
 
+@pytest.fixture
+def pop_with_hiv():
+    pop_size = 100000
+    pop = Population(size=pop_size, start_date=date(1989, 1, 1))
+    # Wait a few months so more people are positive
+    for _ in range(5):
+        pop.evolve(timedelta(days=30))
+    return pop
+
+
 def test_initial_hiv_threshold():
     """Check that HIV is initially introduced only to those with high enough newp."""
     pop = Population(size=1000, start_date=date(1989, 1, 1)).data
@@ -46,15 +56,13 @@ def test_HIV_introduced_only_once(mocker):
     spy.assert_called_once()
 
 
-def test_hiv_update():
+def test_hiv_update(pop_with_hiv):
     pd.set_option('display.max_columns', None)
-    pop_size = 100000
-    pop = Population(size=pop_size, start_date=date(1989, 1, 1))
-    data = pop.data
+    data = pop_with_hiv.data
     prev_status = data["HIV_status"].copy()
 
     for i in range(10):
-        pop.hiv_status.update_HIV_status(pop.data)
+        pop_with_hiv.hiv_status.update_HIV_status(pop_with_hiv.data)
 
     new_cases = data["HIV_status"] & (~ prev_status)
     miracles = (~ data["HIV_status"]) & (prev_status)
