@@ -1,5 +1,5 @@
 import operator
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 import pytest
@@ -30,6 +30,20 @@ def test_initial_hiv_probability():
     initial_status = HIV_module.introduce_HIV(pop)
     # TODO Could check against variance of binomial distribution, see issue #45
     assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)
+
+
+def test_HIV_introduced_only_once(mocker):
+    """Check that we do not initialise HIV status repeatedly."""
+    pop = Population(size=1000, start_date=date(1988, 12, 1))
+    spy = mocker.spy(pop.hiv_status, "introduce_HIV")
+    pop.evolve(timedelta(days=31))
+    spy.assert_not_called()
+    # Starting from 1989/1/1, so HIV should now be introduced...
+    pop.evolve(timedelta(days=31))
+    spy.assert_called_once()
+    # ...but should not be repeated at the next time step
+    pop.evolve(timedelta(days=31))
+    spy.assert_called_once()
 
 
 def test_hiv_update():
