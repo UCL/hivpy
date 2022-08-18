@@ -52,7 +52,10 @@ class SexualBehaviourModule:
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
         self.risk_max_age = 65
-        self.age_limits = [self.risk_min_age + n*self.risk_age_grouping for n in range((self.risk_max_age - self.risk_min_age)/self.risk_age_grouping)]
+        self.sex_mix_age_grouping = 10 
+        self.sex_mix_age_groups = np.arange(self.risk_min_age, self.risk_max_age, self.sex_mix_age_grouping)
+        self.num_sex_mix_groups = len(self.sex_mix_age_groups)
+        self.age_limits = [self.risk_min_age + n*self.risk_age_grouping for n in range((self.risk_max_age - self.risk_min_age)//self.risk_age_grouping)]
         self.sex_mixing_matrix = {
             SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
             SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
@@ -82,6 +85,7 @@ class SexualBehaviourModule:
 
     def update_sex_behaviour(self, population):
         self.num_short_term_partners(population)
+        self.assign_stp_ages(population)
         self.update_sex_groups(population)
         self.update_rred(population)
 
@@ -280,15 +284,15 @@ class SexualBehaviourModule:
             population.loc[men, col.RRED_BALANCE] = 1/rred_balance
             population.loc[women, col.RRED_BALANCE] = rred_balance
 
-    def get_stp_ages(self, sex, age, num_stp):
+    def gen_stp_ages(self, sex, age_group, num_partners, size):
+        stp_age_probs = self.sex_mixing_matrix[sex][age_group]
+        stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
+        return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
+
+    def assign_stp_ages(self, population):
         """Calculate the ages of a persons short term partners
         from the mixing matrices."""
-        mixing_matrix = self.sex_mixing_matrix[sex]
-        age_group = np.digitize(age, self.age_limits)  # should we centralise age grouping so we know it's available for different modules
-        stp_age_probs = mixing_matrix[age_group]
-        # Do we want: indices, lower limits, or real ages? 
-        age_indices = rng.choice(range(len(self.age_limits)), num_stp, p=stp_age_probs)  # get age index of partners
-        low_lims = self.age_limits[age_indices]
-        # low_lims = rng.choice(self.age_limits, num_stp, p=stp_age_probs)  # get the lower age limit of each partner
-        stp_ages = [lim + rng.random()*self.risk_age_grouping for lim in low_lims]  # linearly interpolate to real ages 
-        return (low_lims, stp_ages)
+        population.data[col.SEX_MIX_AGE_GROUP] = np.digitize(population.data[col.AGE], self.sex_mix_age_groups) - 1
+        active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]  # only select people with STPs
+        STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS], self.gen_stp_ages, sub_pop=active_pop)
+        population.data.loc[active_pop, col.STP_AGE_GROUPS] = STP_groups
