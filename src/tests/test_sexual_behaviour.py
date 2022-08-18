@@ -58,7 +58,7 @@ def test_sex_behaviour_transition(yaml_data):
     for s in SexType:
         for g in SexBehaviours[s]:
             pop.data.loc[pop.data[col.SEX] == s, col.SEX_BEHAVIOUR] = g
-            pop.sexual_behaviour.update_sex_groups(pop.data)
+            pop.sexual_behaviour.update_sex_groups(pop)
             for g2 in SexBehaviours[s]:
                 num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2) & (pop.data[col.SEX] == s)])
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
@@ -93,7 +93,7 @@ def check_num_partners(row):
 def test_num_partners():
     """Check that number of partners are reasonable"""
     pop = Population(size=100000, start_date=date(1989, 1, 1))
-    pop.sexual_behaviour.num_short_term_partners(pop.data)
+    pop.sexual_behaviour.num_short_term_partners(pop)
     assert (any(pop.data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
@@ -105,7 +105,7 @@ def test_behaviour_updates():
     pop = Population(size=1000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
     for i in range(500):
-        pop.sexual_behaviour.update_sex_groups(pop.data)
+        pop.sexual_behaviour.update_sex_groups(pop)
     subsequent_groupings = pop.data["sex_behaviour"]
     assert (any(initial_groupings != subsequent_groupings))
 
