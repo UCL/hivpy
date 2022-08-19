@@ -1,6 +1,7 @@
 import operator
 from datetime import date, timedelta
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -20,14 +21,21 @@ def pop_with_hiv():
     return pop
 
 
-def test_initial_hiv_threshold():
+@pytest.mark.parametrize("pop_percentage", [0.4, 0])
+def test_initial_hiv_threshold(pop_percentage):
     """Check that HIV is initially introduced only to those with high enough newp."""
     pop = Population(size=1000, start_date=date(1989, 1, 1)).data
     HIV_module = HIVStatusModule()
-    HIV_module.initial_hiv_prob = 1  # all candidates would be seeded with HIV
-    pop[col.NUM_PARTNERS] = HIV_module.initial_hiv_newp_threshold - 1
+    threshold = HIV_module.initial_hiv_newp_threshold
+    # select a proportion of the population to have high enough newp
+    newp = np.random.default_rng().choice(
+        [threshold, threshold - 1],
+        p=[pop_percentage, 1 - pop_percentage],
+        size=len(pop)
+    )
+    pop[col.NUM_PARTNERS] = newp
     initial_status = HIV_module.introduce_HIV(pop)
-    assert not any(initial_status)
+    assert not any(initial_status & (pop[col.NUM_PARTNERS] < threshold))
 
 
 def test_initial_hiv_probability():
