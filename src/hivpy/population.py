@@ -52,6 +52,9 @@ class Population:
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
+        self.sexual_behaviour.assign_stp_ages(self)
+        # TEMP
+        self.hiv_status.set_dummy_viral_load(self)
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """Groups the data by a list of parameters and applies a function to each grouping. \n
@@ -88,7 +91,7 @@ class Population:
 
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
-        self.hiv_status.update_HIV_status(self.data)
+        self.hiv_status.update_HIV_status(self)
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step

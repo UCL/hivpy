@@ -61,7 +61,7 @@ class SexualBehaviourModule:
             SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
         }
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
-                                    SexType.Female: self.sb_data.female_stp_u25_dists}
+                                    SexType.Female: self.sb_data.female_stp_u25_dists}  # FIXME we don't have the over25 distribution here!
         self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
         self.rred_diagnosis = self.sb_data.rred_diagnosis.sample()
         self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period

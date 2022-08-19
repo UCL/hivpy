@@ -15,6 +15,7 @@ class DiscreteChoice:
         if (len(probs) != N):
             raise Exception
         index_range = np.arange(0, N, 1)
+        self.probs = probs
         self.data = vals
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
