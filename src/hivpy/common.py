@@ -9,13 +9,11 @@ from functools import reduce
 import numpy as np
 import scipy.stats as stat
 
-import hivpy.column_names as col
-
 
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
         N = len(vals)
-        if(len(probs) != N):
+        if (len(probs) != N):
             raise Exception
         index_range = np.arange(0, N, 1)
         self.data = vals
@@ -37,8 +35,10 @@ class SexType(IntEnum):
     Male = 0
     Female = 1
 
+
 def diff_years(date_begin, date_end):
     return (date_end - date_begin) / datetime.timedelta(days=365.25)
+
 
 def selector(population, **kwargs):
     """Select the rows of a population data frame matching a set of criteria.

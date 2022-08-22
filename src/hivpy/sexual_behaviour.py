@@ -7,7 +7,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import SexType, rng, selector, diff_years
+from .common import SexType, diff_years, rng, selector
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -74,9 +74,11 @@ class SexualBehaviourModule:
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
         self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
 
+        # long term partnerships
         self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
         self.annual_ltp_rate_change = rng.choice([0.8, 0.9, 0.95, 1.0])
         self.ltp_rate_change = 1.0
+        self.ltp_end_rate_by_longevity = np.array([0.25, 0.05, 0.02])
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -106,7 +108,7 @@ class SexualBehaviourModule:
 
         denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
 
-        if(j == 0):
+        if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
             Probability = rred*transition_matrix[i][j] / denominator
@@ -171,7 +173,7 @@ class SexualBehaviourModule:
         self.update_rred_population(population.date)
         self.update_rred_age(population.data)
         self.update_rred_long_term_partnered(population.data)
-        if(self.use_rred_art_adherence):
+        if (self.use_rred_art_adherence):
             self.update_rred_art_adherence(population.data)
         population.data[col.RRED] = (self.new_partner_factor *
                                      population.data[col.RRED_AGE] *
@@ -187,7 +189,7 @@ class SexualBehaviourModule:
         pop_data[col.RRED_ART_ADHERENCE] = 1
 
     def update_rred_art_adherence(self, pop_data):
-        if("art_adherence" in pop_data.columns):
+        if ("art_adherence" in pop_data.columns):
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, col.RRED_ART_ADHERENCE] = self.rred_art_adherence
 
@@ -200,7 +202,7 @@ class SexualBehaviourModule:
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data[col.RRED_LTP] = 1  # Unpartnered people
-        if("partnered" in pop_data.columns):
+        if ("partnered" in pop_data.columns):
             partnered_idx = selector(pop_data, partnered=(operator.eq, True))
             pop_data.loc[partnered_idx, col.RRED_LTP] = self.ltp_risk_factor
             # This might be more efficient, but is also a bit obscure
@@ -232,15 +234,15 @@ class SexualBehaviourModule:
     def update_rred_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
-        if(date1995 < date <= date2000):
+        if (date1995 < date <= date2000):
             dt = diff_years(date1995, date)
             self.rred_population = yearly_change_90s**dt
-        elif(date2000 < date < date2010):
+        elif (date2000 < date < date2010):
             self.rred_population = yearly_change_90s**5
-        elif(date2010 < date < date2021):
+        elif (date2010 < date < date2021):
             dt = diff_years(date2010, date)
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
-        elif(date2021 < date):
+        elif (date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_rred_diagnosis(self, population):
@@ -287,51 +289,62 @@ class SexualBehaviourModule:
             self.ltp_rate_change = self.annual_ltp_rate_change**(dt)
         elif date >= date2000:
             self.ltp_rate_change = self.annual_ltp_rate_change**5
-            # don't really need to keep updating after 2000
+            # don't really need to keep doing this update after 2000
 
     def start_new_ltp(self, date, age, size):
         ltp_rands = rng.random(size=size)
         rate_modifier = 1
-        if(35 <= age < 45):
+        if (35 <= age < 45):
             rate_modifier = 0.5
-        elif(45 <= age < 55):
+        elif (45 <= age < 55):
             rate_modifier = 1/3
-        else: 
+        else:
             rate_modifier = 0.2
         new_relationship = ltp_rands < (self.new_ltp_rate * rate_modifier)
         num_new_ltp = sum(new_relationship)
-        
+
         longevity = np.zeros(sum(num_new_ltp))  # ecah new relationship needs a longevity
         longevity_rands = rng.random(size=num_new_ltp)
-        if(age < 45):
+        if (age < 45):
             longevity = ((longevity_rands < 0.3) * 1 +
-                        (0.3 <= longevity_rands & longevity_rands < 0.6) * 2 +
-                        (0.6 <= longevity_rands) * 3)
-        elif(age < 55):
+                         (0.3 <= longevity_rands & longevity_rands < 0.6) * 2 +
+                         (0.6 <= longevity_rands) * 3)
+        elif (age < 55):
             longevity = ((longevity_rands < 0.3) * 1 +
-                       (0.3 <= longevity_rands & longevity_rands < 0.8) * 2 +
-                        (0.8 <= longevity_rands) * 3)
+                         (0.3 <= longevity_rands & longevity_rands < 0.8) * 2 +
+                         (0.8 <= longevity_rands) * 3)
         else:
             longevity = ((longevity_rands < 0.3) * 1 +
-                        (0.3 <= longevity_rands) * 2)
+                         (0.3 <= longevity_rands) * 2)
         return (new_relationship, longevity)
-    
-    def end_ltp(self, age, longevity):
-        return
+
+    def continue_ltp(self, age, longevity, size):
+        """Function to decide which long term partners cease condomless sex based on
+        relationship longevity, age, and sex."""
+        # TODO: Add balancing factors for age and sex demographics.
+        end_probability = self.ltp_end_rate_by_longevity / self.ltp_rate_change
+        r = rng.random(size=size)
+        return (r > end_probability)
 
     def update_long_term_partners(self, population):
-        partnerless_idx = population.data[(population.data[col.LONG_TERM_PARTNER] == False) &
-                                          (population.data[col.AGE] >=15) &
-                                          (population.data[col.AGE] < 65)] 
+        partnerless_idx = population.data[(not population.data[col.LONG_TERM_PARTNER]) &
+                                          (population.data[col.AGE] >= 15) &
+                                          (population.data[col.AGE] < 65)]
 
-        partnered_idx = population.data[(population.data[col.LONG_TERM_PARTNER] == True) &
-                                          (population.data[col.AGE] >=15) &
-                                          (population.data[col.AGE] < 65)] 
+        partnered_idx = population.data[(population.data[col.LONG_TERM_PARTNER]) &
+                                        (population.data[col.AGE] >= 15) &
+                                        (population.data[col.AGE] < 65)]
 
         # new relationships
-        (new_relationships, longevity) = population.transform_group([col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
-        population.data.loc[partnerless_idx] = new_relationships
-        population.data.loc[partnerless_idx, col.LONG_TERM_PARTNER==True] = longevity  # indexing here might be wrong?
+        (new_relationships, longevity) = population.transform_group(
+            [col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
+        population.data.loc[partnerless_idx, col.LONG_TERM_PARTNER] = new_relationships
+        # not sure about indexing on this next line
+        # We only want to update LTP_LONGEVITY where LONG_TERM_PARTNER is true within
+        # the sub-population defined by partnerless_idx
+        population.data.loc[partnerless_idx].loc[col.LONG_TERM_PARTNER,
+                                                 col.LTP_LONGEVITY] = longevity
 
         # ending relationships
-        end_relationships = population.transform_group()
+        population.data.loc[partnered_idx, col.LONG_TERM_PARTNER] = population.transform_group(
+            [col.AGE, col.LTP_LONGEVITY], self.continue_ltp, sub_pop=partnered_idx)

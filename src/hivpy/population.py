@@ -92,7 +92,7 @@ class Population:
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
             args = list(g.name)
-            if(use_size):
+            if (use_size):
                 args.append(g.size)
             return func(*args)
         if "sub_pop" in kwargs.keys():
