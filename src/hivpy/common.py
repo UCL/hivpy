@@ -35,6 +35,8 @@ class SexType(IntEnum):
     Male = 0
     Female = 1
 
+def opposite_sex(sex: SexType):
+    return (1 - sex)
 
 def selector(population, **kwargs):
     """Select the rows of a population data frame matching a set of criteria.

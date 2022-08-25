@@ -1,11 +1,9 @@
-import operator
-
 import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, rng
+from .common import SexType, rng, opposite_sex
 from .sexual_behaviour import selector
 
 
@@ -64,12 +62,31 @@ class HIVStatusModule:
         """Dummy function to set viral load until this part of the code has been implemented properly"""
         population.data[col.VIRAL_LOAD_GROUP] = rng.choice(7, population.size)
 
+    def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
+        # Slow example that avoid repeating the iterations over partners three time by putting them as part of 
+        # one for loop, but for loops in python will be slow.
+        target_sex = opposite_sex(sex)
+        infection_prob = np.zeros(n_partners)
+        for i in range (n_partners):
+            stp_viral_group = rng.choice(7, p = self.stp_viral_group_rate[target_sex][stp_age_groups[i]])
+            HIV_probability = self.stp_HIV_rate[opposite_sex(target_sex)][stp_age_groups[i]]
+            infection_prob[i] = HIV_probability * max(0, rng.normal(self.transmission_means[stp_viral_group], self.transmission_sigmas[stp_viral_group]))
+            if (sex == SexType.Female):
+                if(age < 20):
+                    infection_prob[i] *= self.fold_change_yw
+                else:
+                    infection_prob[i] *= self.fold_change_w
+            return infection_prob
+
     def stp_HIV_transmission(self, person):
-        # TODO: Add circumcision, STIs etc. 
+        # TODO: Add circumcision, STIs etc.
         """Returns True if HIV transmission occurs, and False otherwise"""
-        stp_viral_groups = np.array([rng.choice(7, p=self.stp_viral_group_rate[1 - person[col.SEX]][age_group]) for age_group in person[col.STP_AGE_GROUPS]])
-        HIV_probabilities = np.array([self.stp_HIV_rate[1 - person[col.SEX]][age_group] for age_group in person[col.STP_AGE_GROUPS]])
-        viral_transmission_probabilities = np.array([max(0, rng.normal(self.transmission_means[group], self.transmission_sigmas[group])) for group in stp_viral_groups])
+        stp_viral_groups = np.array([rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(
+            person[col.SEX])][age_group]) for age_group in person[col.STP_AGE_GROUPS]])
+        HIV_probabilities = np.array([self.stp_HIV_rate[opposite_sex(
+            person[col.SEX])][age_group] for age_group in person[col.STP_AGE_GROUPS]])
+        viral_transmission_probabilities = np.array([max(0, rng.normal(
+            self.transmission_means[group], self.transmission_sigmas[group])) for group in stp_viral_groups])
         if person[col.SEX] == SexType.Female:
             if person[col.AGE] < 20:
                 viral_transmission_probabilities = viral_transmission_probabilities * self.fold_change_yw
