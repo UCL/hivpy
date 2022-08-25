@@ -78,7 +78,8 @@ class SexualBehaviourModule:
         self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
         self.annual_ltp_rate_change = rng.choice([0.8, 0.9, 0.95, 1.0])
         self.ltp_rate_change = 1.0
-        self.ltp_end_rate_by_longevity = np.array([0.25, 0.05, 0.02])
+        self.ltp_end_rate_by_longevity = np.array([0, 0.25, 0.05, 0.02])
+        self.ltp_balance_factor = {SexType.Male: 1, SexType.Female: 1}
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -88,6 +89,7 @@ class SexualBehaviourModule:
         self.num_short_term_partners(population)
         self.update_sex_groups(population)
         self.update_rred(population)
+        self.update_long_term_partners(population)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -291,7 +293,28 @@ class SexualBehaviourModule:
             self.ltp_rate_change = self.annual_ltp_rate_change**5
             # don't really need to keep doing this update after 2000
 
-    def start_new_ltp(self, date, age, size):
+    def balance_ltp_factor(self, population):
+        num_ltp_women = sum(
+            population.data.loc[population.data[col.SEX] == SexType.Female, col.LONG_TERM_PARTNER])
+        num_ltp_men = sum(
+            population.data.loc[population.data[col.SEX] == SexType.Male, col.LONG_TERM_PARTNER])
+        if num_ltp_women > 0:
+            ratio_ltp = num_ltp_men / num_ltp_women
+            if ratio_ltp < 0.8:
+                return (4, 1)
+            elif ratio_ltp < 0.9:
+                return (2, 1)
+            elif ratio_ltp < 1.1:
+                return (1, 1)
+            elif ratio_ltp < 1.2:
+                return (1, 2)
+            else:
+                return (1, 4)
+        else:
+            return (1, 1)
+
+    def start_new_ltp(self, sex, age, size):
+        # TODO add alterations for new diagnosis
         ltp_rands = rng.random(size=size)
         rate_modifier = 1
         if (35 <= age < 45):
@@ -300,51 +323,60 @@ class SexualBehaviourModule:
             rate_modifier = 1/3
         else:
             rate_modifier = 0.2
-        new_relationship = ltp_rands < (self.new_ltp_rate * rate_modifier)
-        num_new_ltp = sum(new_relationship)
+        new_relationship = ltp_rands < (self.new_ltp_rate
+                                        * rate_modifier
+                                        * self.ltp_balance_factor[sex])
+        return new_relationship
 
-        longevity = np.zeros(sum(num_new_ltp))  # ecah new relationship needs a longevity
-        longevity_rands = rng.random(size=num_new_ltp)
+    def new_ltp_longevity(self, age, sex, size):
+        longevity = np.zeros(size)  # each new relationship needs a longevity
+        longevity_rands = rng.random(size)
         if (age < 45):
             longevity = ((longevity_rands < 0.3) * 1 +
-                         (0.3 <= longevity_rands & longevity_rands < 0.6) * 2 +
+                         ((0.3 <= longevity_rands) & (longevity_rands < 0.6)) * 2 +
                          (0.6 <= longevity_rands) * 3)
         elif (age < 55):
             longevity = ((longevity_rands < 0.3) * 1 +
-                         (0.3 <= longevity_rands & longevity_rands < 0.8) * 2 +
+                         ((0.3 <= longevity_rands) & (longevity_rands < 0.8)) * 2 +
                          (0.8 <= longevity_rands) * 3)
         else:
             longevity = ((longevity_rands < 0.3) * 1 +
                          (0.3 <= longevity_rands) * 2)
-        return (new_relationship, longevity)
+        return longevity
 
     def continue_ltp(self, age, longevity, size):
         """Function to decide which long term partners cease condomless sex based on
         relationship longevity, age, and sex."""
         # TODO: Add balancing factors for age and sex demographics.
-        end_probability = self.ltp_end_rate_by_longevity / self.ltp_rate_change
+        end_probability = self.ltp_end_rate_by_longevity[int(longevity)] / self.ltp_rate_change
         r = rng.random(size=size)
         return (r > end_probability)
 
     def update_long_term_partners(self, population):
-        partnerless_idx = population.data[(not population.data[col.LONG_TERM_PARTNER]) &
-                                          (population.data[col.AGE] >= 15) &
-                                          (population.data[col.AGE] < 65)]
+        start_partnerless = ((~population.data[col.LONG_TERM_PARTNER]) &
+                             (population.data[col.AGE] >= 15) &
+                             (population.data[col.AGE] < 65))
+        partnerless_idx = population.data.index[start_partnerless]
 
-        partnered_idx = population.data[(population.data[col.LONG_TERM_PARTNER]) &
-                                        (population.data[col.AGE] >= 15) &
-                                        (population.data[col.AGE] < 65)]
+        partnered_idx = population.data.index[(population.data[col.LONG_TERM_PARTNER]) &
+                                              (population.data[col.AGE] >= 15) &
+                                              (population.data[col.AGE] < 65)]
+
+        (self.ltp_balance_factor[SexType.Male],
+         self.ltp_balance_factor[SexType.Female]) = self.balance_ltp_factor(population)
 
         # new relationships
-        (new_relationships, longevity) = population.transform_group(
-            [col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
+        new_relationships = population.transform_group(
+            [col.SEX, col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
         population.data.loc[partnerless_idx, col.LONG_TERM_PARTNER] = new_relationships
         # not sure about indexing on this next line
         # We only want to update LTP_LONGEVITY where LONG_TERM_PARTNER is true within
         # the sub-population defined by partnerless_idx
-        population.data.loc[partnerless_idx].loc[col.LONG_TERM_PARTNER,
-                                                 col.LTP_LONGEVITY] = longevity
-
+        new_ltp_subpop = population.data.index[start_partnerless &
+                                               population.data[col.LONG_TERM_PARTNER]]
+        longevity = population.transform_group(
+            [col.AGE, col.SEX], self.new_ltp_longevity, sub_pop=new_ltp_subpop)
+        population.data.loc[new_ltp_subpop, col.LTP_LONGEVITY] = longevity
         # ending relationships
         population.data.loc[partnered_idx, col.LONG_TERM_PARTNER] = population.transform_group(
             [col.AGE, col.LTP_LONGEVITY], self.continue_ltp, sub_pop=partnered_idx)
