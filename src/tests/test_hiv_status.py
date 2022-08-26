@@ -27,11 +27,11 @@ def test_hiv_update():
     pop = Population(size=pop_size, start_date=date(1989, 1, 1))
     data = pop.data
     prev_status = data["HIV_status"].copy()
-
     for i in range(10):
         pop.hiv_status.update_HIV_status(pop.data)
 
     new_cases = data["HIV_status"] & (~ prev_status)
+    print(sum(new_cases))
     miracles = (~ data["HIV_status"]) & (prev_status)
     under_15s_idx = selector(data, HIV_status=(operator.eq, True), age=(operator.le, 15))
     assert not any(miracles)

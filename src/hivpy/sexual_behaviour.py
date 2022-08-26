@@ -344,7 +344,7 @@ class SexualBehaviourModule:
                          (0.3 <= longevity_rands) * 2)
         return longevity
 
-    def continue_ltp(self, age, longevity, size):
+    def continue_ltp(self, longevity, size):
         """Function to decide which long term partners cease condomless sex based on
         relationship longevity, age, and sex."""
         # TODO: Add balancing factors for age and sex demographics.
@@ -375,7 +375,7 @@ class SexualBehaviourModule:
                                                population.data[col.LONG_TERM_PARTNER]]
         longevity = population.transform_group(
             [col.AGE, col.SEX], self.new_ltp_longevity, sub_pop=new_ltp_subpop)
-        population.data.loc[new_ltp_subpop, col.LTP_LONGEVITY] = longevity
+        population.data.loc[new_ltp_subpop, col.LTP_LONGEVITY] = longevity.astype(int)
         # ending relationships
         population.data.loc[partnered_idx, col.LONG_TERM_PARTNER] = population.transform_group(
-            [col.AGE, col.LTP_LONGEVITY], self.continue_ltp, sub_pop=partnered_idx)
+            [col.LTP_LONGEVITY], self.continue_ltp, sub_pop=partnered_idx)

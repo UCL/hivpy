@@ -393,7 +393,8 @@ def test_start_ltp():
         # TODO: add checks for correct balancing factors & dates
 
 
-def test_end_ltp():
+@pytest.mark.parametrize(["longevity", "rate_change"], [(1, 0.25), (2, 0.05), (3, 0.02)])
+def test_end_ltp(longevity, rate_change):
     # TODO: will need to be updated when addition ltp factors added
     # e.g. for diagnosis & balancing
 
@@ -402,15 +403,11 @@ def test_end_ltp():
     sb_mod = pop.sexual_behaviour
     pop.data[col.AGE] = 20  # make everyone sexually active
 
-    for longevity, rate_change in [(1, 0.25), (2, 0.05), (3, 0.02)]:
-        pop.data[col.LONG_TERM_PARTNER] = True
-        pop.data[col.LTP_LONGEVITY] = longevity
-
-        expected_end_prob = rate_change  # TODO: update for date changes
-        expected_ends = expected_end_prob * N
-        sigma_ends = (1 - expected_end_prob) * expected_ends
-
-        sb_mod.update_long_term_partners(pop)
-        n_ends = N - sum(pop.data[col.LONG_TERM_PARTNER])
-
-        assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_LONGEVITY] = longevity
+    expected_end_prob = rate_change  # TODO: update for date changes
+    expected_ends = expected_end_prob * N
+    sigma_ends = (1 - expected_end_prob) * expected_ends
+    sb_mod.update_long_term_partners(pop)
+    n_ends = N - sum(pop.data[col.LONG_TERM_PARTNER])
+    assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)

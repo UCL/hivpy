@@ -93,7 +93,10 @@ class Population:
         """Groups the data by a list of parameters and applies a function to each grouping"""
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
-            args = list(g.name)
+            if len(param_list) == 1:
+                args = [g.name]
+            else:
+                args = list(g.name)
             if (use_size):
                 args.append(g.size)
             return func(*args)
