@@ -195,7 +195,7 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
-    def _probability_of_death(self, sex, age_group) -> float:
+    def _probability_of_death(self, sex: SexType, age_group: int) -> float:
         rate = self.params["death_rates"][sex][age_group]
         # Probability of dying, assuming time step of 3 months
         prob_of_death = 1 - exp(-rate / 4)
