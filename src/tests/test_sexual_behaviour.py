@@ -389,3 +389,28 @@ def test_start_ltp():
             expected_total = prob * n_partnered
             sigma_total = np.sqrt((1 - prob) * expected_total)
             assert (expected_total - 3 * sigma_total) <= total <= (expected_total + 3 * sigma_total)
+
+        # TODO: add checks for correct balancing factors & dates
+
+
+def test_end_ltp():
+    # TODO: will need to be updated when addition ltp factors added
+    # e.g. for diagnosis & balancing
+
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_mod = pop.sexual_behaviour
+    pop.data[col.AGE] = 20  # make everyone sexually active
+
+    for longevity, rate_change in [(1, 0.25), (2, 0.05), (3, 0.02)]:
+        pop.data[col.LONG_TERM_PARTNER] = True
+        pop.data[col.LTP_LONGEVITY] = longevity
+
+        expected_end_prob = rate_change  # TODO: update for date changes
+        expected_ends = expected_end_prob * N
+        sigma_ends = (1 - expected_end_prob) * expected_ends
+
+        sb_mod.update_long_term_partners(pop)
+        n_ends = N - sum(pop.data[col.LONG_TERM_PARTNER])
+
+        assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
