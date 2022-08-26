@@ -337,6 +337,8 @@ def test_rred_age():
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
     pop.data["age"] = ages
     pop.data["sex"] = np.array([SexType.Male]*N + [SexType.Female]*N)
+    pop.sexual_behaviour.init_sex_behaviour_groups(pop.data)
+    pop.sexual_behaviour.num_short_term_partners(pop)
     pop.sexual_behaviour.init_risk_factors(pop.data)
     # select a particular risk matrix
     risk_factors = np.array(pop.data["rred_age"])
