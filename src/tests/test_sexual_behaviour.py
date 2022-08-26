@@ -355,7 +355,7 @@ def test_rred_age():
 
 
 # Test long term partnerships
-# test the start of new ltps, end of ltps, and longevity. 
+# test the start of new ltps, end of ltps, and longevity.
 
 def test_start_ltp():
     N = 10000
@@ -364,9 +364,9 @@ def test_start_ltp():
     assert (0.1 * np.exp(0.25 * (-5))) <= sb_mod.new_ltp_rate <= (0.1 * np.exp(0.25 * 5))
 
     for age, modifier, longevity_prob in [(20, 1, [0.3, 0.3, 0.4]),
-                                     (40, 2, [0.3, 0.3, 0.4]),
-                                     (50, 3, [0.3, 0.5, 0.2]),
-                                     (60, 5, [0.3, 0.7, 0.0])]:
+                                          (40, 2, [0.3, 0.3, 0.4]),
+                                          (50, 3, [0.3, 0.5, 0.2]),
+                                          (60, 5, [0.3, 0.7, 0.0])]:
         pop.data[col.LONG_TERM_PARTNER] = False
         pop.data[col.AGE] = age
 
@@ -378,7 +378,7 @@ def test_start_ltp():
         sigma_ltp = np.sqrt(expected_ltp * (1 - sb_mod.new_ltp_rate / modifier))
         assert (expected_ltp - 3 * sigma_ltp) <= num_ltp <= (expected_ltp + 3 * sigma_ltp)
 
-        # test longevity 
+        # test longevity
         partnered_idx = pop.data.index[pop.data[col.LONG_TERM_PARTNER]]
         partnered_pop = pop.data.loc[partnered_idx]
         n_partnered = len(partnered_idx)
