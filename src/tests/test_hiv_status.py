@@ -1,14 +1,14 @@
 import operator
 from datetime import date
 
-import pandas as pd
 import numpy as np
-from hivpy.common import SexType
+import pandas as pd
 
+import hivpy.column_names as col
+from hivpy.common import SexType
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 from hivpy.sexual_behaviour import selector
-import hivpy.column_names as col
 
 
 def test_initial_hiv():
@@ -131,28 +131,3 @@ def test_viral_group_risk_vector():
     expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0., 0.])
     assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Male], expectation)
     assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Female], expecation_female)
-
-
-def test_hiv_update2():
-    N = 100000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
-    hiv_module = pop.hiv_status
-    # create some easy to calculate scenarios
-    # let everyone have one partner so P(HIV) is just the fraction with HIV
-    pop.data[col.SEX] = np.array([SexType.Male, SexType.Female] * (N//2))
-    pop.data[col.AGE] = 30
-    pop.data[col.HIV_STATUS] = False
-    pop.data[col.HIV_STATUS][:10000] = np.array([True] * 10000)  # 10% HIV+
-    pop.data[col.NUM_PARTNERS] = 1
-    pop.sexual_behaviour.assign_stp_ages(pop)
-    pop.data[col.VIRAL_LOAD_GROUP] = 5  # set everyone to same viral load group
-    prev_hiv_status = pop.data[col.HIV_STATUS].copy()
-    hiv_module.update_HIV_status(pop)
-    # 10% probability of HIV+ and 10% probability of transmission given viral loa
-    expected_transmission_prob = 0.1 * 0.1
-    pop.data["delta_HIV"] = pop.data[col.HIV_STATUS] ^ prev_hiv_status
-    # count number of new transmissions for men
-    n_new_male = sum(pop.data.loc[pop.data[col.SEX] == SexType.Male, "delta_HIV"])
-    exp_new_male = 45000 * expected_transmission_prob
-    sig = np.sqrt(45000 * expected_transmission_prob * (1 - expected_transmission_prob))
-    print(n_new_male, exp_new_male, sig)

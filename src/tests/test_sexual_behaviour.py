@@ -101,7 +101,7 @@ def test_num_partners():
 
 
 def test_num_partner_for_behaviour_group():
-    """Check that approx correct number of partners are generated for each 
+    """Check that approx correct number of partners are generated for each
     sex, age, and sexual behaviour group"""
     N = 100000
     pop = Population(size=N, start_date=date(1989, 1, 1))
@@ -109,7 +109,8 @@ def test_num_partner_for_behaviour_group():
         np_probs = pop.sexual_behaviour.short_term_partners[sex]
         for g in range(len(np_probs)):
             for (n, p) in zip(np_probs[g].data, np_probs[g].probs):
-                sub_pop = pop.data.loc[(pop.data[col.SEX] == sex) & (pop.data[col.SEX_BEHAVIOUR]==g) & (pop.data[col.AGE] >= 15)]
+                sub_pop = pop.data.loc[(pop.data[col.SEX] == sex) & (
+                    pop.data[col.SEX_BEHAVIOUR] == g) & (pop.data[col.AGE] >= 15)]
                 N_g = len(sub_pop)
                 E = p * N_g
                 sig = np.sqrt(p * (1-p) * N)
