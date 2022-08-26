@@ -16,6 +16,7 @@ class DiscreteChoice:
         if (len(probs) != N):
             raise Exception
         index_range = np.arange(0, N, 1)
+        self.probs = probs
         self.data = vals
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
@@ -38,6 +39,10 @@ class SexType(IntEnum):
 
 def diff_years(date_begin, date_end):
     return (date_end - date_begin) / datetime.timedelta(days=365.25)
+
+
+def opposite_sex(sex: SexType):
+    return (1 - sex)
 
 
 def selector(population, **kwargs):

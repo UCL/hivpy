@@ -51,10 +51,20 @@ class SexualBehaviourModule:
         self.risk_categories = len(self.age_based_risk)-1
         self.risk_min_age = 15  # This should come out of config somewhere
         self.risk_age_grouping = 5  # ditto
+        self.risk_max_age = 65
+        self.sex_mix_age_grouping = 10
+        self.sex_mix_age_groups = np.arange(self.risk_min_age,
+                                            self.risk_max_age,
+                                            self.sex_mix_age_grouping)
+        self.num_sex_mix_groups = len(self.sex_mix_age_groups)
+        self.age_limits = [self.risk_min_age + n*self.risk_age_grouping
+                           for n in range((self.risk_max_age - self.risk_min_age)
+                                          // self.risk_age_grouping)]
         self.sex_mixing_matrix = {
             SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
             SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
         }
+        # FIXME we don't have the over25 distribution here!
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
         self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
@@ -87,6 +97,7 @@ class SexualBehaviourModule:
 
     def update_sex_behaviour(self, population):
         self.num_short_term_partners(population)
+        self.assign_stp_ages(population)
         self.update_sex_groups(population)
         self.update_rred(population)
         self.update_long_term_partners(population)
@@ -379,3 +390,21 @@ class SexualBehaviourModule:
         # ending relationships
         population.data.loc[partnered_idx, col.LONG_TERM_PARTNER] = population.transform_group(
             [col.LTP_LONGEVITY], self.continue_ltp, sub_pop=partnered_idx)
+
+    def gen_stp_ages(self, sex, age_group, num_partners, size):
+        # TODO: Check if this needs additional balancing factors for age
+        stp_age_probs = self.sex_mixing_matrix[sex][age_group]
+        stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
+        return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
+
+    def assign_stp_ages(self, population):
+        """Calculate the ages of a persons short term partners
+        from the mixing matrices."""
+        population.data[col.SEX_MIX_AGE_GROUP] = np.digitize(
+            population.data[col.AGE], self.sex_mix_age_groups) - 1
+        # only select people with STPs
+        active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]
+        STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
+                                                self.gen_stp_ages,
+                                                sub_pop=active_pop)
+        population.data.loc[active_pop, col.STP_AGE_GROUPS] = STP_groups
