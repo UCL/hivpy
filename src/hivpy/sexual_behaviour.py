@@ -321,7 +321,7 @@ class SexualBehaviourModule:
             rate_modifier = 0.5
         elif (45 <= age < 55):
             rate_modifier = 1/3
-        else:
+        elif (55 <= age):
             rate_modifier = 0.2
         new_relationship = ltp_rands < (self.new_ltp_rate
                                         * rate_modifier
@@ -364,7 +364,6 @@ class SexualBehaviourModule:
 
         (self.ltp_balance_factor[SexType.Male],
          self.ltp_balance_factor[SexType.Female]) = self.balance_ltp_factor(population)
-
         # new relationships
         new_relationships = population.transform_group(
             [col.SEX, col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
