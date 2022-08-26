@@ -1,6 +1,4 @@
 import numpy as np
-import operator
-
 import pandas as pd
 
 import hivpy.column_names as col
