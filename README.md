@@ -7,6 +7,8 @@ The code is under active development. While you are welcome to use it,
 be aware that the structure, behaviour and interface (inputs and outputs)
 are all likely to change.
 
+More extensive documentation for this package is under development.
+
 TODO: Link to publications using hiv-synthesis model and other pages
 
 ## Getting started
@@ -39,13 +41,25 @@ In the future, we plan to make the package available through the
 is the only way to access the code.
 
 ## Running simulations
-TODO:
-- Command
-- Config file
-- Outputs
+Simulations can be run from the terminal with `run_model`:
+```bash
+run_model <configuration file>
+```
+The command takes as its argument the path to a YAML file,
+which contains various settings for the simulation, such as
+the start and end dates and the size of the population.
+For an example, see the [sample file](./hivpy.yaml)
+included in this repository.
+
+When the simulation runs, it will produce a CSV file with outputs.
+The file contains one row per time step and a column for each quantity
+that is being tracked or computed.
+The file name reflects the date and time that the simulation was launched,
+for example `simulation_output_20220826-163116.csv`.
+
 
 ## Support
-If you notice something that appears wrong, please le us know by
+If you notice something that appears wrong, please let us know by
 [opening an issue](https://github.com/UCL/hivpy/issues/new/choose)
 on this repository.
 
