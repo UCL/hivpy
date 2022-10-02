@@ -74,7 +74,9 @@ This will install some additional libraries and tools for development, and also 
 
 ### Testing
 The package comes with unit tests. To run them, simply run
-`pytest` from the top level (this directory). The `pytest` package and command are installed during 
+`pytest` from the top level (this directory). The `pytest` package and command
+are installed during the package installation if the `[tests]` extra option
+is supplied, as above.
 
 ### Contributions
 If you want to make changes to the code, we recommend the following workflow:
