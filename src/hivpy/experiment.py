@@ -71,9 +71,10 @@ def create_simulation(experiment_param):
 
 
 def create_log(log_param):
-    log_dir = Path(log_param['log_directory'])
-    if not log_dir.exists():
-        log_dir.mkdir(parents=True)
+    log_dir = log_param['log_directory']
+    log_dir_path = Path(log_dir)
+    if not log_dir_path.exists():
+        log_dir_path.mkdir(parents=True)
     log_file = log_param['logfile_prefix']+"_"+datetime.now().strftime("%y%m%d-%H%M%S")+".log"
     log_level = log_param['log_file_level']
     console_log_level = log_param['console_log_level']
