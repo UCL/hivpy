@@ -81,7 +81,7 @@ class SimulationOutput:
 
     def write_output(self, output_path):
         df = pd.DataFrame(self.output_stats)
-        df.to_csv(output_path, mode='w')
+        df.to_csv(output_path, index_label="Time Step", mode='w')
 
 
 class SimulationHandler:
