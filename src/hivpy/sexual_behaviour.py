@@ -80,6 +80,7 @@ class SexualBehaviourModule:
         self.ltp_rate_change = 1.0
         self.ltp_end_rate_by_longevity = np.array([0, 0.25, 0.05, 0.02])
         self.ltp_balance_factor = {SexType.Male: 1, SexType.Female: 1}
+        self.new_ltp_age_bins = [35, 45, 55]
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -313,29 +314,29 @@ class SexualBehaviourModule:
         else:
             return (1, 1)
 
-    def start_new_ltp(self, sex, age, size):
+    def start_new_ltp(self, sex, age_group, size):
         # TODO add alterations for new diagnosis
         ltp_rands = rng.random(size=size)
         rate_modifier = 1
-        if (35 <= age < 45):
+        if age_group == 1:
             rate_modifier = 0.5
-        elif (45 <= age < 55):
+        elif age_group == 2:
             rate_modifier = 1/3
-        elif (55 <= age):
+        elif age_group == 3:
             rate_modifier = 0.2
         new_relationship = ltp_rands < (self.new_ltp_rate
                                         * rate_modifier
                                         * self.ltp_balance_factor[sex])
         return new_relationship
 
-    def new_ltp_longevity(self, age, sex, size):
+    def new_ltp_longevity(self, age_group, size):
         longevity = np.zeros(size)  # each new relationship needs a longevity
         longevity_rands = rng.random(size)
-        if (age < 45):
+        if age_group < 2:
             longevity = ((longevity_rands < 0.3) * 1 +
                          ((0.3 <= longevity_rands) & (longevity_rands < 0.6)) * 2 +
                          (0.6 <= longevity_rands) * 3)
-        elif (age < 55):
+        elif age_group == 2:
             longevity = ((longevity_rands < 0.3) * 1 +
                          ((0.3 <= longevity_rands) & (longevity_rands < 0.8)) * 2 +
                          (0.8 <= longevity_rands) * 3)
@@ -364,17 +365,20 @@ class SexualBehaviourModule:
 
         (self.ltp_balance_factor[SexType.Male],
          self.ltp_balance_factor[SexType.Female]) = self.balance_ltp_factor(population)
+
         # new relationships
+        population.data[col.LTP_AGE_GROUP] = np.digitize(
+            population.data[col.AGE], self.new_ltp_age_bins)
         new_relationships = population.transform_group(
-            [col.SEX, col.AGE],  self.start_new_ltp, sub_pop=partnerless_idx)
+            [col.SEX, col.LTP_AGE_GROUP],  self.start_new_ltp, sub_pop=partnerless_idx)
         population.data.loc[partnerless_idx, col.LONG_TERM_PARTNER] = new_relationships
-        # not sure about indexing on this next line
-        # We only want to update LTP_LONGEVITY where LONG_TERM_PARTNER is true within
-        # the sub-population defined by partnerless_idx
+
+        # calculate longevity for new relationships this time step
+        # (but not for existing relationships)
         new_ltp_subpop = population.data.index[start_partnerless &
                                                population.data[col.LONG_TERM_PARTNER]]
         longevity = population.transform_group(
-            [col.AGE, col.SEX], self.new_ltp_longevity, sub_pop=new_ltp_subpop)
+            [col.LTP_AGE_GROUP], self.new_ltp_longevity, sub_pop=new_ltp_subpop)
         population.data.loc[new_ltp_subpop, col.LTP_LONGEVITY] = longevity.astype(int)
         # ending relationships
         population.data.loc[partnered_idx, col.LONG_TERM_PARTNER] = population.transform_group(
