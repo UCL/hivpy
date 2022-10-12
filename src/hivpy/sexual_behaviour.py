@@ -332,17 +332,18 @@ class SexualBehaviourModule:
     def new_ltp_longevity(self, age_group, size):
         longevity = np.zeros(size)  # each new relationship needs a longevity
         longevity_rands = rng.random(size)
+        thresholds = [0, 0]
         if age_group < 2:
-            longevity = ((longevity_rands < 0.3) * 1 +
-                         ((0.3 <= longevity_rands) & (longevity_rands < 0.6)) * 2 +
-                         (0.6 <= longevity_rands) * 3)
+            thresholds = [0.3, 0.6]
         elif age_group == 2:
-            longevity = ((longevity_rands < 0.3) * 1 +
-                         ((0.3 <= longevity_rands) & (longevity_rands < 0.8)) * 2 +
-                         (0.8 <= longevity_rands) * 3)
+            thresholds = [0.3, 0.8]
         else:
-            longevity = ((longevity_rands < 0.3) * 1 +
-                         (0.3 <= longevity_rands) * 2)
+            thresholds = [0.3, 1.0]
+
+        longevity[longevity_rands < thresholds[0]] = 1
+        longevity[(thresholds[0] <= longevity_rands) & (longevity_rands < thresholds[1])] = 2
+        longevity[thresholds[1] <= longevity_rands] = 3
+
         return longevity
 
     def continue_ltp(self, longevity, size):
