@@ -350,7 +350,7 @@ class SexualBehaviourModule:
         """Function to decide which long term partners cease condomless sex based on
         relationship longevity, age, and sex."""
         # TODO: Add balancing factors for age and sex demographics.
-        end_probability = self.ltp_end_rate_by_longevity[int(longevity)] / self.ltp_rate_change
+        end_probability = self.ltp_end_rate_by_longevity[longevity] / self.ltp_rate_change
         r = rng.random(size=size)
         return (r > end_probability)
 
