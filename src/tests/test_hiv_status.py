@@ -18,6 +18,7 @@ def pop_with_hiv():
     # Wait a few months so more people are positive
     for _ in range(5):
         pop.evolve(timedelta(days=30))
+    print("Num HIV+ = ", sum(pop.data["HIV_status"]))
     return pop
 
 
@@ -64,15 +65,24 @@ def test_HIV_introduced_only_once(mocker):
     spy.assert_called_once()
 
 
+def test_hiv_initial_ages(pop_with_hiv):
+    """Check that HIV is not introduced to anyone <= 15 or > 65."""
+    under_15s = selector(pop_with_hiv.data, HIV_status=(operator.eq, True), age=(operator.le, 15))
+    over_65s = selector(pop_with_hiv.data, HIV_status=(operator.eq, True), age=(operator.gt, 65))
+    assert not any(under_15s)
+    assert not any(over_65s)
+
+
 def test_hiv_update(pop_with_hiv):
     pd.set_option('display.max_columns', None)
     data = pop_with_hiv.data
     prev_status = data["HIV_status"].copy()
 
-    for i in range(10):
+    for i in range(100):
         pop_with_hiv.hiv_status.update_HIV_status(pop_with_hiv.data)
 
     new_cases = data["HIV_status"] & (~ prev_status)
+    print("Num new HIV+ = ", sum(new_cases))
     miracles = (~ data["HIV_status"]) & (prev_status)
     under_15s_idx = selector(data, HIV_status=(operator.eq, True), age=(operator.le, 15))
     assert not any(miracles)
