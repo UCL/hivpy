@@ -78,7 +78,7 @@ def test_hiv_update(pop_with_hiv):
     data = pop_with_hiv.data
     prev_status = data["HIV_status"].copy()
 
-    for i in range(100):
+    for i in range(10):
         pop_with_hiv.hiv_status.update_HIV_status(pop_with_hiv.data)
 
     new_cases = data["HIV_status"] & (~ prev_status)
