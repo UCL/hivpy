@@ -45,18 +45,17 @@ class HIVStatusModule:
         # Should we be using for loops here or can we do better?
         for sex in SexType:
             for age_group in range(5):   # FIXME need to get number of age groups from somewhere
-                sub_pop_indices = population.data.index[(population.data[col.SEX] == sex) & (
+                sub_pop = population.data.loc[(population.data[col.SEX] == sex) & (
                     population.data[col.SEX_MIX_AGE_GROUP] == age_group)]
-                sub_pop = population.data.loc[sub_pop_indices]
                 # total number of people partnered to people in this group
                 n_stp_total = sum(sub_pop[col.NUM_PARTNERS])
-                # num people parters to HIV+ people in this group
-                n_infected = sum(sub_pop.loc[sub_pop[col.HIV_STATUS]][col.NUM_PARTNERS])
+                # num people partered to HIV+ people in this group
+                n_stp_of_infected = sum(sub_pop.loc[sub_pop[col.HIV_STATUS], col.NUM_PARTNERS])
                 # Probability of being HIV prositive
-                if n_infected == 0:
+                if n_stp_of_infected == 0:
                     self.stp_HIV_rate[sex][age_group] = 0
                 else:
-                    self.stp_HIV_rate[sex][age_group] = n_infected / \
+                    self.stp_HIV_rate[sex][age_group] = n_stp_of_infected / \
                         n_stp_total  # TODO: need to double check this definition
                 # Chances of being in a given viral group
                 if n_stp_total > 0:
@@ -101,7 +100,7 @@ class HIVStatusModule:
         viral_transmission_probabilities = np.array([max(0, rng.normal(
             self.transmission_means[group], self.transmission_sigmas[group]))
             for group in stp_viral_groups])
-        if person[col.SEX] == SexType.Female:
+        if person[col.SEX] is SexType.Female:
             if person[col.AGE] < 20:
                 viral_transmission_probabilities = (viral_transmission_probabilities
                                                     * self.fold_change_yw)

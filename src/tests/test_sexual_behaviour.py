@@ -120,9 +120,9 @@ def test_num_partner_for_behaviour_group():
 
 def test_behaviour_updates():
     """Check that at least one person changes sexual behaviour groups"""
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=100000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
-    for i in range(500):
+    for i in range(5):
         pop.sexual_behaviour.update_sex_groups(pop)
     subsequent_groupings = pop.data["sex_behaviour"]
     assert (any(initial_groupings != subsequent_groupings))
