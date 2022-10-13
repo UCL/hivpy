@@ -50,7 +50,7 @@ def test_initial_hiv_probability():
     assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)
 
 
-def test_HIV_introduced_only_once(mocker):
+def test_hiv_introduced_only_once(mocker):
     """Check that we do not initialise HIV status repeatedly."""
     pop = Population(size=1000, start_date=date(1988, 12, 1))
     spy = mocker.spy(pop.hiv_status, "introduce_HIV")
@@ -62,6 +62,17 @@ def test_HIV_introduced_only_once(mocker):
     # ...but should not be repeated at the next time step
     pop.evolve(timedelta(days=31))
     spy.assert_called_once()
+
+
+def test_hiv_not_reintroduced_after_1989(mocker):
+    """Check that we do not initialise HIV status repeatedly."""
+    pop = Population(size=1000, start_date=date(1989, 4, 1))
+    assert pop.HIV_introduced
+    # HIV has been introduced, so that should not be called again
+    spy = mocker.spy(pop.hiv_status, "introduce_HIV")
+    for _ in range(10):
+        pop.evolve(timedelta(days=31))
+    spy.assert_not_called()
 
 
 def test_hiv_initial_ages(pop_with_initial_hiv):
