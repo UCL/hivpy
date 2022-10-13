@@ -333,6 +333,7 @@ def test_rred_age():
     pop.data["age"] = ages
     pop.data["sex"] = np.array([SexType.Male]*N + [SexType.Female]*N)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop.data)
+    pop.sexual_behaviour.num_short_term_partners(pop)
     pop.sexual_behaviour.init_risk_factors(pop.data)
     # select a particular risk matrix
     risk_factors = np.array(pop.data["rred_age"])
@@ -348,3 +349,60 @@ def test_rred_age():
     expected_risk_male = np.append(expected_risk_male, expected_risk_male[-1])
     expected_risk_female = np.append(expected_risk_female, expected_risk_female[-1])
     assert np.allclose(risk_factors, np.append(expected_risk_male, expected_risk_female))
+
+
+# Test long term partnerships
+# test the start of new ltps, end of ltps, and longevity.
+
+def test_start_ltp():
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_mod = pop.sexual_behaviour
+    assert (0.1 * np.exp(0.25 * (-5))) <= sb_mod.new_ltp_rate <= (0.1 * np.exp(0.25 * 5))
+
+    for age, modifier, longevity_prob in [(20, 1, [0.3, 0.3, 0.4]),
+                                          (40, 2, [0.3, 0.3, 0.4]),
+                                          (50, 3, [0.3, 0.5, 0.2]),
+                                          (60, 5, [0.3, 0.7, 0.0])]:
+        pop.data[col.LONG_TERM_PARTNER] = False
+        pop.data[col.AGE] = age
+
+        sb_mod.update_long_term_partners(pop)
+        # check that the rate of new partnerships is in the expected range
+
+        num_ltp = sum(pop.data[col.LONG_TERM_PARTNER])
+        expected_ltp = sb_mod.new_ltp_rate * N / modifier
+        sigma_ltp = np.sqrt(expected_ltp * (1 - sb_mod.new_ltp_rate / modifier))
+        assert (expected_ltp - 3 * sigma_ltp) <= num_ltp <= (expected_ltp + 3 * sigma_ltp)
+
+        # test longevity
+        partnered_idx = pop.data.index[pop.data[col.LONG_TERM_PARTNER]]
+        partnered_pop = pop.data.loc[partnered_idx]
+        n_partnered = len(partnered_idx)
+        longevity_totals = [sum(partnered_pop[col.LTP_LONGEVITY] == v) for v in [1, 2, 3]]
+        for prob, total in zip(longevity_prob, longevity_totals):
+            expected_total = prob * n_partnered
+            sigma_total = np.sqrt((1 - prob) * expected_total)
+            assert (expected_total - 3 * sigma_total) <= total <= (expected_total + 3 * sigma_total)
+
+        # TODO: add checks for correct balancing factors & dates
+
+
+@pytest.mark.parametrize(["longevity", "rate_change"], [(1, 0.25), (2, 0.05), (3, 0.02)])
+def test_end_ltp(longevity, rate_change):
+    # TODO: will need to be updated when addition ltp factors added
+    # e.g. for diagnosis & balancing
+
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_mod = pop.sexual_behaviour
+    pop.data[col.AGE] = 20  # make everyone sexually active
+
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_LONGEVITY] = longevity
+    expected_end_prob = rate_change  # TODO: update for date changes
+    expected_ends = expected_end_prob * N
+    sigma_ends = (1 - expected_end_prob) * expected_ends
+    sb_mod.update_long_term_partners(pop)
+    n_ends = N - sum(pop.data[col.LONG_TERM_PARTNER])
+    assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
