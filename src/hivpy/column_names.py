@@ -3,6 +3,7 @@
 SEX = "sex"                                 # common.SexType: SexType.Male for male and SexType.Female for female
 AGE = "age"                                 # float: age at the current date
 AGE_GROUP = "age_group"                     # int: discrete age grouping based on age
+LTP_AGE_GROUP = "ltp_age_group"             # int: discrete age group for starting / longevity of ltp
 
 RRED = "rred"                               # float: overall rred value from combined factors
 RRED_AGE = "rred_age"                       # float: risk reduction factor based on age
@@ -15,6 +16,8 @@ RRED_ART_ADHERENCE = "rred_art_adherence"   # float: risk reduction associated w
 RRED_INTIIAL = "rred_initial"               # float: initial risk reduction factor
 NUM_PARTNERS = "num_partners"               # float: number of short term condomless sex partners during the current time step
 SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
+LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a long term condomless partner
+LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
 
 HIV_STATUS = "HIV_status"                   # bool: true if person if HIV positive, o/w false
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None

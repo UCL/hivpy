@@ -1,5 +1,6 @@
 """Functionality shared between multiple parts of the framework."""
 
+import datetime
 import operator
 from contextlib import contextmanager
 from enum import IntEnum
@@ -33,6 +34,10 @@ class DiscreteChoice:
 class SexType(IntEnum):
     Male = 0
     Female = 1
+
+
+def diff_years(date_begin, date_end):
+    return (date_end - date_begin) / datetime.timedelta(days=365.25)
 
 
 def selector(population, **kwargs):

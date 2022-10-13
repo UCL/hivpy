@@ -27,7 +27,6 @@ def test_hiv_update():
     pop = Population(size=pop_size, start_date=date(1989, 1, 1))
     data = pop.data
     prev_status = data["HIV_status"].copy()
-
     for i in range(10):
         pop.hiv_status.update_HIV_status(pop.data)
 
