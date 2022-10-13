@@ -1,5 +1,6 @@
 """Functionality shared between multiple parts of the framework."""
 
+import datetime
 import operator
 from contextlib import contextmanager
 from enum import IntEnum
@@ -38,6 +39,10 @@ class SexType(IntEnum):
 
 def opposite_sex(sex: SexType):
     return (1 - sex)
+
+
+def diff_years(date_begin, date_end):
+    return (date_end - date_begin) / datetime.timedelta(days=365.25)
 
 
 def selector(population, **kwargs):
