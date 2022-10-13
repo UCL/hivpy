@@ -148,7 +148,6 @@ def test_initial_sex_behaviour_groups(yaml_data):
             sigma = np.sqrt(p*(1-p)*float(n_sex))
             Expectation = float(n_sex)*p
             N_g = sum(index_sex & index_group)
-            print(f"Sex {sex}, group {g}, E {Expectation}, N_g {N_g}")
             assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
 
 

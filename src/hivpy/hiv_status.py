@@ -88,13 +88,14 @@ class HIVStatusModule:
                     infection_prob[i] *= self.fold_change_yw
                 else:
                     infection_prob[i] *= self.fold_change_w
-            return infection_prob
+        return infection_prob
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
         """Returns True if HIV transmission occurs, and False otherwise"""
-        stp_viral_groups = np.array([rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(
-            person[col.SEX])][age_group]) for age_group in person[col.STP_AGE_GROUPS]])
+        stp_viral_groups = np.array([
+            rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(person[col.SEX])][age_group])
+            for age_group in person[col.STP_AGE_GROUPS]])
         HIV_probabilities = np.array([self.stp_HIV_rate[opposite_sex(
             person[col.SEX])][age_group] for age_group in person[col.STP_AGE_GROUPS]])
         viral_transmission_probabilities = np.array([max(0, rng.normal(
