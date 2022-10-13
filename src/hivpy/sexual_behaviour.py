@@ -300,7 +300,8 @@ class SexualBehaviourModule:
     def gen_stp_ages(self, sex, age_group, num_partners, size):
         # TODO: Check if this needs additional balancing factors for age
         stp_age_probs = self.sex_mixing_matrix[sex][age_group]
-        stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, int(num_partners)], p=stp_age_probs)
+        stp_age_groups = rng.choice(self.num_sex_mix_groups, [
+                                    size, int(num_partners)], p=stp_age_probs)
         return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
 
     def assign_stp_ages(self, population):
