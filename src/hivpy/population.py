@@ -58,6 +58,9 @@ class Population:
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
+        self.sexual_behaviour.assign_stp_ages(self)
+        # TEMP
+        self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
@@ -101,7 +104,7 @@ class Population:
 
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
-        self.hiv_status.update_HIV_status(self.data)
+        self.hiv_status.update_HIV_status(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:

@@ -100,11 +100,29 @@ def test_num_partners():
     assert np.all(checks)
 
 
+def test_num_partner_for_behaviour_group():
+    """Check that approx correct number of partners are generated for each
+    sex, age, and sexual behaviour group"""
+    N = 100000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    for sex in SexType:
+        np_probs = pop.sexual_behaviour.short_term_partners[sex]
+        for g in range(len(np_probs)):
+            for (n, p) in zip(np_probs[g].data, np_probs[g].probs):
+                sub_pop = pop.data.loc[(pop.data[col.SEX] == sex) & (
+                    pop.data[col.SEX_BEHAVIOUR] == g) & (pop.data[col.AGE] >= 15)]
+                N_g = len(sub_pop)
+                E = p * N_g
+                sig = np.sqrt(p * (1-p) * N)
+                X = sum(sub_pop[col.NUM_PARTNERS] == n)
+                assert (E - 3*sig <= X <= E + 3*sig)
+
+
 def test_behaviour_updates():
     """Check that at least one person changes sexual behaviour groups"""
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=100000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
-    for i in range(500):
+    for i in range(5):
         pop.sexual_behaviour.update_sex_groups(pop)
     subsequent_groupings = pop.data["sex_behaviour"]
     assert (any(initial_groupings != subsequent_groupings))
