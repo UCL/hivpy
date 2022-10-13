@@ -141,7 +141,7 @@ class SexualBehaviourModule:
         active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
         num_partners = population.transform_group(
             [col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group, sub_pop=active_pop)
-        population.data.loc[active_pop, col.NUM_PARTNERS] = num_partners
+        population.data.loc[active_pop, col.NUM_PARTNERS] = num_partners.astype(int)
 
     def _assign_new_sex_group(self, sex, group, rred, size):
         group = int(group)
