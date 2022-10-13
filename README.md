@@ -68,14 +68,14 @@ on this repository.
 If you are planning to make changes to the package code,
 use the following command to install the package instead:
 ```bash
-pip install -e .[tests]
+pip install -e .[dev]
 ```
 This will install some additional libraries and tools for development, and also create an "editable" installation; this means that any changes you make will be applied automatically, without needing to reinstall the package.
 
 ### Testing
 The package comes with unit tests. To run them, simply run
 `pytest` from the top level (this directory). The `pytest` package and command
-are installed during the package installation if the `[tests]` extra option
+are installed during the package installation if the `[dev]` extra option
 is supplied, as above.
 
 ### Contributions
