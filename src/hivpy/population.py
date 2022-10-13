@@ -58,6 +58,10 @@ class Population:
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
+        # If we are at the start of the epidemic, introduce HIV into the population.
+        if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
+            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.HIV_introduced = True
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """Groups the data by a list of parameters and applies a function to each grouping. \n
