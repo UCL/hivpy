@@ -31,7 +31,6 @@ def test_hiv_update():
         pop.hiv_status.update_HIV_status(pop.data)
 
     new_cases = data["HIV_status"] & (~ prev_status)
-    print(sum(new_cases))
     miracles = (~ data["HIV_status"]) & (prev_status)
     under_15s_idx = selector(data, HIV_status=(operator.eq, True), age=(operator.le, 15))
     assert not any(miracles)
