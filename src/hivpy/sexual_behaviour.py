@@ -314,6 +314,7 @@ class SexualBehaviourModule:
                                                 self.gen_stp_ages,
                                                 sub_pop=active_pop)
         population.data.loc[active_pop, col.STP_AGE_GROUPS] = STP_groups
+
     def update_ltp_rate_change(self, date):
         if date1995 < date < date2000:
             dt = diff_years(date1995, date)
