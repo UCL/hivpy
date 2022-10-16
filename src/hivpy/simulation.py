@@ -6,7 +6,7 @@ import pandas as pd
 
 from .common import SexType, selector
 from .config import SimulationConfig
-from .logging import HIVpyLogger
+from .logging import PopulationWriter
 from .population import Population
 
 
@@ -100,7 +100,7 @@ class SimulationHandler:
         self.population = Population(self.simulation_config.population_size,
                                      self.simulation_config.start_date)
 
-    def run(self, logger: HIVpyLogger = None):
+    def run(self, logger: PopulationWriter = None):
         # Start the simulation
         date = self.simulation_config.start_date
         assert date == self.population.date

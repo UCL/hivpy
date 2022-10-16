@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from .exceptions import SimulationException
-from .logging import HIVpyLogger
+from .logging import PopulationWriter, setup_logging
 
 
 @dataclass
@@ -15,8 +15,9 @@ class LoggingConfig:
     fileLogging: bool = True
     fileLogLevel: str = 'DEBUG'
 
-    def start_logging(self) -> HIVpyLogger:
-        return HIVpyLogger(self.log_dir, self.logfile, self.fileLogLevel, self.consoleLogLevel)
+    def start_logging(self) -> PopulationWriter:
+        setup_logging(self.log_dir, self.logfile, self.fileLogLevel, self.consoleLogLevel)
+        return PopulationWriter()
 
 
 @dataclass
