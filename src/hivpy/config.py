@@ -3,7 +3,6 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from .exceptions import SimulationException
-from .logging import PopulationWriter, setup_logging
 
 
 @dataclass
@@ -14,10 +13,6 @@ class LoggingConfig:
     consoleLogLevel: str = 'WARNING'
     fileLogging: bool = True
     fileLogLevel: str = 'DEBUG'
-
-    def start_logging(self) -> PopulationWriter:
-        setup_logging(self.log_dir, self.logfile, self.fileLogLevel, self.consoleLogLevel)
-        return PopulationWriter()
 
 
 @dataclass

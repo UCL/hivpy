@@ -6,7 +6,7 @@ import pandas as pd
 
 from .common import SexType, selector
 from .config import SimulationConfig
-from .logging import PopulationWriter
+from .logging import HIVpyLogger, get_logger
 from .population import Population
 
 
@@ -100,18 +100,19 @@ class SimulationHandler:
         self.population = Population(self.simulation_config.population_size,
                                      self.simulation_config.start_date)
 
-    def run(self, logger: PopulationWriter = None):
+    def run(self, pop_logger: HIVpyLogger = None):
+        logger = get_logger()
         # Start the simulation
         date = self.simulation_config.start_date
         assert date == self.population.date
         time_step = self.simulation_config.time_step
         while date <= self.simulation_config.stop_date:
-            if logger:
-                logger.info("Timestep %s\n", date)
+            logger.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
+            if pop_logger:
+                pop_logger.write_population(self.population)
             self.output.update_summary_stats(date, self.population.data)
             date = date + time_step
-        if logger:
-            logger.info("finished")
+        logger.info("finished")
         self.output.write_output(self.output_path)
