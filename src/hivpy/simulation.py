@@ -1,4 +1,3 @@
-import logging
 import operator
 from datetime import datetime
 
@@ -7,6 +6,7 @@ import pandas as pd
 
 from .common import SexType, selector
 from .config import SimulationConfig
+from .logging import HIVpyLogger
 from .population import Population
 
 
@@ -100,16 +100,18 @@ class SimulationHandler:
         self.population = Population(self.simulation_config.population_size,
                                      self.simulation_config.start_date)
 
-    def run(self):
+    def run(self, logger: HIVpyLogger = None):
         # Start the simulation
         date = self.simulation_config.start_date
         assert date == self.population.date
         time_step = self.simulation_config.time_step
         while date <= self.simulation_config.stop_date:
-            logging.info("Timestep %s\n", date)
+            if logger:
+                logger.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
             self.output.update_summary_stats(date, self.population.data)
             date = date + time_step
-        logging.info("finished")
+        if logger:
+            logger.info("finished")
         self.output.write_output(self.output_path)
