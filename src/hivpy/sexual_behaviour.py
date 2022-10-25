@@ -327,11 +327,16 @@ class SexualBehaviourModule:
         # population.data[col.SEX_MIX_AGE_GROUP] = np.digitize(
         #    population.data[col.AGE], self.sex_mix_age_groups) - 1
         # only select people with STPs
-        active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]
-        STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
-                                                self.gen_stp_ages,
-                                                sub_pop=active_pop)
-        population.data.loc[active_pop, col.STP_AGE_GROUPS] = STP_groups
+        active_pop = population.get_sub_pop([(col.NUM_PARTNERS, operator.gt, 0)])
+        #active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]
+        population.set_variable_by_group(col.STP_AGE_GROUPS,
+                                         [(col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS)],
+                                         self.gen_stp_ages,
+                                         sub_pop=active_pop)
+        # STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
+        #                                         self.gen_stp_ages,
+        #                                         sub_pop=active_pop)
+        # population.data.loc[active_pop, col.STP_AGE_GROUPS] = STP_groups
 
     def update_ltp_rate_change(self, date):
         if date1995 < date < date2000:
