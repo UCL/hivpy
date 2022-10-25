@@ -8,6 +8,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .common import SexType, diff_years, rng, selector
+from .population import Population
 from .sex_behaviour_data import SexualBehaviourData
 
 
@@ -105,13 +106,18 @@ class SexualBehaviourModule:
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
-    def init_sex_behaviour_groups(self, population):
-        population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
-        for sex in SexType:
-            index = selector(population, sex=(operator.eq, sex))
-            n_sex = sum(index)
-            population.loc[index, col.SEX_BEHAVIOUR] = self.init_sex_behaviour_probs[sex].sample(
-                size=n_sex)
+    def init_sex_behaviour_groups(self, population: Population):
+        population.init_variable(col.SEX_BEHAVIOUR, None, 1)
+        # population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
+        population.set_variable_by_group(col.SEX_BEHAVIOUR,
+                                         [col.SEX],
+                                         lambda sex, n:
+                                         self.init_sex_behaviour_probs[sex].sample(size=n))
+        # for sex in SexType:
+        #    index = selector(population, sex=(operator.eq, sex))
+        #    n_sex = sum(index)
+        #    population.loc[index, col.SEX_BEHAVIOUR] = self.init_sex_behaviour_probs[sex].sample(
+        #        size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
@@ -135,13 +141,15 @@ class SexualBehaviourModule:
         group = int(group)
         return self.short_term_partners[sex][group].sample(size)
 
-    def num_short_term_partners(self, population):
+    def num_short_term_partners(self, population: Population):
         """Calculate the number of short term partners for the whole population"""
         # can we avoid doing population.loc[active_pop] twice? Does it waste time?
-        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
-        num_partners = population.transform_group(
-            [col.SEX, col.SEX_BEHAVIOUR], self.get_partners_for_group, sub_pop=active_pop)
-        population.data.loc[active_pop, col.NUM_PARTNERS] = num_partners.astype(int)
+        # active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15), (col.AGE, operator.le, 65)])
+        population.set_variable_by_group(col.NUM_PARTNERS,
+                                         [col.SEX, col.SEX_BEHAVIOUR],
+                                         self.get_partners_for_group,
+                                         sub_pop=active_pop)
 
     def _assign_new_sex_group(self, sex, group, rred, size):
         group = int(group)
@@ -166,19 +174,24 @@ class SexualBehaviourModule:
         population.data.loc[active_pop, col.SEX_BEHAVIOUR] = new_groups
 
     # risk reduction factors
-    def init_risk_factors(self, pop_data):
-        n_pop = len(pop_data)
-        self.init_rred_personal(pop_data, n_pop)
-        pop_data[col.RRED_AGE] = np.ones(n_pop)  # Placeholder to be changed each time step
-        self.update_rred_age(pop_data)
-        pop_data[col.RRED] = (self.new_partner_factor *
-                              pop_data[col.RRED_PERSONAL] *
-                              pop_data[col.RRED_AGE])
-        self.init_rred_adc(pop_data)
-        self.init_rred_diagnosis(pop_data)
+    def init_risk_factors(self, pop: Population):
+        n_pop = pop.size
+        self.init_rred_personal(pop, n_pop)
+        pop.init_variable(col.RRED_AGE, 1, 1)  # Placeholder to be changed each time step
+        self.update_rred_age(pop)
+        pop.set_present_variable(col.RRED,
+                                 pop.apply_vector_func([col.RRED_PERSONAL, col.RRED_AGE],
+                                                       self.calc_rred_base))
+        self.init_rred_adc(pop)
+        self.init_rred_diagnosis(pop)
         self.init_rred_population()
-        self.init_rred_art_adherence(pop_data)
-        self.init_rred_balance(pop_data)
+        self.init_rred_art_adherence(pop)
+        self.init_rred_balance(pop)
+
+    def calc_rred_base(self, rred_personal, rred_age):
+        return (self.new_partner_factor *
+                rred_personal *
+                rred_age)
 
     def update_rred(self, population):
         self.update_rred_adc(population.data)
@@ -199,20 +212,20 @@ class SexualBehaviourModule:
                                      population.data[col.RRED_LTP] *
                                      population.data[col.RRED_ART_ADHERENCE])
 
-    def init_rred_art_adherence(self, pop_data):
-        pop_data[col.RRED_ART_ADHERENCE] = 1
+    def init_rred_art_adherence(self, pop: Population):
+        pop.init_variable(col.RRED_ART_ADHERENCE, 1.0, 1)
 
     def update_rred_art_adherence(self, pop_data):
         if ("art_adherence" in pop_data.columns):
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, col.RRED_ART_ADHERENCE] = self.rred_art_adherence
 
-    def update_rred_age(self, pop_data):
-        over_15s = selector(pop_data, age=(operator.ge, 15))
-        age = pop_data.loc[over_15s, col.AGE]
-        sex = pop_data.loc[over_15s, col.SEX]
+    def update_rred_age(self, pop: Population):
+        over_15s = pop.get_sub_pop([(col.AGE, operator.gt, 15)])
+        age = pop.get_variable(col.AGE, over_15s)
+        sex = pop.get_variable(col.SEX, over_15s)
         age_index = self.age_index(age)
-        pop_data.loc[over_15s, col.RRED_AGE] = self.age_based_risk[age_index, sex]
+        pop.set_present_variable(col.RRED_AGE, self.age_based_risk[age_index, sex], over_15s)
 
     def update_rred_long_term_partnered(self, pop_data):
         pop_data[col.RRED_LTP] = 1  # Unpartnered people
@@ -223,27 +236,29 @@ class SexualBehaviourModule:
             # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
             # pop_data["rred_ltp"] = pop_data["ltp"]*self.ltp_risk_factor+(1-pop_data["ltp"])
 
-    def init_rred_personal(self, population, n_pop):
-        population[col.RRED_PERSONAL] = np.ones(n_pop)
+    def init_rred_personal(self, population: Population, n_pop):
+        population.init_variable(col.RRED_PERSONAL, 1)  # personal rred doesn't update(?)
         r = rng.uniform(size=n_pop)
         mask = r < self.p_rred_p
-        population.loc[mask, col.RRED_PERSONAL] = 1e-5
+        population.set_present_variable(col.RRED_PERSONAL, 1e-5, mask)
 
-    def init_rred_adc(self, population):
-        population[col.RRED_ADC] = 1.0
+    def init_rred_adc(self, population: Population):
+        population.init_variable(col.RRED_ADC, 1.0, 1)
         self.update_rred_adc(population)
 
-    def update_rred_adc(self, population):
+    def update_rred_adc(self, population: Population):
         """Updates risk reduction for AIDS defining condition"""
         # We don't need the rred_adc==1 condition (since they are all set to rred_adc = 1 to start)
         # It prevents needless assignments but requires checking more conditions
         # Not sure which is more efficient or if it matters.
-        indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
-        population.loc[indices, col.RRED_ADC] = 0.2
+        indices = population.get_sub_pop([(col.ADC, operator.eq, True),
+                                          (col.HIV_STATUS, operator.eq, True)])
+        # indices = selector(population, rred_adc=(operator.eq, 1), HIV_status=(operator.eq, True))
+        population.set_present_variable(col.RRED_ADC, 0.2, indices)
 
     def init_rred_population(self):
         """Initialise general population risk reduction w.r.t. condomless sex with new partners"""
-        self.rred_population = 1
+        self.rred_population = 1.0
 
     def update_rred_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
@@ -259,8 +274,8 @@ class SexualBehaviourModule:
         elif (date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
-    def init_rred_diagnosis(self, population):
-        population[col.RRED_DIAGNOSIS] = 1
+    def init_rred_diagnosis(self, population: Population):
+        population.init_variable(col.RRED_DIAGNOSIS, 1, 1)  # do we want previous timesteps?
 
     def update_rred_diagnosis(self, population, date):
         HIV_idx_new = selector(population, HIV_status=(operator.eq, True),
@@ -270,9 +285,9 @@ class SexualBehaviourModule:
                                HIV_Diagnosis_Date=(operator.lt, date-self.rred_diagnosis_period))
         population.loc[HIV_idx_old, col.RRED_DIAGNOSIS] = np.sqrt(self.rred_diagnosis)
 
-    def init_rred_balance(self, population):
+    def init_rred_balance(self, population: Population):
         """Initialise risk reduction factor for balancing sex ratios"""
-        population[col.RRED_BALANCE] = 1.0
+        population.init_variable(col.RRED_BALANCE, 1.0, 1)
 
     def update_rred_balance(self, population):
         """Update balance of new partners for consistency between sexes.
@@ -303,11 +318,14 @@ class SexualBehaviourModule:
         stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
         return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
 
-    def assign_stp_ages(self, population):
+    def assign_stp_ages(self, population: Population):
         """Calculate the ages of a persons short term partners
         from the mixing matrices."""
-        population.data[col.SEX_MIX_AGE_GROUP] = np.digitize(
-            population.data[col.AGE], self.sex_mix_age_groups) - 1
+        population.set_present_variable(col.SEX_MIX_AGE_GROUP,
+                                        (np.digitize(population.get_variable(col.AGE),
+                                                    self.sex_mix_age_groups) - 1))
+        # population.data[col.SEX_MIX_AGE_GROUP] = np.digitize(
+        #    population.data[col.AGE], self.sex_mix_age_groups) - 1
         # only select people with STPs
         active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]
         STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],

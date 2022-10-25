@@ -1,4 +1,6 @@
 import datetime
+import operator
+from functools import reduce
 
 import pandas as pd
 
@@ -18,6 +20,8 @@ class Population:
     params: dict  # population-level parameters
     date: datetime.date  # current date
     HIV_introduced: bool  # whether HIV has been introduced yet
+    variable_history: dict  # how many steps we need to store for each variable
+    step: int
 
     def __init__(self, size, start_date):
         """Initialise a population of the given size."""
@@ -29,6 +33,8 @@ class Population:
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
+        self._variable_history = {}
+        self.step = 0
 
     def _sample_parameters(self):
         """Randomly determine the uncertain population-level parameters."""
@@ -44,19 +50,22 @@ class Population:
         """Populate the data frame with initial values."""
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-        date_of_death = [None] * self.size
         self.data = pd.DataFrame({
+            "Dummy": [None] * self.size,
             col.SEX: self.demographics.initialize_sex(self.size),
             col.AGE: self.demographics.initialise_age(self.size),
-            col.DATE_OF_DEATH: date_of_death
         })
-        self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
-        self.data[col.HIV_DIAGNOSIS_DATE] = None
-        self.data[col.NUM_PARTNERS] = 0
-        self.data[col.LONG_TERM_PARTNER] = False
-        self.data[col.LTP_LONGEVITY] = 0
-        self.sexual_behaviour.init_sex_behaviour_groups(self.data)
-        self.sexual_behaviour.init_risk_factors(self.data)
+        self.init_variable(col.SEX, self.demographics.initialize_sex(self.size))
+        self.init_variable(col.AGE, self.demographics.initialise_age(self.size), 1)  # when do we use current age and when previous timestep age?
+        self.init_variable(col.DATE_OF_DEATH, None)
+        self.init_variable(col.HIV_STATUS, self.hiv_status.initial_HIV_status, 1)
+        self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        self.init_variable(col.NUM_PARTNERS, 0, 3)  # I think we need t-3 for pregnancy but might change if we rethink implementation
+                                                    # In this case the number of previous steps we need would actually be variable based on timestep!!!
+        self.init_variable(col.LONG_TERM_PARTNER, False, 1)
+        self.init_variable(col.LTP_LONGEVITY, 0, 1)
+        self.sexual_behaviour.init_sex_behaviour_groups(self)
+        self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         # TEMP
@@ -65,6 +74,62 @@ class Population:
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
             self.HIV_introduced = True
+
+    def init_variable(self, name: str, init_val, n_prev_steps=0):
+        """
+           New variable will be initialised as a collection of columns.\\
+           Column names (keys) will be (name, 0) ... (name, n_prev_steps).\\
+           Updates dictionary to keep track of number of time steps being stored for each
+           variable.
+           name: string, name of variable
+           n_prev_steps: integer, number of previous iterations of this variable which need
+           to be stored (default 0).
+        """
+        self._variable_history[name] = n_prev_steps
+        for i in range(0, n_prev_steps + 1):
+            self.data[(col.name, i)] = init_val + 1
+
+    def get_sub_pop(self, conditions):
+        index = reduce(operator.and_,
+                       (op(self.data[self.get_correct_column(var)], val) for (var, op, val) in conditions))
+        return index
+
+    def apply_vector_func(self, params, func):
+        param_cols = list(map(self.get_correct_column, params))
+        return func(*param_cols)
+
+    def get_variable(self, var, sub_pop=None):
+        var_col = self.get_correct_column(var)
+        if sub_pop is None:
+            return self.data[var_col]
+        else:
+            return self.data.loc[sub_pop, var_col]
+
+    def set_present_variable(self, target: str, value, sub_pop=None):
+        present_col = self.get_correct_column((target, 0))
+        if sub_pop is None:
+            self.data[present_col] = value
+        else:
+            self.data.loc[sub_pop, present_col] = value
+
+    def get_correct_column(self, param_info):
+        (param, dt) = self.make_column_tuple(param_info)
+        col_index = (self.step + dt) % self.variable_history[param]
+        return (param, col_index)
+
+    def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
+        """Sets the value of a population variable at the present time step by calling transform group."""
+        target_col = self.get_correct_column((target, 0))
+        if sub_pop is None:
+            self.data[target_col] = self.transform_group(groups, func, use_size)
+        else:
+            self.data.loc[sub_pop, target_col] = self.transform_group(groups, func, use_size, sub_pop)
+
+    def make_column_tuple(param):
+        if (type(param) == str):
+            return (param, 1)
+        else:
+            return param
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """Groups the data by a list of parameters and applies a function to each grouping. \n
@@ -78,12 +143,15 @@ class Population:
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
         by `data.loc[sub_pop]`"""
-        # HIV_STATUS is just a dummy column to allow us to use the transform method
+        # Use Dummy column to in order to enable transform method and avoid any risks to data
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
             else:
                 args = list(g.name)
+
+            g = list(map(lambda x: self.get_correct_column(x), g))
+
             if (use_size):
                 args.append(g.size)
             return func(*args)
@@ -91,7 +159,7 @@ class Population:
             df = self.data.loc[sub_pop]
         else:
             df = self.data
-        return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
+        return df.groupby(param_list)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: datetime.timedelta):
         """Advance the population by one time step."""
@@ -100,7 +168,8 @@ class Population:
         self.data.age += time_step.days / 365  # Very naive!
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
-        self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
+        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
+        self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
 
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
@@ -108,10 +177,11 @@ class Population:
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self.data))
             self.HIV_introduced = True
 
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
+        self.step += 1
         return self

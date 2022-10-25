@@ -25,4 +25,6 @@ HIV_STATUS = "HIV_status"                   # bool: true if person if HIV positi
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"       # int: value 1-6 placing bounds on viral load for an HIV positive person
 
+ADC = "AIDS_defining_condition"             # Bool: presence of AIDS defining condition
+
 DATE_OF_DEATH = "date_of_death"             # None | datetime.date: date of death if dead, o/w None
