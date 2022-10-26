@@ -5,6 +5,7 @@ import hivpy.column_names as col
 from .common import SexType, rng
 from .circumcision_data import CircumcisionData
 
+
 class CircumcisionModule:
 
     def __init__(self, **kwargs):
@@ -15,6 +16,6 @@ class CircumcisionModule:
 
     def initialise_circumcision(self, population):
         male_population = population.index[population[col.SEX] == SexType.Male]
-        r = rng.uniform(size = len(male_population))
+        r = rng.uniform(size=len(male_population))
         circumcision = r < self.prob_birth_circ
         population.loc[male_population, col.CIRCUMCISED] = circumcision
