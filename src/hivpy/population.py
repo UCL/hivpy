@@ -7,6 +7,7 @@ import hivpy.column_names as col
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
+from .circumcision import CircumcisionModule
 
 HIV_APPEARANCE = datetime.date(1989, 1, 1)
 
@@ -25,6 +26,7 @@ class Population:
         self.date = start_date
         self.demographics = DemographicsModule()
         self.sexual_behaviour = SexualBehaviourModule()
+        self.circumcision = CircumcisionModule()
         self.hiv_status = HIVStatusModule()
         self.HIV_introduced = False
         self._sample_parameters()
@@ -48,6 +50,7 @@ class Population:
         self.data = pd.DataFrame({
             col.SEX: self.demographics.initialize_sex(self.size),
             col.AGE: self.demographics.initialise_age(self.size),
+            col.CIRCUMCISED: [False] * self.size,
             col.DATE_OF_DEATH: date_of_death
         })
         self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
@@ -55,6 +58,7 @@ class Population:
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
+        self.circumcision.initialise_circumcision(self.data)
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)

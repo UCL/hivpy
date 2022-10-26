@@ -14,6 +14,7 @@ RRED_PERSONAL = "rred_personal"             # float: individual risk reduction a
 RRED_LTP = "rred_long_term_partnered"       # float: risk reduction for people in long term partnerships
 RRED_ART_ADHERENCE = "rred_art_adherence"   # float: risk reduction associated with low ART adherence
 RRED_INTIIAL = "rred_initial"               # float: initial risk reduction factor
+CIRCUMCISED = "circumcised"                 # bool: True if a man is circumcised
 NUM_PARTNERS = "num_partners"               # float: number of short term condomless sex partners during the current time step
 SEX_MIX_AGE_GROUP = "sex_mix_age_group"     # int: Discrete age group for sexual mixing
 STP_AGE_GROUPS = "stp_age_groups"           # int array: ages groups of short term partners
