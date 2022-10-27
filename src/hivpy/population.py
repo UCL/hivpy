@@ -4,10 +4,10 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
-from .circumcision import CircumcisionModule
 
 HIV_APPEARANCE = datetime.date(1989, 1, 1)
 
@@ -58,7 +58,7 @@ class Population:
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
-        self.circumcision.initialise_circumcision(self.data)
+        self.circumcision.init_birth_circumcision(self.data)
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
