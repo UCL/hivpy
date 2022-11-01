@@ -7,6 +7,7 @@ import pandas as pd
 
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import OutputException
+from .logging import start_logging
 from .simulation import SimulationHandler
 
 
@@ -88,13 +89,13 @@ def create_experiment(all_params):
     return ExperimentConfig(simulation_config, logging_config)
 
 
-def run_experiment(experiment_config):
+def run_experiment(experiment_config: ExperimentConfig):
     """Run an entire experiment.
 
     An experiment can consist of one or more simulation runs,
     as well as processing steps after those are completed.
     """
-    experiment_config.logging_config.start_logging()
+    start_logging(experiment_config.logging_config)
     simulation_handler = SimulationHandler(experiment_config.simulation_config)
     simulation_handler.run()
     return (simulation_handler.population)

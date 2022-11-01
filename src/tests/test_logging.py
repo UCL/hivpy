@@ -1,15 +1,15 @@
-import logging
 import os.path as path
 
 from hivpy.config import LoggingConfig
+from hivpy.logging import get_logger, start_logging
 
 
 def test_logging_levels(tmp_path, capsys):
     d = tmp_path / "log"
     d.mkdir()
     log_cfg = LoggingConfig(log_dir=d, logfile="hivpy.log")
-    log_cfg.start_logging()
-    logger = logging.getLogger("Testing")
+    start_logging(log_cfg)
+    logger = get_logger("Testing")
     TEST_DEBUG = "Test debug."
     TEST_INFO = "Test info."
     TEST_WARNING = "Test warning."

@@ -1,5 +1,4 @@
 import importlib.resources
-import logging
 from math import exp
 
 import numpy as np
@@ -10,6 +9,7 @@ import hivpy.column_names as col
 from hivpy.common import SexType, rng
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
+from hivpy.logging import get_logger
 
 SexDType = pd.CategoricalDtype(iter(SexType))
 
@@ -117,9 +117,9 @@ class ContinuousAgeDistribution:
         self.min_age = min_age
         model_age_limit = -modelParams[1]/modelParams[0]
         if (max_age > model_age_limit):
-            logging.getLogger("Demographics").warning(f"Max age exceeds the maximum age limit for "
-                                                      f"this model (negative probability). "
-                                                      f"Adjusting max age to {model_age_limit}")
+            get_logger("Demographics").warning(f"Max age exceeds the maximum age limit for "
+                                               f"this model (negative probability). "
+                                               f"Adjusting max age to {model_age_limit}")
             self.max_age = model_age_limit
         else:
             self.max_age = max_age
