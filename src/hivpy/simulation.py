@@ -85,7 +85,9 @@ class SimulationOutput:
 
 
 class SimulationHandler:
-    """A class for handling executing a simulation and outputting results."""
+    """
+    A class for handling executing a simulation and outputting results.
+    """
     simulation_config: SimulationConfig
     population: Population
 

@@ -5,9 +5,9 @@ import yaml
 
 from .experiment import create_experiment, run_experiment
 
-'''
+"""
 Maybe we may want to register parameters/properties in future?
-'''
+"""
 # def register_parameters():
 #     parser = argparse.ArgumentParser(description="register model parameters")
 #     parser.add_argument("parameters", type=pathlib.Path,
@@ -17,11 +17,11 @@ Maybe we may want to register parameters/properties in future?
 
 
 def run_model():
-    '''
+    """
     Running a HIV model simulation.
     Assuming there is a hivpy.yaml file, the command is
     $run_model hivpy.yaml.
-    '''
+    """
     parser = argparse.ArgumentParser(description="run a simulation")
     parser.add_argument("input", type=pathlib.Path, help="run_model config.yaml")
     args = parser.parse_args()

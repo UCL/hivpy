@@ -46,7 +46,9 @@ class LoggingConfig:
 
 @dataclass
 class SimulationConfig:
-    """A class holding the parameters required for running a simulation."""
+    """
+    A class holding the parameters required for running a simulation.
+    """
     population_size: int
     start_date: date
     stop_date: date
@@ -54,7 +56,9 @@ class SimulationConfig:
     time_step: timedelta = timedelta(days=90)
 
     def _validate(self):
-        """Make sure the values passed in make sense."""
+        """
+        Make sure the values passed in make sense.
+        """
         try:
             assert self.stop_date >= self.start_date + self.time_step
             assert self.time_step > timedelta(days=0)
@@ -62,7 +66,9 @@ class SimulationConfig:
             raise SimulationException("Invalid simulation configuration.")
 
     def __post_init__(self):
-        """This is called automatically during construction."""
+        """
+        This is called automatically during construction.
+        """
         self._validate()
 
 
