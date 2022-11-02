@@ -58,8 +58,8 @@ class StepwiseAgeDistribution:
         CP[N-1] = 1.0
         return CP
 
-    # Generate Age With Stepwise Distribution
-    # the size of ages should be one larger than the cumulative probabilty
+    # Generate Age With Stepwise Distribution.
+    # The size of ages should be one larger than the cumulative probabilty
     # so that each bucket has an upper and lower bound.
     def gen_ages(self, N):
         """Generate Age With Stepwise Distribution
@@ -92,11 +92,12 @@ class ContinuousAgeDistribution:
     P(age) = (m*age + c)*exp(A(age-B))
 
     This fits all three example cases quite neatly.
-    P(age): Probability density at a given age
-    m: gradient of linear part, determines decline in population with age
-    c: intercept of linear part, determines maximum age
-    A: exponent of exponential part, determines the curvature
-    B: offset of exponential part, scaling parameter
+
+    P(age): Probability density at a given age \n
+    m: gradient of linear part, determines decline in population with age \n
+    c: intercept of linear part, determines maximum age \n
+    A: exponent of exponential part, determines the curvature \n
+    B: offset of exponential part, scaling parameter \n
     """
 
     def _integrated_linexp(self, x, m, c, A, B):
@@ -135,7 +136,7 @@ class ContinuousAgeDistribution:
             return cls(-68, 65, *cls.modelParams3)
 
     def gen_ages(self, N):
-        """Generate ages using a (non-normalised) continuous cumulative probability distribution
+        """Generate ages using a (non-normalised) continuous cumulative probability distribution.
 
         Given an analytic PD, this should also be analytically defined
         Cumulative probability distribution is defined in _integratedLinexp

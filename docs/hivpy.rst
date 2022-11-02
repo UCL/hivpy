@@ -51,6 +51,7 @@ hivpy.demographics module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: modelParams1, modelParams2, modelParams3, n_inversion_points, stepwise_boundaries, stepwise_model1, stepwise_model2, stepwise_model3
 
 hivpy.demographics\_data module
 -------------------------------
@@ -83,6 +84,7 @@ hivpy.hiv\_status module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: initial_hiv_newp_threshold, initial_hiv_prob
 
 hivpy.population module
 -----------------------

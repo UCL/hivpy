@@ -102,10 +102,12 @@ class ResettableRandomState:
         forget about it.
 
         The temporary seed can be used in a with-statement, like:
-        ```
-        with rng.set_temp_seed(17):
-            rng.random(...)  # any calls to random methods here
-        ```
+
+        .. code-block:: python
+
+            with rng.set_temp_seed(17):
+                rng.random(...)  # any calls to random methods here
+
         When the with-block is ended, the old random state is restored, as if
         the temporary seed had never been set.
         """
