@@ -1,6 +1,14 @@
 hivpy package
 =============
 
+Module contents
+---------------
+
+.. automodule:: hivpy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Subpackages
 -----------
 
@@ -118,10 +126,3 @@ hivpy.simulation module
    :undoc-members:
    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: hivpy
-   :members:
-   :undoc-members:
-   :show-inheritance:
