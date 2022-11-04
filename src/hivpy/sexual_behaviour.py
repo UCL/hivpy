@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 import datetime
 import importlib.resources
 import operator
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 import hivpy.column_names as col
 
 from .common import SexType, diff_years, rng, selector
-from .population import Population
 from .sex_behaviour_data import SexualBehaviourData
 
+if TYPE_CHECKING:
+    from .population import Population
 
 class MaleSexBehaviour(IntEnum):
     ZERO = 0
@@ -106,7 +110,7 @@ class SexualBehaviourModule:
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
-    def init_sex_behaviour_groups(self, population: Population):
+    def init_sex_behaviour_groups(self, population):
         population.init_variable(col.SEX_BEHAVIOUR, None, 1)
         # population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
@@ -141,7 +145,7 @@ class SexualBehaviourModule:
         group = int(group)
         return self.short_term_partners[sex][group].sample(size)
 
-    def num_short_term_partners(self, population: Population):
+    def num_short_term_partners(self, population):
         """Calculate the number of short term partners for the whole population"""
         # can we avoid doing population.loc[active_pop] twice? Does it waste time?
         # active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
@@ -179,6 +183,7 @@ class SexualBehaviourModule:
         self.init_rred_personal(pop, n_pop)
         pop.init_variable(col.RRED_AGE, 1, 1)  # Placeholder to be changed each time step
         self.update_rred_age(pop)
+        pop.init_variable(col.RRED, 1, 1)
         pop.set_present_variable(col.RRED,
                                  pop.apply_vector_func([col.RRED_PERSONAL, col.RRED_AGE],
                                                        self.calc_rred_base))
@@ -212,7 +217,7 @@ class SexualBehaviourModule:
                                      population.data[col.RRED_LTP] *
                                      population.data[col.RRED_ART_ADHERENCE])
 
-    def init_rred_art_adherence(self, pop: Population):
+    def init_rred_art_adherence(self, pop):
         pop.init_variable(col.RRED_ART_ADHERENCE, 1.0, 1)
 
     def update_rred_art_adherence(self, pop_data):
@@ -220,8 +225,9 @@ class SexualBehaviourModule:
             indices = selector(pop_data, art_adherence=(operator.lt, self.adherence_threshold))
             pop_data.loc[indices, col.RRED_ART_ADHERENCE] = self.rred_art_adherence
 
-    def update_rred_age(self, pop: Population):
+    def update_rred_age(self, pop):
         over_15s = pop.get_sub_pop([(col.AGE, operator.gt, 15)])
+        print("Over 15s = ", over_15s)
         age = pop.get_variable(col.AGE, over_15s)
         sex = pop.get_variable(col.SEX, over_15s)
         age_index = self.age_index(age)
@@ -236,7 +242,7 @@ class SexualBehaviourModule:
             # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
             # pop_data["rred_ltp"] = pop_data["ltp"]*self.ltp_risk_factor+(1-pop_data["ltp"])
 
-    def init_rred_personal(self, population: Population, n_pop):
+    def init_rred_personal(self, population, n_pop):
         population.init_variable(col.RRED_PERSONAL, 1)  # personal rred doesn't update(?)
         r = rng.uniform(size=n_pop)
         mask = r < self.p_rred_p
@@ -244,9 +250,11 @@ class SexualBehaviourModule:
 
     def init_rred_adc(self, population: Population):
         population.init_variable(col.RRED_ADC, 1.0, 1)
+        # TEMP -- AIDS defining condition should go in the appropriate module
+        population.init_variable(col.ADC, False, 1)
         self.update_rred_adc(population)
 
-    def update_rred_adc(self, population: Population):
+    def update_rred_adc(self, population):
         """Updates risk reduction for AIDS defining condition"""
         # We don't need the rred_adc==1 condition (since they are all set to rred_adc = 1 to start)
         # It prevents needless assignments but requires checking more conditions
@@ -274,7 +282,7 @@ class SexualBehaviourModule:
         elif (date2021 < date):
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
-    def init_rred_diagnosis(self, population: Population):
+    def init_rred_diagnosis(self, population):
         population.init_variable(col.RRED_DIAGNOSIS, 1, 1)  # do we want previous timesteps?
 
     def update_rred_diagnosis(self, population, date):
@@ -285,7 +293,7 @@ class SexualBehaviourModule:
                                HIV_Diagnosis_Date=(operator.lt, date-self.rred_diagnosis_period))
         population.loc[HIV_idx_old, col.RRED_DIAGNOSIS] = np.sqrt(self.rred_diagnosis)
 
-    def init_rred_balance(self, population: Population):
+    def init_rred_balance(self, population):
         """Initialise risk reduction factor for balancing sex ratios"""
         population.init_variable(col.RRED_BALANCE, 1.0, 1)
 
@@ -318,7 +326,7 @@ class SexualBehaviourModule:
         stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
         return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
 
-    def assign_stp_ages(self, population: Population):
+    def assign_stp_ages(self, population):
         """Calculate the ages of a persons short term partners
         from the mixing matrices."""
         population.set_present_variable(col.SEX_MIX_AGE_GROUP,
@@ -330,7 +338,7 @@ class SexualBehaviourModule:
         active_pop = population.get_sub_pop([(col.NUM_PARTNERS, operator.gt, 0)])
         #active_pop = population.data.index[population.data[col.NUM_PARTNERS] > 0]
         population.set_variable_by_group(col.STP_AGE_GROUPS,
-                                         [(col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS)],
+                                         [col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
                                          self.gen_stp_ages,
                                          sub_pop=active_pop)
         # STP_groups = population.transform_group([col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],

@@ -3,9 +3,11 @@ import operator
 from functools import reduce
 
 import pandas as pd
+import numpy as np
 
 import hivpy.column_names as col
 
+from .common import rng
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
@@ -27,14 +29,14 @@ class Population:
         """Initialise a population of the given size."""
         self.size = size
         self.date = start_date
+        self.step = 0
+        self.variable_history = {}
         self.demographics = DemographicsModule()
         self.sexual_behaviour = SexualBehaviourModule()
         self.hiv_status = HIVStatusModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
-        self._variable_history = {}
-        self.step = 0
 
     def _sample_parameters(self):
         """Randomly determine the uncertain population-level parameters."""
@@ -64,6 +66,8 @@ class Population:
                                                     # In this case the number of previous steps we need would actually be variable based on timestep!!!
         self.init_variable(col.LONG_TERM_PARTNER, False, 1)
         self.init_variable(col.LTP_LONGEVITY, 0, 1)
+        self.init_variable(col.SEX_MIX_AGE_GROUP, 0, 1)
+        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size), 1)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
@@ -72,7 +76,7 @@ class Population:
         self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
 
     def init_variable(self, name: str, init_val, n_prev_steps=0):
@@ -85,34 +89,37 @@ class Population:
            n_prev_steps: integer, number of previous iterations of this variable which need
            to be stored (default 0).
         """
-        self._variable_history[name] = n_prev_steps
+        self.variable_history[name] = n_prev_steps + 1
         for i in range(0, n_prev_steps + 1):
-            self.data[(col.name, i)] = init_val + 1
+            self.data[(name, i)] = init_val
 
     def get_sub_pop(self, conditions):
         index = reduce(operator.and_,
                        (op(self.data[self.get_correct_column(var)], val) for (var, op, val) in conditions))
-        return index
+        return self.data.index[index]
 
     def apply_vector_func(self, params, func):
-        param_cols = list(map(self.get_correct_column, params))
+        param_cols = list(map(lambda x: self.get_variable(self.get_correct_column(x)), params))
         return func(*param_cols)
 
     def get_variable(self, var, sub_pop=None):
         var_col = self.get_correct_column(var)
+        print("cols = ", self.data.columns)
+        print("Column to get = ", var_col)
         if sub_pop is None:
             return self.data[var_col]
         else:
-            return self.data.loc[sub_pop, var_col]
+            return self.data.loc[sub_pop,[var_col]]
 
     def set_present_variable(self, target: str, value, sub_pop=None):
         present_col = self.get_correct_column((target, 0))
         if sub_pop is None:
             self.data[present_col] = value
         else:
-            self.data.loc[sub_pop, present_col] = value
+            self.data.loc[sub_pop, [present_col]] = value
 
     def get_correct_column(self, param_info):
+        print(param_info, type(param_info))
         (param, dt) = self.make_column_tuple(param_info)
         col_index = (self.step + dt) % self.variable_history[param]
         return (param, col_index)
@@ -125,7 +132,7 @@ class Population:
         else:
             self.data.loc[sub_pop, target_col] = self.transform_group(groups, func, use_size, sub_pop)
 
-    def make_column_tuple(param):
+    def make_column_tuple(self, param):
         if (type(param) == str):
             return (param, 1)
         else:
@@ -144,17 +151,18 @@ class Population:
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
         by `data.loc[sub_pop]`"""
         # Use Dummy column to in order to enable transform method and avoid any risks to data
+        param_list = list(map(lambda x: self.get_correct_column(x), param_list))
+        
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
             else:
                 args = list(g.name)
 
-            g = list(map(lambda x: self.get_correct_column(x), g))
-
             if (use_size):
                 args.append(g.size)
             return func(*args)
+
         if sub_pop is not None:
             df = self.data.loc[sub_pop]
         else:

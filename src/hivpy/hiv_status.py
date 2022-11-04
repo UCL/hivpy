@@ -1,3 +1,5 @@
+import operator
+
 import numpy as np
 import pandas as pd
 
@@ -35,14 +37,18 @@ class HIVStatusModule:
         # as something more complex than a boolean, e.g. an enum.
         return pd.Series(False, population.index)
 
-    def introduce_HIV(self, population: pd.DataFrame):
+    def introduce_HIV(self, population):
         """Initialise HIV status at the start of the pandemic."""
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
-        initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
+        print(population.get_variable(col.NUM_PARTNERS))
+        initial_candidates = population.get_sub_pop([(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
+        # initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
         # Each of them has the same probability of being infected.
-        initial_infection = rng.uniform(size=initial_candidates.sum()) < self.initial_hiv_prob
-        hiv_status = pd.Series(False, index=population.index)
+        print(initial_candidates)
+        print("num init candidates = ", len(initial_candidates))
+        initial_infection = rng.uniform(len(initial_candidates)) < self.initial_hiv_prob
+        hiv_status = pd.Series(False, index=population.data.index)
         hiv_status.loc[initial_candidates] = initial_infection
         return hiv_status
 
@@ -74,7 +80,7 @@ class HIVStatusModule:
     def set_dummy_viral_load(self, population):
         """Dummy function to set viral load until this
         part of the code has been implemented properly"""
-        population.data[col.VIRAL_LOAD_GROUP] = rng.choice(7, population.size)
+        population.init_variable(col.VIRAL_LOAD_GROUP, rng.choice(7, population.size))
 
     def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
         # Slow example that avoid repeating the iterations over partners
