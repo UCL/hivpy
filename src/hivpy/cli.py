@@ -5,16 +5,6 @@ import yaml
 
 from .experiment import create_experiment, run_experiment
 
-"""
-Maybe we may want to register parameters/properties in future?
-"""
-# def register_parameters():
-#     parser = argparse.ArgumentParser(description="register model parameters")
-#     parser.add_argument("parameters", type=pathlib.Path,
-#                         help="register_parameters parameters.csv")
-#     args = parser.parse_args()
-#     parameter_filepath = args.parameters
-
 
 def run_model():
     """
