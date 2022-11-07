@@ -7,7 +7,9 @@ from .common import DiscreteChoice, SexType, rng
 
 
 class SexualBehaviourData:
-    """Class to hold and interpret sexual behaviour data loaded from the yaml file"""
+    """
+    Class to hold and interpret sexual behaviour data loaded from the yaml file.
+    """
 
     def _setup_probabilty_dist(self, prob_dict):
         if ("Range" in prob_dict):

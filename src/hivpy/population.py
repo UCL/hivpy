@@ -12,7 +12,9 @@ HIV_APPEARANCE = datetime.date(1989, 1, 1)
 
 
 class Population:
-    """A set of individuals with particular characteristics."""
+    """
+    A set of individuals with particular characteristics.
+    """
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
@@ -20,7 +22,9 @@ class Population:
     HIV_introduced: bool  # whether HIV has been introduced yet
 
     def __init__(self, size, start_date):
-        """Initialise a population of the given size."""
+        """
+        Initialise a population of the given size.
+        """
         self.size = size
         self.date = start_date
         self.demographics = DemographicsModule()
@@ -31,7 +35,9 @@ class Population:
         self._create_population_data()
 
     def _sample_parameters(self):
-        """Randomly determine the uncertain population-level parameters."""
+        """
+        Randomly determine the uncertain population-level parameters.
+        """
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
         # that distrubition is chosen randomly for each population.
@@ -41,7 +47,9 @@ class Population:
         # }
 
     def _create_population_data(self):
-        """Populate the data frame with initial values."""
+        """
+        Populate the data frame with initial values.
+        """
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         date_of_death = [None] * self.size
@@ -67,9 +75,11 @@ class Population:
             self.HIV_introduced = True
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
-        """Groups the data by a list of parameters and applies a function to each grouping. \n
+        """
+        Groups the data by a list of parameters and applies a function to each grouping.
+
         `param_list` is a list of names of columns by which you want to group the data. The order
-        must match the order of arguments taken by the function `func` \n
+        must match the order of arguments taken by the function `func`. \n
         `func` is a function which takes the values of those columns for a group (and optionally
         the size of the group, which should be the last argument) and returns a value or array of
         values of the size of the group. \n
@@ -77,7 +87,8 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`"""
+        by `data.loc[sub_pop]`.
+        """
         # HIV_STATUS is just a dummy column to allow us to use the transform method
         def general_func(g):
             if len(param_list) == 1:
@@ -94,7 +105,9 @@ class Population:
         return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
 
     def evolve(self, time_step: datetime.timedelta):
-        """Advance the population by one time step."""
+        """
+        Advance the population by one time step.
+        """
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
         self.data.age += time_step.days / 365  # Very naive!

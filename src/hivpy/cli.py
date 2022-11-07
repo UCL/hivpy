@@ -7,11 +7,11 @@ from .experiment import create_experiment, run_experiment
 
 
 def run_model():
-    '''
-    Running a HIV model simulation
-    Assuming there is a hivpy.yaml file the command is
-    $run_model hivpy.yaml
-    '''
+    """
+    Running a HIV model simulation.
+    Assuming there is a hivpy.yaml file, the command is
+    $run_model hivpy.yaml.
+    """
     parser = argparse.ArgumentParser(description="run a simulation")
     parser.add_argument("input", type=pathlib.Path, help="run_model config.yaml")
     args = parser.parse_args()

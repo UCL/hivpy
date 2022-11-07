@@ -9,7 +9,7 @@ are all likely to change.
 
 More extensive documentation for this package is under development.
 
-TODO: Link to publications using hiv-synthesis model and other pages
+TODO: Link to publications using hiv-synthesis model and other pages.
 
 ## Getting started
 ### Prerequisites
@@ -22,7 +22,6 @@ and [activating](https://packaging.python.org/en/latest/guides/installing-using-
 If you are using Python through anaconda, see
 [their guide for managing environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html).
 
-
 ### Installing the package
 Once you have activated the relevant virtual environment (if desired),
 you can install the package by running the following command
@@ -30,8 +29,8 @@ from the top level of this repository (the location of this README file):
 ```bash
 pip install .
 ```
-(if you are planning to make changes to the code, see the
-developer instructions below)
+(If you are planning to make changes to the code, see the
+developer instructions below.)
 
 This will install the libraries that the package requires, and make available
 the command-line tool for running simulations.
@@ -39,6 +38,16 @@ the command-line tool for running simulations.
 In the future, we plan to make the package available through the
 [Python Package Index](https://pypi.org/). Until then, installing from source
 is the only way to access the code.
+
+## Documentation
+We use [Sphinx](https://www.sphinx-doc.org/en/master/) to auto-generate our documentation. You can build it by running `make <target>` in the `docs/` directory. The following command will generate documentation in HTML format in `docs/_build/html/`:
+```bash
+make html
+```
+If you execute `make` without an argument you can find a list of other available format options.
+
+### Accessing HTML documentation
+Once you build the documentation as HTML, please visit our landing page `docs/_build/html/index.html` if you would like to search for something or browse our index pages. If you would like to jump straight to the page that contains all the most relevant `hivpy` package information, our documentation is best viewed through `docs/_build/html/hivpy.html`.
 
 ## Running simulations
 Simulations can be run from the terminal with `run_model`:
@@ -56,7 +65,6 @@ The file contains one row per time step and a column for each quantity
 that is being tracked or computed.
 The file name reflects the date and time that the simulation was launched,
 for example `simulation_output_20220826-163116.csv`.
-
 
 ## Support
 If you notice something that appears wrong, please let us know by

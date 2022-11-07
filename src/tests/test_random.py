@@ -4,7 +4,9 @@ from hivpy.common import rng
 
 
 def test_seed_reproduce():
-    """Check that using the same seed value produces the same random values."""
+    """
+    Check that using the same seed value produces the same random values.
+    """
     sample_size = 10
     # Get samples with a specific seed
     rng.set_seed(50)
@@ -21,7 +23,9 @@ def test_seed_reproduce():
 
 
 def test_seed_context():
-    """Check that setting the temporary seed has the correct effect."""
+    """
+    Check that setting the temporary seed has the correct effect.
+    """
     sample_size = 10
     # Get samples with a particular seed
     rng.set_seed(50)
@@ -33,7 +37,9 @@ def test_seed_context():
 
 
 def test_seed_context_switching():
-    """Check that the right state is restored after using a temporary seed."""
+    """
+    Check that the right state is restored after using a temporary seed.
+    """
     sample_size = 10
     rng.set_seed(50)
     samples_base = rng.random(size=2*sample_size)

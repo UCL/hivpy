@@ -8,7 +8,9 @@ from hivpy.experiment import create_experiment, run_experiment
 
 @pytest.fixture
 def sample_experiment_params():
-    """Sample experiment parameters for testing."""
+    """
+    Sample experiment parameters for testing.
+    """
     filepath = os.path.join(os.path.dirname(__file__), 'fixtures', 'sample.yaml')
     with open(filepath, 'r') as sample_file:
         sample_config = yaml.safe_load(sample_file)
@@ -16,7 +18,8 @@ def sample_experiment_params():
 
 
 def test_dummy_workflow(tmp_path, sample_experiment_params):
-    """Check that we can run a sample experiment from start to end.
+    """
+    Check that we can run a sample experiment from start to end.
 
     This is only a placeholder test and should be replaced when we have
     implemented actual functionality.

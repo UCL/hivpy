@@ -1,4 +1,6 @@
-"""Functionality shared between multiple parts of the framework."""
+"""
+Functionality shared between multiple parts of the framework.
+"""
 
 import datetime
 import operator
@@ -21,9 +23,11 @@ class DiscreteChoice:
         self.dist = stat.rv_discrete(values=(index_range, probs))
 
     def sample(self, size=None):
-        """Samples from a random discrete distribution.
+        """
+        Samples from a random discrete distribution.
         Used without an argument it will return a single object.
-        Used with the "size" argument it will return an array of that size."""
+        Used with the "size" argument it will return an array of that size.
+        """
         if size is None:
             index = self.dist.rvs()
             return self.data[index]
@@ -46,17 +50,19 @@ def diff_years(date_begin, date_end):
 
 
 def selector(population, **kwargs):
-    """Select the rows of a population data frame matching a set of criteria.
-
-    FIXME Describe usage in more detail.
     """
+    Select the rows of a population data frame matching a set of criteria.
+    """
+    # FIXME Describe usage in more detail.
     index = reduce(operator.and_,
                    (op(population[kw], val) for kw, (op, val) in kwargs.items()))
     return index
 
 
 def between(values, limits):
-    """A helper function for selecting values within a range."""
+    """
+    A helper function for selecting values within a range.
+    """
     min_value, max_value = limits
     # def _is_in_range(values):
     return (min_value <= values) & (values < max_value)
@@ -64,9 +70,10 @@ def between(values, limits):
 
 
 class ResettableRandomState:
-    """A convenience class for using the NumPy random number generator.
+    """
+    A convenience class for using the NumPy random number generator.
 
-    This is meant to be used as: `from hivpy.common import rng`
+    This is meant to be used as: `from hivpy.common import rng`.
 
     For most things, this can be used exactly as NumPy's `Generator`. All the
     methods like `random`, `normal`, `choice` are supported and called in
@@ -77,15 +84,20 @@ class ResettableRandomState:
     It also offers the ability to use a temporary seed.
     """
     def __init__(self):
-        """Create a new wrapper around a NumPy Generator."""
+        """
+        Create a new wrapper around a NumPy Generator.
+        """
         self.rng = np.random.default_rng()
 
     def __getattr__(self, name):
-        """Delegate method calls and attribute lookups to the Generator."""
+        """
+        Delegate method calls and attribute lookups to the Generator.
+        """
         return getattr(self.rng, name)
 
     def set_seed(self, seed):
-        """Set the seed that controls the sequence of values generated.
+        """
+        Set the seed that controls the sequence of values generated.
 
         Generating samples from the same seed should always return the same
         results.
@@ -94,7 +106,8 @@ class ResettableRandomState:
 
     @contextmanager
     def set_temp_seed(self, temp_seed):
-        """Allow setting the seed temporarily and restoring it automatically.
+        """
+        Allow setting the seed temporarily and restoring it automatically.
 
         This can be useful if we want to generate a sequence of numbers
         without affecting the underlying random state. This allows us to use
@@ -102,10 +115,12 @@ class ResettableRandomState:
         forget about it.
 
         The temporary seed can be used in a with-statement, like:
-        ```
-        with rng.set_temp_seed(17):
-            rng.random(...)  # any calls to random methods here
-        ```
+
+        .. code-block:: python
+
+            with rng.set_temp_seed(17):
+                rng.random(...)  # any calls to random methods here
+
         When the with-block is ended, the old random state is restored, as if
         the temporary seed had never been set.
         """

@@ -91,7 +91,9 @@ def check_num_partners(row):
 
 
 def test_num_partners():
-    """Check that number of partners are reasonable"""
+    """
+    Check that number of partners are reasonable.
+    """
     pop = Population(size=100000, start_date=date(1989, 1, 1))
     pop.sexual_behaviour.num_short_term_partners(pop)
     assert (any(pop.data["num_partners"] > 0))
@@ -101,8 +103,10 @@ def test_num_partners():
 
 
 def test_num_partner_for_behaviour_group():
-    """Check that approx correct number of partners are generated for each
-    sex, age, and sexual behaviour group"""
+    """
+    Check that approx correct number of partners are generated for each
+    sex, age, and sexual behaviour group.
+    """
     N = 100000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     for sex in SexType:
@@ -119,7 +123,9 @@ def test_num_partner_for_behaviour_group():
 
 
 def test_behaviour_updates():
-    """Check that at least one person changes sexual behaviour groups"""
+    """
+    Check that at least one person changes sexual behaviour groups.
+    """
     pop = Population(size=100000, start_date=date(1989, 1, 1))
     initial_groupings = pop.data["sex_behaviour"].copy()
     for i in range(5):
@@ -129,8 +135,10 @@ def test_behaviour_updates():
 
 
 def test_initial_sex_behaviour_groups(yaml_data):
-    """Check that the number of people initialised into each sexual behaviour group
-    is within 3-sigma of the expectation value, as calculated by a binomial distribution."""
+    """
+    Check that the number of people initialised into each sexual behaviour group
+    is within 3-sigma of the expectation value, as calculated by a binomial distribution.
+    """
     N = 10000
     pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
     probs = {SexType.Male:

@@ -1,4 +1,6 @@
-"""Column names in the Population Data-Frame."""
+"""
+Column names in the Population Data-Frame.
+"""
 
 SEX = "sex"                                 # common.SexType: SexType.Male for male and SexType.Female for female
 AGE = "age"                                 # float: age at the current date
