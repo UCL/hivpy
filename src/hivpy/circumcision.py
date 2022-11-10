@@ -27,9 +27,9 @@ class CircumcisionModule:
         circumcision = r < self.prob_birth_circ
         population.loc[male_population, col.CIRCUMCISED] = circumcision
         # split newly circumcised population into born and unborn
-        circ_born_population = population.index[(population[col.CIRCUMCISED] is True)
+        circ_born_population = population.index[population[col.CIRCUMCISED]
                                                 & (population[col.AGE] >= 0.25)]
-        circ_unborn_population = population.index[(population[col.CIRCUMCISED] is True)
+        circ_unborn_population = population.index[population[col.CIRCUMCISED]
                                                   & (population[col.AGE] < 0.25)]
         # use current simulation start date as circumcision date for born individuals
         population.loc[circ_born_population, col.CIRCUMCISION_DATE] = date
@@ -48,7 +48,7 @@ class CircumcisionModule:
         circumcision = r < self.prob_birth_circ
         population.loc[male_born_population, col.CIRCUMCISED] = circumcision
         # all circumcised men get a circumcision date of the start of the simulation
-        population.loc[population[col.CIRCUMCISED] is True, col.CIRCUMCISION_DATE] = date
+        population.loc[population[col.CIRCUMCISED], col.CIRCUMCISION_DATE] = date
 
     def update_birth_circumcision(self, population, time_step, date):
         """
@@ -62,6 +62,6 @@ class CircumcisionModule:
         circumcision = r < self.prob_birth_circ
         population.loc[newborn_males, col.CIRCUMCISED] = circumcision
         # newly circumcised men get the current date set as their circumcision date
-        circ_newborn_males = population.index[(population[col.CIRCUMCISED] is True)
+        circ_newborn_males = population.index[population[col.CIRCUMCISED]
                                               & population[col.CIRCUMCISION_DATE].isnull()]
         population.loc[circ_newborn_males, col.CIRCUMCISION_DATE] = date
