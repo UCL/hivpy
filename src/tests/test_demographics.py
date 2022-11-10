@@ -67,7 +67,9 @@ def test_stepwise_age_distribution(stepwise_age_module):
 
 
 def test_date_permanent(default_module):
-    """Check that that death is not recorded again in future steps."""
+    """
+    Check that that death is not recorded again in future steps.
+    """
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
     pop.data['date_of_death'] = [None, datetime.today(), datetime.today() - timedelta(days=1)]
@@ -81,7 +83,9 @@ def test_date_permanent(default_module):
 
 
 def test_death_rate():
-    """Check that we record the expected number of deaths."""
+    """
+    Check that we record the expected number of deaths.
+    """
     # Set up the population to have equal-sized age groups and balanced sexes
     data_path = "src/tests/test_data/demographics_testing.yaml"
     data = DemographicsData(data_path)

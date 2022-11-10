@@ -20,6 +20,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       # Install dependencies and package
-      - run: pip install .[tests]
+      - run: pip install .[dev]
       # Run tests
       - run: pytest

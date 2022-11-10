@@ -1,20 +1,30 @@
-"""Functionality shared between multiple parts of the framework."""
+"""
+Functionality shared between multiple parts of the framework.
+"""
 
 
 class HIVpyException(Exception):
-    """Superclass for all exceptions thrown by HIVpy framework"""
+    """
+    Superclass for all exceptions thrown by HIVpy framework.
+    """
 
 
 class SimulationException(HIVpyException):
-    """A class to distinguish exceptions thrown by the hivpy framework."""
+    """
+    A class to distinguish exceptions thrown by the hivpy framework.
+    """
     pass
 
 
 class OutputException(HIVpyException):
-    """A class for exceptions thrown by the Output module"""
+    """
+    A class for exceptions thrown by the Output module.
+    """
     pass
 
 
 class DataLoadException(HIVpyException):
-    """A class for exceptions thrown by modules which are loading data"""
+    """
+    A class for exceptions thrown by modules which are loading data.
+    """
     pass

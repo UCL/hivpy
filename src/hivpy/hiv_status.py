@@ -31,13 +31,17 @@ class HIVStatusModule:
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
 
     def initial_HIV_status(self, population: pd.DataFrame):
-        """Initialise HIV status at the start of the simulation to no infections."""
+        """
+        Initialise HIV status at the start of the simulation to no infections.
+        """
         # This may be useful as a separate method if we end up representing status
         # as something more complex than a boolean, e.g. an enum.
         return pd.Series(False, population.index)
 
     def introduce_HIV(self, population: pd.DataFrame):
-        """Initialise HIV status at the start of the pandemic."""
+        """
+        Initialise HIV status at the start of the pandemic.
+        """
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
         initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
@@ -48,7 +52,9 @@ class HIVStatusModule:
         return hiv_status
 
     def update_partner_risk_vectors(self, population):
-        """calculate the risk factor associated with each sex and age group"""
+        """
+        Calculate the risk factor associated with each sex and age group.
+        """
         # Should we be using for loops here or can we do better?
         for sex in SexType:
             for age_group in range(5):   # FIXME need to get number of age groups from somewhere
@@ -73,8 +79,10 @@ class HIVStatusModule:
                     self.stp_viral_group_rate[sex][age_group] = np.array([1, 0, 0, 0, 0, 0, 0])
 
     def set_dummy_viral_load(self, population):
-        """Dummy function to set viral load until this
-        part of the code has been implemented properly"""
+        """
+        Dummy function to set viral load until this
+        part of the code has been implemented properly.
+        """
         population.data[col.VIRAL_LOAD_GROUP] = rng.choice(7, population.size)
 
     def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
@@ -99,7 +107,9 @@ class HIVStatusModule:
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
-        """Returns True if HIV transmission occurs, and False otherwise"""
+        """
+        Returns True if HIV transmission occurs, and False otherwise.
+        """
         stp_viral_groups = np.array([
             rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(person[col.SEX])][age_group])
             for age_group in person[col.STP_AGE_GROUPS]])
@@ -123,12 +133,14 @@ class HIVStatusModule:
         return r > prob_uninfected
 
     def update_HIV_status(self, population):
-        """Update HIV status for new transmissions in the last time period.\\
-            Super simple model where probability of being infected by a given person
-            is prevalence times transmission risk (P x r).\\
-            Probability of each new partner not infecting you then is (1-Pr)\\
-            Then prob of n partners independently not infecting you is (1-Pr)**n\\
-            So probability of infection is 1-((1-Pr)**n)"""
+        """
+        Update HIV status for new transmissions in the last time period.
+        Super simple model where probability of being infected by a given person
+        is prevalence times transmission risk (P x r).
+        Probability of each new partner not infecting you then is (1-Pr),
+        and then prob of n partners independently not infecting you is (1-Pr)**n,
+        so probability of infection is 1-((1-Pr)**n).
+        """
         self.update_partner_risk_vectors(population)
         HIV_neg_idx = population.data.index[(~population.data[col.HIV_STATUS]) & (
             population.data[col.NUM_PARTNERS] > 0)]

@@ -13,7 +13,9 @@ def default_data():
 
 
 def test_death_rate_ages(default_data):
-    """Check that the default death rate specification is consistent."""
+    """
+    Check that the default death rate specification is consistent.
+    """
     male_death_rates = default_data.death_rates[SexType.Male]
     female_death_rates = default_data.death_rates[SexType.Female]
     age_limits = default_data.death_age_limits
