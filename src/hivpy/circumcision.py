@@ -41,6 +41,11 @@ class CircumcisionModule:
     def init_birth_circumcision_born(self, population, date):
         """
         Initialise circumcision at birth for all born males.
+
+        This is an alternative birth circumcision initialisation
+        method to `init_birth_circumcision_all` and requires
+        the use of `update_birth_circumcision` at every time step
+        to work as expected.
         """
         male_born_population = population.index[(population[col.SEX] == SexType.Male)
                                                 & (population[col.AGE] >= 0.25)]
@@ -53,6 +58,10 @@ class CircumcisionModule:
     def update_birth_circumcision(self, population, time_step, date):
         """
         Update birth circumcision for newly born males.
+
+        Requires birth circumcision to be initialised with
+        `init_birth_circumcision_born` instead of
+        `init_birth_circumcision_all` in order to work as expected.
         """
         # assumes ages have already been incremented
         newborn_males = population.index[(population[col.SEX] == SexType.Male)
