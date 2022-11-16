@@ -32,6 +32,7 @@ def test_birth_circumcision_timing():
         pop = Population(size=N, start_date=start_date)
         pop.data[col.CIRCUMCISED] = False
         pop.data[col.CIRCUMCISION_DATE] = None
+        pop.data[col.VMMC] = False
 
         # time init all at once
         t_start = perf_counter()
@@ -41,6 +42,7 @@ def test_birth_circumcision_timing():
 
         pop.data[col.CIRCUMCISED] = False
         pop.data[col.CIRCUMCISION_DATE] = None
+        pop.data[col.VMMC] = False
 
         # time partial init
         t_start = perf_counter()
@@ -87,6 +89,7 @@ def test_birth_circumcision_atonce():
     pop = Population(size=N, start_date=date(1990, 1, 1))
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
     pop.circumcision.init_birth_circumcision_all(pop.data, pop.date)
 
     # get stats
@@ -94,7 +97,10 @@ def test_birth_circumcision_atonce():
     no_male = len(pop.data[pop.data[col.SEX] == SexType.Male])
     mean = no_male * pop.circumcision.prob_birth_circ
     stdev = sqrt(mean * (1 - pop.circumcision.prob_birth_circ))
-    birth_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    # basic checks
+    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    # check that no circumcised people have undergone VMMC
+    assert len(pop.data[pop.data[col.CIRCUMCISED] & pop.data[col.VMMC]]) == 0
 
 
 def test_birth_circumcision_stages():
@@ -108,6 +114,7 @@ def test_birth_circumcision_stages():
     pop = Population(size=N, start_date=start_date)
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
     pop.circumcision.init_birth_circumcision_born(pop.data, pop.date)
 
     # get stats
@@ -116,7 +123,8 @@ def test_birth_circumcision_stages():
                                & (pop.data[col.AGE] > 0.25)]
     mean = len(male_population) * pop.circumcision.prob_birth_circ
     stdev = sqrt(mean * (1 - pop.circumcision.prob_birth_circ))
-    birth_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    # basic checks
+    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
 
     # evolve population
     while pop.date <= stop_date:
@@ -126,27 +134,81 @@ def test_birth_circumcision_stages():
         pop.date += time_step
 
     # get stats
-    new_no_circumcised = len(pop.data[pop.data[col.CIRCUMCISED] == 1])
-    new_no_male = len(pop.data[(pop.data[col.SEX] == SexType.Male)
-                      & (pop.data[col.AGE] > 0.25)])
-    mean = new_no_male * pop.circumcision.prob_birth_circ
+    no_circumcised = len(pop.data[pop.data[col.CIRCUMCISED]])
+    male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
+                               & (pop.data[col.AGE] > 0.25)]
+    mean = len(male_population) * pop.circumcision.prob_birth_circ
     stdev = sqrt(mean * (1 - pop.circumcision.prob_birth_circ))
-    birth_circumcision_checks(mean, stdev, new_no_circumcised, pop.data)
+    # basic checks
+    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    # check that no circumcised people have undergone VMMC
+    assert len(pop.data[pop.data[col.CIRCUMCISED] & pop.data[col.VMMC]]) == 0
 
 
-def birth_circumcision_checks(mean, stdev, no_circumcised, data):
-
-    # check circumcised value is within 3 standard deviations
-    assert mean - 3 * stdev < no_circumcised < mean + 3 * stdev
+def general_circumcision_checks(mean, stdev, no_circumcised, data):
 
     # no female is marked as circumcised
     assert len(data[(data[col.SEX] == SexType.Female)
                     & data[col.CIRCUMCISED]]) == 0
 
     # no uncircumcised people have circumcision dates
-    assert len(data[(data[col.CIRCUMCISED] is False)
+    assert len(data[~data[col.CIRCUMCISED]
                     & data[col.CIRCUMCISION_DATE].notnull()]) == 0
 
     # all circumcised people have circumcision dates
     assert len(data[data[col.CIRCUMCISED]]) == \
            len(data[data[col.CIRCUMCISED] & data[col.CIRCUMCISION_DATE].notnull()])
+
+    # check circumcised value is within 3 standard deviations
+    assert mean - 3 * stdev < no_circumcised < mean + 3 * stdev
+
+
+def test_vmmc():
+
+    N = 100000
+    start_date = date(2008, 12, 1)
+    stop_date = date(2028, 12, 1)
+    time_step = timedelta(days=90)
+
+    # build artificial population
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.AGE] = 18
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    # check no VMMC occurs until after mc_int
+    assert len(pop.data[pop.data[col.VMMC]]) == 0
+
+    # change date to appropriate year
+    pop.date += time_step
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+
+    # get stats
+    no_vmmc = len(pop.data[pop.data[col.VMMC]])
+    male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
+                               & (pop.data[col.AGE] >= 10)
+                               & (pop.data[col.AGE] < 50)]
+    prob_circ = (pop.date.year - pop.circumcision.mc_int) * pop.circumcision.circ_inc_rate
+    mean = len(male_population) * prob_circ
+    stdev = sqrt(mean * (1 - prob_circ))
+    # basic checks
+    general_circumcision_checks(mean, stdev, no_vmmc, pop.data)
+
+    # evolve population
+    while pop.date <= stop_date:
+        circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
+        # advance ages and vmmc
+        pop.data.age += time_step.days / 365
+        pop.circumcision.update_vmmc(pop)
+        pop.date += time_step
+        # check circumcisied people remain circumcised each step
+        new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
+                                        & pop.data[col.CIRCUMCISED]]
+        assert circ_males.isin(new_circ_males).all()

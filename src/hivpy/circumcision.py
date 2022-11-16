@@ -79,7 +79,6 @@ class CircumcisionModule:
                                               & population[col.CIRCUMCISION_DATE].isnull()]
         population.loc[circ_newborn_males, col.CIRCUMCISION_DATE] = date
 
-
     def update_vmmc(self, pop):
         """
         Update voluntary medical male circumcision intervention.
@@ -101,18 +100,18 @@ class CircumcisionModule:
 
                 # group males by age groups
                 # TODO: change age group col name to be more descriptive
-                pop.data.loc[uncirc_male_population, col.AGE_GROUP] = \
-                np.digitize(pop.data.loc[uncirc_male_population, col.AGE], [10, 20, 30, 50])
+                pop.data.loc[uncirc_male_population,
+                             col.AGE_GROUP] = np.digitize(pop.data.loc[uncirc_male_population,
+                                                                       col.AGE], [10, 20, 30, 50])
                 # calculate vmmc outcomes
                 circumcision = pop.transform_group([col.AGE_GROUP], self.calc_prob_circ,
-                                                sub_pop=uncirc_male_population)
+                                                   sub_pop=uncirc_male_population)
                 pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
                 # newly circumcised males get the current date set as their circumcision date
                 new_circ_males = pop.data.index[pop.data[col.CIRCUMCISED]
                                                 & pop.data[col.CIRCUMCISION_DATE].isnull()]
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
-
 
     def calc_prob_circ(self, age_group, size):
         """
