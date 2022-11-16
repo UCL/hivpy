@@ -121,6 +121,7 @@ class Population:
         died_this_period = self.demographics.determine_deaths(self)
         self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
+        self.circumcision.update_vmmc(self)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
