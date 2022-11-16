@@ -180,7 +180,7 @@ def test_vmmc():
 
     # evolve population
     pop.data.age += time_step.days / 365
-    pop.circumcision.update_vmmc(pop)
+    pop.circumcision.update_vmmc(pop, 0)
     # check no VMMC occurs until after mc_int
     assert len(pop.data[pop.data[col.VMMC]]) == 0
 
@@ -188,7 +188,7 @@ def test_vmmc():
     pop.date += time_step
     # evolve population
     pop.data.age += time_step.days / 365
-    pop.circumcision.update_vmmc(pop)
+    pop.circumcision.update_vmmc(pop, 0)
 
     # get stats
     no_vmmc = len(pop.data[pop.data[col.VMMC]])
@@ -206,9 +206,60 @@ def test_vmmc():
         circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
         # advance ages and vmmc
         pop.data.age += time_step.days / 365
-        pop.circumcision.update_vmmc(pop)
+        pop.circumcision.update_vmmc(pop, 0)
         pop.date += time_step
         # check circumcisied people remain circumcised each step
         new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                         & pop.data[col.CIRCUMCISED]]
         assert circ_males.isin(new_circ_males).all()
+
+
+# This "test" replicates an uncommon issue with
+# population filtering in VMMC [currently fixed].
+def test_uncommon_vmmc_bug():
+
+    N = 5
+    start_date = date(2009, 1, 1)
+    time_step = timedelta(days=90)
+
+    # build artificial population
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.AGE] = 12
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+    # set circumcision rate to 100%
+    pop.circumcision.circ_inc_rate = 1
+
+    print("\nNew Artificial Population:\n",
+          pop.data[[col.SEX, col.AGE, col.CIRCUMCISED,
+                   col.CIRCUMCISION_DATE, col.VMMC]])
+
+    print("\n===== EVOLVE STEP #1 =====")
+    print("\nNormal step. Behaviour as expected.\nCircumcises all males.")
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop, 1)
+    pop.date += time_step
+    print("\nPopulation After Evolve #1:\n",
+          pop.data[[col.SEX, col.AGE, col.CIRCUMCISED,
+                   col.CIRCUMCISION_DATE, col.VMMC]])
+
+    print("\n===== EVOLVE STEP #2 =====")
+    print("\nNormal step. No uncircumcised males are discovered.\nNobody is circumcised.")
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop, 1)
+    pop.date += time_step
+    print("\nPopulation After Evolve #2:\n",
+          pop.data[[col.SEX, col.AGE, col.CIRCUMCISED,
+                   col.CIRCUMCISION_DATE, col.VMMC]])
+
+    print("\n===== EVOLVE STEP #3 =====")
+    print("\nProblem step. Circumcised males are selected for the uncircumcised population.\
+          \nEveryone is re-circumcised (though circumcision dates are not updated).")
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop, 1)
+    pop.date += time_step
+    print("\nPopulation After Evolve #3:\n",
+          pop.data[[col.SEX, col.AGE, col.CIRCUMCISED,
+                   col.CIRCUMCISION_DATE, col.VMMC]])

@@ -79,7 +79,7 @@ class CircumcisionModule:
                                               & population[col.CIRCUMCISION_DATE].isnull()]
         population.loc[circ_newborn_males, col.CIRCUMCISION_DATE] = date
 
-    def update_vmmc(self, pop):
+    def update_vmmc(self, pop, debug):
         """
         Update voluntary medical male circumcision intervention.
         """
@@ -95,6 +95,12 @@ class CircumcisionModule:
                                                     & (pop.data[col.AGE] >= 10)
                                                     & (pop.data[col.AGE] < 50)]
 
+            if debug:
+                print("\nFound Uncircumcised Male Population:")
+                print(pop.data.loc[uncirc_male_population,
+                                   [col.SEX, col.AGE, col.CIRCUMCISED,
+                                    col.CIRCUMCISION_DATE, col.VMMC]])
+
             # continue if uncircumcised males are present this timestep
             if len(uncirc_male_population) > 0:
 
@@ -106,6 +112,9 @@ class CircumcisionModule:
                 # calculate vmmc outcomes
                 circumcision = pop.transform_group([col.AGE_GROUP], self.calc_prob_circ,
                                                    sub_pop=uncirc_male_population)
+                if debug:
+                    print("\nCircumcision Outcomes:")
+                    print(circumcision)
                 pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
                 # newly circumcised males get the current date set as their circumcision date
