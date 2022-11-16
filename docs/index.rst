@@ -6,7 +6,7 @@
 Welcome to HIVpy's documentation!
 =================================
 
-This code simulates a model of the spread and effects of HIV in Sub-Saharan Africa.
+HIV Synthesis is an individual-based stochastic simulation model including sexual behaviour, HIV transmission, HIV progression, HIV prevention interventions and effects of ART within a sub-Saharan African context (e.g. a country, district,  town, or other small area). For each simulated person in the data set, there are variables such as age and condomless sex, HIV testing, and, if infected with HIV, on HIV diagnosis, CD4 count, viral load, use of specific ART drugs, adherence and resistance.
 
 .. toctree::
    :maxdepth: 2
