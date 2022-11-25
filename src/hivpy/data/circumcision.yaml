@@ -4,6 +4,8 @@ test_link_circ: 1
 
 test_link_circ_prob: 0.05
 
+circ_inc_rate_year_i: 0
+
 # rate at which cricumcision increases over time
 circ_inc_rate:
   Value: [0.0001, 0.001, 0.003, 0.01, 0.1]
