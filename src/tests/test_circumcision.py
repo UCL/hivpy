@@ -160,10 +160,10 @@ def general_circumcision_checks(mean, stdev, no_circumcised, data):
            len(data[data[col.CIRCUMCISED] & data[col.CIRCUMCISION_DATE].notnull()])
 
     # check circumcised value is within 3 standard deviations
-    assert mean - 3 * stdev < no_circumcised < mean + 3 * stdev
+    assert mean - 3 * stdev <= no_circumcised <= mean + 3 * stdev
 
 
-def test_vmmc():
+def test_vmmc_basic():
 
     N = 100000
     start_date = date(2008, 12, 1)
@@ -172,6 +172,7 @@ def test_vmmc():
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)
+    pop.circumcision.mc_int = 2008
     pop.data[col.SEX] = SexType.Male
     pop.data[col.AGE] = 18
     pop.data[col.CIRCUMCISED] = False
@@ -200,6 +201,8 @@ def test_vmmc():
     stdev = sqrt(mean * (1 - prob_circ))
     # basic checks
     general_circumcision_checks(mean, stdev, no_vmmc, pop.data)
+    # nobody over 50 has been circumcised
+    assert len(pop.data[(pop.data[col.AGE] >= 50) & (pop.data[col.VMMC])]) == 0
 
     # evolve population
     while pop.date <= stop_date:
@@ -212,3 +215,173 @@ def test_vmmc():
         new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                         & pop.data[col.CIRCUMCISED]]
         assert circ_males.isin(new_circ_males).all()
+
+    # nobody under 10 has been circumcised
+    assert len(pop.data[(pop.data[col.AGE] < 10) & (pop.data[col.VMMC])]) == 0
+
+
+def test_vmmc_case_i1():
+
+    N = 100000
+    start_date = date(2022, 1, 1)
+    time_step = timedelta(days=90)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # case 1
+    # circumcision stops in 10-14 year olds and
+    # increases in 15-19 year olds after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 1
+    pop.circumcision.year_interv = 2022
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    # nobody under 15 has been circumcised
+    assert len(pop.data[(pop.data[col.AGE] < 15) & (pop.data[col.VMMC])]) == 0
+
+    # get stats
+    no_vmmc = len(pop.data[pop.data[col.VMMC]
+                           & (pop.data[col.AGE] >= 15)
+                           & (pop.data[col.AGE] < 20)])
+    male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
+                               & (pop.data[col.AGE] >= 15)
+                               & (pop.data[col.AGE] < 20)]
+    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
+                 * pop.circumcision.rel_incr_circ_post_2013
+                 * pop.circumcision.circ_inc_15_19) * pop.circumcision.circ_inc_rate
+    # cap probability at 1
+    if (prob_circ > 1):
+        prob_circ = 1
+    mean = len(male_population) * prob_circ
+    stdev = sqrt(mean * (1 - prob_circ))
+    # check circumcised value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
+
+
+def test_vmmc_case_i2():
+
+    N = 100000
+    start_date = date(2021, 12, 1)
+    time_step = timedelta(days=90)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # case 2
+    # no further circumcision after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 2
+    pop.circumcision.year_interv = 2022
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
+    pop.date += time_step
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
+                                    & pop.data[col.CIRCUMCISED]]
+    # check that circumcision has stopped
+    assert circ_males.tolist() == new_circ_males.tolist()
+
+
+def test_vmmc_case_i3():
+
+    N = 100000
+    start_date = date(2022, 1, 1)
+    time_step = timedelta(days=90)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # case 3
+    # circumcision stops in 10-14 year olds and does not
+    # increase in 15-19 year olds after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 3
+    pop.circumcision.year_interv = 2022
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    # nobody under 15 has been circumcised
+    assert len(pop.data[(pop.data[col.AGE] < 15) & (pop.data[col.VMMC])]) == 0
+
+    # get stats
+    no_vmmc = len(pop.data[pop.data[col.VMMC]
+                           & (pop.data[col.AGE] >= 15)
+                           & (pop.data[col.AGE] < 20)])
+    male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
+                               & (pop.data[col.AGE] >= 15)
+                               & (pop.data[col.AGE] < 20)]
+    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
+                 * pop.circumcision.rel_incr_circ_post_2013) * pop.circumcision.circ_inc_rate
+    # cap probability at 1
+    if (prob_circ > 1):
+        prob_circ = 1
+    mean = len(male_population) * prob_circ
+    stdev = sqrt(mean * (1 - prob_circ))
+    # check circumcised value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
+
+
+def test_vmmc_case_i4():
+
+    N = 100000
+    start_date = date(2026, 12, 1)
+    time_step = timedelta(days=90)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # case 4
+    # after year_interv circumcision stops in 10-14 year olds,
+    # does not increase in 15-19 year olds,
+    # and VMMC stops after 5 years
+    pop.circumcision.circ_inc_rate_year_i = 4
+    pop.circumcision.year_interv = 2022
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # evolve population
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
+    # nobody under 15 has been circumcised
+    assert len(pop.data[(pop.data[col.AGE] < 15) & (pop.data[col.VMMC])]) == 0
+
+    # get stats
+    no_vmmc = len(pop.data[pop.data[col.VMMC]
+                           & (pop.data[col.AGE] >= 15)
+                           & (pop.data[col.AGE] < 20)])
+    male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
+                               & (pop.data[col.AGE] >= 15)
+                               & (pop.data[col.AGE] < 20)]
+    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
+                 * pop.circumcision.rel_incr_circ_post_2013) * pop.circumcision.circ_inc_rate
+    # cap probability at 1
+    if (prob_circ > 1):
+        prob_circ = 1
+    mean = len(male_population) * prob_circ
+    stdev = sqrt(mean * (1 - prob_circ))
+    # check circumcised value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
+
+    # evolve population
+    pop.date += time_step
+    pop.data.age += time_step.days / 365
+    pop.circumcision.update_vmmc(pop)
+    new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
+                                    & pop.data[col.CIRCUMCISED]]
+    # check that circumcision has stopped
+    assert circ_males.tolist() == new_circ_males.tolist()
