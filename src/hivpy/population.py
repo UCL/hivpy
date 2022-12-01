@@ -2,8 +2,8 @@ import datetime
 import operator
 from functools import reduce
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 import hivpy.column_names as col
 
@@ -54,11 +54,10 @@ class Population:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         self.data = pd.DataFrame({
             "Dummy": [None] * self.size,
-            col.SEX: self.demographics.initialize_sex(self.size),
-            col.AGE: self.demographics.initialise_age(self.size),
         })
         self.init_variable(col.SEX, self.demographics.initialize_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size), 1)  # when do we use current age and when previous timestep age?
+        self.init_variable(col.AGE_GROUP, 0) 
         self.init_variable(col.DATE_OF_DEATH, None)
         self.init_variable(col.HIV_STATUS, self.hiv_status.initial_HIV_status, 1)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
@@ -104,7 +103,7 @@ class Population:
                        (op(self.data[self.get_correct_column(var)], val) for (var, op, val) in conditions))
         return self.data.index[index]
 
-    def get_sub_pop_intersection(self, subpop_1, subpop_2)
+    def get_sub_pop_intersection(self, subpop_1, subpop_2):
         """
         Get the indexing of the intersection of two subpopulations
         """
@@ -131,7 +130,6 @@ class Population:
             self.data.loc[sub_pop, [present_col]] = value
 
     def get_correct_column(self, param_info):
-        print(param_info, type(param_info))
         (param, dt) = self.make_column_tuple(param_info)
         col_index = (self.step + dt) % self.variable_history[param]
         return (param, col_index)

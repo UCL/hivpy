@@ -10,7 +10,7 @@ from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
 from hivpy.population import Population
-
+import hivpy.column_names as col
 
 @pytest.fixture(scope="module")
 def default_module():
@@ -70,14 +70,14 @@ def test_date_permanent(default_module):
     """Check that that death is not recorded again in future steps."""
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
-    pop.data['date_of_death'] = [None, datetime.today(), datetime.today() - timedelta(days=1)]
-    pop.data['age'] = [30, 20, 50]
-    pop.data['sex'] = [SexType.Female, SexType.Female, SexType.Male]
+    pop.set_present_variable(col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
+    pop.set_present_variable(col.AGE, [30, 20, 50])
+    pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
 
     new_deaths = default_module.determine_deaths(pop)
     # Find who already had a date of death, and check that they are not marked
     # as having died in this time step.
-    assert not new_deaths[pop.data.date_of_death.notnull()].any()
+    assert not new_deaths[pop.get_variable(col.DATE_OF_DEATH).notnull()].any()
 
 
 def test_death_rate():
@@ -93,9 +93,8 @@ def test_death_rate():
     ages = sum(([age] * group_size for age in ages_to_try), []) * 2
     sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data['date_of_death'] = None
-    pop.data['age'] = ages
-    pop.data['sex'] = sexes
+    pop.init_variable(col.AGE, ages)
+    pop.init_variable(col.SEX, sexes)
 
     # The rates in the data file are annualised
     expected_annual_deaths = {
@@ -107,9 +106,10 @@ def test_death_rate():
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
         deaths = module.determine_deaths(pop)
+        print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
-        pop.data.loc[deaths, "date_of_death"] = datetime.today()
+        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = datetime.today()
     recorded_deaths = pop.data.groupby(
-        ["sex", "age_group"]
+        [pop.get_correct_column(col.SEX), pop.get_correct_column(col.AGE_GROUP)]
         ).date_of_death.count().to_dict()
     assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)
