@@ -94,9 +94,21 @@ class Population:
             self.data[(name, i)] = init_val
 
     def get_sub_pop(self, conditions):
+        """
+        Get a dataframe representing a sub-population meeting a list conditions.\\
+        Conditions are expressed as a tuple (variable, operator, value)\\
+        e.g. `(col.AGE, operator.ge, 15)` gets people who are 15 and over\\
+        `conditions` is a list (or other iterable) of such tuples.
+        """
         index = reduce(operator.and_,
                        (op(self.data[self.get_correct_column(var)], val) for (var, op, val) in conditions))
         return self.data.index[index]
+
+    def get_sub_pop_intersection(self, subpop_1, subpop_2)
+        """
+        Get the indexing of the intersection of two subpopulations
+        """
+        return pd.Index.intersection(subpop_1, subpop_2)
 
     def apply_vector_func(self, params, func):
         param_cols = list(map(lambda x: self.get_variable(self.get_correct_column(x)), params))

@@ -28,3 +28,5 @@ VIRAL_LOAD_GROUP = "viral_load_group"       # int: value 1-6 placing bounds on v
 ADC = "AIDS_defining_condition"             # Bool: presence of AIDS defining condition
 
 DATE_OF_DEATH = "date_of_death"             # None | datetime.date: date of death if dead, o/w None
+
+ART_ADHERENCE = "art_adherence"        # DUMMY
