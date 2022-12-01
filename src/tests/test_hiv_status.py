@@ -20,32 +20,37 @@ def pop_with_initial_hiv():
     return pop
 
 
-@pytest.mark.parametrize("pop_percentage", [0.4, 0])
+@pytest.mark.parametrize("pop_percentage", [0.4, 0.0])
 def test_initial_hiv_threshold(pop_percentage):
     """Check that HIV is initially introduced only to those with high enough newp."""
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1)).data
+    pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     threshold = HIV_module.initial_hiv_newp_threshold
     # select a proportion of the population to have high enough newp
     newp = np.random.default_rng().choice(
         [threshold, threshold - 1],
         p=[pop_percentage, 1 - pop_percentage],
-        size=len(pop)
+        size=pop.size
     )
-    pop[col.NUM_PARTNERS] = newp
+    print("newp = ", newp)
+    print("sum newp = ", sum(newp))
+    pop.set_present_variable(col.NUM_PARTNERS, newp)
     initial_status = HIV_module.introduce_HIV(pop)
-    assert not any(initial_status & (pop[col.NUM_PARTNERS] < threshold))
+    print(pop.get_variable(col.NUM_PARTNERS))
+    print(sum(pop.get_variable(col.NUM_PARTNERS)))
+    print(initial_status)
+    assert not any(initial_status & (pop.get_variable(col.NUM_PARTNERS) < threshold))
 
 
 def test_initial_hiv_probability():
     """Check that HIV is initially assigned with the specified probability."""
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1)).data
+    pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     # Have everyone be a candidate for initial introduction
-    pop[col.NUM_PARTNERS] = HIV_module.initial_hiv_newp_threshold
-    expected_infections = HIV_module.initial_hiv_prob * len(pop)
+    pop.set_present_variable(col.NUM_PARTNERS, HIV_module.initial_hiv_newp_threshold)
+    expected_infections = HIV_module.initial_hiv_prob * pop.size
     initial_status = HIV_module.introduce_HIV(pop)
     # TODO Could check against variance of binomial distribution, see issue #45
     assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)

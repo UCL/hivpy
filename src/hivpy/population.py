@@ -59,14 +59,16 @@ class Population:
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size), 1)  # when do we use current age and when previous timestep age?
         self.init_variable(col.AGE_GROUP, 0) 
         self.init_variable(col.DATE_OF_DEATH, None)
-        self.init_variable(col.HIV_STATUS, self.hiv_status.initial_HIV_status, 1)
+        self.init_variable(col.HIV_STATUS, False, 1)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         self.init_variable(col.NUM_PARTNERS, 0, 3)  # I think we need t-3 for pregnancy but might change if we rethink implementation
                                                     # In this case the number of previous steps we need would actually be variable based on timestep!!!
         self.init_variable(col.LONG_TERM_PARTNER, False, 1)
+        self.init_variable(col.LTP_AGE_GROUP, 0)
         self.init_variable(col.LTP_LONGEVITY, 0, 1)
         self.init_variable(col.SEX_MIX_AGE_GROUP, 0, 1)
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size), 1)
+        self.init_variable(col.RRED_LTP, 1)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
@@ -113,14 +115,20 @@ class Population:
         param_cols = list(map(lambda x: self.get_variable(self.get_correct_column(x)), params))
         return func(*param_cols)
 
+    def apply_function(self, function, axis, sub_pop=None):
+        if sub_pop == None:
+            self.data.apply(function, axis)
+        else:
+            self.data.loc[sub_pop].apply(function, axis)
+
     def get_variable(self, var, sub_pop=None):
         var_col = self.get_correct_column(var)
-        print("cols = ", self.data.columns)
-        print("Column to get = ", var_col)
+        #print("cols = ", self.data.columns)
+        #print("Column to get = ", var_col)
         if sub_pop is None:
             return self.data[var_col]
         else:
-            return self.data.loc[sub_pop,[var_col]]
+            return self.data.loc[sub_pop, [var_col]][var_col]
 
     def set_present_variable(self, target: str, value, sub_pop=None):
         present_col = self.get_correct_column((target, 0))
@@ -144,7 +152,7 @@ class Population:
 
     def make_column_tuple(self, param):
         if (type(param) == str):
-            return (param, 1)
+            return (param, 0)
         else:
             return param
 
@@ -183,7 +191,8 @@ class Population:
         """Advance the population by one time step."""
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
-        self.data.age += time_step.days / 365  # Very naive!
+        ages = self.get_variable(col.AGE)
+        ages += time_step.days / 365  # Very naive!
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
@@ -195,7 +204,7 @@ class Population:
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self.data))
+            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
 
         # We should think about whether we want to return a copy or evolve

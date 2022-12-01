@@ -172,10 +172,11 @@ class SexualBehaviourModule:
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        active_pop = population.data.index[(15 <= population.data.age) & (population.data.age < 65)]
+        active_pop = population.get_sub_pop([(col.AGE, operator.le, 15),
+                                             (col.AGE, operator.gt, 65)])
         new_groups = population.transform_group(
             [col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group, sub_pop=active_pop)
-        population.data.loc[active_pop, col.SEX_BEHAVIOUR] = new_groups
+        population.set_present_variable(col.SEX_BEHAVIOUR, new_groups, active_pop)
 
     # risk reduction factors
     def init_risk_factors(self, pop: Population):
@@ -201,20 +202,31 @@ class SexualBehaviourModule:
         self.update_rred_adc(population)
         self.update_rred_balance(population)
         self.update_rred_diagnosis(population, population.date)
-        self.update_rred_population(population)
+        self.update_rred_population(population.date)
         self.update_rred_age(population)
         self.update_rred_long_term_partnered(population)
         if (self.use_rred_art_adherence):
             self.update_rred_art_adherence(population)
-        population.data[col.RRED] = (self.new_partner_factor *
-                                     population.data[col.RRED_AGE] *
-                                     population.data[col.RRED_ADC] *
-                                     population.data[col.RRED_BALANCE] *
-                                     population.data[col.RRED_DIAGNOSIS] *
-                                     population.data[col.RRED_PERSONAL] *
-                                     self.rred_population *
-                                     population.data[col.RRED_LTP] *
-                                     population.data[col.RRED_ART_ADHERENCE])
+
+        def comined_rred(age, adc, balance, diagnosis, personal, ltp, art):
+            return self.new_partner_factor*age*adc*balance*diagnosis*personal*self.rred_population*ltp*art
+        population.set_present_variable(col.RRED,
+            population.apply_vector_func([col.RRED_AGE,
+                                          col.RRED_ADC,
+                                          col.RRED_BALANCE,
+                                          col.RRED_DIAGNOSIS,
+                                          col.RRED_PERSONAL,
+                                          col.RRED_LTP,
+                                          col.RRED_ART_ADHERENCE], comined_rred))
+        #population.data[col.RRED] = (self.new_partner_factor *
+        #                             population.data[col.RRED_AGE] *
+        #                             population.data[col.RRED_ADC] *
+        #                             population.data[col.RRED_BALANCE] *
+        #                             population.data[col.RRED_DIAGNOSIS] *
+        #                             population.data[col.RRED_PERSONAL] *
+        #                             self.rred_population *
+        #                             population.data[col.RRED_LTP] *
+        #                             population.data[col.RRED_ART_ADHERENCE])
 
     def init_rred_art_adherence(self, pop: Population):
         pop.init_variable(col.RRED_ART_ADHERENCE, 1.0, 1)
@@ -360,9 +372,9 @@ class SexualBehaviourModule:
 
     def balance_ltp_factor(self, population: Population):
         num_ltp_women = sum(population.get_variable(col.LONG_TERM_PARTNER,
-                            population.get_sub_pop([(col.Sex, operator.eq, SexType.Female)])))
+                            population.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])))
         num_ltp_men = sum(population.get_variable(col.LONG_TERM_PARTNER,
-                          population.get_sub_pop([(col.Sex, operator.eq, SexType.Male)])))
+                          population.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])))
         if num_ltp_women > 0:
             ratio_ltp = num_ltp_men / num_ltp_women
             if ratio_ltp < 0.8:
