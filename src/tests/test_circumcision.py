@@ -172,12 +172,17 @@ def test_vmmc_basic():
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)
-    pop.circumcision.mc_int = 2008
     pop.data[col.SEX] = SexType.Male
     pop.data[col.AGE] = 18
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     pop.data[col.VMMC] = False
+
+    pop.circumcision.circ_inc_rate_year_i = 0
+    pop.circumcision.covid_disrup_affected = 0
+    pop.circumcision.vmmc_disrup_covid = 0
+    pop.circumcision.mc_int = 2008
+    pop.circumcision.year_interv = 2022
 
     # evolve population
     pop.data.age += time_step.days / 365
@@ -228,15 +233,19 @@ def test_vmmc_case_i1():
 
     # build population
     pop = Population(size=N, start_date=start_date)
-    # case 1
-    # circumcision stops in 10-14 year olds and
-    # increases in 15-19 year olds after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 1
-    pop.circumcision.year_interv = 2022
     pop.data[col.SEX] = SexType.Male
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     pop.data[col.VMMC] = False
+
+    # case 1
+    # circumcision stops in 10-14 year olds and
+    # increases in 15-19 year olds after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 1
+    pop.circumcision.covid_disrup_affected = 0
+    pop.circumcision.vmmc_disrup_covid = 0
+    pop.circumcision.mc_int = 2008
+    pop.circumcision.year_interv = 2022
 
     # evolve population
     pop.data.age += time_step.days / 365
@@ -271,13 +280,17 @@ def test_vmmc_case_i2():
 
     # build population
     pop = Population(size=N, start_date=start_date)
-    # case 2
-    # no further circumcision after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 2
-    pop.circumcision.year_interv = 2022
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     pop.data[col.VMMC] = False
+
+    # case 2
+    # no further circumcision after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 2
+    pop.circumcision.covid_disrup_affected = 0
+    pop.circumcision.vmmc_disrup_covid = 0
+    pop.circumcision.mc_int = 2008
+    pop.circumcision.year_interv = 2022
 
     # evolve population
     pop.data.age += time_step.days / 365
@@ -300,15 +313,19 @@ def test_vmmc_case_i3():
 
     # build population
     pop = Population(size=N, start_date=start_date)
-    # case 3
-    # circumcision stops in 10-14 year olds and does not
-    # increase in 15-19 year olds after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 3
-    pop.circumcision.year_interv = 2022
     pop.data[col.SEX] = SexType.Male
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     pop.data[col.VMMC] = False
+
+    # case 3
+    # circumcision stops in 10-14 year olds and does not
+    # increase in 15-19 year olds after year_interv
+    pop.circumcision.circ_inc_rate_year_i = 3
+    pop.circumcision.covid_disrup_affected = 0
+    pop.circumcision.vmmc_disrup_covid = 0
+    pop.circumcision.mc_int = 2008
+    pop.circumcision.year_interv = 2022
 
     # evolve population
     pop.data.age += time_step.days / 365
@@ -342,16 +359,20 @@ def test_vmmc_case_i4():
 
     # build population
     pop = Population(size=N, start_date=start_date)
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
     # case 4
     # after year_interv circumcision stops in 10-14 year olds,
     # does not increase in 15-19 year olds,
     # and VMMC stops after 5 years
     pop.circumcision.circ_inc_rate_year_i = 4
+    pop.circumcision.covid_disrup_affected = 0
+    pop.circumcision.vmmc_disrup_covid = 0
+    pop.circumcision.mc_int = 2008
     pop.circumcision.year_interv = 2022
-    pop.data[col.SEX] = SexType.Male
-    pop.data[col.CIRCUMCISED] = False
-    pop.data[col.CIRCUMCISION_DATE] = None
-    pop.data[col.VMMC] = False
 
     # evolve population
     pop.data.age += time_step.days / 365
@@ -385,3 +406,30 @@ def test_vmmc_case_i4():
                                     & pop.data[col.CIRCUMCISED]]
     # check that circumcision has stopped
     assert circ_males.tolist() == new_circ_males.tolist()
+
+
+def test_circ_covid():
+
+    N = 100000
+    start_date = date(2010, 1, 1)
+    time_step = timedelta(days=90)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.data[col.VMMC] = False
+
+    # covid disruption is in place
+    pop.circumcision.circ_inc_rate_year_i = 0
+    pop.circumcision.covid_disrup_affected = 1
+    pop.circumcision.vmmc_disrup_covid = 1
+    pop.circumcision.mc_int = 2008
+    pop.circumcision.year_interv = 2022
+
+    # evolve population
+    pop.circumcision.update_birth_circumcision(pop.data, time_step, pop.date)
+    pop.circumcision.update_vmmc(pop)
+
+    # check there was no circumcision
+    assert len(pop.data[pop.data[col.CIRCUMCISED]]) == 0
