@@ -27,8 +27,11 @@ class CircumcisionData:
             self.data = yaml.safe_load(file)
         try:
             self.mc_int = self.data["mc_int"]
+            self.year_interv = self.data["year_interv"]
             self.test_link_circ = self.data["test_link_circ"]
             self.test_link_circ_prob = self.data["test_link_circ_prob"]
+            self.covid_disrup_affected = self.data["covid_disrup_affected"]
+            self.vmmc_disrup_covid = self.data["vmmc_disrup_covid"]
             self.circ_inc_rate_year_i = self.data["circ_inc_rate_year_i"]
             self.circ_inc_rate = self._get_discrete_dist("circ_inc_rate")
             self.rel_incr_circ_post_2013 = self._get_discrete_dist("rel_incr_circ_post_2013")

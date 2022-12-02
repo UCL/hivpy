@@ -16,19 +16,18 @@ class CircumcisionModule:
         with importlib.resources.path("hivpy.data", "circumcision.yaml") as data_path:
             self.c_data = CircumcisionData(data_path)
         self.mc_int = self.c_data.mc_int
+        self.year_interv = self.c_data.year_interv
         self.test_link_circ_prob = self.c_data.test_link_circ_prob
         self.circ_inc_rate_year_i = self.c_data.circ_inc_rate_year_i
+        # NOTE: the covid disrup field may not belong here
+        self.covid_disrup_affected = self.c_data.covid_disrup_affected
+        self.vmmc_disrup_covid = self.c_data.vmmc_disrup_covid
         self.circ_inc_rate = self.c_data.circ_inc_rate.sample()
         self.rel_incr_circ_post_2013 = self.c_data.rel_incr_circ_post_2013.sample()
         self.circ_inc_15_19 = self.c_data.circ_inc_15_19.sample()
         self.circ_red_20_30 = self.c_data.circ_red_20_30.sample()
         self.circ_red_30_50 = self.c_data.circ_red_30_50.sample()
         self.prob_birth_circ = self.c_data.prob_birth_circ.sample()
-        # TODO: these fields doesn't belong here and/or
-        # need to be implemented properly another time
-        self.year_interv = 2022
-        self.covid_disrup_affected = 0
-        self.vmmc_disrup_covid = 0
 
     def init_birth_circumcision_all(self, population, date):
         """
