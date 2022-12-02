@@ -50,14 +50,14 @@ Individuals are chosen for VMMC by first finding all eligible males that have no
 VMMC probabilities are calculated in the following way:
 - An age modifier is determined based on age group and the year used in calculations is capped at 2019 if the current year exceeds this date.
 - If the current date is 2013 or earlier, the following calculation is used:
-```
-prob_circ = (year - mc_int) * circ_inc_rate * age_mod.
+```python
+prob_circ = (year - mc_int) * circ_inc_rate * age_mod
 ```
 - If the current date is after 2013 and the 15-19 age group has an age modifier, the probability is calculated with:
-```
+```python
 prob_circ = ((2013 - mc_int) + (year - 2013) * rel_incr_circ_post_2013 * circ_inc_15_19) * circ_inc_rate
 ```
-Otherwise, the calculation is:
-```
+- Otherwise, if the current date is after 2013 and the 10-19 (or 15-19) age group does not have an age modifier (other than the default 1), the calculation is:
+```python
 prob_circ = ((2013 - mc_int) + (year - 2013) * rel_incr_circ_post_2013) * circ_inc_rate * age_mod
 ```
