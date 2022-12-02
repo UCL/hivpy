@@ -56,7 +56,7 @@ class Population:
             "Dummy": [None] * self.size,
         })
         self.init_variable(col.SEX, self.demographics.initialize_sex(self.size))
-        self.init_variable(col.AGE, self.demographics.initialise_age(self.size), 1)  # when do we use current age and when previous timestep age?
+        self.init_variable(col.AGE, self.demographics.initialise_age(self.size))  # when do we use current age and when previous timestep age?
         self.init_variable(col.AGE_GROUP, 0) 
         self.init_variable(col.DATE_OF_DEATH, None)
         self.init_variable(col.HIV_STATUS, False, 1)
@@ -67,7 +67,7 @@ class Population:
         self.init_variable(col.LTP_AGE_GROUP, 0)
         self.init_variable(col.LTP_LONGEVITY, 0, 1)
         self.init_variable(col.SEX_MIX_AGE_GROUP, 0, 1)
-        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size), 1)
+        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
@@ -91,8 +91,14 @@ class Population:
            to be stored (default 0).
         """
         self.variable_history[name] = n_prev_steps + 1
-        for i in range(0, n_prev_steps + 1):
-            self.data[(name, i)] = init_val
+        if(n_prev_steps == 0):
+            self.data[name] = init_val
+        else:
+            for i in range(0, n_prev_steps + 1):
+                self.data[self.constructParamColumn(name, i)] = init_val
+
+    def constructParamColumn(self, name, i):
+        return name + "," + str(i)
 
     def get_sub_pop(self, conditions):
         """
@@ -112,49 +118,47 @@ class Population:
         return pd.Index.intersection(subpop_1, subpop_2)
 
     def apply_vector_func(self, params, func):
-        param_cols = list(map(lambda x: self.get_variable(self.get_correct_column(x)), params))
+        param_cols = list(map(lambda x: self.get_variable(x), params))
         return func(*param_cols)
 
     def apply_function(self, function, axis, sub_pop=None):
-        if sub_pop == None:
+        if sub_pop is None:
             self.data.apply(function, axis)
         else:
             self.data.loc[sub_pop].apply(function, axis)
 
-    def get_variable(self, var, sub_pop=None):
-        var_col = self.get_correct_column(var)
+    def get_variable(self, var, sub_pop=None, dt=0):
+        var_col = self.get_correct_column(var, dt)
         #print("cols = ", self.data.columns)
         #print("Column to get = ", var_col)
         if sub_pop is None:
             return self.data[var_col]
         else:
-            return self.data.loc[sub_pop, [var_col]][var_col]
+            return self.data.loc[sub_pop, var_col]
 
     def set_present_variable(self, target: str, value, sub_pop=None):
-        present_col = self.get_correct_column((target, 0))
+        present_col = self.get_correct_column(target, 0)
         if sub_pop is None:
             self.data[present_col] = value
         else:
-            self.data.loc[sub_pop, [present_col]] = value
+            self.data.loc[sub_pop, present_col] = value
 
-    def get_correct_column(self, param_info):
-        (param, dt) = self.make_column_tuple(param_info)
-        col_index = (self.step + dt) % self.variable_history[param]
-        return (param, col_index)
+    def get_correct_column(self, param, dt=0):
+        """Gets the correct column for a parameter and a given time delay."""
+        #(param, dt) = self.make_column_tuple(param_info)
+        if(self.variable_history[param] == 1):
+            return param
+        else:
+            col_index = (self.step + dt) % self.variable_history[param]
+            return self.constructParamColumn(param, col_index)
 
     def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
         """Sets the value of a population variable at the present time step by calling transform group."""
-        target_col = self.get_correct_column((target, 0))
+        target_col = self.get_correct_column(target, 0)
         if sub_pop is None:
             self.data[target_col] = self.transform_group(groups, func, use_size)
         else:
             self.data.loc[sub_pop, target_col] = self.transform_group(groups, func, use_size, sub_pop)
-
-    def make_column_tuple(self, param):
-        if (type(param) == str):
-            return (param, 0)
-        else:
-            return param
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """Groups the data by a list of parameters and applies a function to each grouping. \n

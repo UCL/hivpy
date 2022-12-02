@@ -143,7 +143,10 @@ class SexualBehaviourModule:
         """Calculates the number of short term partners for people in a given intersection of
         sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group]"""
         group = int(group)
-        return self.short_term_partners[sex][group].sample(size)
+        print("Get partners: ", sex, group, size)
+        stp = self.short_term_partners[sex][group].sample(size)
+        print(stp)
+        return stp
 
     def num_short_term_partners(self, population: Population):
         """Calculate the number of short term partners for the whole population"""
@@ -426,7 +429,7 @@ class SexualBehaviourModule:
         """Function to decide which long term partners cease condomless sex based on
         relationship longevity, age, and sex."""
         # TODO: Add balancing factors for age and sex demographics.
-        end_probability = self.ltp_end_rate_by_longevity[longevity] / self.ltp_rate_change
+        end_probability = self.ltp_end_rate_by_longevity[int(longevity)] / self.ltp_rate_change
         r = rng.random(size=size)
         return (r > end_probability)
 
