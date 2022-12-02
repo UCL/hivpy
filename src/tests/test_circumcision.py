@@ -178,10 +178,10 @@ def test_vmmc_basic():
     pop.data[col.CIRCUMCISION_DATE] = None
     pop.data[col.VMMC] = False
 
-    pop.circumcision.circ_inc_rate_year_i = 0
+    pop.circumcision.circumcision_increase_scenario = 0
     pop.circumcision.covid_disrup_affected = 0
     pop.circumcision.vmmc_disrup_covid = 0
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
@@ -201,7 +201,7 @@ def test_vmmc_basic():
     male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
                                & (pop.data[col.AGE] >= 10)
                                & (pop.data[col.AGE] < 50)]
-    prob_circ = (pop.date.year - pop.circumcision.mc_int) * pop.circumcision.circ_inc_rate
+    prob_circ = (pop.date.year - pop.circumcision.vmmc_start_date) * pop.circumcision.circ_increase_rate
     mean = len(male_population) * prob_circ
     stdev = sqrt(mean * (1 - prob_circ))
     # basic checks
@@ -241,10 +241,10 @@ def test_vmmc_case_i1():
     # case 1
     # circumcision stops in 10-14 year olds and
     # increases in 15-19 year olds after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 1
+    pop.circumcision.circumcision_increase_scenario = 1
     pop.circumcision.covid_disrup_affected = 0
     pop.circumcision.vmmc_disrup_covid = 0
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
@@ -260,9 +260,9 @@ def test_vmmc_case_i1():
     male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
                                & (pop.data[col.AGE] >= 15)
                                & (pop.data[col.AGE] < 20)]
-    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
-                 * pop.circumcision.rel_incr_circ_post_2013
-                 * pop.circumcision.circ_inc_15_19) * pop.circumcision.circ_inc_rate
+    prob_circ = ((2013 - pop.circumcision.vmmc_start_date) + (2019 - 2013)
+                 * pop.circumcision.circ_rate_change_post_2013
+                 * pop.circumcision.circ_rate_change_15_19) * pop.circumcision.circ_increase_rate
     # cap probability at 1
     if (prob_circ > 1):
         prob_circ = 1
@@ -286,10 +286,10 @@ def test_vmmc_case_i2():
 
     # case 2
     # no further circumcision after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 2
+    pop.circumcision.circumcision_increase_scenario = 2
     pop.circumcision.covid_disrup_affected = 0
     pop.circumcision.vmmc_disrup_covid = 0
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
@@ -321,10 +321,10 @@ def test_vmmc_case_i3():
     # case 3
     # circumcision stops in 10-14 year olds and does not
     # increase in 15-19 year olds after year_interv
-    pop.circumcision.circ_inc_rate_year_i = 3
+    pop.circumcision.circumcision_increase_scenario = 3
     pop.circumcision.covid_disrup_affected = 0
     pop.circumcision.vmmc_disrup_covid = 0
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
@@ -340,8 +340,8 @@ def test_vmmc_case_i3():
     male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
                                & (pop.data[col.AGE] >= 15)
                                & (pop.data[col.AGE] < 20)]
-    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
-                 * pop.circumcision.rel_incr_circ_post_2013) * pop.circumcision.circ_inc_rate
+    prob_circ = ((2013 - pop.circumcision.vmmc_start_date) + (2019 - 2013)
+                 * pop.circumcision.circ_rate_change_post_2013) * pop.circumcision.circ_increase_rate
     # cap probability at 1
     if (prob_circ > 1):
         prob_circ = 1
@@ -368,10 +368,10 @@ def test_vmmc_case_i4():
     # after year_interv circumcision stops in 10-14 year olds,
     # does not increase in 15-19 year olds,
     # and VMMC stops after 5 years
-    pop.circumcision.circ_inc_rate_year_i = 4
+    pop.circumcision.circumcision_increase_scenario = 4
     pop.circumcision.covid_disrup_affected = 0
     pop.circumcision.vmmc_disrup_covid = 0
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
@@ -388,8 +388,8 @@ def test_vmmc_case_i4():
     male_population = pop.data[(pop.data[col.SEX] == SexType.Male)
                                & (pop.data[col.AGE] >= 15)
                                & (pop.data[col.AGE] < 20)]
-    prob_circ = ((2013 - pop.circumcision.mc_int) + (2019 - 2013)
-                 * pop.circumcision.rel_incr_circ_post_2013) * pop.circumcision.circ_inc_rate
+    prob_circ = ((2013 - pop.circumcision.vmmc_start_date) + (2019 - 2013)
+                 * pop.circumcision.circ_rate_change_post_2013) * pop.circumcision.circ_increase_rate
     # cap probability at 1
     if (prob_circ > 1):
         prob_circ = 1
@@ -421,10 +421,10 @@ def test_circ_covid():
     pop.data[col.VMMC] = False
 
     # covid disruption is in place
-    pop.circumcision.circ_inc_rate_year_i = 0
+    pop.circumcision.circumcision_increase_scenario = 0
     pop.circumcision.covid_disrup_affected = 1
     pop.circumcision.vmmc_disrup_covid = 1
-    pop.circumcision.mc_int = 2008
+    pop.circumcision.vmmc_start_date = 2008
     pop.circumcision.year_interv = 2022
 
     # evolve population
