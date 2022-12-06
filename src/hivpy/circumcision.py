@@ -15,18 +15,18 @@ class CircumcisionModule:
         # init cirumcision data
         with importlib.resources.path("hivpy.data", "circumcision.yaml") as data_path:
             self.c_data = CircumcisionData(data_path)
-        self.mc_int = self.c_data.mc_int
+        self.vmmc_start_date = self.c_data.vmmc_start_date
         self.year_interv = self.c_data.year_interv
         self.test_link_circ_prob = self.c_data.test_link_circ_prob
-        self.circ_inc_rate_year_i = self.c_data.circ_inc_rate_year_i
+        self.circumcision_increase_scenario = self.c_data.circumcision_increase_scenario
         # NOTE: the covid disrup field may not belong here
         self.covid_disrup_affected = self.c_data.covid_disrup_affected
         self.vmmc_disrup_covid = self.c_data.vmmc_disrup_covid
-        self.circ_inc_rate = self.c_data.circ_inc_rate.sample()
-        self.rel_incr_circ_post_2013 = self.c_data.rel_incr_circ_post_2013.sample()
-        self.circ_inc_15_19 = self.c_data.circ_inc_15_19.sample()
-        self.circ_red_20_30 = self.c_data.circ_red_20_30.sample()
-        self.circ_red_30_50 = self.c_data.circ_red_30_50.sample()
+        self.circ_increase_rate = self.c_data.circ_increase_rate.sample()
+        self.circ_rate_change_post_2013 = self.c_data.circ_rate_change_post_2013.sample()
+        self.circ_rate_change_15_19 = self.c_data.circ_rate_change_15_19.sample()
+        self.circ_rate_change_20_30 = self.c_data.circ_rate_change_20_30.sample()
+        self.circ_rate_change_30_50 = self.c_data.circ_rate_change_30_50.sample()
         self.prob_birth_circ = self.c_data.prob_birth_circ.sample()
 
     def init_birth_circumcision_all(self, population, date):
@@ -102,18 +102,18 @@ class CircumcisionModule:
         # no further circumcision
         if (self.vmmc_disrup_covid == 1) \
            | ((self.year_interv <= self.date.year)
-              & (self.circ_inc_rate_year_i == 2)) \
+              & (self.circumcision_increase_scenario == 2)) \
            | ((self.year_interv + 5 <= self.date.year)
-              & (self.circ_inc_rate_year_i == 4)):
+              & (self.circumcision_increase_scenario == 4)):
             self.test_link_circ_prob = 0
 
         # only begin VMMC after a specific year
-        elif self.mc_int < self.date.year:
+        elif self.vmmc_start_date < self.date.year:
 
             # circumcision stops in 10-14 year olds
-            if ((self.circ_inc_rate_year_i == 1)
-                | (self.circ_inc_rate_year_i == 3)
-                | (self.circ_inc_rate_year_i == 4)) \
+            if ((self.circumcision_increase_scenario == 1)
+                | (self.circumcision_increase_scenario == 3)
+                | (self.circumcision_increase_scenario == 4)) \
                & (self.year_interv <= self.date.year):
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
@@ -152,9 +152,9 @@ class CircumcisionModule:
         age_mod = 1
         # age group 1 has no modifier in most cases
         if age_group == 2:
-            age_mod = self.circ_red_20_30
+            age_mod = self.circ_rate_change_20_30
         elif age_group == 3:
-            age_mod = self.circ_red_30_50
+            age_mod = self.circ_rate_change_30_50
 
         calc_date = self.date.year
         # cap date at 2019 for calculations
@@ -164,17 +164,17 @@ class CircumcisionModule:
         # circumcision probability for a given age group
         if 2013 < self.date.year:
             # case where age group 1 has a modifier
-            ag1_has_mod = (age_group == 1) & (self.circ_inc_rate_year_i == 1) \
+            ag1_has_mod = (age_group == 1) & (self.circumcision_increase_scenario == 1) \
                           & (self.year_interv <= self.date.year)
             if ag1_has_mod:
-                prob_circ = ((2013 - self.mc_int) + (calc_date - 2013)
-                             * self.rel_incr_circ_post_2013 * self.circ_inc_15_19) \
-                            * self.circ_inc_rate
+                prob_circ = ((2013 - self.vmmc_start_date) + (calc_date - 2013)
+                             * self.circ_rate_change_post_2013 * self.circ_rate_change_15_19) \
+                            * self.circ_increase_rate
             else:
-                prob_circ = ((2013 - self.mc_int) + (calc_date - 2013)
-                             * self.rel_incr_circ_post_2013) * self.circ_inc_rate * age_mod
+                prob_circ = ((2013 - self.vmmc_start_date) + (calc_date - 2013)
+                             * self.circ_rate_change_post_2013) * self.circ_increase_rate * age_mod
         else:
-            prob_circ = (calc_date - self.mc_int) * self.circ_inc_rate * age_mod
+            prob_circ = (calc_date - self.vmmc_start_date) * self.circ_increase_rate * age_mod
         # outcomes
         r = rng.uniform(size=size)
         circumcision = r < prob_circ
