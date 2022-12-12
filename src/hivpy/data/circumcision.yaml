@@ -1,13 +1,15 @@
-mc_int: 2008
-year_interv: 2022
+vmmc_start_year: 2008
+circ_rate_change_year: 2013
+prob_circ_calc_cutoff_year: 2019
+policy_intervention_year: 2022
 
 test_link_circ: 1
 test_link_circ_prob: 0.05
 
-covid_disrup_affected: 0
-vmmc_disrup_covid: 0
+covid_disrup_affected: False
+vmmc_disrup_covid: False
 
-circ_inc_rate_year_i: 0
+circ_policy_scenario: 0
 
 # rate at which cricumcision increases over time
 circ_inc_rate:
