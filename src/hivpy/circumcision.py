@@ -27,8 +27,8 @@ class CircumcisionModule:
         self.circ_increase_rate = self.c_data.circ_increase_rate.sample()
         self.circ_rate_change_post_2013 = self.c_data.circ_rate_change_post_2013.sample()
         self.circ_rate_change_15_19 = self.c_data.circ_rate_change_15_19.sample()
-        self.circ_rate_change_20_30 = self.c_data.circ_rate_change_20_30.sample()
-        self.circ_rate_change_30_50 = self.c_data.circ_rate_change_30_50.sample()
+        self.circ_rate_change_20_29 = self.c_data.circ_rate_change_20_29.sample()
+        self.circ_rate_change_30_49 = self.c_data.circ_rate_change_30_49.sample()
         self.prob_birth_circ = self.c_data.prob_birth_circ.sample()
 
     def init_birth_circumcision_all(self, population, date):
@@ -137,7 +137,7 @@ class CircumcisionModule:
                              col.AGE_GROUP] = np.digitize(pop.data.loc[uncirc_male_population,
                                                                        col.AGE], [10, 20, 30, 50])
                 # calculate vmmc outcomes
-                circumcision = pop.transform_group([col.AGE_GROUP], self.calc_prob_circ,
+                circumcision = pop.transform_group([col.AGE_GROUP], self.calc_circ_outcomes,
                                                    sub_pop=uncirc_male_population)
                 pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
@@ -146,25 +146,25 @@ class CircumcisionModule:
                                                 & pop.data[col.CIRCUMCISION_DATE].isnull()]
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
 
-    def calc_prob_circ(self, age_group, size):
+    def calc_prob_circ(self, age_group):
         """
         Calculates the circumcision probability for a given
-        age group and returns VMMC outcomes.
+        age group and returns it.
         """
         age_mod = 1
         # age group 1 has no modifier in most cases
         if age_group == 2:
-            age_mod = self.circ_rate_change_20_30
+            age_mod = self.circ_rate_change_20_29
         elif age_group == 3:
-            age_mod = self.circ_rate_change_30_50
+            age_mod = self.circ_rate_change_30_49
 
         calc_date = self.date.year
-        # cap date at 2019 for calculations
+        # cap date at prob_circ_calc_cutoff_year (2019 by default) for calculations
         if self.prob_circ_calc_cutoff_year < self.date.year:
             calc_date = self.prob_circ_calc_cutoff_year
 
         # circumcision probability for a given age group
-        # year is after 2013
+        # year is after circ_rate_change_year (2013 by default)
         if self.circ_rate_change_year < self.date.year:
             # case where age group 1 has a modifier
             ag1_has_mod = (age_group == 1) & (self.circ_policy_scenario == 1) \
@@ -178,9 +178,18 @@ class CircumcisionModule:
                 prob_circ = ((self.circ_rate_change_year - self.vmmc_start_year)
                              + (calc_date - self.circ_rate_change_year)
                              * self.circ_rate_change_post_2013) * self.circ_increase_rate * age_mod
-        # year is before 2013
+        # year is before circ_rate_change_year (2013 by default)
         else:
             prob_circ = (calc_date - self.vmmc_start_year) * self.circ_increase_rate * age_mod
+
+        return prob_circ
+
+    def calc_circ_outcomes(self, age_group, size):
+        """
+        Uses the circumcision probability for a given
+        age group to return VMMC outcomes.
+        """
+        prob_circ = self.calc_prob_circ(age_group)
         # outcomes
         r = rng.uniform(size=size)
         circumcision = r < prob_circ
