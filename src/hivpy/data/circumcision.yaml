@@ -26,11 +26,11 @@ circ_inc_15_19:
   Value: [1.5, 2.0, 3.0]
   Probability: [0.33, 0.33, 0.33]
 
-circ_red_20_30:
+circ_red_20_29:
   Value: [0.3, 0.4, 0.5]
   Probability: [0.33, 0.33, 0.33]
 
-circ_red_30_50:
+circ_red_30_49:
   Value: [0.15, 0.25, 0.35]
   Probability: [0.33, 0.33, 0.33]
 

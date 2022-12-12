@@ -38,8 +38,8 @@ class CircumcisionData:
             self.circ_increase_rate = self._get_discrete_dist("circ_inc_rate")
             self.circ_rate_change_post_2013 = self._get_discrete_dist("rel_incr_circ_post_2013")
             self.circ_rate_change_15_19 = self._get_discrete_dist("circ_inc_15_19")
-            self.circ_rate_change_20_30 = self._get_discrete_dist("circ_red_20_30")
-            self.circ_rate_change_30_50 = self._get_discrete_dist("circ_red_30_50")
+            self.circ_rate_change_20_29 = self._get_discrete_dist("circ_red_20_29")
+            self.circ_rate_change_30_49 = self._get_discrete_dist("circ_red_30_49")
             self.prob_birth_circ = self._get_discrete_dist("prob_birth_circ")
         except KeyError as ke:
             print(ke.args)
