@@ -12,9 +12,11 @@ from .common import SexType, rng
 class CircumcisionModule:
 
     def __init__(self, **kwargs):
+
         # init cirumcision data
         with importlib.resources.path("hivpy.data", "circumcision.yaml") as data_path:
             self.c_data = CircumcisionData(data_path)
+
         self.vmmc_start_year = self.c_data.vmmc_start_year
         self.circ_rate_change_year = self.c_data.circ_rate_change_year
         self.prob_circ_calc_cutoff_year = self.c_data.prob_circ_calc_cutoff_year
@@ -30,6 +32,13 @@ class CircumcisionModule:
         self.circ_rate_change_20_29 = self.c_data.circ_rate_change_20_29.sample()
         self.circ_rate_change_30_49 = self.c_data.circ_rate_change_30_49.sample()
         self.prob_birth_circ = self.c_data.prob_birth_circ.sample()
+
+        # age range and grouping variables
+        self.min_vmmc_age = 10
+        self.vmmc_cutoff_age = self.min_vmmc_age + 5
+        self.vmmc_age_bound_1 = 20
+        self.vmmc_age_bound_2 = 30
+        self.max_vmmc_age = 50
 
     def init_birth_circumcision_all(self, population, date):
         """
@@ -119,23 +128,26 @@ class CircumcisionModule:
                & (self.policy_intervention_year <= self.date.year):
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
-                                                        & (pop.data[col.AGE] >= 15)
-                                                        & (pop.data[col.AGE] < 50)]
+                                                        & (pop.data[col.AGE] >= self.vmmc_cutoff_age)
+                                                        & (pop.data[col.AGE] < self.max_vmmc_age)]
             # get uncircumcised male population of specific ages
             else:
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
-                                                        & (pop.data[col.AGE] >= 10)
-                                                        & (pop.data[col.AGE] < 50)]
+                                                        & (pop.data[col.AGE] >= self.min_vmmc_age)
+                                                        & (pop.data[col.AGE] < self.max_vmmc_age)]
 
             # continue if uncircumcised males are present this timestep
             if len(uncirc_male_population) > 0:
 
                 # group males by age groups
+                age_groups = np.digitize(pop.data.loc[uncirc_male_population, col.AGE],
+                                         [self.min_vmmc_age,
+                                          self.vmmc_age_bound_1,
+                                          self.vmmc_age_bound_2,
+                                          self.max_vmmc_age])
                 # TODO: change age group col name to be more descriptive
-                pop.data.loc[uncirc_male_population,
-                             col.AGE_GROUP] = np.digitize(pop.data.loc[uncirc_male_population,
-                                                                       col.AGE], [10, 20, 30, 50])
+                pop.data.loc[uncirc_male_population, col.AGE_GROUP] = age_groups
                 # calculate vmmc outcomes
                 circumcision = pop.transform_group([col.AGE_GROUP], self.calc_circ_outcomes,
                                                    sub_pop=uncirc_male_population)

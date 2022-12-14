@@ -86,3 +86,9 @@ prob_circ = ((circ_rate_change_year - vmmc_start_year) + (year - circ_rate_chang
 ```python
 prob_circ = ((circ_rate_change_year - vmmc_start_year) + (year - circ_rate_change_year) * circ_rate_change_post_2013) * circ_increase_rate * age_mod
 ```
+
+#### Changing VMMC Age Range and Age Groupings
+
+If you would like to change the age range at which VMMC can be applied (*10 =< age < 50* by default), you can do so by editing *`min_vmmc_age`* and *`max_vmmc_age`* in `__init__` in `circumcision.py`. Note that the module is set up such that those of *`min_vmmc_age`* are included as valid candidates for VMMC, while those of *`max_vmmc_age`* are excluded. Additionally, you can edit *`vmmc_cutoff_age`* (*`min_vmmc_age` + 5* i.e. 15 by default) to change the age at which `circ_policy_scenario`* 1, 3, and 4 stop circumcision in minors.
+
+If you would like to change the age groups ([10-19, 20-29, 30-49] by default) used for calculating different VMMC probabilities, you can edit *`vmmc_age_bound_1`* (20 by default) and *`vmmc_age_bound_2`* (30 by default) in `__init__` to change the boundary ages at which age groups are divided. If you would like to change the *number* of age groups, introduce any new *`vmmc_age_bound_x`* variables as necessary and edit *`age_groups`* in `update_vmmc` to achieve the desired number of groups by adding or removing age bounds. Additionally, `calc_prob_circ` may need to be updated to change the VMMC probability age modifier for any newly added age groups.
