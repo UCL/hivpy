@@ -19,7 +19,7 @@ class CircumcisionModule:
         self.circ_rate_change_year = self.c_data.circ_rate_change_year
         self.prob_circ_calc_cutoff_year = self.c_data.prob_circ_calc_cutoff_year
         self.policy_intervention_year = self.c_data.policy_intervention_year
-        self.test_link_circ_prob = self.c_data.test_link_circ_prob
+        self.prob_circ_after_test = self.c_data.prob_circ_after_test
         self.circ_policy_scenario = self.c_data.circ_policy_scenario
         # NOTE: the covid disrup field may not belong here
         self.covid_disrup_affected = self.c_data.covid_disrup_affected
@@ -107,7 +107,7 @@ class CircumcisionModule:
               & (self.circ_policy_scenario == 2)) \
            | ((self.policy_intervention_year + 5 <= self.date.year)
               & (self.circ_policy_scenario == 4)):
-            self.test_link_circ_prob = 0
+            self.prob_circ_after_test = 0
 
         # only begin VMMC after a specific year
         elif self.vmmc_start_year <= self.date.year:
@@ -182,7 +182,7 @@ class CircumcisionModule:
         else:
             prob_circ = (calc_date - self.vmmc_start_year) * self.circ_increase_rate * age_mod
 
-        return prob_circ
+        return min(prob_circ, 1)
 
     def calc_circ_outcomes(self, age_group, size):
         """
