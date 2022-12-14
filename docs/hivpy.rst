@@ -20,6 +20,22 @@ Subpackages
 Submodules
 ----------
 
+hivpy.circumcision module
+-------------------------
+
+.. automodule:: hivpy.circumcision
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hivpy.circumcision\_data module
+-------------------------------
+
+.. automodule:: hivpy.circumcision_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 hivpy.cli module
 ----------------
 

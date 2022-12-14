@@ -28,6 +28,7 @@ class HIVStatusModule:
             np.array([0, self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary])
         self.transmission_sigmas = np.array(
             [0, 0.000025**2, 0.0025**2, 0.0075**2, 0.015**2, 0.025**2, 0.075**2])
+        self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """
@@ -124,6 +125,9 @@ class HIVStatusModule:
             else:
                 viral_transmission_probabilities = (viral_transmission_probabilities
                                                     * self.fold_change_w)
+        elif person[col.CIRCUMCISED]:
+            viral_transmission_probabilities = (viral_transmission_probabilities
+                                                * self.circumcision_risk_reduction)
         prob_uninfected = np.prod(1-(HIV_probabilities * viral_transmission_probabilities))
         r = rng.random()
         return r > prob_uninfected

@@ -4,6 +4,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
@@ -29,6 +30,7 @@ class Population:
         self.date = start_date
         self.demographics = DemographicsModule()
         self.sexual_behaviour = SexualBehaviourModule()
+        self.circumcision = CircumcisionModule()
         self.hiv_status = HIVStatusModule()
         self.HIV_introduced = False
         self._sample_parameters()
@@ -56,6 +58,9 @@ class Population:
         self.data = pd.DataFrame({
             col.SEX: self.demographics.initialize_sex(self.size),
             col.AGE: self.demographics.initialise_age(self.size),
+            col.CIRCUMCISED: [False] * self.size,
+            col.CIRCUMCISION_DATE: [None] * self.size,
+            col.VMMC: [False] * self.size,
             col.DATE_OF_DEATH: date_of_death
         })
         self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
@@ -63,6 +68,7 @@ class Population:
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
+        self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
@@ -115,6 +121,7 @@ class Population:
         died_this_period = self.demographics.determine_deaths(self)
         self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
+        self.circumcision.update_vmmc(self)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
