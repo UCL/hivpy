@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from math import sqrt
+from math import sqrt, isclose
 
 import hivpy.column_names as col
 from hivpy.common import SexType
@@ -112,6 +112,54 @@ def test_birth_circumcision_stages():
     assert sum(pop.data[col.CIRCUMCISED] & pop.data[col.VMMC]) == 0
 
 
+def test_calc_prob_circ():
+
+    # setup
+    pop = Population(size=1, start_date=date(2010, 1, 1))
+    pop.circumcision.date = pop.date
+    pop.circumcision.circ_policy_scenario = 0
+    set_covid(pop.circumcision, False)
+    set_vmmc_default_dates(pop.circumcision)
+    # fixing some probabilities
+    pop.circumcision.circ_increase_rate = 0.1
+    pop.circumcision.circ_rate_change_post_2013 = 1.5
+    pop.circumcision.circ_rate_change_15_19 = 2
+    pop.circumcision.circ_rate_change_20_29 = 0.5
+    pop.circumcision.circ_rate_change_30_49 = 0.25
+
+    # check basic case
+    # (2 * 0.1) = 0.2
+    assert isclose(pop.circumcision.calc_prob_circ(1), 0.2)
+    # (2 * 0.1 * 0.5) = 0.1
+    assert isclose(pop.circumcision.calc_prob_circ(2), 0.1)
+    # (2 * 0.1 * 0.25) = 0.05
+    assert isclose(pop.circumcision.calc_prob_circ(3), 0.05)
+
+    # re-fixing some probabilities for easier math
+    pop.circumcision.circ_rate_change_15_19 = 0.5
+    pop.circumcision.circ_rate_change_20_29 = 0.2
+    pop.circumcision.circ_rate_change_30_49 = 0.1
+
+    pop.circumcision.date = date(2019, 1, 1)
+    # check basic case post 2013
+    # ((5 + 6 * 1.5) * 0.1) = 1.4
+    assert isclose(pop.circumcision.calc_prob_circ(1), 1)
+    # ((5 + 6 * 1.5) * 0.1 * 0.2) = 0.28
+    assert isclose(pop.circumcision.calc_prob_circ(2), 0.28)
+    # ((5 + 6 * 1.5) * 0.1 * 0.1) = 14
+    assert isclose(pop.circumcision.calc_prob_circ(3), 0.14)
+
+    pop.circumcision.date = date(2022, 1, 1)
+    # check the year is capped at 2019 as expected
+    # (repeat last assert)
+    assert isclose(pop.circumcision.calc_prob_circ(3), 0.14)
+
+    pop.circumcision.circ_policy_scenario = 1
+    # check special group 1 case
+    # ((5 + 6 * 1.5 * 0.5) * 0.1) =
+    assert isclose(pop.circumcision.calc_prob_circ(1), 0.95)
+
+
 def test_vmmc_case_0():
 
     test_ages = [18, 25, 40]
@@ -171,7 +219,7 @@ def test_vmmc_case_0():
 
 def test_vmmc_case_1():
 
-    test_ages = [18, 25, 40]
+    test_ages = [14, 18, 25, 40]
     for age in test_ages:
 
         N = 100000
@@ -195,14 +243,15 @@ def test_vmmc_case_1():
         pop.data.age += time_step.days / 365
         pop.circumcision.update_vmmc(pop)
         # nobody under 15 has been circumcised
-        assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
+        if age < 15:
+            assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
 
-        # get stats
-        # cap probability at 1
-        prob_circ = min(pop.circumcision.calc_prob_circ(test_ages.index(age)+1), 1)
-        no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
-        # check circumcised value is within 3 standard deviations
-        assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
+        if age >= 15:
+            # get stats
+            prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age))
+            no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
+            # check circumcised value is within 3 standard deviations
+            assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
 
 
 def test_vmmc_case_2():
@@ -263,8 +312,7 @@ def test_vmmc_case_3():
         assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
 
         # get stats
-        # cap probability at 1
-        prob_circ = min(pop.circumcision.calc_prob_circ(test_ages.index(age)+1), 1)
+        prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
         no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
         # check circumcised value is within 3 standard deviations
         assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
@@ -305,8 +353,7 @@ def test_vmmc_case_4():
         no_male = sum((pop.data[col.SEX] == SexType.Male)
                       & (pop.data[col.AGE] >= 15)
                       & (pop.data[col.AGE] < 20))
-        # cap probability at 1
-        prob_circ = min(pop.circumcision.calc_prob_circ(test_ages.index(age)+1), 1)
+        prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
         mean = no_male * prob_circ
         stdev = sqrt(mean * (1 - prob_circ))
         # check circumcised value is within 3 standard deviations
