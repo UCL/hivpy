@@ -112,10 +112,8 @@ class CircumcisionModule:
 
         # no further circumcision
         if self.vmmc_disrup_covid \
-           | ((self.policy_intervention_year <= self.date.year)
-              & (self.circ_policy_scenario == 2)) \
-           | ((self.policy_intervention_year + 5 <= self.date.year)
-              & (self.circ_policy_scenario == 4)):
+           | ((self.policy_intervention_year <= self.date.year) & (self.circ_policy_scenario == 2)) \
+           | ((self.policy_intervention_year + 5 <= self.date.year) & (self.circ_policy_scenario == 4)):
             self.prob_circ_after_test = 0
 
         # only begin VMMC after a specific year
