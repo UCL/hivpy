@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from math import sqrt, isclose
+from math import isclose, sqrt
 
 import hivpy.column_names as col
 from hivpy.common import SexType
@@ -156,7 +156,7 @@ def test_calc_prob_circ():
 
     pop.circumcision.circ_policy_scenario = 1
     # check special group 1 case
-    # ((5 + 6 * 1.5 * 0.5) * 0.1) =
+    # ((5 + 6 * 1.5 * 0.5) * 0.1) = 0.95
     assert isclose(pop.circumcision.calc_prob_circ(1), 0.95)
 
 
