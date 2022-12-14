@@ -2,7 +2,6 @@
 vmmc_start_year: 2008
 circ_rate_change_year: 2013
 prob_circ_calc_cutoff_year: 2019
-policy_intervention_year: 2022
 
 # negative HIV test leads to VMMC
 circ_after_test: True
@@ -13,6 +12,7 @@ covid_disrup_affected: False
 vmmc_disrup_covid: False
 
 # policy scenarios 1-4 begin during policy_intervention_year
+policy_intervention_year: 2022
 circ_policy_scenario: 0
 
 # rate at which cricumcision increases over time

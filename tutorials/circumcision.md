@@ -9,6 +9,29 @@ Welcome to the circumcision module. This code deals with circumcision at birth a
 
 If there are any circumcision-related variables you would like to change before running your simulation, please change them in `circumcision.yaml`.
 
+### Circumcision Data Variables
+
+- *`vmmc_start_year`* - The year during which VMMC intervention begins (2008 by default).
+- *`circ_rate_change_year`* - The year after which VMMC rates change and *`circ_rate_change_post_2013`* becomes included in VMMC probability calculations (2013 by default).
+- *`prob_circ_calc_cutoff_year`* - The year which caps the current time step date used in VMMC probability calculations (2019 by default).
+- *`circ_after_test`* - A boolean that determines whether a negative HIV test can lead to VMMC.
+- *`prob_circ_after_test`* - The probability that a negative HIV test leads to VMMC.
+- *`covid_disrup_affected`* - A boolean that determines whether disruption due to COVID is factored into the model.
+- *`vmmc_disrup_covid`* - A boolean that determines whether COVID disruption affects VMMC intervention.
+- *`policy_intervention_year`* - The year after which policy intervention options are modelled (2022 by default).
+- *`circ_policy_scenario`* - An integer that represents the simulation of the enactment of a specific policy intervantion option after *`policy_intervention_year`*.
+    - **Scenario 0** - Default behaviour.
+    - **Scenario 1** - VMMC stops in 10-14 year olds and increases in 15-19 year olds.
+    - **Scenario 2** - No further VMMC is carried out.
+    - **Scenario 3** - VMMC stops in 10-14 year olds.
+    - **Scenario 4** - VMMC stops in 10-14 year olds and and there is no further VMMC 5 years after *`policy_intervention_year`*.
+- *`circ_increase_rate`* - The rate at which VMMC increases over time.
+- *`circ_rate_change_post_2013`* - The relative increase in VMCC after *`circ_rate_change_year`*.
+- *`circ_rate_change_15_19`* - The relative increase in VMMC in 15-19 year olds.
+- *`circ_rate_change_20_29`* - The relative decrease in VMMC in 20-29 year olds.
+- *`circ_rate_change_30_49`* - The relative decrease in VMMC in 30-49 year olds.
+- *`prob_birth_circ`* - The probability of circumcision at birth.
+
 ### Population Initialisation
 
 Birth circumcision is initialised when population data is first created. There are currently two methods for initialising birth circumcision:
@@ -17,6 +40,8 @@ Birth circumcision is initialised when population data is first created. There a
 - `init_birth_circumcision_born` - Initialises circumcision at birth for all born males of *age >= 0.25*. All circumcised individuals get assigned a circumcision date of the start of the simulation. This method requires the use of `update_birth_circumcision` during a population's evolve step, which updates birth circumcision for newly born males of *age >= 0.25* and *age - `time_step` < 0.25* during each time step (assuming ages have already been incremented this time step). During the update, newly circumcised males have the date of the current time step set as their circumcision date.
 
 The method that initialises birth circumcision all at once is much faster at determining birth circumcision outcomes for the entire population than the second due to the high cumulative time taken by the update method, however it does not factor in COVID disruption. On the other hand, the second method's updates can take new information into account during a simulation, and is thus capable of factoring in COVID disruption. As such, a birth circumcision update only goes ahead if *`covid_disrup_affected`* and *`vmmc_disrup_covid`* are both False, otherwise the circumcision probability is 0.
+
+#### Changing Birth Circumcision Initialisation
 
 If you would like to change how birth circumcision is initialised, you need to edit `_create_population_data` in `src/hivpy/population.py`.
 

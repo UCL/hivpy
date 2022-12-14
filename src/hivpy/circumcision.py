@@ -18,8 +18,8 @@ class CircumcisionModule:
         self.vmmc_start_year = self.c_data.vmmc_start_year
         self.circ_rate_change_year = self.c_data.circ_rate_change_year
         self.prob_circ_calc_cutoff_year = self.c_data.prob_circ_calc_cutoff_year
-        self.policy_intervention_year = self.c_data.policy_intervention_year
         self.prob_circ_after_test = self.c_data.prob_circ_after_test
+        self.policy_intervention_year = self.c_data.policy_intervention_year
         self.circ_policy_scenario = self.c_data.circ_policy_scenario
         # NOTE: the covid disrup field may not belong here
         self.covid_disrup_affected = self.c_data.covid_disrup_affected
