@@ -54,20 +54,21 @@ class Population:
         """
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-        date_of_death = [None] * self.size
         self.data = pd.DataFrame({
-            col.SEX: self.demographics.initialize_sex(self.size),
+            col.SEX: self.demographics.initialise_sex(self.size),
             col.AGE: self.demographics.initialise_age(self.size),
-            col.CIRCUMCISED: [False] * self.size,
-            col.CIRCUMCISION_DATE: [None] * self.size,
-            col.VMMC: [False] * self.size,
-            col.DATE_OF_DEATH: date_of_death
+            col.DATE_OF_DEATH: [None] * self.size
         })
+        self.data[col.CIRCUMCISED] = False
+        self.data[col.CIRCUMCISION_DATE] = None
+        self.data[col.VMMC] = False
+        self.data[col.HARD_REACH] = False
         self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
         self.data[col.HIV_DIAGNOSIS_DATE] = None
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
+        self.demographics.initialise_hard_reach(self.data)
         self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
