@@ -69,7 +69,10 @@ class Population:
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
         self.demographics.initialise_hard_reach(self.data)
-        self.circumcision.init_birth_circumcision_all(self.data, self.date)
+        if self.circumcision.vmmc_disrup_covid:
+            self.circumcision.init_birth_circumcision_born(self.data, self.date)
+        else:
+            self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.init_sex_behaviour_groups(self.data)
         self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
@@ -122,6 +125,8 @@ class Population:
         died_this_period = self.demographics.determine_deaths(self)
         self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
+        if self.circumcision.vmmc_disrup_covid:
+            self.circumcision.update_birth_circumcision(self, time_step, self.date)
         self.circumcision.update_vmmc(self)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
