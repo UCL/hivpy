@@ -126,7 +126,7 @@ class Population:
         self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
 
         if self.circumcision.vmmc_disrup_covid:
-            self.circumcision.update_birth_circumcision(self, time_step, self.date)
+            self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
         self.circumcision.update_vmmc(self)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
