@@ -1,6 +1,9 @@
 # percentage of women that can become pregnant
 can_be_pregnant: 0.95
 
+# fertility factor that changes with age
+fold_preg: [2.0, 1.9, 1, 0.2]
+
 # whatever this is, it affects pregnancy probability
 inc_cat:
   Value: [1, 2, 3]

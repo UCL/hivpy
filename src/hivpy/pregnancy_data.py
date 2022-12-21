@@ -27,8 +27,9 @@ class PregnancyData:
             self.data = yaml.safe_load(file)
         try:
             self.can_be_pregnant = self.data["can_be_pregnant"]
-            self.inc_cat = self._get_discrete_dist["inc_cat"]
-            self.rate_birth_with_infected_child = self._get_discrete_dist["rate_birth_with_infected_child"]
+            self.fold_preg = self.data["fold_preg"]
+            self.inc_cat = self._get_discrete_dist("inc_cat")
+            self.rate_birth_with_infected_child = self._get_discrete_dist("rate_birth_with_infected_child")
         except KeyError as ke:
             print(ke.args)
             raise DataLoadException
