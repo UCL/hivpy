@@ -25,8 +25,10 @@ STP_AGE_GROUPS = "stp_age_groups"           # int array: ages groups of short te
 SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
 LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
+LOW_FERTILITY = "low_fertility"             # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
+PREGNANCY_DATE = "pregnancy_date"           # None | datetime.date: date of most recent pregnancy, o/w None if not pregnant
 
-HIV_STATUS = "HIV_status"                   # bool: true if person if HIV positive, o/w false
+HIV_STATUS = "HIV_status"                   # bool: True if person is HIV positive, o/w False
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"       # int: value 1-6 placing bounds on viral load for an HIV positive person
 
