@@ -44,7 +44,7 @@ class Population:
         """
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
-        # that distrubition is chosen randomly for each population.
+        # that distribution is chosen randomly for each population.
         # avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
         # self.params = {
         #     'avg_max_age': avg_max_age,
@@ -68,7 +68,10 @@ class Population:
         self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
         self.data[col.HIV_DIAGNOSIS_DATE] = None
         self.data[col.LOW_FERTILITY] = False
-        self.data[col.PREGNANCY_DATE] = None
+        self.data[col.PREGNANT] = False
+        self.data[col.LAST_PREGNANCY_DATE] = None
+        self.data[col.NUM_CHILDREN] = 0
+        self.data[col.WANT_NO_CHILDREN] = False
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
