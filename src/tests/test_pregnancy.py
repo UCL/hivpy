@@ -70,6 +70,7 @@ def test_childbirth():
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
     pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.NUM_CHILDREN] = 0
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
 
@@ -85,6 +86,8 @@ def test_childbirth():
     pop.date += time_step
     # check that nobody is pregnant anymore
     assert ~pop.data[col.PREGNANT].all()
+    # check that everyone now has one child
+    assert (pop.data[col.NUM_CHILDREN] == 1).all()
 
     # test the pregnancy pause period
     pop.pregnancy.update_pregnancy(pop)
@@ -96,3 +99,35 @@ def test_childbirth():
     pop.date += time_step
     # check that everyone is pregnant again
     assert pop.data[col.PREGNANT].all()
+
+def test_child_cap():
+
+    N = 100
+    start_date = date(1990, 1, 1)
+    time_step = timedelta(days=90)
+
+    # build artificial population
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.SEX] = SexType.Female
+    pop.data[col.AGE] = 18
+    pop.data[col.LOW_FERTILITY] = False
+    pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.NUM_CHILDREN] = 0
+    # cap children
+    pop.pregnancy.max_children = 1
+    # guaranteed pregnancy
+    pop.pregnancy.prob_pregnancy_base = 1
+
+    # evolve population
+    # TODO: may need to account for including time step period when updating pregnancy
+    # get through pregnancy, childbirth, and pregnancy pause period
+    for i in range(5):
+        # advance pregnancy
+        pop.pregnancy.update_pregnancy(pop)
+        pop.date += time_step
+
+    # past pregnancy pause period
+    pop.pregnancy.update_pregnancy(pop)
+    pop.date += time_step
+    # check that there are no pregnancies due to reaching child cap
+    assert ~pop.data[col.PREGNANT].all()
