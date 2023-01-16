@@ -100,6 +100,7 @@ def test_childbirth():
     # check that everyone is pregnant again
     assert pop.data[col.PREGNANT].all()
 
+
 def test_child_cap():
 
     N = 100

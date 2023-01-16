@@ -126,12 +126,14 @@ class CircumcisionModule:
                & (self.policy_intervention_year <= self.date.year):
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
+                                                        & ~pop.data[col.HARD_REACH]
                                                         & (pop.data[col.AGE] >= self.vmmc_cutoff_age)
                                                         & (pop.data[col.AGE] < self.max_vmmc_age)]
             # get uncircumcised male population of specific ages
             else:
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
+                                                        & ~pop.data[col.HARD_REACH]
                                                         & (pop.data[col.AGE] >= self.min_vmmc_age)
                                                         & (pop.data[col.AGE] < self.max_vmmc_age)]
 

@@ -31,6 +31,7 @@ LAST_PREGNANCY_DATE = "last_pregnancy_date"     # None | datetime.date: date of 
 NUM_CHILDREN = "num_children"                   # int: number of children a woman has
 WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children
 
+HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person

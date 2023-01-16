@@ -183,7 +183,7 @@ class DemographicsModule:
             params[param] = value
         self.params = params
 
-    def initialize_sex(self, count):
+    def initialise_sex(self, count):
         sex_distribution = (
             1 - self.params['female_ratio'], self.params['female_ratio'])
         return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
@@ -195,6 +195,21 @@ class DemographicsModule:
             age_distribution = ContinuousAgeDistribution.select_model(self.params['inc_cat'])
 
         return age_distribution.gen_ages(count)
+
+    def initialise_hard_reach(self, population):
+        # base probabilities for being hard to reach
+        self.prob_hard_reach_f = round(rng.uniform(0.05, 0.2), 2)
+        self.prob_hard_reach_m = self.prob_hard_reach_f + round(rng.uniform(0, 0.1), 2)
+        # split population by sex
+        female_pop = population.index[(population[col.SEX] == SexType.Female)]
+        male_pop = population.index[(population[col.SEX] == SexType.Male)]
+        r_f = rng.uniform(size=len(female_pop))
+        r_m = rng.uniform(size=len(male_pop))
+        # outcomes
+        hard_reach_f = r_f < self.prob_hard_reach_f
+        hard_reach_m = r_m < self.prob_hard_reach_m
+        population.loc[female_pop, col.HARD_REACH] = hard_reach_f
+        population.loc[male_pop, col.HARD_REACH] = hard_reach_m
 
     def _probability_of_death(self, sex: SexType, age_group: int) -> float:
         rate = self.params["death_rates"][sex][age_group]

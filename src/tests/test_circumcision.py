@@ -51,6 +51,7 @@ def get_vmmc_stats(pop, prob_circ):
 
     no_vmmc = sum(pop.data[col.VMMC])
     no_male = sum((pop.data[col.SEX] == SexType.Male)
+                  & ~pop.data[col.HARD_REACH]
                   & (pop.data[col.AGE] >= 10)
                   & (pop.data[col.AGE] < 50))
     mean = no_male * prob_circ
@@ -197,6 +198,8 @@ def test_vmmc_case_0():
         no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
         # basic checks
         general_circumcision_checks(mean, stdev, no_vmmc, pop.data)
+        # no hard to reach people have undergone VMMC
+        assert sum(pop.data[col.HARD_REACH] & pop.data[col.VMMC]) == 0
         # nobody over 50 has been circumcised
         assert sum((pop.data[col.AGE] >= 50) & (pop.data[col.VMMC])) == 0
 
@@ -349,13 +352,8 @@ def test_vmmc_case_4():
         assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
 
         # get stats
-        no_vmmc = sum(pop.data[col.VMMC] & (pop.data[col.AGE] >= 15) & (pop.data[col.AGE] < 20))
-        no_male = sum((pop.data[col.SEX] == SexType.Male)
-                      & (pop.data[col.AGE] >= 15)
-                      & (pop.data[col.AGE] < 20))
         prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
-        mean = no_male * prob_circ
-        stdev = sqrt(mean * (1 - prob_circ))
+        no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
         # check circumcised value is within 3 standard deviations
         assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
 
