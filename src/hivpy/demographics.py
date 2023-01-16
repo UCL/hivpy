@@ -198,7 +198,7 @@ class DemographicsModule:
 
     def initialise_hard_reach(self, population):
         # base probabilities for being hard to reach
-        self.prob_hard_reach_f = round(rng.uniform(0.05, 0.15), 2)
+        self.prob_hard_reach_f = round(rng.uniform(0.05, 0.2), 2)
         self.prob_hard_reach_m = self.prob_hard_reach_f + round(rng.uniform(0, 0.1), 2)
         # split population by sex
         female_pop = population.index[(population[col.SEX] == SexType.Female)]
