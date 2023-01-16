@@ -77,7 +77,7 @@ class PregnancyModule:
             pregnancy_ready = ~active_female_population[col.LOW_FERTILITY]
             if len(previously_pregnant) > 0:
                 # mask
-                pregnancy_ready = previously_pregnant[col.LAST_PREGNANCY_DATE] + timedelta(days=450) <= pop.date
+                pregnancy_ready = pregnancy_ready & (previously_pregnant[col.LAST_PREGNANCY_DATE] + timedelta(days=450) <= pop.date)
 
             # group females by age groups
             age_groups = np.digitize(pop.data.loc[active_female_population[pregnancy_ready].index, col.AGE],
