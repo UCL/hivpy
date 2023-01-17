@@ -65,7 +65,7 @@ VMMC is updated when the population is advanced by one time step during its `evo
 
 There is no VMMC during a given time step if one of the following conditions is fulfilled:
 - *`vmmc_disrup_covid` == True*
-- *`circ_policy_scenario == 2`* AND *`policy_intervention_year` <= year*
+- *`circ_policy_scenario` == 2* AND *`policy_intervention_year` <= year*
 - *`circ_policy_scenario` == 4* AND *`policy_intervention_year` + 5 <= year*
 
 Otherwise, VMMC occurs only if the current *year > `vmmc_start_year`*. Typically uncircumcised males of *10 =< age < 50* are eligible for VMMC, but if *`circ_policy_scenario`* is one of 1, 3, or 4 and *`policy_intervention_year` <= year* then circumcision stops in 10-14 year olds.
