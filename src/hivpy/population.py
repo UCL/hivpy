@@ -59,14 +59,15 @@ class Population:
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))  # when do we use current age and when previous timestep age?
         self.init_variable(col.AGE_GROUP, 0) 
         self.init_variable(col.DATE_OF_DEATH, None)
-        self.init_variable(col.HIV_STATUS, False, 1)
+        self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
-        self.init_variable(col.NUM_PARTNERS, 0, 3)  # I think we need t-3 for pregnancy but might change if we rethink implementation
+        self.init_variable(col.NUM_PARTNERS, 0)    # I think we need t-3 for pregnancy but might change if we rethink implementation
                                                     # In this case the number of previous steps we need would actually be variable based on timestep!!!
-        self.init_variable(col.LONG_TERM_PARTNER, False, 1)
+        self.init_variable(col.RRED, 1)
+        self.init_variable(col.LONG_TERM_PARTNER, False)
         self.init_variable(col.LTP_AGE_GROUP, 0)
-        self.init_variable(col.LTP_LONGEVITY, 0, 1)
-        self.init_variable(col.SEX_MIX_AGE_GROUP, 0, 1)
+        self.init_variable(col.LTP_LONGEVITY, 0)
+        self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
@@ -123,9 +124,9 @@ class Population:
 
     def apply_function(self, function, axis, sub_pop=None):
         if sub_pop is None:
-            self.data.apply(function, axis)
+            return self.data.apply(function, axis)
         else:
-            self.data.loc[sub_pop].apply(function, axis)
+            return self.data.loc[sub_pop].apply(function, axis)
 
     def get_variable(self, var, sub_pop=None, dt=0):
         var_col = self.get_correct_column(var, dt)
@@ -174,7 +175,6 @@ class Population:
         by `data.loc[sub_pop]`"""
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))
-        
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]

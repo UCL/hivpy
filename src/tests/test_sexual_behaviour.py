@@ -27,14 +27,18 @@ def check_prob_sums(sex, trans_matrix):
     for i in range(0, dim):
         ages = np.array([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65])
         sexes = np.array([sex]*len(ages))
-        pop = pd.DataFrame({"age": ages, "sex": sexes, "HIV_status": False,
-                           "HIV_Diagnosis_Date": None})
-        SBM.init_risk_factors(pop)
-        assert len(pop["rred"]) == 11
+        population = Population(11, date(1989, 1, 1))
+        population.set_present_variable(col.AGE, ages)
+        population.set_present_variable(col.SEX, sexes)
+        population.set_present_variable(col.HIV_STATUS, False)
+        population.set_present_variable(col.HIV_DIAGNOSIS_DATE, None)
+        SBM.init_risk_factors(population)
+        rred = population.get_variable(col.RRED)
+        assert len(rred) == 11
         assert (0 < SBM.new_partner_factor <= 2)
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
-            tot_prob += SBM.prob_transition(sex, pop["rred"], i, j)
+            tot_prob += SBM.prob_transition(sex, rred, i, j)
         assert (np.allclose(tot_prob, 1.0))
 
 
@@ -50,20 +54,27 @@ def test_transition_probabilities(yaml_data):
 def test_sex_behaviour_transition(yaml_data):
     N = 100000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.AGE] = 25  # make whole population active
-    pop.data[col.RRED] = 1  # rred factors can be tested elsewhere
+    pop.set_present_variable(col.AGE, 25)  # make whole population active
+    pop.set_present_variable(col.RRED, 1)  # rred factors can be tested elsewhere
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
     sex_ratio = {SexType.Male: 0.48, SexType.Female: 0.52}
     for s in SexType:
         for g in SexBehaviours[s]:
-            pop.data.loc[pop.data[col.SEX] == s, col.SEX_BEHAVIOUR] = g
+            print(g)
+            pop.set_present_variable(col.SEX_BEHAVIOUR, 0)
+            pop.set_present_variable(col.SEX_BEHAVIOUR, g, pop.get_sub_pop([(col.SEX, operator.eq, s)]))
+            #pop.data.loc[pop.data[col.SEX] == s, col.SEX_BEHAVIOUR] = g
             pop.sexual_behaviour.update_sex_groups(pop)
             for g2 in SexBehaviours[s]:
+                print(s, g2)
                 num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2) & (pop.data[col.SEX] == s)])
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
                 E = p * N * sex_ratio[s]
                 sig = np.sqrt(E * (1-p))
+                lower = E - 5*sig
+                upper = E + 5*sig
+                print(num, lower, upper)
                 assert (E - 10*sig <= num <= E + 10*sig)
 
 
@@ -156,10 +167,10 @@ def test_rred_long_term_partner():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     # pick some indices and give those people LTPs
     indices = rng.integers(0, N, size=15)
-    pop.data["partnered"] = False
-    pop.data.loc[indices, "partnered"] = True
+    pop.set_present_variable(col.LONG_TERM_PARTNER, False)
+    pop.set_present_variable(col.LONG_TERM_PARTNER, True, indices)
     SBM = SexualBehaviourModule()
-    SBM.update_rred_long_term_partnered(pop.data)
+    SBM.update_rred_long_term_partnered(pop)
     assert all(pop.data.loc[indices, "rred_long_term_partnered"] == SBM.ltp_risk_factor)
 
 

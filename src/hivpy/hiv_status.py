@@ -48,19 +48,13 @@ class HIVStatusModule:
         """Initialise HIV status at the start of the pandemic."""
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
-        print(population.get_variable(col.NUM_PARTNERS))
         initial_candidates = population.get_sub_pop([(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
         # initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
         # Each of them has the same probability of being infected.
-        print(initial_candidates)
-        print("num init candidates = ", len(initial_candidates))
         num_init_candidates = len(initial_candidates)
-        print(self.initial_hiv_prob)
         rands = rng.uniform(size=num_init_candidates)
-        print(rands, len(rands))
         initial_infection = rands < self.initial_hiv_prob
         hiv_status = pd.Series(False, index=population.data.index)
-        print(len(hiv_status.loc[initial_candidates]), len(initial_infection))
         hiv_status.loc[initial_candidates] = initial_infection
         return hiv_status
 
@@ -162,9 +156,11 @@ class HIVStatusModule:
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
         #HIV_neg_idx = population.data.index[(~population.data[col.HIV_STATUS]) & (
         #    population.data[col.NUM_PARTNERS] > 0)]
-        #sub_pop = population.data.loc[HIV_neg_idx]
+        #print(HIV_neg_active_pop == HIV_neg_idx)
+        #sub_pop = population.data.loc[HIV_neg_active_pop]
+        new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
         population.set_present_variable(col.HIV_STATUS,
-                                        population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop),
+                                        new_HIV_status,
                                         HIV_neg_active_pop)
         #population.data.loc[HIV_neg_idx, col.HIV_STATUS] = sub_pop.apply(
         #    self.stp_HIV_transmission, axis=1)

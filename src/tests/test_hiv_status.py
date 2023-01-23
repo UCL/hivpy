@@ -88,7 +88,7 @@ def test_hiv_not_reintroduced_after_1989(mocker):
 def test_hiv_initial_ages(pop_with_initial_hiv: Population):
     """Check that HIV is not introduced to anyone <= 15 or > 65."""
     under_15s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                  (col.AGE, operator.le, 60)])
+                                                  (col.AGE, operator.le, 15)])
     over_65s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                  (col.AGE, operator.gt, 65)])
     HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
@@ -101,13 +101,15 @@ def test_hiv_update(pop_with_initial_hiv: Population):
     pd.set_option('display.max_columns', None)
     data = pop_with_initial_hiv.data
     prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
+
     for i in range(10):
         pop_with_initial_hiv.hiv_status.update_HIV_status(pop_with_initial_hiv)
 
-    current_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS)
+    current_status = np.array(pop_with_initial_hiv.get_variable(col.HIV_STATUS))
+
     new_cases = current_status & (~ prev_status)
     print("Num new HIV+ = ", sum(new_cases))
-    miracles = (~ current_status) & (prev_status)
+    miracles = (~current_status) & (prev_status)
     under_15s_idx = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                       (col.AGE, operator.le, 15)])
     assert not any(miracles)

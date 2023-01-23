@@ -111,7 +111,7 @@ class SexualBehaviourModule:
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
     def init_sex_behaviour_groups(self, population: Population):
-        population.init_variable(col.SEX_BEHAVIOUR, None, 1)
+        population.init_variable(col.SEX_BEHAVIOUR, None)
         # population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
                                          [col.SEX],
@@ -143,9 +143,7 @@ class SexualBehaviourModule:
         """Calculates the number of short term partners for people in a given intersection of
         sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group]"""
         group = int(group)
-        print("Get partners: ", sex, group, size)
         stp = self.short_term_partners[sex][group].sample(size)
-        print(stp)
         return stp
 
     def num_short_term_partners(self, population: Population):
@@ -175,18 +173,21 @@ class SexualBehaviourModule:
         """Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j)."""
-        active_pop = population.get_sub_pop([(col.AGE, operator.le, 15),
-                                             (col.AGE, operator.gt, 65)])
-        new_groups = population.transform_group(
-            [col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group, sub_pop=active_pop)
-        population.set_present_variable(col.SEX_BEHAVIOUR, new_groups, active_pop)
+        active_pop = population.get_sub_pop([(col.AGE, operator.gt, 15),
+                                             (col.AGE, operator.le, 65)])
+        population.set_variable_by_group(col.SEX_BEHAVIOUR,
+                                         [col.SEX, col.SEX_BEHAVIOUR, col.RRED],
+                                         self._assign_new_sex_group,
+                                         sub_pop=active_pop)
+        #new_groups = population.(
+        #    [col.SEX, col.SEX_BEHAVIOUR, col.RRED], self._assign_new_sex_group, sub_pop=active_pop)
+        #population.set_present_variable(col.SEX_BEHAVIOUR, new_groups, active_pop)
 
     # risk reduction factors
     def init_risk_factors(self, pop: Population):
         self.init_rred_personal(pop)
-        pop.init_variable(col.RRED_AGE, 1, 1)  # Placeholder to be changed each time step
+        pop.init_variable(col.RRED_AGE, 1)  # Placeholder to be changed each time step
         self.update_rred_age(pop)
-        pop.init_variable(col.RRED, 1, 1)
         pop.set_present_variable(col.RRED,
                                  pop.apply_vector_func([col.RRED_PERSONAL, col.RRED_AGE],
                                                        self.calc_rred_base))
@@ -232,7 +233,7 @@ class SexualBehaviourModule:
         #                             population.data[col.RRED_ART_ADHERENCE])
 
     def init_rred_art_adherence(self, pop: Population):
-        pop.init_variable(col.RRED_ART_ADHERENCE, 1.0, 1)
+        pop.init_variable(col.RRED_ART_ADHERENCE, 1.0)
 
     def update_rred_art_adherence(self, pop: Population):
         # need to make this column check more intuitive
@@ -249,9 +250,8 @@ class SexualBehaviourModule:
 
     def update_rred_long_term_partnered(self, pop: Population):
         pop.set_present_variable(col.RRED_LTP, 1)  # Unpartnered people
-        if ((col.LONG_TERM_PARTNER, 0) in pop.data.columns):
-            partnered_pop = pop.get_variable(col.LONG_TERM_PARTNER)
-            pop.set_present_variable(col.RRED_LTP, self.ltp_risk_factor, partnered_pop)
+        partnered_pop = pop.get_sub_pop([(col.LONG_TERM_PARTNER, operator.eq, True)])
+        pop.set_present_variable(col.RRED_LTP, self.ltp_risk_factor, partnered_pop)
             #pop_data.loc[partnered_idx, col.RRED_LTP] = self.ltp_risk_factor
             # This might be more efficient, but is also a bit obscure
             # = ltp_risk_factor if ltp is true, and 1 if ltp is false.
@@ -264,9 +264,9 @@ class SexualBehaviourModule:
         population.set_present_variable(col.RRED_PERSONAL, 1e-5, mask)
 
     def init_rred_adc(self, population: Population):
-        population.init_variable(col.RRED_ADC, 1.0, 1)
+        population.init_variable(col.RRED_ADC, 1.0)
         # TEMP -- AIDS defining condition should go in the appropriate module
-        population.init_variable(col.ADC, False, 1)
+        population.init_variable(col.ADC, False)
         self.update_rred_adc(population)
 
     def update_rred_adc(self, population: Population):
@@ -298,7 +298,7 @@ class SexualBehaviourModule:
             self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_rred_diagnosis(self, population: Population):
-        population.init_variable(col.RRED_DIAGNOSIS, 1, 1)  # do we want previous timesteps?
+        population.init_variable(col.RRED_DIAGNOSIS, 1)  # do we want previous timesteps?
 
     def update_rred_diagnosis(self, population: Population, date):
         new_HIV_pop = population.get_sub_pop(
@@ -314,7 +314,7 @@ class SexualBehaviourModule:
 
     def init_rred_balance(self, population: Population):
         """Initialise risk reduction factor for balancing sex ratios"""
-        population.init_variable(col.RRED_BALANCE, 1.0, 1)
+        population.init_variable(col.RRED_BALANCE, 1.0)
 
     def update_rred_balance(self, population: Population):
         """Update balance of new partners for consistency between sexes.
