@@ -15,12 +15,12 @@ class PregnancyModule:
 
         # init pregnancy data
         with importlib.resources.path("hivpy.data", "pregnancy.yaml") as data_path:
-            self.c_data = PregnancyData(data_path)
+            self.p_data = PregnancyData(data_path)
 
-        self.can_be_pregnant = self.c_data.can_be_pregnant
-        self.fold_preg = self.c_data.fold_preg
-        self.inc_cat = self.c_data.inc_cat.sample()
-        self.rate_birth_with_infected_child = self.c_data.rate_birth_with_infected_child.sample()
+        self.can_be_pregnant = self.p_data.can_be_pregnant
+        self.fold_preg = self.p_data.fold_preg
+        self.inc_cat = self.p_data.inc_cat.sample()
+        self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()
         self.rate_want_no_children = 0.005
         self.max_children = 10
@@ -86,9 +86,8 @@ class PregnancyModule:
             # TODO: change age group col name to be more descriptive
             pop.data.loc[active_female_population[pregnancy_ready].index, col.AGE_GROUP] = age_groups
             # calculate pregnancy outcomes
-            pregnancy = pop.transform_group([col.AGE_GROUP], self.calc_preg_outcomes,
+            pregnancy = pop.transform_group([col.AGE_GROUP, col.WANT_NO_CHILDREN], self.calc_preg_outcomes,
                                             sub_pop=active_female_population[pregnancy_ready].index)
-            # TODO: wanting no more children decreases pregnancy probability by 80%
             # assign outcomes
             pop.data.loc[active_female_population[pregnancy_ready].index, col.PREGNANT] = pregnancy
             # use pregnancy outcomes as mask to assign current date as pregnancy date
@@ -114,19 +113,23 @@ class PregnancyModule:
             # assign outcomes
             pop.data.loc[want_children_population, col.WANT_NO_CHILDREN] = want_no_children
 
-    def calc_prob_preg(self, age_group):
+    def calc_prob_preg(self, age_group, want_no_children):
         """
         Calculates the probability of getting pregnant
         for a given age group and returns it.
         """
-        return self.prob_pregnancy_base * self.fold_preg[int(age_group)-1]
+        prob_preg = self.prob_pregnancy_base * self.fold_preg[int(age_group)-1]
+        # wanting no more children decreases pregnancy probability by 80%
+        if want_no_children:
+            prob_preg *= 0.2
+        return prob_preg
 
-    def calc_preg_outcomes(self, age_group, size):
+    def calc_preg_outcomes(self, age_group, want_no_children, size):
         """
         Uses the pregnancy probability for a given
         age group to return pregnancy outcomes.
         """
-        prob_preg = self.calc_prob_preg(age_group)
+        prob_preg = self.calc_prob_preg(age_group, want_no_children)
         # outcomes
         r = rng.uniform(size=size)
         pregnancy = r < prob_preg
