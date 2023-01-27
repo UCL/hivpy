@@ -76,6 +76,7 @@ class Population:
         self.data[col.LONG_TERM_PARTNER] = False
         self.data[col.LTP_LONGEVITY] = 0
         self.pregnancy.init_fertility(self)
+        self.pregnancy.init_num_children(self)
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)

@@ -21,6 +21,42 @@ def test_fertility():
     assert mean - 3 * stdev <= no_infertile <= mean + 3 * stdev
 
 
+def test_num_children():
+
+    test_ages = [20, 30, 40, 50]
+    for age in test_ages:
+
+        # build artificial population
+        N = 100000
+        pop = Population(size=N, start_date=date(1990, 1, 1))
+        pop.data[col.SEX] = SexType.Female
+        pop.data[col.AGE] = age
+        pop.data[col.LAST_PREGNANCY_DATE] = None
+        pop.data[col.NUM_CHILDREN] = 0
+        pop.pregnancy.init_fertility(pop)
+        pop.pregnancy.init_num_children(pop)
+
+        # check that anyone with child has a pregnancy date
+        assert ((pop.data[col.NUM_CHILDREN] > 0) == pop.data[col.LAST_PREGNANCY_DATE].notnull()).all()
+
+        # probability distribution and values for initialising child numbers
+        prob_children_dist = pop.pregnancy.init_num_children_distributions[test_ages.index(age)].probs
+        num_children_values = pop.pregnancy.init_num_children_distributions[test_ages.index(age)].data
+        prob_dist_size = len(prob_children_dist)
+
+        # get stats
+        no_female = sum(~pop.data[col.LOW_FERTILITY])
+        # loop through distribution
+        for i in range(0, prob_dist_size):
+            no_children = sum((pop.data[col.NUM_CHILDREN] == num_children_values[i])
+                              & (~pop.data[col.LOW_FERTILITY]))
+            prob_children = prob_children_dist[i]
+            mean = no_female * prob_children
+            stdev = sqrt(mean * (1 - prob_children))
+            # check pregnancy value is within 3 standard deviations
+            assert mean - 3 * stdev <= no_children <= mean + 3 * stdev
+
+
 def test_new_preg():
 
     test_ages = [10, 20, 30, 40, 50, 60]
@@ -32,6 +68,8 @@ def test_new_preg():
         pop.data[col.SEX] = SexType.Female
         pop.data[col.AGE] = age
         pop.data[col.NUM_PARTNERS] = 1
+        pop.data[col.LAST_PREGNANCY_DATE] = None
+        pop.data[col.NUM_CHILDREN] = 0
         pop.pregnancy.prob_pregnancy_base = 0.1
         pop.pregnancy.init_fertility(pop)
         pop.pregnancy.update_pregnancy(pop)
@@ -69,6 +107,7 @@ def test_childbirth():
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
     pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
@@ -111,6 +150,7 @@ def test_child_cap():
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
     pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     # cap children
     pop.pregnancy.max_children = 1
@@ -141,6 +181,7 @@ def test_want_no_children():
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
     pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     pop.pregnancy.prob_pregnancy_base = 0.1
 

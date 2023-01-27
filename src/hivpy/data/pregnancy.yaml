@@ -4,7 +4,8 @@ can_be_pregnant: 0.95
 # fertility factor that changes with age
 fold_preg: [2.0, 1.9, 1, 0.2]
 
-# whatever this is, it affects pregnancy probability
+# TODO: move this, it's a demographics variable that affects
+# population growth (and pregnancy probability)
 inc_cat:
   Value: [1, 2, 3]
   Probability: [0.33, 0.33, 0.33]
@@ -13,3 +14,15 @@ inc_cat:
 rate_birth_with_infected_child:
   Value: [0.3, 0.4, 0.5, 0.6]
   Probability: [0.05, 0.25, 0.6, 0.1]
+
+# probability for each starting number of children
+# based on age group (15-24, 25-34, 35-44, 45+)
+init_num_children_distributions:
+  - Value: [0, 1, 2, 3]
+    Probability: [0.72, 0.21, 0.06, 0.01]
+  - Value: [0, 1, 2, 3, 4, 5, 6]
+    Probability: [0.25, 0.3, 0.26, 0.12, 0.05, 0.01, 0.01]
+  - Value: [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]
+    Probability: [0.11, 0.13, 0.26, 0.21, 0.14, 0.07, 0.04, 0.02, 0.01, 0.01]
+  - Value: [0, 1, 2, 3, 4, 5, 6, 7, 8, 10]
+    Probability: [0.11, 0.1, 0.21, 0.2, 0.14, 0.1, 0.06, 0.04, 0.02, 0.02]

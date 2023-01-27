@@ -21,7 +21,8 @@ class PregnancyModule:
         self.fold_preg = self.p_data.fold_preg
         self.inc_cat = self.p_data.inc_cat.sample()
         self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
-        self.prob_pregnancy_base = self.generate_prob_pregnancy_base()
+        self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
+        self.init_num_children_distributions = self.p_data.init_num_children_distributions
         self.rate_want_no_children = 0.005
         self.max_children = 10
 
@@ -46,6 +47,37 @@ class PregnancyModule:
         r = rng.uniform(size=len(female_population))
         fertility = r > self.can_be_pregnant
         pop.data.loc[female_population, col.LOW_FERTILITY] = fertility
+
+    def init_num_children(self, pop):
+        """
+        Initialise the number of children each female individual
+        at or above the age of 15 starts out with.
+        """
+        # TODO: ask about this
+        # negation of low fertility condition not present originally but seems logical to include
+        female_population = pop.data.index[(pop.data[col.SEX] == SexType.Female)
+                                           & (~pop.data[col.LOW_FERTILITY])
+                                           & (pop.data[col.AGE] >= 15)]
+        # group females by age groups
+        age_groups = np.digitize(pop.data.loc[female_population, col.AGE],
+                                 [15, 25, 35, 45])
+        pop.data.loc[female_population, col.AGE_GROUP] = age_groups
+        # outcomes
+        num_children = pop.transform_group([col.AGE_GROUP], self.calc_init_num_children_outcomes,
+                                           sub_pop=female_population)
+        # assign outcomes
+        pop.data.loc[female_population, col.NUM_CHILDREN] = num_children
+        # give everyone with a child a pregnancy date before the start of the simulation
+        pop.data.loc[pop.data[col.NUM_CHILDREN] > 0, col.LAST_PREGNANCY_DATE] = pop.date - timedelta(days=270)
+
+    def calc_init_num_children_outcomes(self, age_group, size):
+        """
+        Uses the probability distribution for a given age group to return
+        outcomes for each individual's initial number of children.
+        """
+        index = int(age_group)-1
+        outcomes = self.init_num_children_distributions[index].sample(size)
+        return outcomes
 
     def update_pregnancy(self, pop):
         """
