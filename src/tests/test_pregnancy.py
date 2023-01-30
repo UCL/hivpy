@@ -57,7 +57,7 @@ def test_num_children():
             assert mean - 3 * stdev <= no_children <= mean + 3 * stdev
 
 
-def test_new_preg():
+def test_ltp_preg():
 
     test_ages = [10, 20, 30, 40, 50, 60]
     for age in test_ages:
@@ -67,7 +67,8 @@ def test_new_preg():
         pop = Population(size=N, start_date=date(1990, 1, 1))
         pop.data[col.SEX] = SexType.Female
         pop.data[col.AGE] = age
-        pop.data[col.NUM_PARTNERS] = 1
+        pop.data[col.NUM_PARTNERS] = 0
+        pop.data[col.LONG_TERM_PARTNER] = True
         pop.data[col.LAST_PREGNANCY_DATE] = None
         pop.data[col.NUM_CHILDREN] = 0
         pop.pregnancy.prob_pregnancy_base = 0.1
@@ -96,6 +97,40 @@ def test_new_preg():
             assert sum(pop.data[col.LOW_FERTILITY] & pop.data[col.PREGNANT]) == 0
 
 
+def test_stp_preg():
+
+    test_ages = [20, 30, 40, 50]
+    test_stp_partners = [1, 3, 5]
+    for age in test_ages:
+        for partners in test_stp_partners:
+
+            # build artificial population
+            N = 100000
+            pop = Population(size=N, start_date=date(1990, 1, 1))
+            pop.data[col.SEX] = SexType.Female
+            pop.data[col.AGE] = age
+            pop.data[col.NUM_PARTNERS] = partners
+            pop.data[col.LONG_TERM_PARTNER] = False
+            pop.data[col.LAST_PREGNANCY_DATE] = None
+            pop.data[col.NUM_CHILDREN] = 0
+            pop.data[col.WANT_NO_CHILDREN] = False
+            pop.pregnancy.prob_pregnancy_base = 0.1
+            pop.pregnancy.init_fertility(pop)
+            pop.pregnancy.update_pregnancy(pop)
+
+            # get stats
+            no_active_female = sum((pop.data[col.SEX] == SexType.Female)
+                                   & (~pop.data[col.LOW_FERTILITY])
+                                   & ((pop.data[col.NUM_PARTNERS] > 0)
+                                      | pop.data[col.LONG_TERM_PARTNER]))
+            no_pregnant = sum(pop.data[col.PREGNANT])
+            prob_preg = pop.pregnancy.calc_prob_preg(test_ages.index(age)+1, False, partners)
+            mean = no_active_female * prob_preg
+            stdev = sqrt(mean * (1 - prob_preg))
+            # check pregnancy value is within 3 standard deviations
+            assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
+
+
 def test_childbirth():
 
     N = 100
@@ -106,7 +141,8 @@ def test_childbirth():
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
-    pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     # guaranteed pregnancy
@@ -149,7 +185,8 @@ def test_child_cap():
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
-    pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     # cap children
@@ -180,7 +217,8 @@ def test_want_no_children():
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 18
     pop.data[col.LOW_FERTILITY] = False
-    pop.data[col.NUM_PARTNERS] = 1
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     pop.pregnancy.prob_pregnancy_base = 0.1
@@ -222,23 +260,44 @@ def test_calc_prob_preg():
     pop.pregnancy.can_be_pregnant = 0.95
     pop.pregnancy.fold_preg = [2.0, 1.5, 1, 0.1]
     pop.pregnancy.prob_pregnancy_base = 0.1
+    pop.pregnancy.fold_tr_newp = 0.5
 
-    # check basic case
+    # check basic ltp case
     # (0.1 * 2) = 0.2
-    assert isclose(pop.pregnancy.calc_prob_preg(1, False), 0.2)
+    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 0), 0.2)
     # (0.1 * 1.5) = 0.15
-    assert isclose(pop.pregnancy.calc_prob_preg(2, False), 0.15)
+    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 0), 0.15)
     # (0.1 * 1) = 0.1
-    assert isclose(pop.pregnancy.calc_prob_preg(3, False), 0.1)
+    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 0), 0.1)
     # (0.1 * 0.1) = 0.01
-    assert isclose(pop.pregnancy.calc_prob_preg(4, False), 0.01)
+    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 0), 0.01)
+
+    # check basic stp case
+    # (0.1 * 2 * 0.5) = 0.1
+    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 1), 0.1)
+    # (0.1 * 1.5 * 0.5) = 0.075
+    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 1), 0.075)
+    # (0.1 * 1 * 0.5) = 0.05
+    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 1), 0.05)
+    # (0.1 * 0.1 * 0.5) = 0.005
+    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 1), 0.005)
+
+    # check more stp partners case
+    # (1 - (1 - 0.1)^2 * 2 * 0.5) = 0.19
+    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 2), 0.19)
+    # (1 - (1 - 0.1)^2 * 1.5 * 0.5) = 0.1425
+    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 2), 0.1425)
+    # (1 - (1 - 0.1)^2 * 1 * 0.5) = 0.095
+    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 2), 0.095)
+    # (1 - (1 - 0.1)^2 * 0.1 * 0.5) = 0.0095
+    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 2), 0.0095)
 
     # check want no children
     # (0.1 * 2 * 0.2) = 0.2
-    assert isclose(pop.pregnancy.calc_prob_preg(1, True), 0.04)
+    assert isclose(pop.pregnancy.calc_prob_preg(1, True, 0), 0.04)
     # (0.1 * 1.5 * 0.2) = 0.02
-    assert isclose(pop.pregnancy.calc_prob_preg(2, True), 0.03)
+    assert isclose(pop.pregnancy.calc_prob_preg(2, True, 0), 0.03)
     # (0.1 * 1 * 0.2) = 0.02
-    assert isclose(pop.pregnancy.calc_prob_preg(3, True), 0.02)
+    assert isclose(pop.pregnancy.calc_prob_preg(3, True, 0), 0.02)
     # (0.1 * 0.1 * 0.2) = 0.002
-    assert isclose(pop.pregnancy.calc_prob_preg(4, True), 0.002)
+    assert isclose(pop.pregnancy.calc_prob_preg(4, True, 0), 0.002)

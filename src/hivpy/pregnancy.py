@@ -137,6 +137,7 @@ class PregnancyModule:
             # add to children
             pop.data.loc[birthing_population, col.NUM_CHILDREN] += 1
 
+        # TODO: should this be here or have its own function?
         # increase number of women that want no more children
         want_children_population = pop.data.index[(pop.data[col.SEX] == SexType.Female)
                                                   & (pop.data[col.AGE] >= 25)
