@@ -281,14 +281,24 @@ def test_calc_prob_preg():
     assert isclose(pop.pregnancy.calc_prob_preg(4, False, 1, False), 0.005)
 
     # check more stp partners case
-    # (1 - (1 - 0.1 * 0.5)^2 * 2) = 0.195
+    # ((1 - (1 - 0.1 * 0.5)^2) * 2) = 0.195
     assert isclose(pop.pregnancy.calc_prob_preg(1, False, 2, False), 0.195)
-    # (1 - (1 - 0.1 * 0.5)^2 * 1.5) = 0.14625
+    # ((1 - (1 - 0.1 * 0.5)^2) * 1.5) = 0.14625
     assert isclose(pop.pregnancy.calc_prob_preg(2, False, 2, False), 0.14625)
-    # (1 - (1 - 0.1 * 0.5)^2 * 1) = 0.0975
+    # ((1 - (1 - 0.1 * 0.5)^2) * 1) = 0.0975
     assert isclose(pop.pregnancy.calc_prob_preg(3, False, 2, False), 0.0975)
-    # (1 - (1 - 0.1 * 0.5)^2 * 0.1) = 0.00975
+    # ((1 - (1 - 0.1 * 0.5)^2) * 0.1) = 0.00975
     assert isclose(pop.pregnancy.calc_prob_preg(4, False, 2, False), 0.00975)
+
+    # check both ltp and stp case
+    # ((1 - (1 - 0.1) * (1 - 0.1 * 0.5)) * 2) = 0.29
+    assert isclose(pop.pregnancy.calc_prob_preg(1, True, 1, False), 0.29)
+    # ((1 - (1 - 0.1) * (1 - 0.1 * 0.5)) * 1.5) = 0.2175
+    assert isclose(pop.pregnancy.calc_prob_preg(2, True, 1, False), 0.2175)
+    # ((1 - (1 - 0.1) * (1 - 0.1 * 0.5)) * 1) = 0.145
+    assert isclose(pop.pregnancy.calc_prob_preg(3, True, 1, False), 0.145)
+    # ((1 - (1 - 0.1) * (1 - 0.1 * 0.5)) * 0.1) = 0.0145
+    assert isclose(pop.pregnancy.calc_prob_preg(4, True, 1, False), 0.0145)
 
     # check want no children (with ltp)
     # (0.1 * 2 * 0.2) = 0.2
