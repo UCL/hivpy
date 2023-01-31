@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from math import isclose, sqrt
+from math import ceil, isclose, sqrt
 
 import hivpy.column_names as col
 from hivpy.common import SexType, rng
@@ -102,14 +102,14 @@ def test_stp_preg():
     test_ages = [20, 30, 40, 50]
     test_stp_partners = [1, 3, 5]
     for age in test_ages:
-        for partners in test_stp_partners:
+        for stp in test_stp_partners:
 
             # build artificial population
             N = 100000
             pop = Population(size=N, start_date=date(1990, 1, 1))
             pop.data[col.SEX] = SexType.Female
             pop.data[col.AGE] = age
-            pop.data[col.NUM_PARTNERS] = partners
+            pop.data[col.NUM_PARTNERS] = stp
             pop.data[col.LONG_TERM_PARTNER] = False
             pop.data[col.LAST_PREGNANCY_DATE] = None
             pop.data[col.NUM_CHILDREN] = 0
@@ -124,7 +124,7 @@ def test_stp_preg():
                                    & ((pop.data[col.NUM_PARTNERS] > 0)
                                       | pop.data[col.LONG_TERM_PARTNER]))
             no_pregnant = sum(pop.data[col.PREGNANT])
-            prob_preg = pop.pregnancy.calc_prob_preg(test_ages.index(age)+1, False, partners)
+            prob_preg = pop.pregnancy.calc_prob_preg(test_ages.index(age)+1, False, stp, False)
             mean = no_active_female * prob_preg
             stdev = sqrt(mean * (1 - prob_preg))
             # check pregnancy value is within 3 standard deviations
@@ -149,8 +149,7 @@ def test_childbirth():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    # TODO: may need to account for including time step period when updating pregnancy
-    for i in range(3):
+    for i in range(0, ceil(timedelta(days=270)/time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -195,9 +194,8 @@ def test_child_cap():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    # TODO: may need to account for including time step period when updating pregnancy
     # get through pregnancy, childbirth, and pregnancy pause period
-    for i in range(5):
+    for i in range(0, ceil(timedelta(days=450)/time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -264,40 +262,40 @@ def test_calc_prob_preg():
 
     # check basic ltp case
     # (0.1 * 2) = 0.2
-    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 0), 0.2)
+    assert isclose(pop.pregnancy.calc_prob_preg(1, True, 0, False), 0.2)
     # (0.1 * 1.5) = 0.15
-    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 0), 0.15)
+    assert isclose(pop.pregnancy.calc_prob_preg(2, True, 0, False), 0.15)
     # (0.1 * 1) = 0.1
-    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 0), 0.1)
+    assert isclose(pop.pregnancy.calc_prob_preg(3, True, 0, False), 0.1)
     # (0.1 * 0.1) = 0.01
-    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 0), 0.01)
+    assert isclose(pop.pregnancy.calc_prob_preg(4, True, 0, False), 0.01)
 
     # check basic stp case
     # (0.1 * 2 * 0.5) = 0.1
-    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 1), 0.1)
+    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 1, False), 0.1)
     # (0.1 * 1.5 * 0.5) = 0.075
-    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 1), 0.075)
+    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 1, False), 0.075)
     # (0.1 * 1 * 0.5) = 0.05
-    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 1), 0.05)
+    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 1, False), 0.05)
     # (0.1 * 0.1 * 0.5) = 0.005
-    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 1), 0.005)
+    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 1, False), 0.005)
 
     # check more stp partners case
-    # (1 - (1 - 0.1)^2 * 2 * 0.5) = 0.19
-    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 2), 0.19)
-    # (1 - (1 - 0.1)^2 * 1.5 * 0.5) = 0.1425
-    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 2), 0.1425)
-    # (1 - (1 - 0.1)^2 * 1 * 0.5) = 0.095
-    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 2), 0.095)
-    # (1 - (1 - 0.1)^2 * 0.1 * 0.5) = 0.0095
-    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 2), 0.0095)
+    # (1 - (1 - 0.1 * 0.5)^2 * 2) = 0.195
+    assert isclose(pop.pregnancy.calc_prob_preg(1, False, 2, False), 0.195)
+    # (1 - (1 - 0.1 * 0.5)^2 * 1.5) = 0.14625
+    assert isclose(pop.pregnancy.calc_prob_preg(2, False, 2, False), 0.14625)
+    # (1 - (1 - 0.1 * 0.5)^2 * 1) = 0.0975
+    assert isclose(pop.pregnancy.calc_prob_preg(3, False, 2, False), 0.0975)
+    # (1 - (1 - 0.1 * 0.5)^2 * 0.1) = 0.00975
+    assert isclose(pop.pregnancy.calc_prob_preg(4, False, 2, False), 0.00975)
 
-    # check want no children
+    # check want no children (with ltp)
     # (0.1 * 2 * 0.2) = 0.2
-    assert isclose(pop.pregnancy.calc_prob_preg(1, True, 0), 0.04)
+    assert isclose(pop.pregnancy.calc_prob_preg(1, True, 0, True), 0.04)
     # (0.1 * 1.5 * 0.2) = 0.02
-    assert isclose(pop.pregnancy.calc_prob_preg(2, True, 0), 0.03)
+    assert isclose(pop.pregnancy.calc_prob_preg(2, True, 0, True), 0.03)
     # (0.1 * 1 * 0.2) = 0.02
-    assert isclose(pop.pregnancy.calc_prob_preg(3, True, 0), 0.02)
+    assert isclose(pop.pregnancy.calc_prob_preg(3, True, 0, True), 0.02)
     # (0.1 * 0.1 * 0.2) = 0.002
-    assert isclose(pop.pregnancy.calc_prob_preg(4, True, 0), 0.002)
+    assert isclose(pop.pregnancy.calc_prob_preg(4, True, 0, True), 0.002)

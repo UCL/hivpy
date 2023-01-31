@@ -45,9 +45,11 @@ class PregnancyData:
             self.data = yaml.safe_load(file)
         try:
             self.can_be_pregnant = self.data["can_be_pregnant"]
+            self.rate_want_no_children = self.data["rate_want_no_children"]
             self.fold_preg = self.data["fold_preg"]
             self.inc_cat = self._get_discrete_dist("inc_cat")
             self.rate_birth_with_infected_child = self._get_discrete_dist("rate_birth_with_infected_child")
+            self.max_children = self.data["max_children"]
             self.init_num_children_distributions = self._get_discrete_dist_list("init_num_children_distributions")
 
         except KeyError as ke:

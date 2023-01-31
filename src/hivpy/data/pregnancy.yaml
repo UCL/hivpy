@@ -1,6 +1,9 @@
 # percentage of women that can become pregnant
 can_be_pregnant: 0.95
 
+# rate at which women stop wanting children over time
+rate_want_no_children: 0.005
+
 # fertility factor that changes with age
 fold_preg: [2.0, 1.9, 1, 0.2]
 
@@ -14,6 +17,9 @@ inc_cat:
 rate_birth_with_infected_child:
   Value: [0.3, 0.4, 0.5, 0.6]
   Probability: [0.05, 0.25, 0.6, 0.1]
+
+# maximum number of children someone can have
+max_children: 10
 
 # probability for each starting number of children
 # based on age group (15-24, 25-34, 35-44, 45+)

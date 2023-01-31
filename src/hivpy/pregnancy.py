@@ -19,13 +19,13 @@ class PregnancyModule:
             self.p_data = PregnancyData(data_path)
 
         self.can_be_pregnant = self.p_data.can_be_pregnant
+        self.rate_want_no_children = self.p_data.rate_want_no_children
         self.fold_preg = self.p_data.fold_preg
         self.inc_cat = self.p_data.inc_cat.sample()
-        self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
+        self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
+        self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
-        self.rate_want_no_children = 0.005
-        self.max_children = 10
 
     def generate_prob_pregnancy_base(self):
         """
@@ -54,8 +54,7 @@ class PregnancyModule:
         Initialise the number of children each female individual
         at or above the age of 15 starts out with.
         """
-        # TODO: ask about this
-        # negation of low fertility condition not present originally but seems logical to include
+        # get fertile female population above age 14
         female_population = pop.data.index[(pop.data[col.SEX] == SexType.Female)
                                            & (~pop.data[col.LOW_FERTILITY])
                                            & (pop.data[col.AGE] >= 15)]
@@ -87,8 +86,7 @@ class PregnancyModule:
         # TODO: this is needed for stp prob preg reduction but should
         # probably be moved elsewhere so it's only initialised once
         self.fold_tr_newp = pop.hiv_status.fold_tr_newp
-        # get sexually active female population
-        # to check for new pregnancies
+        # get sexually active female population to check for new pregnancies
         active_female_population = pop.data[(pop.data[col.SEX] == SexType.Female)
                                             & (pop.data[col.AGE] >= 15)
                                             & (pop.data[col.AGE] < 55)
@@ -122,7 +120,8 @@ class PregnancyModule:
             # TODO: change age group col name to be more descriptive
             pop.data.loc[active_female_population[pregnancy_ready].index, col.AGE_GROUP] = age_groups
             # calculate pregnancy outcomes
-            pregnancy = pop.transform_group([col.AGE_GROUP, col.WANT_NO_CHILDREN, col.NUM_PARTNERS],
+            pregnancy = pop.transform_group([col.AGE_GROUP, col.LONG_TERM_PARTNER,
+                                             col.NUM_PARTNERS, col.WANT_NO_CHILDREN],
                                             self.calc_preg_outcomes,
                                             sub_pop=active_female_population[pregnancy_ready].index)
             # assign outcomes
@@ -151,37 +150,36 @@ class PregnancyModule:
             # assign outcomes
             pop.data.loc[want_children_population, col.WANT_NO_CHILDREN] = want_no_children
 
-    def calc_prob_preg(self, age_group, want_no_children, stp):
+    def calc_prob_preg(self, age_group, ltp, stp, want_no_children):
         """
         Calculates the probability of getting pregnant
         for a given age group and returns it.
         """
-        # base pregnancy probability
-        prob_preg = self.prob_pregnancy_base
-        # short-term partner adjustments
+        # initial values (no chance of pregnancy)
+        ltp_prob_no_preg = 1
+        stp_prob_no_preg = 1
+        # chance of not getting pregnant from a long-term partner
+        if ltp:
+            ltp_prob_no_preg = 1 - self.prob_pregnancy_base
+        # chance of not getting pregnant from all short-term partners
         if stp > 0:
-            # probability of no pregnancy from all encounters
-            prob_all_no_preg = pow(1 - prob_preg, stp)
-            # probability of at least one encounter resulting in pregnancy
-            prob_at_least_one_preg = 1 - prob_all_no_preg
             # apply short-term partner reduction
-            prob_preg = prob_at_least_one_preg * self.fold_tr_newp
-        # adjust probability according to age factor
-        prob_preg *= self.fold_preg[int(age_group)-1]
+            stp_prob_no_preg = pow(1 - self.prob_pregnancy_base * self.fold_tr_newp, stp)
+        # total probability of no pregnancy
+        prob_all_no_preg = ltp_prob_no_preg * stp_prob_no_preg
+        # probability of at least one encounter resulting in pregnancy (adjusted according to age factor)
+        prob_preg = (1 - prob_all_no_preg) * self.fold_preg[int(age_group)-1]
         # wanting no more children decreases pregnancy probability by 80%
         if want_no_children:
             prob_preg *= 0.2
-        # TODO: can you have both an LTP and STPs?
-        # current implementation assumes each individual
-        # has either one or the other
         return min(prob_preg, 1)
 
-    def calc_preg_outcomes(self, age_group, want_no_children, stp, size):
+    def calc_preg_outcomes(self, age_group, ltp, stp, want_no_children, size):
         """
         Uses the pregnancy probability for a given
         age group to return pregnancy outcomes.
         """
-        prob_preg = self.calc_prob_preg(age_group, want_no_children, stp)
+        prob_preg = self.calc_prob_preg(age_group, ltp, stp, want_no_children)
         # outcomes
         r = rng.uniform(size=size)
         pregnancy = r < prob_preg
