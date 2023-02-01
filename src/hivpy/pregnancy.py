@@ -19,7 +19,7 @@ class PregnancyModule:
             self.p_data = PregnancyData(data_path)
 
         self.can_be_pregnant = self.p_data.can_be_pregnant
-        self.rate_want_no_children = self.p_data.rate_want_no_children
+        self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
         self.fold_preg = self.p_data.fold_preg
         self.inc_cat = self.p_data.inc_cat.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
@@ -95,12 +95,6 @@ class PregnancyModule:
                                             & (pop.data[col.NUM_CHILDREN] < self.max_children)
                                             & ((pop.data[col.NUM_PARTNERS] > 0)
                                                 | pop.data[col.LONG_TERM_PARTNER])]
-        # get population ready for childbirth
-        pregnant_population = pop.data[pop.data[col.PREGNANT]]
-        # TODO: may need to include time step period in the check below
-        birthing_population = pregnant_population.index[pop.date -
-                                                        pregnant_population[col.LAST_PREGNANCY_DATE]
-                                                        >= timedelta(days=270)]
 
         # continue if sexually active females are present this timestep
         if len(active_female_population) > 0:
@@ -129,6 +123,20 @@ class PregnancyModule:
             # use pregnancy outcomes as mask to assign current date as pregnancy date
             pop.data.loc[active_female_population[pregnancy_ready].index[pregnancy], col.LAST_PREGNANCY_DATE] = pop.date
 
+        self.update_births(pop)
+        self.update_want_no_children(pop)
+
+    def update_births(self, pop):
+        """
+        Model pregnancies that come to term.
+        """
+        # get pregnant population
+        pregnant_population = pop.data[pop.data[col.PREGNANT]]
+        # get population ready for childbirth
+        birthing_population = pregnant_population.index[pop.date -
+                                                        pregnant_population[col.LAST_PREGNANCY_DATE]
+                                                        >= timedelta(days=270)]
+
         # continue if births occur this time step
         if len(birthing_population) > 0:
             # remove pregnancy status
@@ -136,8 +144,14 @@ class PregnancyModule:
             # add to children
             pop.data.loc[birthing_population, col.NUM_CHILDREN] += 1
 
-        # TODO: should this be here or have its own function?
-        # increase number of women that want no more children
+    def update_want_no_children(self, pop):
+        """
+        Increase the number of female individuals that
+        don't want any more children each time step.
+        """
+        # TODO: should this have an init?
+        # ideally yes, but task is low-priority
+        # could apply rate at the start a number of times proportional to age
         want_children_population = pop.data.index[(pop.data[col.SEX] == SexType.Female)
                                                   & (pop.data[col.AGE] >= 25)
                                                   & (pop.data[col.AGE] < 55)
