@@ -152,26 +152,30 @@ class PregnancyModule:
 
     def calc_prob_preg(self, age_group, ltp, stp, want_no_children):
         """
-        Calculates the probability of getting pregnant
-        for a given age group and returns it.
+        Calculates the probability of getting pregnant for a group
+        with specific characteristics and returns it. Age, number
+        of condomless sex partners, and the desire to have no more
+        children all affect groupings and pregnancy probability.
         """
         # initial values (no chance of pregnancy)
         ltp_prob_no_preg = 1
         stp_prob_no_preg = 1
+        # base probability adjusted according to age factor
+        base_prob_adjusted = self.prob_pregnancy_base * self.fold_preg[int(age_group)-1]
+        # wanting no more children decreases pregnancy probability by 80%
+        if want_no_children:
+            base_prob_adjusted *= 0.2
         # chance of not getting pregnant from a long-term partner
         if ltp:
-            ltp_prob_no_preg = 1 - self.prob_pregnancy_base
+            ltp_prob_no_preg = 1 - base_prob_adjusted
         # chance of not getting pregnant from all short-term partners
         if stp > 0:
             # apply short-term partner reduction
-            stp_prob_no_preg = pow(1 - self.prob_pregnancy_base * self.fold_tr_newp, stp)
+            stp_prob_no_preg = pow(1 - base_prob_adjusted * self.fold_tr_newp, stp)
         # total probability of no pregnancy
         prob_all_no_preg = ltp_prob_no_preg * stp_prob_no_preg
-        # probability of at least one encounter resulting in pregnancy (adjusted according to age factor)
-        prob_preg = (1 - prob_all_no_preg) * self.fold_preg[int(age_group)-1]
-        # wanting no more children decreases pregnancy probability by 80%
-        if want_no_children:
-            prob_preg *= 0.2
+        # probability of at least one encounter resulting in pregnancy
+        prob_preg = 1 - prob_all_no_preg
         return min(prob_preg, 1)
 
     def calc_preg_outcomes(self, age_group, ltp, stp, want_no_children, size):
