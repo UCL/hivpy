@@ -70,6 +70,7 @@ class Population:
         self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
+        self.init_variable(col.ADC, False)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
@@ -197,6 +198,7 @@ class Population:
         # and set death dates.
         ages = self.get_variable(col.AGE)
         ages += time_step.days / 365  # Very naive!
+        self.set_present_variable(col.AGE, ages)
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date

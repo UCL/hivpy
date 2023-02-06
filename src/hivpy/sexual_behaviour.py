@@ -205,7 +205,7 @@ class SexualBehaviourModule:
     def update_rred(self, population : Population):
         self.update_rred_adc(population)
         self.update_rred_balance(population)
-        self.update_rred_diagnosis(population, population.date)
+        self.update_rred_diagnosis(population)
         self.update_rred_population(population.date)
         self.update_rred_age(population)
         self.update_rred_long_term_partnered(population)
@@ -237,7 +237,7 @@ class SexualBehaviourModule:
 
     def update_rred_art_adherence(self, pop: Population):
         # need to make this column check more intuitive
-        if ((col.ART_ADHERENCE, 0) in pop.data.columns):
+        if (col.ART_ADHERENCE in pop.data.columns):
             low_adherence_pop = pop.get_sub_pop([(col.ART_ADHERENCE, operator.lt, self.adherence_threshold)])
             pop.set_present_variable(col.RRED_ART_ADHERENCE, self.rred_art_adherence, low_adherence_pop)
 
@@ -265,8 +265,6 @@ class SexualBehaviourModule:
 
     def init_rred_adc(self, population: Population):
         population.init_variable(col.RRED_ADC, 1.0)
-        # TEMP -- AIDS defining condition should go in the appropriate module
-        population.init_variable(col.ADC, False)
         self.update_rred_adc(population)
 
     def update_rred_adc(self, population: Population):
@@ -300,16 +298,16 @@ class SexualBehaviourModule:
     def init_rred_diagnosis(self, population: Population):
         population.init_variable(col.RRED_DIAGNOSIS, 1)  # do we want previous timesteps?
 
-    def update_rred_diagnosis(self, population: Population, date):
+    def update_rred_diagnosis(self, population: Population):
         new_HIV_pop = population.get_sub_pop(
             [(col.HIV_STATUS, operator.eq, True),
-             (col.HIV_DIAGNOSIS_DATE, operator.ge, date-self.rred_diagnosis_period)])
+             (col.HIV_DIAGNOSIS_DATE, operator.ge, population.date-self.rred_diagnosis_period)])
         population.set_present_variable(col.RRED_DIAGNOSIS, self.rred_diagnosis, new_HIV_pop)
         # TODO: Could make this update more efficient by only getting the people whose value need to change
         # i.e. just crossed the threshold this time step 
         old_HIV_pop = population.get_sub_pop(
             [(col.HIV_STATUS, operator.eq, True),
-             (col.HIV_DIAGNOSIS_DATE, operator.lt, date-self.rred_diagnosis_period)])
+             (col.HIV_DIAGNOSIS_DATE, operator.lt, population.date-self.rred_diagnosis_period)])
         population.set_present_variable(col.RRED_DIAGNOSIS, np.sqrt(self.rred_diagnosis), old_HIV_pop)
 
     def init_rred_balance(self, population: Population):
