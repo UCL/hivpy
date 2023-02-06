@@ -64,7 +64,7 @@ class Population:
         self.data = pd.DataFrame({
             "Dummy": [None] * self.size,
         })
-        self.init_variable(col.SEX, self.demographics.initialize_sex(self.size))
+        self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
@@ -90,8 +90,6 @@ class Population:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
-        self.sexual_behaviour.init_sex_behaviour_groups(self.data)
-        self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         # TEMP
