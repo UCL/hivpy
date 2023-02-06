@@ -14,6 +14,8 @@ from hivpy.common import between
     ((12, math.inf), [False, False, False, True, True])  # infinite bound
 ])
 def test_between(limits, expected):
-    """Check the between helper behaves as expected for numerical Series."""
+    """
+    Check the between helper behaves as expected for numerical Series.
+    """
     s = pd.Series([5, 2.5, 10, 20, 15])
     assert list(between(s, limits)) == expected

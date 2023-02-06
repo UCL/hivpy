@@ -7,6 +7,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
@@ -15,7 +16,9 @@ HIV_APPEARANCE = datetime.date(1989, 1, 1)
 
 
 class Population:
-    """A set of individuals with particular characteristics."""
+    """
+    A set of individuals with particular characteristics.
+    """
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
@@ -25,20 +28,25 @@ class Population:
     step: int
 
     def __init__(self, size, start_date):
-        """Initialise a population of the given size."""
+        """
+        Initialise a population of the given size.
+        """
         self.size = size
         self.date = start_date
         self.step = 0
         self.variable_history = {}
         self.demographics = DemographicsModule()
         self.sexual_behaviour = SexualBehaviourModule()
+        self.circumcision = CircumcisionModule()
         self.hiv_status = HIVStatusModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
 
     def _sample_parameters(self):
-        """Randomly determine the uncertain population-level parameters."""
+        """
+        Randomly determine the uncertain population-level parameters.
+        """
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
         # that distrubition is chosen randomly for each population.
@@ -48,7 +56,9 @@ class Population:
         # }
 
     def _create_population_data(self):
-        """Populate the data frame with initial values."""
+        """
+        Populate the data frame with initial values.
+        """
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         self.data = pd.DataFrame({
@@ -71,6 +81,17 @@ class Population:
         self.init_variable(col.ADC, False)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
+        self.data[col.CIRCUMCISED] = False
+        self.data[col.CIRCUMCISION_DATE] = None
+        self.data[col.VMMC] = False
+        self.data[col.HARD_REACH] = False
+        self.demographics.initialise_hard_reach(self.data)
+        if self.circumcision.vmmc_disrup_covid:
+            self.circumcision.init_birth_circumcision_born(self.data, self.date)
+        else:
+            self.circumcision.init_birth_circumcision_all(self.data, self.date)
+        self.sexual_behaviour.init_sex_behaviour_groups(self.data)
+        self.sexual_behaviour.init_risk_factors(self.data)
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         # TEMP
@@ -161,9 +182,11 @@ class Population:
                                                                       use_size, sub_pop)
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
-        """Groups the data by a list of parameters and applies a function to each grouping. \n
+        """
+        Groups the data by a list of parameters and applies a function to each grouping.
+
         `param_list` is a list of names of columns by which you want to group the data. The order
-        must match the order of arguments taken by the function `func` \n
+        must match the order of arguments taken by the function `func`. \n
         `func` is a function which takes the values of those columns for a group (and optionally
         the size of the group, which should be the last argument) and returns a value or array of
         values of the size of the group. \n
@@ -171,7 +194,8 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`"""
+        by `data.loc[sub_pop]`
+        """
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))
 
@@ -192,7 +216,9 @@ class Population:
         return df.groupby(param_list)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: datetime.timedelta):
-        """Advance the population by one time step."""
+        """
+        Advance the population by one time step.
+        """
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
         ages = self.get_variable(col.AGE)
@@ -203,6 +229,9 @@ class Population:
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
         self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
 
+        if self.circumcision.vmmc_disrup_covid:
+            self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
+        self.circumcision.update_vmmc(self)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)

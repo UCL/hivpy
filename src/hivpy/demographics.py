@@ -65,13 +65,11 @@ class StepwiseAgeDistribution:
         CP[N-1] = 1.0
         return CP
 
-    # Generate Age With Stepwise Distribution
-    # the size of ages should be one larger than the cumulative probabilty
-    # so that each bucket has an upper and lower bound.
     def gen_ages(self, N):
-        """Generate Age With Stepwise Distribution
+        """
+        Generate Age With Stepwise Distribution.
 
-        the size of ages should be one larger than the cumulative probabilty
+        The size of ages should be one larger than the cumulative probabilty
         so that each bucket has an upper and lower bound.
         """
         cpd = self._gen_cumulative_prob()
@@ -94,20 +92,22 @@ class StepwiseAgeDistribution:
 class ContinuousAgeDistribution:
     """
     Class to handle age distributions using a continuous probability density.
-    Linear-Exponential function is used for the example distribution.
+    Linear-Exponential function is used for the example distribution:
 
     P(age) = (m*age + c)*exp(A(age-B))
 
     This fits all three example cases quite neatly.
-    P(age): Probability density at a given age
-    m: gradient of linear part, determines decline in population with age
-    c: intercept of linear part, determines maximum age
-    A: exponent of exponential part, determines the curvature
-    B: offset of exponential part, scaling parameter
+
+    P(age): Probability density at a given age. \n
+    m: gradient of linear part, determines decline in population with age. \n
+    c: intercept of linear part, determines maximum age. \n
+    A: exponent of exponential part, determines the curvature. \n
+    B: offset of exponential part, scaling parameter. \n
     """
 
     def _integrated_linexp(self, x, m, c, A, B):
-        """Intregral of linear-exponential function
+        """
+        Intregral of linear-exponential function.
 
         Un-normalised cumulative probability distribution for age.
         """
@@ -142,10 +142,11 @@ class ContinuousAgeDistribution:
             return cls(-68, 65, *cls.modelParams3)
 
     def gen_ages(self, N):
-        """Generate ages using a (non-normalised) continuous cumulative probability distribution
+        """
+        Generate ages using a (non-normalised) continuous cumulative probability distribution.
 
-        Given an analytic PD, this should also be analytically defined
-        Cumulative probability distribution is defined in _integratedLinexp
+        Given an analytic PD, this should also be analytically defined.
+        Cumulative probability distribution is defined in _integratedLinexp.
         """
         # Normalise distribution over given range
         C = self.cpd(self.min_age)
@@ -189,7 +190,7 @@ class DemographicsModule:
             params[param] = value
         self.params = params
 
-    def initialize_sex(self, count):
+    def initialise_sex(self, count):
         sex_distribution = (
             1 - self.params['female_ratio'], self.params['female_ratio'])
         return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
@@ -202,6 +203,21 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
+    def initialise_hard_reach(self, population):
+        # base probabilities for being hard to reach
+        self.prob_hard_reach_f = round(rng.uniform(0.05, 0.2), 2)
+        self.prob_hard_reach_m = self.prob_hard_reach_f + round(rng.uniform(0, 0.1), 2)
+        # split population by sex
+        female_pop = population.index[(population[col.SEX] == SexType.Female)]
+        male_pop = population.index[(population[col.SEX] == SexType.Male)]
+        r_f = rng.uniform(size=len(female_pop))
+        r_m = rng.uniform(size=len(male_pop))
+        # outcomes
+        hard_reach_f = r_f < self.prob_hard_reach_f
+        hard_reach_m = r_m < self.prob_hard_reach_m
+        population.loc[female_pop, col.HARD_REACH] = hard_reach_f
+        population.loc[male_pop, col.HARD_REACH] = hard_reach_m
+
     def _probability_of_death(self, sex: SexType, age_group: int) -> float:
         rate = self.params["death_rates"][sex][age_group]
         # Probability of dying, assuming time step of 3 months
@@ -209,7 +225,9 @@ class DemographicsModule:
         return prob_of_death
 
     def determine_deaths(self, pop: Population) -> pd.Series:
-        """Get which individuals die in a time step, as a boolean Series."""
+        """
+        Get which individuals die in a time step, as a boolean Series.
+        """
         # This binning should perhaps happen when the date advances
         # Age groups are the same regardless of sex
         age_limits = self.data.death_age_limits

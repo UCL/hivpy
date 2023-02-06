@@ -26,7 +26,9 @@ from hivpy.simulation import SimulationHandler
 
 
 def test_error_end_before_start(tmp_path):
-    """Ensure that we throw an error if the end date is before the start."""
+    """
+    Ensure that we throw an error if the end date is before the start.
+    """
     today = date.today()
     yesterday = today - timedelta(days=1)
     with pytest.raises(SimulationException):
@@ -35,7 +37,9 @@ def test_error_end_before_start(tmp_path):
 
 
 def test_error_end_before_first_step(tmp_path):
-    """Ensure that we throw an error if the simulation would end before the first step."""
+    """
+    Ensure that we throw an error if the simulation would end before the first step.
+    """
     start = date.today()
     end = start + timedelta(days=30)
     step = timedelta(days=90)
@@ -45,7 +49,9 @@ def test_error_end_before_first_step(tmp_path):
 
 
 def test_death_occurs(tmp_path):
-    """Check that the number of people alive always decreases."""
+    """
+    Check that the number of people alive always decreases.
+    """
     # FIXME This will not necessarily be true once we add in births
     size = 10000
     start = date.today()

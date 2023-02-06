@@ -14,8 +14,8 @@ class OutputHandler:
     """
     Handles output for the experiment.
     Could be used to just keep track of files and handle writing/reading
-    Or could also be used to calculate summary statistics
-    Although if that is going to be elaborate, a separate statistics module
+    or could also be used to calculate summary statistics,
+    although if that is going to be elaborate a separate statistics module
     could be useful.
     """
     files: dict
@@ -89,7 +89,8 @@ def create_experiment(all_params):
 
 
 def run_experiment(experiment_config):
-    """Run an entire experiment.
+    """
+    Run an entire experiment.
 
     An experiment can consist of one or more simulation runs,
     as well as processing steps after those are completed.

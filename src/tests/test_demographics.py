@@ -1,5 +1,6 @@
 import logging
 from datetime import date, datetime, timedelta
+from math import sqrt
 
 import numpy as np
 import pytest
@@ -27,7 +28,7 @@ def stepwise_age_module():
 def test_sex_distribution(ratio):
     module = DemographicsModule(female_ratio=ratio)
     count = 100000
-    sex = module.initialize_sex(count)
+    sex = module.initialise_sex(count)
     female = np.sum(sex == SexType.Female)
     assert female/count == pytest.approx(ratio, rel=0.01)
 
@@ -67,8 +68,35 @@ def test_stepwise_age_distribution(stepwise_age_module):
         assert pytest.approx(age_count, rel=0.1) == age_dist[i]*count
 
 
+def get_hard_reach_stats(pop, sex: SexType, prob_hard_reach):
+
+    no_hard_reach = sum((pop.data[col.SEX] == sex) & pop.data[col.HARD_REACH])
+    no_sex_type_pop = sum(pop.data[col.SEX] == sex)
+    mean = no_sex_type_pop * prob_hard_reach
+    stdev = sqrt(mean * (1 - prob_hard_reach))
+
+    return no_hard_reach, mean, stdev
+
+
+def test_hard_reach():
+
+    N = 100000
+    start_date = date(2000, 1, 1)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # get stats
+    no_hard_reach_f, mean_f, stdev_f = get_hard_reach_stats(pop, SexType.Female, pop.demographics.prob_hard_reach_f)
+    no_hard_reach_m, mean_m, stdev_m = get_hard_reach_stats(pop, SexType.Male, pop.demographics.prob_hard_reach_m)
+    # check hard to reach numbers are within 3 standard deviations
+    assert mean_f - 3 * stdev_f <= no_hard_reach_f <= mean_f + 3 * stdev_f
+    assert mean_m - 3 * stdev_m <= no_hard_reach_m <= mean_m + 3 * stdev_m
+
+
 def test_date_permanent(default_module):
-    """Check that that death is not recorded again in future steps."""
+    """
+    Check that that death is not recorded again in future steps.
+    """
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
     pop.set_present_variable(
@@ -83,7 +111,9 @@ def test_date_permanent(default_module):
 
 
 def test_death_rate():
-    """Check that we record the expected number of deaths."""
+    """
+    Check that we record the expected number of deaths.
+    """
     # Set up the population to have equal-sized age groups and balanced sexes
     data_path = "src/tests/test_data/demographics_testing.yaml"
     data = DemographicsData(data_path)

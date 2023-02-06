@@ -4,7 +4,9 @@ from .common import SexType
 
 
 class DemographicsData:
-    """A class for holding demographics-related data loaded from a file."""
+    """
+    A class for holding demographics-related data loaded from a file.
+    """
 
     def __init__(self, filename):
         with open(filename, 'r') as file:

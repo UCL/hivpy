@@ -127,8 +127,10 @@ class SexualBehaviourModule:
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
     def prob_transition(self, sex, rred, i, j):
-        """Calculates the probability of transitioning from sexual behaviour
-        group i to group j, based on sex and age."""
+        """
+        Calculates the probability of transitioning from sexual behaviour
+        group i to group j, based on sex and age.
+        """
         transition_matrix = self.sex_behaviour_trans[sex]
 
         denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
@@ -141,14 +143,18 @@ class SexualBehaviourModule:
         return Probability
 
     def get_partners_for_group(self, sex, group, size):
-        """Calculates the number of short term partners for people in a given intersection of
-        sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group]"""
+        """
+        Calculates the number of short term partners for people in a given intersection of
+        sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group].
+        """
         group = int(group)
         stp = self.short_term_partners[sex][group].sample(size)
         return stp
 
     def num_short_term_partners(self, population: Population):
-        """Calculate the number of short term partners for the whole population"""
+        """
+        Calculate the number of short term partners for the whole population
+        """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
                                              (col.AGE, operator.le, 65)])
         population.set_variable_by_group(col.NUM_PARTNERS,
@@ -170,9 +176,11 @@ class SexualBehaviourModule:
         return new_groups
 
     def update_sex_groups(self, population: Population):
-        """Determine changes to sexual behaviour groups.
+        """
+        Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
-           Within each group it then loops over groups again to check all transition pairs (i,j)."""
+           Within each group it then loops over groups again to check all transition pairs (i,j).
+        """
         active_pop = population.get_sub_pop([(col.AGE, operator.gt, 15),
                                              (col.AGE, operator.le, 65)])
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
@@ -256,7 +264,9 @@ class SexualBehaviourModule:
         self.update_rred_adc(population)
 
     def update_rred_adc(self, population: Population):
-        """Updates risk reduction for AIDS defining condition"""
+        """
+        Updates risk reduction for AIDS defining condition
+        """
         # We don't need the rred_adc==1 condition (since they are all set to rred_adc = 1 to start)
         # It prevents needless assignments but requires checking more conditions
         # Not sure which is more efficient or if it matters.
@@ -265,7 +275,9 @@ class SexualBehaviourModule:
         population.set_present_variable(col.RRED_ADC, 0.2, indices)
 
     def init_rred_population(self):
-        """Initialise general population risk reduction w.r.t. condomless sex with new partners"""
+        """
+        Initialise general population risk reduction w.r.t. condomless sex with new partners
+        """
         self.rred_population = 1.0
 
     def update_rred_population(self, date):
@@ -300,12 +312,16 @@ class SexualBehaviourModule:
             col.RRED_DIAGNOSIS, np.sqrt(self.rred_diagnosis), old_HIV_pop)
 
     def init_rred_balance(self, population: Population):
-        """Initialise risk reduction factor for balancing sex ratios"""
+        """
+        Initialise risk reduction factor for balancing sex ratios
+        """
         population.init_variable(col.RRED_BALANCE, 1.0)
 
     def update_rred_balance(self, population: Population):
-        """Update balance of new partners for consistency between sexes.
-           Integral discrepancies have been replaced with fractional discrepancy."""
+        """
+        Update balance of new partners for consistency between sexes.
+           Integral discrepancies have been replaced with fractional discrepancy.
+        """
         # We first need the difference of new partners between men and women
         men = population.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         women = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
@@ -405,8 +421,10 @@ class SexualBehaviourModule:
         return longevity
 
     def continue_ltp(self, longevity, size):
-        """Function to decide which long term partners cease condomless sex based on
-        relationship longevity, age, and sex."""
+        """
+        Function to decide which long term partners cease condomless sex based on
+        relationship longevity, age, and sex.
+        """
         # TODO: Add balancing factors for age and sex demographics.
         end_probability = self.ltp_end_rate_by_longevity[int(longevity)] / self.ltp_rate_change
         r = rng.random(size=size)

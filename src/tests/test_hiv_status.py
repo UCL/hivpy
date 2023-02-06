@@ -25,7 +25,9 @@ def pop_with_initial_hiv():
 
 @pytest.mark.parametrize("pop_percentage", [0.4, 0.0])
 def test_initial_hiv_threshold(pop_percentage):
-    """Check that HIV is initially introduced only to those with high enough newp."""
+    """
+    Check that HIV is initially introduced only to those with high enough newp.
+    """
     # Start before 1989 to avoid having HIV introduced when creating population
     pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
@@ -47,7 +49,9 @@ def test_initial_hiv_threshold(pop_percentage):
 
 
 def test_initial_hiv_probability():
-    """Check that HIV is initially assigned with the specified probability."""
+    """
+    Check that HIV is initially assigned with the specified probability.
+    """
     # Start before 1989 to avoid having HIV introduced when creating population
     pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
@@ -60,7 +64,9 @@ def test_initial_hiv_probability():
 
 
 def test_hiv_introduced_only_once(mocker):
-    """Check that we do not initialise HIV status repeatedly."""
+    """
+    Check that we do not initialise HIV status repeatedly.
+    """
     pop = Population(size=1000, start_date=date(1988, 12, 1))
     spy = mocker.spy(pop.hiv_status, "introduce_HIV")
     pop.evolve(timedelta(days=31))
@@ -74,7 +80,9 @@ def test_hiv_introduced_only_once(mocker):
 
 
 def test_hiv_not_reintroduced_after_1989(mocker):
-    """Check that we do not initialise HIV status repeatedly."""
+    """
+    Check that we do not initialise HIV status repeatedly.
+    """
     pop = Population(size=1000, start_date=date(1989, 4, 1))
     assert pop.HIV_introduced
     # HIV has been introduced, so that should not be called again
@@ -85,13 +93,14 @@ def test_hiv_not_reintroduced_after_1989(mocker):
 
 
 def test_hiv_initial_ages(pop_with_initial_hiv: Population):
-    """Check that HIV is not introduced to anyone <= 15 or > 65."""
+    """
+    Check that HIV is not introduced to anyone <= 15 or > 65.
+    """
     under_15s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                   (col.AGE, operator.le, 15)])
     over_65s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                  (col.AGE, operator.gt, 65)])
     HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-    print(HIV_pos)
     assert not any(under_15s)
     assert not any(over_65s)
 
