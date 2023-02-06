@@ -9,7 +9,7 @@ import yaml
 import hivpy.column_names as col
 from hivpy.common import SexType, rng, selector
 from hivpy.population import Population
-from hivpy.sexual_behaviour import (SexBehaviours, SexualBehaviourModule)
+from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
 
 
 @pytest.fixture(scope="module")
