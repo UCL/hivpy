@@ -103,6 +103,7 @@ def test_hiv_initial_ages(pop_with_initial_hiv: Population):
     HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
     assert not any(under_15s)
     assert not any(over_65s)
+    assert any(HIV_pos)
 
 
 def test_hiv_update(pop_with_initial_hiv: Population):
