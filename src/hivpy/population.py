@@ -7,7 +7,6 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import rng
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .sexual_behaviour import SexualBehaviourModule
@@ -56,13 +55,12 @@ class Population:
             "Dummy": [None] * self.size,
         })
         self.init_variable(col.SEX, self.demographics.initialize_sex(self.size))
-        self.init_variable(col.AGE, self.demographics.initialise_age(self.size))  # when do we use current age and when previous timestep age?
-        self.init_variable(col.AGE_GROUP, 0) 
+        self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
+        self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
-        self.init_variable(col.NUM_PARTNERS, 0)    # I think we need t-3 for pregnancy but might change if we rethink implementation
-                                                    # In this case the number of previous steps we need would actually be variable based on timestep!!!
+        self.init_variable(col.NUM_PARTNERS, 0)
         self.init_variable(col.RRED, 1)
         self.init_variable(col.LONG_TERM_PARTNER, False)
         self.init_variable(col.LTP_AGE_GROUP, 0)
@@ -93,7 +91,7 @@ class Population:
            to be stored (default 0).
         """
         self.variable_history[name] = n_prev_steps + 1
-        if(n_prev_steps == 0):
+        if (n_prev_steps == 0):
             self.data[name] = init_val
         else:
             for i in range(0, n_prev_steps + 1):
@@ -110,7 +108,8 @@ class Population:
         `conditions` is a list (or other iterable) of such tuples.
         """
         index = reduce(operator.and_,
-                       (op(self.data[self.get_correct_column(var)], val) for (var, op, val) in conditions))
+                       (op(self.data[self.get_correct_column(var)], val)
+                        for (var, op, val) in conditions))
         return self.data.index[index]
 
     def get_sub_pop_intersection(self, subpop_1, subpop_2):
@@ -131,8 +130,6 @@ class Population:
 
     def get_variable(self, var, sub_pop=None, dt=0):
         var_col = self.get_correct_column(var, dt)
-        #print("cols = ", self.data.columns)
-        #print("Column to get = ", var_col)
         if sub_pop is None:
             return self.data[var_col]
         else:
@@ -147,20 +144,21 @@ class Population:
 
     def get_correct_column(self, param, dt=0):
         """Gets the correct column for a parameter and a given time delay."""
-        #(param, dt) = self.make_column_tuple(param_info)
-        if(self.variable_history[param] == 1):
+        if (self.variable_history[param] == 1):
             return param
         else:
             col_index = (self.step + dt) % self.variable_history[param]
             return self.constructParamColumn(param, col_index)
 
     def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
-        """Sets the value of a population variable at the present time step by calling transform group."""
+        """Sets the value of a population variable at the present time step
+        by calling transform group."""
         target_col = self.get_correct_column(target, 0)
         if sub_pop is None:
             self.data[target_col] = self.transform_group(groups, func, use_size)
         else:
-            self.data.loc[sub_pop, target_col] = self.transform_group(groups, func, use_size, sub_pop)
+            self.data.loc[sub_pop, target_col] = self.transform_group(groups, func,
+                                                                      use_size, sub_pop)
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """Groups the data by a list of parameters and applies a function to each grouping. \n
@@ -176,6 +174,7 @@ class Population:
         by `data.loc[sub_pop]`"""
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))
+
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]

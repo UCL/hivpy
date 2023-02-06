@@ -214,11 +214,9 @@ class DemographicsModule:
         # Age groups are the same regardless of sex
         age_limits = self.data.death_age_limits
         pop.set_present_variable(col.AGE_GROUP, np.digitize(pop.get_variable(col.AGE), age_limits))
-        #pop.data[col.AGE_GROUP] = np.digitize(pop.data[col.AGE], age_limits)
 
         death_probs = pop.transform_group([col.SEX, col.AGE_GROUP],
                                           self._probability_of_death, use_size=False)
         rands = rng.random(len(pop.data))
 
         return pop.get_variable(col.DATE_OF_DEATH).isnull() & (rands < death_probs)
-        #return pop.data.date_of_death.isnull() & (rands < death_probs)

@@ -5,12 +5,13 @@ import numpy as np
 import pytest
 import scipy.integrate
 
+import hivpy.column_names as col
 from hivpy.common import SexType
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
 from hivpy.population import Population
-import hivpy.column_names as col
+
 
 @pytest.fixture(scope="module")
 def default_module():
@@ -70,7 +71,8 @@ def test_date_permanent(default_module):
     """Check that that death is not recorded again in future steps."""
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
-    pop.set_present_variable(col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
+    pop.set_present_variable(
+        col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
     pop.set_present_variable(col.AGE, [30, 20, 50])
     pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
 

@@ -3,7 +3,6 @@ import operator
 from datetime import date, timedelta
 
 import numpy as np
-import pandas as pd
 import pytest
 import yaml
 
@@ -58,14 +57,13 @@ def test_sex_behaviour_transition(yaml_data):
     pop.set_present_variable(col.RRED, 1)  # rred factors can be tested elsewhere
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
-    sex_ratio = {SexType.Male: 0.48, SexType.Female: 0.52}
     for s in SexType:
         num_sex = sum(pop.data[col.SEX] == s)
         for g in SexBehaviours[s]:
             print(g)
             pop.set_present_variable(col.SEX_BEHAVIOUR, 0)
-            pop.set_present_variable(col.SEX_BEHAVIOUR, g, pop.get_sub_pop([(col.SEX, operator.eq, s)]))
-            #pop.data.loc[pop.data[col.SEX] == s, col.SEX_BEHAVIOUR] = g
+            pop.set_present_variable(col.SEX_BEHAVIOUR, g,
+                                     pop.get_sub_pop([(col.SEX, operator.eq, s)]))
             pop.sexual_behaviour.update_sex_groups(pop)
             for g2 in SexBehaviours[s]:
                 num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2) & (pop.data[col.SEX] == s)])
@@ -178,7 +176,7 @@ def test_rred_adc():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data["HIV_status"] = False  # make test independent of how HIV is initialised
     init_HIV_idx = rng.integers(0, N, size=5)
-    init_ADC_idx = init_HIV_idx[[0,2,4]]
+    init_ADC_idx = init_HIV_idx[[0, 2, 4]]
     pop.data.loc[init_HIV_idx, col.HIV_STATUS] = True
     pop.data.loc[init_ADC_idx, col.ADC] = True
     expected_rred = np.ones(N)
@@ -190,7 +188,7 @@ def test_rred_adc():
     assert np.all(pop.data["rred_adc"] == expected_rred)
     # Assign more people with HIV
     add_HIV_idx = rng.integers(0, N, size=5)
-    add_ADC_idx = add_HIV_idx[[0,1,2]]
+    add_ADC_idx = add_HIV_idx[[0, 1, 2]]
     pop.data.loc[add_HIV_idx, col.HIV_STATUS] = True
     pop.data.loc[add_ADC_idx, col.ADC] = True
     # Update rred factors

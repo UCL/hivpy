@@ -9,7 +9,6 @@ import hivpy.column_names as col
 from hivpy.common import SexType
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
-from hivpy.sexual_behaviour import selector
 
 
 @pytest.fixture
@@ -99,7 +98,6 @@ def test_hiv_initial_ages(pop_with_initial_hiv: Population):
 
 def test_hiv_update(pop_with_initial_hiv: Population):
     pd.set_option('display.max_columns', None)
-    data = pop_with_initial_hiv.data
     prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
 
     for i in range(10):

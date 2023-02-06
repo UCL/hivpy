@@ -48,7 +48,8 @@ class HIVStatusModule:
         """Initialise HIV status at the start of the pandemic."""
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
-        initial_candidates = population.get_sub_pop([(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
+        initial_candidates = population.get_sub_pop(
+            [(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
         # initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
         # Each of them has the same probability of being infected.
         num_init_candidates = len(initial_candidates)
@@ -65,18 +66,15 @@ class HIVStatusModule:
             for age_group in range(5):   # FIXME need to get number of age groups from somewhere
                 sub_pop = population.get_sub_pop([(col.SEX, operator.eq, sex),
                                                   (col.SEX_MIX_AGE_GROUP, operator.eq, age_group)])
-                #sub_pop = population.data.loc[(population.data[col.SEX] == sex) & (
-                #    population.data[col.SEX_MIX_AGE_GROUP] == age_group)]
                 # total number of people partnered to people in this group
                 n_stp_total = sum(population.get_variable(col.NUM_PARTNERS, sub_pop))
                 # num people partered to HIV+ people in this group
                 HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
                 n_stp_of_infected = sum(population.get_variable(col.NUM_PARTNERS,
                                                                 population.get_sub_pop_intersection(
-                                                                    sub_pop, 
+                                                                    sub_pop,
                                                                     HIV_positive_pop
                                                                 )))
-                #n_stp_of_infected = sum(sub_pop.loc[sub_pop[col.HIV_STATUS], col.NUM_PARTNERS])
                 # Probability of being HIV prositive
                 if n_stp_of_infected == 0:
                     self.stp_HIV_rate[sex][age_group] = 0
@@ -85,9 +83,6 @@ class HIVStatusModule:
                         n_stp_total  # TODO: need to double check this definition
                 # Chances of being in a given viral group
                 if n_stp_total > 0:
-                    #self.stp_viral_group_rate[sex][age_group] = [
-                    #    sum(sub_pop.loc[sub_pop[col.VIRAL_LOAD_GROUP] == vg,
-                    #        col.NUM_PARTNERS])/n_stp_total for vg in range(7)]
                     self.stp_viral_group_rate[sex][age_group] = [
                         sum(population.get_variable(col.NUM_PARTNERS,
                             population.get_sub_pop_intersection(
@@ -154,13 +149,7 @@ class HIVStatusModule:
         self.update_partner_risk_vectors(population)
         HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
-        #HIV_neg_idx = population.data.index[(~population.data[col.HIV_STATUS]) & (
-        #    population.data[col.NUM_PARTNERS] > 0)]
-        #print(HIV_neg_active_pop == HIV_neg_idx)
-        #sub_pop = population.data.loc[HIV_neg_active_pop]
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
         population.set_present_variable(col.HIV_STATUS,
                                         new_HIV_status,
                                         HIV_neg_active_pop)
-        #population.data.loc[HIV_neg_idx, col.HIV_STATUS] = sub_pop.apply(
-        #    self.stp_HIV_transmission, axis=1)
