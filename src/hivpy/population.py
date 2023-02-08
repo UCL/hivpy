@@ -71,15 +71,17 @@ class Population:
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         self.init_variable(col.NUM_PARTNERS, 0)
-        self.init_variable(col.RRED, 1)
+        self.init_variable(col.RISK, 1)
         self.init_variable(col.LONG_TERM_PARTNER, False)
         self.init_variable(col.LTP_AGE_GROUP, 0)
         self.init_variable(col.LTP_LONGEVITY, 0)
         self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
-        self.init_variable(col.RRED_LTP, 1)
+        self.init_variable(col.RISK_LTP, 1)
         self.init_variable(col.ADC, False)
         self.init_variable(col.SEX_WORKER, False)
+        self.init_variable(col.SW_AGE_GROUP, 0)
+        self.init_variable(col.DATE_STOP_SW, None)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.data[col.CIRCUMCISED] = False
@@ -137,6 +139,12 @@ class Population:
         Get the indexing of the intersection of two subpopulations
         """
         return pd.Index.intersection(subpop_1, subpop_2)
+    
+    def get_sub_pop_from_array(self, array, sub_pop=None):
+        if sub_pop is None:
+            return self.data.index[array]
+        else:
+            return self.data.loc[sub_pop].index[array]
 
     def apply_vector_func(self, params, func):
         param_cols = list(map(lambda x: self.get_variable(x), params))

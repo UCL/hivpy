@@ -73,22 +73,22 @@ class SexualBehaviourModule:
         # FIXME we don't have the over25 distribution here!
         self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
                                     SexType.Female: self.sb_data.female_stp_u25_dists}
-        self.ltp_risk_factor = self.sb_data.rred_long_term_partnered.sample()
-        self.rred_diagnosis = self.sb_data.rred_diagnosis.sample()
-        self.rred_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.rred_diagnosis_period
+        self.ltp_risk_factor = self.sb_data.risk_long_term_partnered.sample()
+        self.risk_diagnosis = self.sb_data.risk_diagnosis.sample()
+        self.risk_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.risk_diagnosis_period
         self.yearly_risk_change = {"1990s": self.sb_data.yearly_risk_change["1990s"].sample(),
                                    "2010s": self.sb_data.yearly_risk_change["2010s"].sample()}
 
-        # rred_art_adherence is only incorporated into the model in a fraction of the runs
-        # usage of rred_art_adherence is randomly selected to be on or off for this simulation here
-        self.use_rred_art_adherence = (
-            rng.random() < self.sb_data.rred_art_adherence_probability)
-        self.rred_art_adherence = self.sb_data.rred_art_adherence
+        # risk_art_adherence is only incorporated into the model in a fraction of the runs
+        # usage of risk_art_adherence is randomly selected to be on or off for this simulation here
+        self.use_risk_art_adherence = (
+            rng.random() < self.sb_data.risk_art_adherence_probability)
+        self.risk_art_adherence = self.sb_data.risk_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
         self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
-        self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
+        self.p_risk_p = self.sb_data.p_risk_p_dist.sample()
 
         # long term partnerships
         self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
@@ -98,9 +98,11 @@ class SexualBehaviourModule:
         self.ltp_balance_factor = {SexType.Male: 1, SexType.Female: 1}
         self.new_ltp_age_bins = [35, 45, 55]
 
-        # sex worker status
+        # sex workers
         self.base_start_sw = self.sb_data.base_start_sex_work.sample()
         self.base_stop_sw = self.sb_data.base_stop_sex_work.sample()
+        self.risk_sex_worker_age = self.sb_data.risk_sex_worker_age
+        self.sw_age_bins = [20, 25, 35]
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -108,27 +110,54 @@ class SexualBehaviourModule:
 
     def update_sex_worker_status(self, population: Population):
         # Only consider female sex workers
-        female_over_15 = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
-                                                 (col.AGE, operator.gt, 15)])
+        # is there a max age for sex workers?
+        female_15to49_not_sw = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                                 (col.AGE, operator.ge, 15),
+                                                 (col.AGE, operator.lt, 50),
+                                                 (col.SEX_WORKER, operator.eq, False)])
+        population.set_present_variable(col.SW_AGE_GROUP, np.digitize(population.get_variable(
+            col.AGE, female_15to49_not_sw), self.sw_age_bins), female_15to49_not_sw)
 
-        def change_SW_prob(sex_worker, size):
-            if (sex_worker):
-                sw_status = rng.random(size) < self.base_start_sw
-            else:
-                sw_status = rng.random(size) > self.base_stop_sw
+        sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
+
+        def start_sex_work(age_group, size):
+            sw_status = rng.random(size) < (self.base_start_sw * np.sqrt(self.risk_population)
+                                            * self.risk_sex_worker_age[age_group])
             return sw_status
 
+        def stop_sex_work(age_group, size):
+            # group 0: under 40, group 1 over 40, group 2 over 50
+            if (age_group == 2):
+                # Over 50s stop sex work
+                return False
+            prob_stop_sw = self.base_stop_sw / np.sqrt(self.risk_population)
+            if (age_group == 1):
+                prob_stop_sw *= 3
+            sw_status = rng.random(size) > prob_stop_sw
+            return sw_status
+
+        # Women starting sex work 
         population.set_variable_by_group(col.SEX_WORKER,
-                                         [col.SEX_WORKER],
-                                         change_SW_prob,
-                                         sub_pop=female_over_15)
+                                         [col.SW_AGE_GROUP],
+                                         start_sex_work,
+                                         sub_pop=female_15to49_not_sw)
+
+        # Women stopping sex work
+        new_sex_work_status = population.transform_group([col.SW_AGE_GROUP],
+                                                         stop_sex_work,
+                                                         sub_pop=sex_workers)
+        population.set_present_variable(col.SEX_WORKER, new_sex_work_status, sex_workers)
+        # We need a way of getting the indexing for a population of people 
+        # returned from a function like this
+        women_stopping_sex_work = population.get_sub_pop_from_array(new_sex_work_status, sex_workers)
+        population.set_present_variable(col.DATE_STOP_SW, population.date, women_stopping_sex_work)
 
     def update_sex_behaviour(self, population: Population):
         self.update_sex_worker_status(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
         self.update_sex_groups(population)
-        self.update_rred(population)
+        self.update_risk(population)
         self.update_long_term_partners(population)
 
     # Haven't been able to locate the probabilities for this yet
@@ -142,19 +171,19 @@ class SexualBehaviourModule:
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
-    def prob_transition(self, sex, rred, i, j):
+    def prob_transition(self, sex, risk, i, j):
         """
         Calculates the probability of transitioning from sexual behaviour
         group i to group j, based on sex and age.
         """
         transition_matrix = self.sex_behaviour_trans[sex]
 
-        denominator = transition_matrix[i][0] + rred*sum(transition_matrix[i][1:])
+        denominator = transition_matrix[i][0] + risk*sum(transition_matrix[i][1:])
 
         if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
-            Probability = rred*transition_matrix[i][j] / denominator
+            Probability = risk*transition_matrix[i][j] / denominator
 
         return Probability
 
@@ -178,7 +207,7 @@ class SexualBehaviourModule:
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
 
-    def _assign_new_sex_group(self, sex, group, rred, size):
+    def _assign_new_sex_group(self, sex, group, risk, size):
         group = int(group)
         rands = rng.uniform(0.0, 1.0, size)
         dim = self.sex_behaviour_trans[sex].shape[0]
@@ -187,7 +216,7 @@ class SexualBehaviourModule:
         new_groups = np.zeros(size)
         for new_group in range(dim):
             Pmin = Pmax.copy()
-            Pmax += self.prob_transition(sex, rred, group, new_group)
+            Pmax += self.prob_transition(sex, risk, group, new_group)
             new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
         return new_groups
 
@@ -200,140 +229,140 @@ class SexualBehaviourModule:
         active_pop = population.get_sub_pop([(col.AGE, operator.gt, 15),
                                              (col.AGE, operator.le, 65)])
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
-                                         [col.SEX, col.SEX_BEHAVIOUR, col.RRED],
+                                         [col.SEX, col.SEX_BEHAVIOUR, col.RISK],
                                          self._assign_new_sex_group,
                                          sub_pop=active_pop)
 
     # risk reduction factors
     def init_risk_factors(self, pop: Population):
-        self.init_rred_personal(pop)
-        pop.init_variable(col.RRED_AGE, 1)  # Placeholder to be changed each time step
-        self.update_rred_age(pop)
-        pop.set_present_variable(col.RRED,
-                                 pop.apply_vector_func([col.RRED_PERSONAL, col.RRED_AGE],
-                                                       self.calc_rred_base))
-        self.init_rred_adc(pop)
-        self.init_rred_diagnosis(pop)
-        self.init_rred_population()
-        self.init_rred_art_adherence(pop)
-        self.init_rred_balance(pop)
+        self.init_risk_personal(pop)
+        pop.init_variable(col.RISK_AGE, 1)  # Placeholder to be changed each time step
+        self.update_risk_age(pop)
+        pop.set_present_variable(col.RISK,
+                                 pop.apply_vector_func([col.RISK_PERSONAL, col.RISK_AGE],
+                                                       self.calc_risk_base))
+        self.init_risk_adc(pop)
+        self.init_risk_diagnosis(pop)
+        self.init_risk_population()
+        self.init_risk_art_adherence(pop)
+        self.init_risk_balance(pop)
 
-    def calc_rred_base(self, rred_personal, rred_age):
+    def calc_risk_base(self, risk_personal, risk_age):
         return (self.new_partner_factor *
-                rred_personal *
-                rred_age)
+                risk_personal *
+                risk_age)
 
-    def update_rred(self, population: Population):
-        self.update_rred_adc(population)
-        self.update_rred_balance(population)
-        self.update_rred_diagnosis(population)
-        self.update_rred_population(population.date)
-        self.update_rred_age(population)
-        self.update_rred_long_term_partnered(population)
-        if (self.use_rred_art_adherence):
-            self.update_rred_art_adherence(population)
+    def update_risk(self, population: Population):
+        self.update_risk_adc(population)
+        self.update_risk_balance(population)
+        self.update_risk_diagnosis(population)
+        self.update_risk_population(population.date)
+        self.update_risk_age(population)
+        self.update_risk_long_term_partnered(population)
+        if (self.use_risk_art_adherence):
+            self.update_risk_art_adherence(population)
 
-        def comined_rred(age, adc, balance, diagnosis, personal, ltp, art):
+        def comined_risk(age, adc, balance, diagnosis, personal, ltp, art):
             return (self.new_partner_factor * age * adc * balance *
-                    diagnosis * personal * self.rred_population * ltp * art)
-        population.set_present_variable(col.RRED,
-                                        population.apply_vector_func([col.RRED_AGE,
-                                                                      col.RRED_ADC,
-                                                                      col.RRED_BALANCE,
-                                                                      col.RRED_DIAGNOSIS,
-                                                                      col.RRED_PERSONAL,
-                                                                      col.RRED_LTP,
-                                                                      col.RRED_ART_ADHERENCE],
-                                                                     comined_rred))
+                    diagnosis * personal * self.risk_population * ltp * art)
+        population.set_present_variable(col.RISK,
+                                        population.apply_vector_func([col.RISK_AGE,
+                                                                      col.RISK_ADC,
+                                                                      col.RISK_BALANCE,
+                                                                      col.RISK_DIAGNOSIS,
+                                                                      col.RISK_PERSONAL,
+                                                                      col.RISK_LTP,
+                                                                      col.RISK_ART_ADHERENCE],
+                                                                     comined_risk))
 
-    def init_rred_art_adherence(self, pop: Population):
-        pop.init_variable(col.RRED_ART_ADHERENCE, 1.0)
+    def init_risk_art_adherence(self, pop: Population):
+        pop.init_variable(col.RISK_ART_ADHERENCE, 1.0)
 
-    def update_rred_art_adherence(self, pop: Population):
+    def update_risk_art_adherence(self, pop: Population):
         # need to make this column check more intuitive
         if (col.ART_ADHERENCE in pop.data.columns):
             low_adherence_pop = pop.get_sub_pop(
                 [(col.ART_ADHERENCE, operator.lt, self.adherence_threshold)])
-            pop.set_present_variable(col.RRED_ART_ADHERENCE,
-                                     self.rred_art_adherence, low_adherence_pop)
+            pop.set_present_variable(col.RISK_ART_ADHERENCE,
+                                     self.risk_art_adherence, low_adherence_pop)
 
-    def update_rred_age(self, pop: Population):
+    def update_risk_age(self, pop: Population):
         over_15s = pop.get_sub_pop([(col.AGE, operator.gt, 15)])
         age = pop.get_variable(col.AGE, over_15s)
         sex = pop.get_variable(col.SEX, over_15s)
         age_index = self.age_index(age)
-        pop.set_present_variable(col.RRED_AGE, self.age_based_risk[age_index, sex], over_15s)
+        pop.set_present_variable(col.RISK_AGE, self.age_based_risk[age_index, sex], over_15s)
 
-    def update_rred_long_term_partnered(self, pop: Population):
-        pop.set_present_variable(col.RRED_LTP, 1)  # Unpartnered people
+    def update_risk_long_term_partnered(self, pop: Population):
+        pop.set_present_variable(col.RISK_LTP, 1)  # Unpartnered people
         partnered_pop = pop.get_sub_pop([(col.LONG_TERM_PARTNER, operator.eq, True)])
-        pop.set_present_variable(col.RRED_LTP, self.ltp_risk_factor, partnered_pop)
+        pop.set_present_variable(col.RISK_LTP, self.ltp_risk_factor, partnered_pop)
 
-    def init_rred_personal(self, population: Population):
-        population.init_variable(col.RRED_PERSONAL, 1)  # personal rred doesn't update(?)
+    def init_risk_personal(self, population: Population):
+        population.init_variable(col.RISK_PERSONAL, 1)  # personal risk doesn't update(?)
         r = rng.uniform(size=population.size)
-        mask = r < self.p_rred_p
-        population.set_present_variable(col.RRED_PERSONAL, 1e-5, mask)
+        mask = r < self.p_risk_p
+        population.set_present_variable(col.RISK_PERSONAL, 1e-5, mask)
 
-    def init_rred_adc(self, population: Population):
-        population.init_variable(col.RRED_ADC, 1.0)
-        self.update_rred_adc(population)
+    def init_risk_adc(self, population: Population):
+        population.init_variable(col.RISK_ADC, 1.0)
+        self.update_risk_adc(population)
 
-    def update_rred_adc(self, population: Population):
+    def update_risk_adc(self, population: Population):
         """
         Updates risk reduction for AIDS defining condition
         """
-        # We don't need the rred_adc==1 condition (since they are all set to rred_adc = 1 to start)
+        # We don't need the risk_adc==1 condition (since they are all set to risk_adc = 1 to start)
         # It prevents needless assignments but requires checking more conditions
         # Not sure which is more efficient or if it matters.
         indices = population.get_sub_pop([(col.ADC, operator.eq, True),
                                           (col.HIV_STATUS, operator.eq, True)])
-        population.set_present_variable(col.RRED_ADC, 0.2, indices)
+        population.set_present_variable(col.RISK_ADC, 0.2, indices)
 
-    def init_rred_population(self):
+    def init_risk_population(self):
         """
         Initialise general population risk reduction w.r.t. condomless sex with new partners
         """
-        self.rred_population = 1.0
+        self.risk_population = 1.0
 
-    def update_rred_population(self, date):
+    def update_risk_population(self, date):
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
         if (date1995 < date <= date2000):
             dt = diff_years(date1995, date)
-            self.rred_population = yearly_change_90s**dt
+            self.risk_population = yearly_change_90s**dt
         elif (date2000 < date < date2010):
-            self.rred_population = yearly_change_90s**5
+            self.risk_population = yearly_change_90s**5
         elif (date2010 < date < date2021):
             dt = diff_years(date2010, date)
-            self.rred_population = yearly_change_90s**5 * yearly_change_10s**dt
+            self.risk_population = yearly_change_90s**5 * yearly_change_10s**dt
         elif (date2021 < date):
-            self.rred_population = yearly_change_90s**5 * yearly_change_10s**11
+            self.risk_population = yearly_change_90s**5 * yearly_change_10s**11
 
-    def init_rred_diagnosis(self, population: Population):
-        population.init_variable(col.RRED_DIAGNOSIS, 1)  # do we want previous timesteps?
+    def init_risk_diagnosis(self, population: Population):
+        population.init_variable(col.RISK_DIAGNOSIS, 1)  # do we want previous timesteps?
 
-    def update_rred_diagnosis(self, population: Population):
+    def update_risk_diagnosis(self, population: Population):
         new_HIV_pop = population.get_sub_pop(
             [(col.HIV_STATUS, operator.eq, True),
-             (col.HIV_DIAGNOSIS_DATE, operator.ge, population.date-self.rred_diagnosis_period)])
-        population.set_present_variable(col.RRED_DIAGNOSIS, self.rred_diagnosis, new_HIV_pop)
+             (col.HIV_DIAGNOSIS_DATE, operator.ge, population.date-self.risk_diagnosis_period)])
+        population.set_present_variable(col.RISK_DIAGNOSIS, self.risk_diagnosis, new_HIV_pop)
         # TODO: Could make this update more efficient by only
         # getting the people whose value need to change
         # i.e. just crossed the threshold this time step
         old_HIV_pop = population.get_sub_pop(
             [(col.HIV_STATUS, operator.eq, True),
-             (col.HIV_DIAGNOSIS_DATE, operator.lt, population.date-self.rred_diagnosis_period)])
+             (col.HIV_DIAGNOSIS_DATE, operator.lt, population.date-self.risk_diagnosis_period)])
         population.set_present_variable(
-            col.RRED_DIAGNOSIS, np.sqrt(self.rred_diagnosis), old_HIV_pop)
+            col.RISK_DIAGNOSIS, np.sqrt(self.risk_diagnosis), old_HIV_pop)
 
-    def init_rred_balance(self, population: Population):
+    def init_risk_balance(self, population: Population):
         """
         Initialise risk reduction factor for balancing sex ratios
         """
-        population.init_variable(col.RRED_BALANCE, 1.0)
+        population.init_variable(col.RISK_BALANCE, 1.0)
 
-    def update_rred_balance(self, population: Population):
+    def update_risk_balance(self, population: Population):
         """
         Update balance of new partners for consistency between sexes.
            Integral discrepancies have been replaced with fractional discrepancy.
@@ -345,18 +374,18 @@ class SexualBehaviourModule:
         womens_partners = sum(population.get_variable(col.NUM_PARTNERS, women))
         partner_discrepancy = abs(mens_partners - womens_partners) / population.size
 
-        rred_balance = 1
+        risk_balance = 1
         for (t, b) in zip(self.balance_thresholds, self.balance_factors):
             if partner_discrepancy >= t:
-                rred_balance = b
+                risk_balance = b
                 break
 
         if (mens_partners > womens_partners):
-            population.set_present_variable(col.RRED_BALANCE, rred_balance, men)
-            population.set_present_variable(col.RRED_BALANCE, 1/rred_balance, women)
+            population.set_present_variable(col.RISK_BALANCE, risk_balance, men)
+            population.set_present_variable(col.RISK_BALANCE, 1/risk_balance, women)
         else:
-            population.set_present_variable(col.RRED_BALANCE, rred_balance, women)
-            population.set_present_variable(col.RRED_BALANCE, 1/rred_balance, men)
+            population.set_present_variable(col.RISK_BALANCE, risk_balance, women)
+            population.set_present_variable(col.RISK_BALANCE, 1/risk_balance, men)
 
     def gen_stp_ages(self, sex, age_group, num_partners, size):
         # TODO: Check if this needs additional balancing factors for age

@@ -23,21 +23,21 @@ base_rate_start_sex_work:
 base_rate_stop_sex_work:
   Value: [0.010, 0.015, 0.030]
 
-# Risk reduction (rred) factors
+# Risk (rred) factors
 
-# rred_initial
-rred_initial: 1.0
+# risk_initial
+risk_initial: 1.0
 
 # p_rred_p
-population_rred_personal:
+population_risk_personal:
   Value: [0.3, 0.5, 0.7]
   Probability: [0.33, 0.33, 0.33]
 
 # rred_adc
-rred_aids_defining_condition: 0.2
+risk_aids_defining_condition: 0.2
 
 # rred_adhav
-rred_art_adherence:
+risk_art_adherence:
   Value: 2.0
   Adherence_Threshold: 0.8
   Probability: 0.2
@@ -45,7 +45,7 @@ rred_art_adherence:
 # rred_d
 # Take value for initial period and then sqrt value thereafter
 # Period in years
-rred_diagnosis:
+risk_diagnosis:
   Value: [0.7, 0.8, 0.9, 1.0]
   Probability: [0.25, 0.25, 0.25, 0.25]
   Period: 0.5
@@ -60,7 +60,7 @@ yearly_risk_change_10s:
   Probability: [0.05, 0.05, 0.15, 0.5, 0.15, 0.05, 0.05]
 
 # rred_ep / conc_ep
-rred_partnered:
+risk_partnered:
   Value: [0.33, 1.0, 3.0]
   Probability: [0.33, 0.33, 0.33]
 
@@ -119,6 +119,21 @@ age_based_risk_options:
       [0.15, 0.01]
     ]
   Probability: [0.15, 0.15, 0.35, 0.35]
+
+risk_sex_worker_age: [0.8, 1.0, 0.3, 0.03]
+  # for ages [15-19, 20-24, 25-34, 35-49]
+
+risk_sw_program:
+  - Strong:
+    - Value: [0.3, 0.5, 0.6]
+  - Weak:
+    - Value: [0.7, 0.8, 0.9]
+
+# no idea what this is
+risk_sw_life_sex_risk_3: 10
+
+# sex workers who have previously been sex workers? Maybe?
+risk_sw_prev_sw: 10
 
 sex_behaviour_transition_options:
   Male:

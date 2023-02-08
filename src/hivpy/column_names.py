@@ -7,15 +7,15 @@ AGE = "age"                                 # float: age at the current date
 AGE_GROUP = "age_group"                     # int: discrete age grouping based on age
 LTP_AGE_GROUP = "ltp_age_group"             # int: discrete age group for starting / longevity of ltp
 
-RRED = "rred"                               # float: overall rred value from combined factors
-RRED_AGE = "rred_age"                       # float: risk reduction factor based on age
-RRED_ADC = "rred_adc"                       # float: risk reduction for AIDS defining condition
-RRED_BALANCE = "rred_balance"               # float: risk reduction factor to re-balance male & female partner numbers
-RRED_DIAGNOSIS = "rred_diagnosis"           # float: risk reduction associated with recent HIV diagnosis
-RRED_PERSONAL = "rred_personal"             # float: individual risk reduction applied with a certain probability
-RRED_LTP = "rred_long_term_partnered"       # float: risk reduction for people in long term partnerships
-RRED_ART_ADHERENCE = "rred_art_adherence"   # float: risk reduction associated with low ART adherence
-RRED_INTIIAL = "rred_initial"               # float: initial risk reduction factor
+RISK = "risk"                               # float: overall risk value from combined factors
+RISK_AGE = "risk_age"                       # float: risk reduction factor based on age
+RISK_ADC = "risk_adc"                       # float: risk reduction for AIDS defining condition
+RISK_BALANCE = "risk_balance"               # float: risk reduction factor to re-balance male & female partner numbers
+RISK_DIAGNOSIS = "risk_diagnosis"           # float: risk reduction associated with recent HIV diagnosis
+RISK_PERSONAL = "risk_personal"             # float: individual risk reduction applied with a certain probability
+RISK_LTP = "risk_long_term_partnered"       # float: risk reduction for people in long term partnerships
+RISK_ART_ADHERENCE = "risk_art_adherence"   # float: risk reduction associated with low ART adherence
+RISK_INTIIAL = "risk_initial"               # float: initial risk reduction factor
 CIRCUMCISED = "circumcised"                 # bool: True if a man is circumcised
 CIRCUMCISION_DATE = "circumcision_date"     # None | datetime.date: date of circumcision if circumcised, o/w None
 VMMC = "vmmc"                               # bool: True if voluntary medical male circumcision was applied
@@ -27,6 +27,14 @@ LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a lo
 LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
 
 SEX_WORKER = "sex_worker"                   # bool: True if person is a sex worker, false otherwise
+SW_AGE_GROUP = "sw_age_group"               # int: categorises sex worker behaviour by age
+DATE_STOP_SW = "date_stop_sex_work"         # date: date at which a former sex worker (last) stopped sex work
+SW_PROGRAM_VISIT = "sw_program_visit"       # bool: is sex worker engaged with sex worker program?
+SW_TEST_6MONTHLY = "sw_test_6monthly"       # bool: sex worker tested for HIV bi-annually
+SW_HIGHER_INT = "sw_higher_int"             # bool: TODO: something sex workers and ART disadvantage?
+SW_ART_DISENGAGE = "sw_art_disengage"       # bool: whether sex workers have lower levels of ART engagement
+SW_PROGRAM = "sw_program"                   # bool: Is a sex worker program in place?
+SW_PROGRAM_EFFECT = "sw_program_effect"     # enum: STRONG or WEAK program efficacy
 
 HARD_REACH = "hard_reach"                   # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 HIV_STATUS = "HIV_status"                   # bool: True if person is HIV positive, o/w False

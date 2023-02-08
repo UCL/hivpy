@@ -31,12 +31,12 @@ def check_prob_sums(sex, trans_matrix):
         population.set_present_variable(col.HIV_STATUS, False)
         population.set_present_variable(col.HIV_DIAGNOSIS_DATE, None)
         SBM.init_risk_factors(population)
-        rred = population.get_variable(col.RRED)
-        assert len(rred) == 11
+        risk = population.get_variable(col.RISK)
+        assert len(risk) == 11
         assert (0 < SBM.new_partner_factor <= 2)
         tot_prob = np.array([0.0]*len(ages))  # probability for each age range
         for j in range(0, dim):
-            tot_prob += SBM.prob_transition(sex, rred, i, j)
+            tot_prob += SBM.prob_transition(sex, risk, i, j)
         assert (np.allclose(tot_prob, 1.0))
 
 
@@ -53,7 +53,7 @@ def test_sex_behaviour_transition(yaml_data):
     N = 100000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.set_present_variable(col.AGE, 25)  # make whole population active
-    pop.set_present_variable(col.RRED, 1)  # rred factors can be tested elsewhere
+    pop.set_present_variable(col.RISK, 1)  # risk factors can be tested elsewhere
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
     for s in SexType:
@@ -166,7 +166,7 @@ def test_initial_sex_behaviour_groups(yaml_data):
             assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
 
 
-def test_rred_long_term_partner():
+def test_risk_long_term_partner():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     # pick some indices and give those people LTPs
@@ -174,11 +174,11 @@ def test_rred_long_term_partner():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(col.LONG_TERM_PARTNER, True, indices)
     SBM = SexualBehaviourModule()
-    SBM.update_rred_long_term_partnered(pop)
-    assert all(pop.data.loc[indices, "rred_long_term_partnered"] == SBM.ltp_risk_factor)
+    SBM.update_risk_long_term_partnered(pop)
+    assert all(pop.data.loc[indices, "risk_long_term_partnered"] == SBM.ltp_risk_factor)
 
 
-def test_rred_adc():
+def test_risk_adc():
     N = 20
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data["HIV_status"] = False  # make test independent of how HIV is initialised
@@ -186,50 +186,50 @@ def test_rred_adc():
     init_ADC_idx = init_HIV_idx[[0, 2, 4]]
     pop.data.loc[init_HIV_idx, col.HIV_STATUS] = True
     pop.data.loc[init_ADC_idx, col.ADC] = True
-    expected_rred = np.ones(N)
-    expected_rred[init_ADC_idx] = 0.2
+    expected_risk = np.ones(N)
+    expected_risk[init_ADC_idx] = 0.2
     SBM = SexualBehaviourModule()
-    # initialise rred_adc
+    # initialise risk_adc
     SBM.init_risk_factors(pop)
-    # Check only people with HIV have rred_adc = 0.2
-    assert np.all(pop.data["rred_adc"] == expected_rred)
+    # Check only people with HIV have risk_adc = 0.2
+    assert np.all(pop.data["risk_adc"] == expected_risk)
     # Assign more people with HIV
     add_HIV_idx = rng.integers(0, N, size=5)
     add_ADC_idx = add_HIV_idx[[0, 1, 2]]
     pop.data.loc[add_HIV_idx, col.HIV_STATUS] = True
     pop.data.loc[add_ADC_idx, col.ADC] = True
-    # Update rred factors
+    # Update risk factors
     SBM.update_sex_behaviour(pop)
-    expected_rred[add_ADC_idx] = 0.2
-    assert np.all(pop.data["rred_adc"] == expected_rred)
+    expected_risk[add_ADC_idx] = 0.2
+    assert np.all(pop.data["risk_adc"] == expected_risk)
 
 
-def test_rred_diagnosis():
+def test_risk_diagnosis():
     N = 20
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data["HIV_status"] = False  # init everyone HIV negative
     SBM = SexualBehaviourModule()
-    SBM.rred_diagnosis = 4
-    SBM.rred_diagnosis_period = timedelta(700)
-    SBM.update_rred_diagnosis(pop)
-    assert np.all(pop.data["rred_diagnosis"] == 1)
+    SBM.risk_diagnosis = 4
+    SBM.risk_diagnosis_period = timedelta(700)
+    SBM.update_risk_diagnosis(pop)
+    assert np.all(pop.data["risk_diagnosis"] == 1)
     # give up some people HIV and advance the date
     HIV_idx = rng.integers(0, N, size=5)
     pop.data.loc[HIV_idx, "HIV_status"] = True
     pop.data.loc[HIV_idx, "HIV_Diagnosis_Date"] = pop.date
-    SBM.update_rred_diagnosis(pop)
-    assert all(pop.data.loc[HIV_idx, "rred_diagnosis"] == 4)
+    SBM.update_risk_diagnosis(pop)
+    assert all(pop.data.loc[HIV_idx, "risk_diagnosis"] == 4)
     pop.date += timedelta(days=365)
-    SBM.update_rred_diagnosis(pop)
-    assert all(pop.data.loc[HIV_idx, "rred_diagnosis"] == 4)
+    SBM.update_risk_diagnosis(pop)
+    assert all(pop.data.loc[HIV_idx, "risk_diagnosis"] == 4)
     pop.date += timedelta(days=500)
-    SBM.update_rred_diagnosis(pop)
-    assert all(pop.data.loc[HIV_idx, "rred_diagnosis"] == 2)
+    SBM.update_risk_diagnosis(pop)
+    assert all(pop.data.loc[HIV_idx, "risk_diagnosis"] == 2)
     undiagnosed = [x for x in range(0, N) if x not in HIV_idx]
-    assert all(pop.data.loc[undiagnosed, "rred_diagnosis"] == 1)
+    assert all(pop.data.loc[undiagnosed, "risk_diagnosis"] == 1)
 
 
-def test_rred_balance():
+def test_risk_balance():
     N = 1000
     n_partners = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
@@ -248,9 +248,9 @@ def test_rred_balance():
         pop.data.loc[rand_man, "num_partners"] += 1
     for rand_woman in rng.choice(women_idx, size=n_partners_women):
         pop.data.loc[rand_woman, "num_partners"] += 1
-    SBM.update_rred_balance(pop)
-    assert np.all(pop.data.loc[men, "rred_balance"] == 1)
-    assert np.all(pop.data.loc[women, "rred_balance"] == 1)
+    SBM.update_risk_balance(pop)
+    assert np.all(pop.data.loc[men, "risk_balance"] == 1)
+    assert np.all(pop.data.loc[women, "risk_balance"] == 1)
 
     # ~ -1 % discrepancy
     pop.data["num_partners"] = 0
@@ -260,9 +260,9 @@ def test_rred_balance():
         pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
     for i in range(n_partners_women):
         pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
-    SBM.update_rred_balance(pop)
-    assert np.allclose(pop.data.loc[men, "rred_balance"], 1/0.7)
-    assert np.allclose(pop.data.loc[women, "rred_balance"], 0.7)
+    SBM.update_risk_balance(pop)
+    assert np.allclose(pop.data.loc[men, "risk_balance"], 1/0.7)
+    assert np.allclose(pop.data.loc[women, "risk_balance"], 0.7)
 
     # > 10 % discrepancy
     pop.data["num_partners"] = 0
@@ -272,80 +272,80 @@ def test_rred_balance():
         pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
     for i in range(n_partners_women):
         pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
-    SBM.update_rred_balance(pop)
-    assert np.all(pop.data.loc[men, "rred_balance"] == 0.1)
-    assert np.all(pop.data.loc[women, "rred_balance"] == 10)
+    SBM.update_risk_balance(pop)
+    assert np.all(pop.data.loc[men, "risk_balance"] == 0.1)
+    assert np.all(pop.data.loc[women, "risk_balance"] == 10)
 
 
-def test_rred_art_adherence():
+def test_risk_art_adherence():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     pop.init_variable(col.ART_ADHERENCE, rng.random(size=N))
     SBM.init_risk_factors(pop)
     # art adherence flag off
-    SBM.use_rred_art_adherence = False
+    SBM.use_risk_art_adherence = False
     above_idx = selector(pop.data, art_adherence=(operator.ge, 0.8))
     below_idx = selector(pop.data, art_adherence=(operator.lt, 0.8))
-    SBM.update_rred(pop)
-    assert np.allclose(pop.data["rred_art_adherence"], 1)
+    SBM.update_risk(pop)
+    assert np.allclose(pop.data["risk_art_adherence"], 1)
 
     # art adherence flag on
-    SBM.use_rred_art_adherence = True
-    SBM.update_rred(pop)
-    assert np.all(pop.data.loc[above_idx, "rred_art_adherence"] == 1)
-    assert np.all(pop.data.loc[below_idx, "rred_art_adherence"] == 2)
+    SBM.use_risk_art_adherence = True
+    SBM.update_risk(pop)
+    assert np.all(pop.data.loc[above_idx, "risk_art_adherence"] == 1)
+    assert np.all(pop.data.loc[below_idx, "risk_art_adherence"] == 2)
 
 
-def test_rred_art_adherence_usage():
+def test_risk_art_adherence_usage():
     # check that art adherence risk factor is considered in correct fraction
     # of simulations
     count = 0
     for i in range(100):
         SBM_temp = SexualBehaviourModule()
-        count += SBM_temp.use_rred_art_adherence
+        count += SBM_temp.use_risk_art_adherence
     assert 0.1 < count/100 < 0.3
 
 
-def test_rred_population():
+def test_risk_population():
     N = 100
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     SBM.init_risk_factors(pop)
-    assert (SBM.rred_population == 1)
+    assert (SBM.risk_population == 1)
     pop.date = date(1995, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, 1)
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population, 1)
     pop.date = date(1996, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"], 0.001)
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"], 0.001)
     pop.date = date(1998, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**3, 0.001)
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**3, 0.001)
     pop.date = date(2000, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
     pop.date = date(2010, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
     pop.date = date(2011, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population,
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population,
                       SBM.yearly_risk_change["1990s"]**5 *
                       SBM.yearly_risk_change["2010s"], 0.001)
     pop.date = date(2020, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population,
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population,
                       SBM.yearly_risk_change["1990s"]**5 *
                       SBM.yearly_risk_change["2010s"]**10, 0.001)
     pop.date = date(2022, 1, 1)
-    SBM.update_rred(pop)
-    assert np.isclose(SBM.rred_population,
+    SBM.update_risk(pop)
+    assert np.isclose(SBM.risk_population,
                       SBM.yearly_risk_change["1990s"]**5 *
                       SBM.yearly_risk_change["2010s"]**11, 0.001)
 
 
-def test_rred_personal():
+def test_risk_personal():
     N = 100
     pop = Population(size=N, start_date=date(1989, 1, 1))
     # Count how many times we initialise with each threshold 0.3, 0.5, 0.7
@@ -353,17 +353,17 @@ def test_rred_personal():
     for i in range(100):
         SBM = SexualBehaviourModule()
         SBM.init_risk_factors(pop)
-        risk_count = sum(selector(pop.data, rred_personal=(operator.lt, 1)))
+        risk_count = sum(selector(pop.data, risk_personal=(operator.lt, 1)))
         count03 += (0.2 < (risk_count/N) < 0.4)  # check consistency with threshold
         count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
         count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold
-        assert all([x == 1 or x == 1e-5 for x in pop.data["rred_personal"]])
+        assert all([x == 1 or x == 1e-5 for x in pop.data["risk_personal"]])
     assert (1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
 
 
-def test_rred_age():
+def test_risk_age():
     N = 11
     pop = Population(size=2*N, start_date=date(1989, 1, 1))
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
@@ -373,7 +373,7 @@ def test_rred_age():
     pop.sexual_behaviour.num_short_term_partners(pop)
     pop.sexual_behaviour.init_risk_factors(pop)
     # select a particular risk matrix
-    risk_factors = np.array(pop.data[col.RRED_AGE])
+    risk_factors = np.array(pop.data[col.RISK_AGE])
     assert risk_factors[0] == 1  # no update for under 15
     assert risk_factors[11] == 1
     expected_risk_male, expected_risk_female = pop.sexual_behaviour.age_based_risk.T
@@ -387,7 +387,7 @@ def test_rred_age():
     dt = timedelta(days=90)
     for i in range(20):
         pop.evolve(dt)
-    risk_factors = np.array(pop.data[col.RRED_AGE])
+    risk_factors = np.array(pop.data[col.RISK_AGE])
     print("*************************************************")
     print(risk_factors)
     print("*************************************************")
