@@ -110,7 +110,6 @@ class SexualBehaviourModule:
 
     def update_sex_worker_status(self, population: Population):
         # Only consider female sex workers
-        # is there a max age for sex workers?
         female_15to49_not_sw = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
                                                  (col.AGE, operator.ge, 15),
                                                  (col.AGE, operator.lt, 50),
@@ -136,7 +135,10 @@ class SexualBehaviourModule:
             sw_status = rng.random(size) > prob_stop_sw
             return sw_status
 
-        # Women starting sex work 
+        # Women starting sex work
+        population.set_present_variable(col.SW_AGE_GROUP, np.digitize(population.get_variable(
+            col.AGE, sex_workers), [40, 50]), sex_workers
+        )
         population.set_variable_by_group(col.SEX_WORKER,
                                          [col.SW_AGE_GROUP],
                                          start_sex_work,
@@ -151,6 +153,10 @@ class SexualBehaviourModule:
         # returned from a function like this
         women_stopping_sex_work = population.get_sub_pop_from_array(new_sex_work_status, sex_workers)
         population.set_present_variable(col.DATE_STOP_SW, population.date, women_stopping_sex_work)
+        population.set_present_variable(col.SW_TEST_6MONTHLY, False, women_stopping_sex_work)
+        population.set_present_variable(col.AGE_STOP_SEX_WORK,
+                                        population.get_variable(col.AGE, sub_pop=women_stopping_sex_work),
+                                        women_stopping_sex_work)
 
     def update_sex_behaviour(self, population: Population):
         self.update_sex_worker_status(population)
