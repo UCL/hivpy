@@ -2,6 +2,7 @@ Test_Example_List:
   - Value: [1, 2, 3, 4, 5]
     Probability: [0.0, 0.1, 0.2, 0.3, 0.8]
   - Range: [1, 10]
+  - Value: [1, 2, 3, 4, 5]
 
 initial_sex_behaviour_probabilities:
   Male: 
@@ -14,6 +15,15 @@ initial_sex_behaviour_probabilities:
 initial_sex_worker_probability:
   Ages: [15, 20, 25, 40, 50]
   Probability: [0.04, 0.02, 0.01, 0.002]
+
+# 1 month base probability of starting sex work
+base_rate_start_sex_work:
+  Value: [0.0015, 0.0020, 0.0025]
+  Probability: [0.2, 0.6, 0.2]
+
+# 1 month base probability of stopping sex work
+base_rate_stop_sex_work:
+  Value: [0.010, 0.015, 0.030]
 
 new_partner_factor:
   Value: [0.5, 1, 2]

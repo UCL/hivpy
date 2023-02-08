@@ -452,3 +452,20 @@ def test_end_ltp(longevity, rate_change):
     sb_mod.update_long_term_partners(pop)
     n_ends = N - sum(pop.data[col.LONG_TERM_PARTNER])
     assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
+
+
+def test_sex_worker_status():
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_module = pop.sexual_behaviour
+    pop.set_present_variable(col.SEX_WORKER, False)
+    sb_module.update_sex_worker_status(pop)
+
+    # Men and under 15s should not be sex workers
+    men = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+    under_15 = pop.get_sub_pop([(col.AGE, operator.lt, 15)])
+    men_sex_worker = pop.get_variable(col.SEX_WORKER, men)
+    assert not any(men_sex_worker)
+    assert not any(pop.get_variable(col.SEX_WORKER, under_15))
+
+    # Proportion of sex workers

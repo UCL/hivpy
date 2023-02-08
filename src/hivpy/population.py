@@ -79,6 +79,7 @@ class Population:
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.init_variable(col.ADC, False)
+        self.init_variable(col.SEX_WORKER, False)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.data[col.CIRCUMCISED] = False

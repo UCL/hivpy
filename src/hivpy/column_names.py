@@ -26,6 +26,8 @@ SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
 LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
 
+SEX_WORKER = "sex_worker"                   # bool: True if person is a sex worker, false otherwise
+
 HARD_REACH = "hard_reach"                   # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 HIV_STATUS = "HIV_status"                   # bool: True if person is HIV positive, o/w False
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None

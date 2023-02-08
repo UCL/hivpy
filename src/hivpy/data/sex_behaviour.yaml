@@ -14,6 +14,15 @@ new_partner_factor:
   Value: [0.5, 1, 2]
   Probability: [0.33, 0.33, 0.33]
 
+# 1 month base probability of starting sex work
+base_rate_start_sex_work:
+  Value: [0.0015, 0.0020, 0.0025]
+  Probability: [0.2, 0.6, 0.2]
+
+# 1 month base probability of stopping sex work
+base_rate_stop_sex_work:
+  Value: [0.010, 0.015, 0.030]
+
 # Risk reduction (rred) factors
 
 # rred_initial

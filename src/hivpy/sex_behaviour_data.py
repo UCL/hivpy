@@ -18,10 +18,7 @@ class SexualBehaviourData:
             N = max - min + 1
             return DiscreteChoice(np.arange(min, max+1, 1), np.array([1./N]*N))
         else:
-            values = np.array(prob_dict["Value"])
-            probs = np.array(prob_dict["Probability"])
-            probs /= sum(probs)
-            return DiscreteChoice(values, probs)
+            return self._extract_discrete_dist(prob_dict)
 
     def _get_discrete_dist_list(self, *keys):
         dist_list = self.data
@@ -33,8 +30,14 @@ class SexualBehaviourData:
         dist_data = self.data
         for k in keys:
             dist_data = dist_data[k]
+        return self._extract_discrete_dist(dist_data)
+
+    def _extract_discrete_dist(self, dist_data):
         vals = np.array(dist_data["Value"])
-        probs = np.array(dist_data["Probability"])
+        if "Probability" in dist_data:
+            probs = np.array(dist_data["Probability"])
+        else:
+            probs = np.ones(vals.size)
         probs /= sum(probs)
         return DiscreteChoice(vals, probs)
 
@@ -105,6 +108,9 @@ class SexualBehaviourData:
             self.rred_art_adherence = self.data["rred_art_adherence"]["Value"]
             self.adherence_threshold = self.data["rred_art_adherence"]["Adherence_Threshold"]
             self.rred_art_adherence_probability = self.data["rred_art_adherence"]["Probability"]
+
+            self.base_start_sex_work = self._get_discrete_dist("base_rate_start_sex_work")
+            self.base_stop_sex_work = self._get_discrete_dist("base_rate_stop_sex_work")
 
         except KeyError as ke:
             print(ke.args)

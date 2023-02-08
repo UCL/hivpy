@@ -29,3 +29,14 @@ def test_probability_loading():
         E_count = 0.1 * N
         var = N * 0.09
         assert E_count - 2*var <= count <= E_count + 2*var
+
+    # uniform over specific values
+    d2 = dists[2]
+    pop2 = d2.sample(size=N)
+    for i in range(5):
+        v = i + 1
+        p = 0.2
+        count = sum(pop2 == v)
+        E_count = N * p
+        var = N * p * (1-p)
+        assert E_count - 2*var <= count <= E_count + 2*var

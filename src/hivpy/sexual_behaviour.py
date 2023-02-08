@@ -98,11 +98,33 @@ class SexualBehaviourModule:
         self.ltp_balance_factor = {SexType.Male: 1, SexType.Female: 1}
         self.new_ltp_age_bins = [35, 45, 55]
 
+        # sex worker status
+        self.base_start_sw = self.sb_data.base_start_sex_work.sample()
+        self.base_stop_sw = self.sb_data.base_stop_sex_work.sample()
+
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
                           self.risk_age_grouping, self.risk_categories)
 
+    def update_sex_worker_status(self, population: Population):
+        # Only consider female sex workers
+        female_over_15 = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                                 (col.AGE, operator.gt, 15)])
+
+        def change_SW_prob(sex_worker, size):
+            if (sex_worker):
+                sw_status = rng.random(size) < self.base_start_sw
+            else:
+                sw_status = rng.random(size) > self.base_stop_sw
+            return sw_status
+
+        population.set_variable_by_group(col.SEX_WORKER,
+                                         [col.SEX_WORKER],
+                                         change_SW_prob,
+                                         sub_pop=female_over_15)
+
     def update_sex_behaviour(self, population: Population):
+        self.update_sex_worker_status(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
         self.update_sex_groups(population)
@@ -113,16 +135,10 @@ class SexualBehaviourModule:
     # Doing them uniform for now
     def init_sex_behaviour_groups(self, population: Population):
         population.init_variable(col.SEX_BEHAVIOUR, None)
-        # population[col.SEX_BEHAVIOUR] = None  # to avoid type problems
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
                                          [col.SEX],
                                          lambda sex, n:
                                          self.init_sex_behaviour_probs[sex].sample(size=n))
-        # for sex in SexType:
-        #    index = selector(population, sex=(operator.eq, sex))
-        #    n_sex = sum(index)
-        #    population.loc[index, col.SEX_BEHAVIOUR] = self.init_sex_behaviour_probs[sex].sample(
-        #        size=n_sex)
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
