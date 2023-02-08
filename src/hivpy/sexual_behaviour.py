@@ -262,7 +262,7 @@ class SexualBehaviourModule:
         if (self.use_risk_art_adherence):
             self.update_risk_art_adherence(population)
 
-        def comined_risk(age, adc, balance, diagnosis, personal, ltp, art):
+        def combined_risk(age, adc, balance, diagnosis, personal, ltp, art):
             return (self.new_partner_factor * age * adc * balance *
                     diagnosis * personal * self.risk_population * ltp * art)
         population.set_present_variable(col.RISK,
@@ -273,7 +273,7 @@ class SexualBehaviourModule:
                                                                       col.RISK_PERSONAL,
                                                                       col.RISK_LTP,
                                                                       col.RISK_ART_ADHERENCE],
-                                                                     comined_risk))
+                                                                     combined_risk))
 
     def init_risk_art_adherence(self, pop: Population):
         pop.init_variable(col.RISK_ART_ADHERENCE, 1.0)
