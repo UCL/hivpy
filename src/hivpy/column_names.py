@@ -27,13 +27,17 @@ LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has 
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
+ANC = "anc"                                     # bool: True if in antenatal care
+PMTCT = "pmtct"                                 # bool: True if undergoing prevention of mother to child transmission care
 LAST_PREGNANCY_DATE = "last_pregnancy_date"     # None | datetime.date: date of most recent pregnancy, o/w None if never pregnant
 NUM_CHILDREN = "num_children"                   # int: number of children a woman has
+NUM_HIV_CHILDREN = "num_HIV_children"           # int: number of children infected with HIV a woman has
 WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children
 
 HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person
+ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
 
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
