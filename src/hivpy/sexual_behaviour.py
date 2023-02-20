@@ -217,7 +217,7 @@ class SexualBehaviourModule:
         if (self.use_rred_art_adherence):
             self.update_rred_art_adherence(population)
 
-        def comined_rred(age, adc, balance, diagnosis, personal, ltp, art):
+        def combined_rred(age, adc, balance, diagnosis, personal, ltp, art):
             return (self.new_partner_factor * age * adc * balance *
                     diagnosis * personal * self.rred_population * ltp * art)
         population.set_present_variable(col.RRED,
@@ -228,7 +228,7 @@ class SexualBehaviourModule:
                                                                       col.RRED_PERSONAL,
                                                                       col.RRED_LTP,
                                                                       col.RRED_ART_ADHERENCE],
-                                                                     comined_rred))
+                                                                     combined_rred))
 
     def init_rred_art_adherence(self, pop: Population):
         pop.init_variable(col.RRED_ART_ADHERENCE, 1.0)
