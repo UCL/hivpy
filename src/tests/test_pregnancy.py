@@ -83,8 +83,7 @@ def test_ltp_preg():
 
         else:
             # get stats
-            no_active_female = sum((pop.data[col.SEX] == SexType.Female)
-                                   & (~pop.data[col.LOW_FERTILITY])
+            no_active_female = sum((~pop.data[col.LOW_FERTILITY])
                                    & ((pop.data[col.NUM_PARTNERS] > 0)
                                       | pop.data[col.LONG_TERM_PARTNER]))
             no_pregnant = sum(pop.data[col.PREGNANT])
@@ -119,8 +118,7 @@ def test_stp_preg():
             pop.pregnancy.update_pregnancy(pop)
 
             # get stats
-            no_active_female = sum((pop.data[col.SEX] == SexType.Female)
-                                   & (~pop.data[col.LOW_FERTILITY])
+            no_active_female = sum((~pop.data[col.LOW_FERTILITY])
                                    & ((pop.data[col.NUM_PARTNERS] > 0)
                                       | pop.data[col.LONG_TERM_PARTNER]))
             no_pregnant = sum(pop.data[col.PREGNANT])
@@ -248,6 +246,82 @@ def test_want_no_children():
 
     # check pregnancy value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
+
+
+def test_anc_and_pmtct():
+
+    # build artificial population
+    N = 100
+    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop.data[col.SEX] = SexType.Female
+    pop.data[col.AGE] = 20
+    pop.data[col.LOW_FERTILITY] = False
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LAST_PREGNANCY_DATE] = None
+    pop.data[col.NUM_CHILDREN] = 0
+    pop.data[col.WANT_NO_CHILDREN] = False
+    # guaranteed pregnancy
+    pop.pregnancy.prob_pregnancy_base = 1
+    pop.pregnancy.rate_testanc_inc = 1
+    pop.pregnancy.date_pmtct = 2004
+    pop.pregnancy.pmtct_inc_rate = 1
+
+    # advance pregnancy
+    pop.pregnancy.update_pregnancy(pop)
+
+    # get stats
+    no_anc = sum(pop.data[col.ANC])
+    mean = len(pop.data) * pop.pregnancy.prob_anc
+    stdev = sqrt(mean * (1 - pop.pregnancy.prob_anc))
+    # check anc attendance value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_anc <= mean + 3 * stdev
+
+    # get stats
+    no_pmtct = sum(pop.data[col.PMTCT])
+    prob_pmtct = min((pop.date.year - pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
+    mean = no_anc * prob_pmtct
+    stdev = sqrt(mean * (1 - prob_pmtct))
+    # check pmtct value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_pmtct <= mean + 3 * stdev
+
+
+def test_infected_births():
+
+    N = 100
+    time_step = timedelta(days=90)
+
+    # build artificial population
+    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop.data[col.SEX] = SexType.Female
+    pop.data[col.AGE] = 18
+    pop.data[col.LOW_FERTILITY] = False
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LAST_PREGNANCY_DATE] = None
+    pop.data[col.NUM_CHILDREN] = 0
+    pop.data[col.NUM_HIV_CHILDREN] = 0
+    pop.data[col.VIRAL_LOAD_GROUP] = 5
+    pop.data[col.HIV_STATUS] = True
+    # guaranteed pregnancy
+    pop.pregnancy.prob_pregnancy_base = 1
+
+    # evolve population
+    for i in range(0, ceil(timedelta(days=270)/time_step)):
+        # advance pregnancy
+        pop.pregnancy.update_pregnancy(pop)
+        pop.date += time_step
+
+    # final advancement into childbirth
+    pop.pregnancy.update_pregnancy(pop)
+    pop.date += time_step
+
+    # get stats
+    no_infected_births = sum(pop.data[col.NUM_HIV_CHILDREN])
+    mean = len(pop.data) * pop.pregnancy.rate_birth_with_infected_child
+    stdev = sqrt(mean * (1 - pop.pregnancy.rate_birth_with_infected_child))
+    # check infected birth value is within 3 standard deviations
+    assert mean - 3 * stdev <= no_infected_births <= mean + 3 * stdev
 
 
 def test_calc_prob_preg():

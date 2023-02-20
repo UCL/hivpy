@@ -67,10 +67,14 @@ class Population:
         self.data[col.HARD_REACH] = False
         self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
         self.data[col.HIV_DIAGNOSIS_DATE] = None
+        self.data[col.ART_NAIVE] = True
         self.data[col.LOW_FERTILITY] = False
         self.data[col.PREGNANT] = False
+        self.data[col.ANC] = False
+        self.data[col.PMTCT] = False
         self.data[col.LAST_PREGNANCY_DATE] = None
         self.data[col.NUM_CHILDREN] = 0
+        self.data[col.NUM_HIV_CHILDREN] = 0
         self.data[col.WANT_NO_CHILDREN] = False
         self.data[col.NUM_PARTNERS] = 0
         self.data[col.LONG_TERM_PARTNER] = False

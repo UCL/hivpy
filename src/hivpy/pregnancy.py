@@ -20,12 +20,16 @@ class PregnancyModule:
 
         self.can_be_pregnant = self.p_data.can_be_pregnant
         self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
+        self.date_pmtct = self.p_data.date_pmtct
+        self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
         self.fold_preg = self.p_data.fold_preg
         self.inc_cat = self.p_data.inc_cat.sample()
+        self.rate_testanc_inc = self.p_data.rate_testanc_inc.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
         self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
         self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
+        self.prob_anc = 0
 
     def generate_prob_pregnancy_base(self):
         """
@@ -123,26 +127,67 @@ class PregnancyModule:
             # use pregnancy outcomes as mask to assign current date as pregnancy date
             pop.data.loc[active_female_population[pregnancy_ready].index[pregnancy], col.LAST_PREGNANCY_DATE] = pop.date
 
+        self.update_antenatal_care_testing(pop)
         self.update_births(pop)
         self.update_want_no_children(pop)
 
+    def update_antenatal_care_testing(self, pop):
+        """
+        Determine who is in antenatal care and receiving
+        prevention of mother to child transmission care.
+        """
+        # get pregnant population
+        pregnant_population = pop.data[pop.data[col.PREGNANT]]
+        # update probability of antenatal care attendance
+        self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_testanc_inc, 0.975)
+
+        # anc outcomes
+        r = rng.uniform(size=len(pregnant_population))
+        anc = r < self.prob_anc
+        pop.data.loc[pregnant_population.index, col.ANC] = anc
+
+        # update pregnant population
+        pregnant_population = pop.data[pop.data[col.PREGNANT]]
+
+        # FIXME: this should probably only be applied to HIV+ individuals
+        if pop.date.year >= self.date_pmtct:
+            # probability of prevention of mother to child transmission care
+            prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
+            # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
+            in_anc = pregnant_population[pregnant_population[col.ART_NAIVE]
+                                         & pregnant_population[col.ANC]]
+            # pmtct outcomes
+            r = rng.uniform(size=len(in_anc))
+            pmtct = r < prob_pmtct
+            pop.data.loc[in_anc.index, col.PMTCT] = pmtct
+
     def update_births(self, pop):
         """
-        Model pregnancies that come to term.
+        Model pregnancies that come to term, including
+        births with infected children.
         """
         # get pregnant population
         pregnant_population = pop.data[pop.data[col.PREGNANT]]
         # get population ready for childbirth
-        birthing_population = pregnant_population.index[pop.date -
-                                                        pregnant_population[col.LAST_PREGNANCY_DATE]
-                                                        >= timedelta(days=270)]
+        birthing_population = pregnant_population[pop.date -
+                                                  pregnant_population[col.LAST_PREGNANCY_DATE]
+                                                  >= timedelta(days=270)]
 
         # continue if births occur this time step
         if len(birthing_population) > 0:
             # remove pregnancy status
-            pop.data.loc[birthing_population, col.PREGNANT] = False
+            pop.data.loc[birthing_population.index, col.PREGNANT] = False
             # add to children
-            pop.data.loc[birthing_population, col.NUM_CHILDREN] += 1
+            pop.data.loc[birthing_population.index, col.NUM_CHILDREN] += 1
+            # birth with infected child
+            infected_birthing_population = birthing_population[birthing_population[col.HIV_STATUS]]
+            # calculate infected pregnancy outcomes
+            infected_children = pop.transform_group([col.VIRAL_LOAD_GROUP],
+                                                    self.calc_infected_birth_outcomes,
+                                                    sub_pop=infected_birthing_population.index)
+            # add to infected children
+            pop.data.loc[infected_birthing_population[infected_children].index, col.NUM_HIV_CHILDREN] += 1
+            # FIXME: drug resistance in HIV mutations not modelled yet
 
     def update_want_no_children(self, pop):
         """
@@ -203,3 +248,21 @@ class PregnancyModule:
         pregnancy = r < prob_preg
 
         return pregnancy
+
+    def calc_infected_birth_outcomes(self, viral_load, size):
+        """
+        Determines whether a birth results in an infected
+        child based on the mother's viral load.
+        """
+        vl_multiplier = 1
+        if viral_load <= 3:
+            vl_multiplier = 1000
+        elif viral_load <= 4:
+            vl_multiplier = 2
+        elif viral_load > 5:
+            vl_multiplier = 0.5
+        # outcomes
+        r = rng.uniform(size=size) * vl_multiplier
+        infected_children = r < self.rate_birth_with_infected_child
+
+        return infected_children
