@@ -28,6 +28,11 @@ class FemaleSexBehaviour(IntEnum):
     ZERO = 0
     ANY = 1
 
+class SexBehaviourClass(IntEnum):
+    MALE = 0
+    FEMALE_U25 = 1
+    FEMALE_O25 = 2
+    SEX_WORKER = 3
 
 SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
 
@@ -46,12 +51,17 @@ class SexualBehaviourModule:
             self.sb_data = SexualBehaviourData(data_path)
 
         # Randomly initialise sexual behaviour group transitions
+        # both groups of younger and older women have the same behaviour groups 
         self.sex_behaviour_trans = {
-            SexType.Male: np.array(
-                rng.choice(self.sb_data.sex_behaviour_transition_options["Male"])),
-            SexType.Female: np.array(
-                rng.choice(self.sb_data.sex_behaviour_transition_options["Female"]))
+            SexBehaviourClass.MALE: np.array(
+                rng.choice(self.sb_data.sex_behaviour_male_options)),
+            SexBehaviourClass.FEMALE_U25: np.array(
+                rng.choice(self.sb_data.sex_behaviour_female_options)),
+            SexBehaviourClass.SEX_WORKER: np.array(
+                rng.choice(self.sb_data.sex_behaviour_sex_worker_options))
         }
+        self.sex_behaviour_trans[SexBehaviourClass.FEMALE_O25] = self.sex_behaviour_trans[SexBehaviourClass.FEMALE_U25]
+
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.age_based_risk = self.sb_data.age_based_risk
         self.risk_categories = len(self.age_based_risk)-1
@@ -70,9 +80,10 @@ class SexualBehaviourModule:
             SexType.Male: rng.choice(self.sb_data.sex_mixing_matrix_male_options),
             SexType.Female: rng.choice(self.sb_data.sex_mixing_matrix_female_options)
         }
-        # FIXME we don't have the over25 distribution here!
-        self.short_term_partners = {SexType.Male: self.sb_data.male_stp_dists,
-                                    SexType.Female: self.sb_data.female_stp_u25_dists}
+        self.short_term_partners = {SexBehaviourClass.MALE: self.sb_data.male_stp_dists,
+                                    SexBehaviourClass.FEMALE_U25: self.sb_data.female_stp_u25_dists,
+                                    SexBehaviourClass.FEMALE_O25: self.sb_data.female_stp_o25_dists,
+                                    SexBehaviourClass.SEX_WORKER: self.sb_data.sexworker_stp_dists}
         self.ltp_risk_factor = self.sb_data.risk_long_term_partnered.sample()
         self.risk_diagnosis = self.sb_data.risk_diagnosis.sample()
         self.risk_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.risk_diagnosis_period
@@ -159,12 +170,13 @@ class SexualBehaviourModule:
                                         women_stopping_sex_work)
 
     def update_sex_behaviour(self, population: Population):
-        self.update_sex_worker_status(population)
+        self.update_risk(population)
+        self.update_sex_groups(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
-        self.update_sex_groups(population)
-        self.update_risk(population)
         self.update_long_term_partners(population)
+        # self.update_sex_worker_status(population)
+        self.update_sex_behaviour_class(population)
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -177,12 +189,12 @@ class SexualBehaviourModule:
 
     # Here we need to figure out how to vectorise this which is currently blocked
     # by the sex if statement
-    def prob_transition(self, sex, risk, i, j):
+    def prob_transition(self, sex_class: SexBehaviourClass, risk, i, j):
         """
         Calculates the probability of transitioning from sexual behaviour
         group i to group j, based on sex and age.
         """
-        transition_matrix = self.sex_behaviour_trans[sex]
+        transition_matrix = self.sex_behaviour_trans[sex_class]
 
         denominator = transition_matrix[i][0] + risk*sum(transition_matrix[i][1:])
 
@@ -193,14 +205,13 @@ class SexualBehaviourModule:
 
         return Probability
 
-    def get_partners_for_group(self, sex, group, size):
+    def get_partners_for_group(self, sex_class, group, size):
         """
         Calculates the number of short term partners for people in a given intersection of
         sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group].
         """
-        group = int(group)
-        stp = self.short_term_partners[sex][group].sample(size)
-        return stp
+        stp = self.short_term_partners[sex_class][group].sample(size)
+        return stp.astype(int)
 
     def num_short_term_partners(self, population: Population):
         """
@@ -208,21 +219,22 @@ class SexualBehaviourModule:
         """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
                                              (col.AGE, operator.le, 65)])
+        print("\n",population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
         population.set_variable_by_group(col.NUM_PARTNERS,
-                                         [col.SEX, col.SEX_BEHAVIOUR],
+                                         [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
 
-    def _assign_new_sex_group(self, sex, group, risk, size):
-        group = int(group)
+    def _assign_new_sex_group(self, sex_class, group, risk, size):
+        # group = int(group)
         rands = rng.uniform(0.0, 1.0, size)
-        dim = self.sex_behaviour_trans[sex].shape[0]
+        dim = self.sex_behaviour_trans[sex_class].shape[0]
         Pmin = np.zeros(size)
         Pmax = np.zeros(size)
-        new_groups = np.zeros(size)
+        new_groups = np.zeros(size).astype(int)
         for new_group in range(dim):
             Pmin = Pmax.copy()
-            Pmax += self.prob_transition(sex, risk, group, new_group)
+            Pmax += self.prob_transition(sex_class, risk, group, new_group)
             new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
         return new_groups
 
@@ -235,9 +247,34 @@ class SexualBehaviourModule:
         active_pop = population.get_sub_pop([(col.AGE, operator.gt, 15),
                                              (col.AGE, operator.le, 65)])
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
-                                         [col.SEX, col.SEX_BEHAVIOUR, col.RISK],
+                                         [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR, col.RISK],
                                          self._assign_new_sex_group,
                                          sub_pop=active_pop)
+
+    def update_sex_behaviour_class(self, population: Population):
+        """
+        Updates the sexual behaviour classification for women based on 
+        being over/under the age boundary (25) or participating in sex work.
+        """
+        young_women_limit = 25
+        younger_women = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                                (col.AGE, operator.lt, young_women_limit),
+                                                (col.SEX_WORKER, operator.eq, False)])
+        older_women = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                              (col.AGE, operator.ge, young_women_limit),
+                                              (col.SEX_WORKER, operator.eq, False)])
+        sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
+        
+        population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
+                                        SexBehaviourClass.FEMALE_U25,
+                                        younger_women)
+        population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
+                                        SexBehaviourClass.FEMALE_O25,
+                                        older_women)
+        population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
+                                        SexBehaviourClass.SEX_WORKER,
+                                        sex_workers)
+        
 
     # risk reduction factors
     def init_risk_factors(self, pop: Population):

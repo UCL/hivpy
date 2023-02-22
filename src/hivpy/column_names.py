@@ -23,6 +23,7 @@ NUM_PARTNERS = "num_partners"               # float: number of short term condom
 SEX_MIX_AGE_GROUP = "sex_mix_age_group"     # int: Discrete age group for sexual mixing
 STP_AGE_GROUPS = "stp_age_groups"           # int array: ages groups of short term partners
 SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
+SEX_BEHAVIOUR_CLASS = "sex_class"           # sexual_behaviour.SexBehaviourClass (enum): Men, Young Women, Older Women, or Sex Worker
 LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
 
