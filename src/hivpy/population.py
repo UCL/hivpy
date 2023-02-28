@@ -1,5 +1,8 @@
 import datetime
+import operator
+from functools import reduce
 
+import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
@@ -22,6 +25,8 @@ class Population:
     params: dict  # population-level parameters
     date: datetime.date  # current date
     HIV_introduced: bool  # whether HIV has been introduced yet
+    variable_history: dict  # how many steps we need to store for each variable
+    step: int
 
     def __init__(self, size, start_date):
         """
@@ -29,6 +34,8 @@ class Population:
         """
         self.size = size
         self.date = start_date
+        self.step = 0
+        self.variable_history = {}
         self.demographics = DemographicsModule()
         self.circumcision = CircumcisionModule()
         self.sexual_behaviour = SexualBehaviourModule()
@@ -57,45 +64,133 @@ class Population:
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
         self.data = pd.DataFrame({
-            col.SEX: self.demographics.initialise_sex(self.size),
-            col.AGE: self.demographics.initialise_age(self.size),
-            col.DATE_OF_DEATH: [None] * self.size
+            "Dummy": [None] * self.size,
         })
-        self.data[col.CIRCUMCISED] = False
-        self.data[col.CIRCUMCISION_DATE] = None
-        self.data[col.VMMC] = False
-        self.data[col.HARD_REACH] = False
-        self.data[col.HIV_STATUS] = self.hiv_status.initial_HIV_status(self.data)
-        self.data[col.HIV_DIAGNOSIS_DATE] = None
-        self.data[col.ART_NAIVE] = True
-        self.data[col.LOW_FERTILITY] = False
-        self.data[col.PREGNANT] = False
-        self.data[col.ANC] = False
-        self.data[col.PMTCT] = False
-        self.data[col.LAST_PREGNANCY_DATE] = None
-        self.data[col.NUM_CHILDREN] = 0
-        self.data[col.NUM_HIV_CHILDREN] = 0
-        self.data[col.WANT_NO_CHILDREN] = False
-        self.data[col.NUM_PARTNERS] = 0
-        self.data[col.LONG_TERM_PARTNER] = False
-        self.data[col.LTP_LONGEVITY] = 0
-        self.pregnancy.init_fertility(self)
-        self.pregnancy.init_num_children(self)
+        self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
+        self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
+        self.init_variable(col.AGE_GROUP, 0)
+        self.init_variable(col.DATE_OF_DEATH, None)
+        self.init_variable(col.HIV_STATUS, False)
+        self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        self.init_variable(col.NUM_PARTNERS, 0)
+        self.init_variable(col.RRED, 1)
+        self.init_variable(col.LONG_TERM_PARTNER, False)
+        self.init_variable(col.LTP_AGE_GROUP, 0)
+        self.init_variable(col.LTP_LONGEVITY, 0)
+        self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
+        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
+        self.init_variable(col.RRED_LTP, 1)
+        self.init_variable(col.ADC, False)
+        self.init_variable(col.CIRCUMCISED, False)
+        self.init_variable(col.CIRCUMCISION_DATE, None)
+        self.init_variable(col.VMMC, False)
+        self.init_variable(col.HARD_REACH, False)
+        self.init_variable(col.LOW_FERTILITY, False)
+        self.init_variable(col.PREGNANT, False)
+        self.init_variable(col.LAST_PREGNANCY_DATE, None)
+        self.init_variable(col.WANT_NO_CHILDREN, False)
+        self.init_variable(col.NUM_HIV_CHILDREN, 0)
+        self.init_variable(col.ART_NAIVE, True)
+        self.init_variable(col.ANC, False)
+        self.init_variable(col.PMTCT, False)
+        
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
-        self.sexual_behaviour.init_sex_behaviour_groups(self.data)
-        self.sexual_behaviour.init_risk_factors(self.data)
+        self.sexual_behaviour.init_sex_behaviour_groups(self)
+        self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
+        self.pregnancy.init_fertility(self)
+        self.pregnancy.init_num_children(self)
         # TEMP
         self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
+
+    def init_variable(self, name: str, init_val, n_prev_steps=0):
+        """
+           New variable will be initialised as a collection of columns.\\
+           Column names (keys) will be (name, 0) ... (name, n_prev_steps).\\
+           Updates dictionary to keep track of number of time steps being stored for each
+           variable.
+           name: string, name of variable
+           n_prev_steps: integer, number of previous iterations of this variable which need
+           to be stored (default 0).
+        """
+        self.variable_history[name] = n_prev_steps + 1
+        if (n_prev_steps == 0):
+            self.data[name] = init_val
+        else:
+            for i in range(0, n_prev_steps + 1):
+                self.data[self.constructParamColumn(name, i)] = init_val
+
+    def constructParamColumn(self, name, i):
+        return name + "," + str(i)
+
+    def get_sub_pop(self, conditions):
+        """
+        Get a dataframe representing a sub-population meeting a list conditions.\\
+        Conditions are expressed as a tuple (variable, operator, value)\\
+        e.g. `(col.AGE, operator.ge, 15)` gets people who are 15 and over\\
+        `conditions` is a list (or other iterable) of such tuples.
+        """
+        index = reduce(operator.and_,
+                       (op(self.data[self.get_correct_column(var)], val)
+                        for (var, op, val) in conditions))
+        return self.data.index[index]
+
+    def get_sub_pop_intersection(self, subpop_1, subpop_2):
+        """
+        Get the indexing of the intersection of two subpopulations
+        """
+        return pd.Index.intersection(subpop_1, subpop_2)
+
+    def apply_vector_func(self, params, func):
+        param_cols = list(map(lambda x: self.get_variable(x), params))
+        return func(*param_cols)
+
+    def apply_function(self, function, axis, sub_pop=None):
+        if sub_pop is None:
+            return self.data.apply(function, axis)
+        else:
+            return self.data.loc[sub_pop].apply(function, axis)
+
+    def get_variable(self, var, sub_pop=None, dt=0):
+        var_col = self.get_correct_column(var, dt)
+        if sub_pop is None:
+            return self.data[var_col]
+        else:
+            return self.data.loc[sub_pop, var_col]
+
+    def set_present_variable(self, target: str, value, sub_pop=None):
+        present_col = self.get_correct_column(target, 0)
+        if sub_pop is None:
+            self.data[present_col] = value
+        else:
+            self.data.loc[sub_pop, present_col] = value
+
+    def get_correct_column(self, param, dt=0):
+        """Gets the correct column for a parameter and a given time delay."""
+        if (self.variable_history[param] == 1):
+            return param
+        else:
+            col_index = (self.step + dt) % self.variable_history[param]
+            return self.constructParamColumn(param, col_index)
+
+    def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
+        """Sets the value of a population variable at the present time step
+        by calling transform group."""
+        target_col = self.get_correct_column(target, 0)
+        if sub_pop is None:
+            self.data[target_col] = self.transform_group(groups, func, use_size)
+        else:
+            self.data.loc[sub_pop, target_col] = self.transform_group(groups, func,
+                                                                      use_size, sub_pop)
 
     def transform_group(self, param_list, func, use_size=True, sub_pop=None):
         """
@@ -110,22 +205,26 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`.
+        by `data.loc[sub_pop]`
         """
-        # HIV_STATUS is just a dummy column to allow us to use the transform method
+        # Use Dummy column to in order to enable transform method and avoid any risks to data
+        param_list = list(map(lambda x: self.get_correct_column(x), param_list))
+
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
             else:
                 args = list(g.name)
+
             if (use_size):
                 args.append(g.size)
             return func(*args)
+
         if sub_pop is not None:
             df = self.data.loc[sub_pop]
         else:
             df = self.data
-        return df.groupby(param_list)[col.HIV_STATUS].transform(general_func)
+        return df.groupby(param_list)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: datetime.timedelta):
         """
@@ -133,10 +232,13 @@ class Population:
         """
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
-        self.data.age += time_step.days / 365  # Very naive!
+        ages = self.get_variable(col.AGE)
+        ages += time_step.days / 365  # Very naive!
+        self.set_present_variable(col.AGE, ages)
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
-        self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
+        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
+        self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
 
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
@@ -148,10 +250,11 @@ class Population:
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.data[col.HIV_STATUS] = self.hiv_status.introduce_HIV(self.data)
+            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
 
         # We should think about whether we want to return a copy or evolve
         # the population in-place. We will likely need a copy at some point.
         self.date += time_step
+        self.step += 1
         return self

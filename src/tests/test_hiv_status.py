@@ -9,35 +9,43 @@ import hivpy.column_names as col
 from hivpy.common import SexType
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
-from hivpy.sexual_behaviour import selector
 
 
 @pytest.fixture
 def pop_with_initial_hiv():
     pop_size = 100000
     pop = Population(size=pop_size, start_date=date(1989, 1, 1))
-    print("Num HIV+ = ", sum(pop.data["HIV_status"]))
+    partners = pop.get_variable(col.NUM_PARTNERS) > 0
+    overThresh = pop.get_variable(col.NUM_PARTNERS) > pop.hiv_status.initial_hiv_newp_threshold
+    print("total partnered", sum(partners))
+    print("total over threshold", sum(overThresh))
+    print("Num HIV+ = ", sum(pop.get_variable(col.HIV_STATUS)))
     return pop
 
 
-@pytest.mark.parametrize("pop_percentage", [0.4, 0])
+@pytest.mark.parametrize("pop_percentage", [0.4, 0.0])
 def test_initial_hiv_threshold(pop_percentage):
     """
     Check that HIV is initially introduced only to those with high enough newp.
     """
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1)).data
+    pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     threshold = HIV_module.initial_hiv_newp_threshold
     # select a proportion of the population to have high enough newp
     newp = np.random.default_rng().choice(
         [threshold, threshold - 1],
         p=[pop_percentage, 1 - pop_percentage],
-        size=len(pop)
+        size=pop.size
     )
-    pop[col.NUM_PARTNERS] = newp
+    print("newp = ", newp)
+    print("sum newp = ", sum(newp))
+    pop.set_present_variable(col.NUM_PARTNERS, newp)
     initial_status = HIV_module.introduce_HIV(pop)
-    assert not any(initial_status & (pop[col.NUM_PARTNERS] < threshold))
+    print(pop.get_variable(col.NUM_PARTNERS))
+    print(sum(pop.get_variable(col.NUM_PARTNERS)))
+    print(initial_status)
+    assert not any(initial_status & (pop.get_variable(col.NUM_PARTNERS) < threshold))
 
 
 def test_initial_hiv_probability():
@@ -45,11 +53,11 @@ def test_initial_hiv_probability():
     Check that HIV is initially assigned with the specified probability.
     """
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1)).data
+    pop = Population(size=1000, start_date=date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     # Have everyone be a candidate for initial introduction
-    pop[col.NUM_PARTNERS] = HIV_module.initial_hiv_newp_threshold
-    expected_infections = HIV_module.initial_hiv_prob * len(pop)
+    pop.set_present_variable(col.NUM_PARTNERS, HIV_module.initial_hiv_newp_threshold)
+    expected_infections = HIV_module.initial_hiv_prob * pop.size
     initial_status = HIV_module.introduce_HIV(pop)
     # TODO Could check against variance of binomial distribution, see issue #45
     assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)
@@ -84,29 +92,34 @@ def test_hiv_not_reintroduced_after_1989(mocker):
     spy.assert_not_called()
 
 
-def test_hiv_initial_ages(pop_with_initial_hiv):
+def test_hiv_initial_ages(pop_with_initial_hiv: Population):
     """
     Check that HIV is not introduced to anyone <= 15 or > 65.
     """
-    under_15s = selector(pop_with_initial_hiv.data, HIV_status=(operator.eq, True),
-                         age=(operator.le, 15))
-    over_65s = selector(pop_with_initial_hiv.data, HIV_status=(operator.eq, True),
-                        age=(operator.gt, 65))
+    under_15s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
+                                                  (col.AGE, operator.le, 15)])
+    over_65s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
+                                                 (col.AGE, operator.gt, 65)])
+    HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
     assert not any(under_15s)
     assert not any(over_65s)
+    assert any(HIV_pos)
 
 
-def test_hiv_update(pop_with_initial_hiv):
+def test_hiv_update(pop_with_initial_hiv: Population):
     pd.set_option('display.max_columns', None)
-    data = pop_with_initial_hiv.data
-    prev_status = data["HIV_status"].copy()
+    prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
+
     for i in range(10):
         pop_with_initial_hiv.hiv_status.update_HIV_status(pop_with_initial_hiv)
 
-    new_cases = data["HIV_status"] & (~ prev_status)
+    current_status = np.array(pop_with_initial_hiv.get_variable(col.HIV_STATUS))
+
+    new_cases = current_status & (~ prev_status)
     print("Num new HIV+ = ", sum(new_cases))
-    miracles = (~ data["HIV_status"]) & (prev_status)
-    under_15s_idx = selector(data, HIV_status=(operator.eq, True), age=(operator.le, 15))
+    miracles = (~current_status) & (prev_status)
+    under_15s_idx = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
+                                                      (col.AGE, operator.le, 15)])
     assert not any(miracles)
     assert any(new_cases)
     assert not any(under_15s_idx)

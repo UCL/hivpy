@@ -40,4 +40,8 @@ HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of 
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
 
+ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition
+
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
+
+ART_ADHERENCE = "art_adherence"                 # DUMMY
