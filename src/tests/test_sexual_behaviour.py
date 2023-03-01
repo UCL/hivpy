@@ -369,6 +369,7 @@ def test_risk_age():
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
     pop.data["age"] = ages
     pop.data["sex"] = np.array([SexType.Male]*N + [SexType.Female]*N)
+    pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
     pop.sexual_behaviour.num_short_term_partners(pop)
     pop.sexual_behaviour.init_risk_factors(pop)

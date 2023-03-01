@@ -101,7 +101,7 @@ class SexualBehaviourModule:
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
         self.p_risk_p = self.sb_data.p_risk_p_dist.sample()
 
-        # long term partnerships
+        # long term partnerships parameters
         self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
         self.annual_ltp_rate_change = rng.choice([0.8, 0.9, 0.95, 1.0])
         self.ltp_rate_change = 1.0
@@ -109,7 +109,7 @@ class SexualBehaviourModule:
         self.ltp_balance_factor = {SexType.Male: 1, SexType.Female: 1}
         self.new_ltp_age_bins = [35, 45, 55]
 
-        # sex workers
+        # sex workers parameters
         self.base_start_sw = self.sb_data.base_start_sex_work.sample()
         self.base_stop_sw = self.sb_data.base_stop_sex_work.sample()
         self.risk_sex_worker_age = self.sb_data.risk_sex_worker_age
@@ -118,6 +118,18 @@ class SexualBehaviourModule:
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
                           self.risk_age_grouping, self.risk_categories)
+
+    def update_sex_behaviour(self, population: Population):
+        self.update_risk(population)
+        self.update_sex_groups(population)
+        self.num_short_term_partners(population)
+        self.assign_stp_ages(population)
+        self.update_long_term_partners(population)
+        # self.update_sex_worker_status(population)
+        self.update_sex_behaviour_class(population)
+
+
+    # Code for sex work ---------------------------------------------------------------------------
 
     def update_sex_worker_status(self, population: Population):
         # Only consider female sex workers
@@ -169,14 +181,7 @@ class SexualBehaviourModule:
                                         population.get_variable(col.AGE, sub_pop=women_stopping_sex_work),
                                         women_stopping_sex_work)
 
-    def update_sex_behaviour(self, population: Population):
-        self.update_risk(population)
-        self.update_sex_groups(population)
-        self.num_short_term_partners(population)
-        self.assign_stp_ages(population)
-        self.update_long_term_partners(population)
-        # self.update_sex_worker_status(population)
-        self.update_sex_behaviour_class(population)
+    # Code for short term partners ----------------------------------------------------------------
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
@@ -225,30 +230,29 @@ class SexualBehaviourModule:
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
 
-    def _assign_new_sex_group(self, sex_class, group, risk, size):
-        # group = int(group)
-        rands = rng.uniform(0.0, 1.0, size)
-        dim = self.sex_behaviour_trans[sex_class].shape[0]
-        Pmin = np.zeros(size)
-        Pmax = np.zeros(size)
-        new_groups = np.zeros(size).astype(int)
-        for new_group in range(dim):
-            Pmin = Pmax.copy()
-            Pmax += self.prob_transition(sex_class, risk, group, new_group)
-            new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
-        return new_groups
-
     def update_sex_groups(self, population: Population):
         """
         Determine changes to sexual behaviour groups.
            Loops over sex, and behaviour groups within each sex.
            Within each group it then loops over groups again to check all transition pairs (i,j).
         """
+        def _assign_new_sex_group(sex_class, group, risk, size):
+            rands = rng.uniform(0.0, 1.0, size)
+            dim = self.sex_behaviour_trans[sex_class].shape[0]
+            Pmin = np.zeros(size)
+            Pmax = np.zeros(size)
+            new_groups = np.zeros(size).astype(int)
+            for new_group in range(dim):
+                Pmin = Pmax.copy()
+                Pmax += self.prob_transition(sex_class, risk, group, new_group)
+                new_groups[(rands >= Pmin) & (rands < Pmax)] = new_group
+            return new_groups
+
         active_pop = population.get_sub_pop([(col.AGE, operator.gt, 15),
                                              (col.AGE, operator.le, 65)])
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR, col.RISK],
-                                         self._assign_new_sex_group,
+                                         _assign_new_sex_group,
                                          sub_pop=active_pop)
 
     def update_sex_behaviour_class(self, population: Population):
@@ -274,9 +278,9 @@ class SexualBehaviourModule:
         population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
                                         SexBehaviourClass.SEX_WORKER,
                                         sex_workers)
-        
 
-    # risk reduction factors
+    # code for risk factors -----------------------------------------------------------------------
+
     def init_risk_factors(self, pop: Population):
         self.init_risk_personal(pop)
         pop.init_variable(col.RISK_AGE, 1)  # Placeholder to be changed each time step
@@ -447,6 +451,8 @@ class SexualBehaviourModule:
                                          [col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
                                          self.gen_stp_ages,
                                          sub_pop=active_pop)
+
+    # Code for long term partnerships -------------------------------------------------------------
 
     def update_ltp_rate_change(self, date):
         if date1995 < date < date2000:
