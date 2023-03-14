@@ -69,7 +69,7 @@ def test_ltp_preg():
         pop.data[col.AGE] = age
         pop.data[col.NUM_PARTNERS] = 0
         pop.data[col.LONG_TERM_PARTNER] = True
-        pop.data[col.LAST_PREGNANCY_DATE] = None
+        pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None]*(N//2)
         pop.data[col.NUM_CHILDREN] = 0
         pop.pregnancy.prob_pregnancy_base = 0.1
         pop.pregnancy.init_fertility(pop)
@@ -91,7 +91,10 @@ def test_ltp_preg():
             mean = no_active_female * prob_preg
             stdev = sqrt(mean * (1 - prob_preg))
             # check pregnancy value is within 3 standard deviations
-            assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
+            max = mean + 3*stdev
+            min = mean - 3*stdev
+            assert min <= no_pregnant
+            assert no_pregnant <= max
             # low fertility individuals don't become pregnant
             assert sum(pop.data[col.LOW_FERTILITY] & pop.data[col.PREGNANT]) == 0
 

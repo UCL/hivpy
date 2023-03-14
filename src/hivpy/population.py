@@ -132,7 +132,7 @@ class Population:
     def constructParamColumn(self, name, i):
         return name + "," + str(i)
 
-    def get_sub_pop(self, conditions):
+    def get_sub_pop(self, conditions, sub_pop=None):
         """
         Get a dataframe representing a sub-population meeting a list conditions.\\
         Conditions are expressed as a tuple (variable, operator, value)\\
@@ -140,9 +140,36 @@ class Population:
         `conditions` is a list (or other iterable) of such tuples.
         """
         index = reduce(operator.and_,
-                       (op(self.data[self.get_correct_column(var)], val)
-                        for (var, op, val) in conditions))
+                       (self.disjunction(expr)
+                        for expr in conditions))
         return self.data.index[index]
+
+    def disjunction(self, expr):
+        """
+        Evaluate a disjunction so that is can be used in CNF expressions
+        """
+        if type(expr) == list:
+            return reduce(operator.or_,
+                          (self.eval(sub_expr)
+                           for sub_expr in expr))
+        else:
+            return self.eval(expr)
+
+    def eval(self, expr):
+        var, op, val = expr
+        if val is None:
+            if op == operator.eq:
+                return self.data[self.get_correct_column(var)].isnull()
+            else:
+                return self.data[self.get_correct_column(var)].notnull()
+        else:
+            return op(self.data[self.get_correct_column(var)], val)
+
+    def apply_bool_mask(self, bool_mask, sub_pop=None):
+        if sub_pop is None:
+            return self.data.index[bool_mask]
+        else:
+            return sub_pop[bool_mask]
 
     def get_sub_pop_intersection(self, subpop_1, subpop_2):
         """
