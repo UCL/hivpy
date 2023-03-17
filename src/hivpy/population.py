@@ -10,6 +10,7 @@ import hivpy.column_names as col
 from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
+from .hiv_testing import HIVTestingModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = datetime.date(1989, 1, 1)
@@ -39,6 +40,7 @@ class Population:
         self.sexual_behaviour = SexualBehaviourModule()
         self.circumcision = CircumcisionModule()
         self.hiv_status = HIVStatusModule()
+        self.hiv_testing = HIVTestingModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -49,7 +51,7 @@ class Population:
         """
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
-        # that distrubition is chosen randomly for each population.
+        # that distribution is chosen randomly for each population.
         # avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
         # self.params = {
         #     'avg_max_age': avg_max_age,
@@ -79,6 +81,8 @@ class Population:
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.init_variable(col.ADC, False)
+        self.init_variable(col.EVER_TESTED, False)
+        self.init_variable(col.LAST_TEST_DATE, None)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.data[col.CIRCUMCISED] = False
