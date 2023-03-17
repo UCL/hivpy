@@ -132,7 +132,7 @@ class Population:
     def constructParamColumn(self, name, i):
         return name + "," + str(i)
 
-    def get_sub_pop(self, conditions, sub_pop=None):
+    def get_sub_pop(self, conditions):
         """
         Get a dataframe representing a sub-population meeting a list conditions.\\
         Conditions are expressed as a tuple (variable, operator, value)\\
@@ -146,7 +146,7 @@ class Population:
 
     def disjunction(self, expr):
         """
-        Evaluate a disjunction so that is can be used in CNF expressions
+        Evaluate a disjunction so that is can be used in CNF expressions.
         """
         if type(expr) == list:
             return reduce(operator.or_,
@@ -173,7 +173,7 @@ class Population:
 
     def get_sub_pop_intersection(self, subpop_1, subpop_2):
         """
-        Get the indexing of the intersection of two subpopulations
+        Get the indexing of the intersection of two subpopulations.
         """
         return pd.Index.intersection(subpop_1, subpop_2)
 
@@ -232,7 +232,7 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`
+        by `data.loc[sub_pop]`.
         """
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))

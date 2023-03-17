@@ -159,7 +159,7 @@ def test_childbirth():
     pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that nobody is pregnant anymore
-    assert ~pop.data[col.PREGNANT].all()
+    assert (~pop.data[col.PREGNANT]).all()
     # check that everyone now has one child
     assert (pop.data[col.NUM_CHILDREN] == 1).all()
 
@@ -167,7 +167,7 @@ def test_childbirth():
     pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that there are still no pregnancies
-    assert ~pop.data[col.PREGNANT].all()
+    assert (~pop.data[col.PREGNANT]).all()
 
     pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
@@ -205,7 +205,7 @@ def test_child_cap():
     pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that there are no pregnancies due to reaching child cap
-    assert ~pop.data[col.PREGNANT].all()
+    assert (~pop.data[col.PREGNANT]).all()
 
 
 def test_want_no_children():

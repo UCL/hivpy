@@ -99,7 +99,6 @@ class PregnancyModule:
         self.fold_tr_newp = pop.hiv_status.fold_tr_newp
 
         # get sexually active female population to check for new pregnancies
-        pop.init_variable("tot_partners", pop.data[col.NUM_PARTNERS] + pop.data[col.LONG_TERM_PARTNER])
         can_get_pregnant = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female),
                                             (col.AGE, op.ge, 15),
                                             (col.AGE, op.lt, 55),
@@ -177,8 +176,7 @@ class PregnancyModule:
         if len(birthing_population) > 0:
             # remove pregnancy status
             pop.set_present_variable(col.PREGNANT, False, birthing_population)
-            # reset ANC: this would imply ANC for each subsequent pregnancy is independent
-            # I think this is what the SAS code does with "tested_anc = ."
+            # remove from antenatal care
             pop.set_present_variable(col.ANC, False, birthing_population)
             # add to children
             pop.set_present_variable(col.NUM_CHILDREN, pop.get_variable(col.NUM_CHILDREN)+1, birthing_population)
@@ -193,7 +191,7 @@ class PregnancyModule:
             pop.set_present_variable(col.NUM_HIV_CHILDREN,
                                      pop.get_variable(col.NUM_HIV_CHILDREN)+1,
                                      pop.apply_bool_mask(infected_children, infected_birthing_pop))
-            # pop.data.loc[infected_birthing_population[infected_children].index, col.NUM_HIV_CHILDREN] += 1
+
             # FIXME: drug resistance in HIV mutations not modelled yet
 
     def update_want_no_children(self, pop: Population):
