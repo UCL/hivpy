@@ -10,6 +10,7 @@ import hivpy.column_names as col
 from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
+from .pregnancy import PregnancyModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = datetime.date(1989, 1, 1)
@@ -36,8 +37,9 @@ class Population:
         self.step = 0
         self.variable_history = {}
         self.demographics = DemographicsModule()
-        self.sexual_behaviour = SexualBehaviourModule()
         self.circumcision = CircumcisionModule()
+        self.sexual_behaviour = SexualBehaviourModule()
+        self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
         self.HIV_introduced = False
         self._sample_parameters()
@@ -49,7 +51,7 @@ class Population:
         """
         # Example: Each person will have a predetermined max age,
         # which will come from a normal distribution. The mean of
-        # that distrubition is chosen randomly for each population.
+        # that distribution is chosen randomly for each population.
         # avg_max_age = random.choices([80, 85, 90], [0.4, 0.4, 0.2])
         # self.params = {
         #     'avg_max_age': avg_max_age,
@@ -79,19 +81,30 @@ class Population:
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.init_variable(col.ADC, False)
-        self.sexual_behaviour.init_sex_behaviour_groups(self)
-        self.sexual_behaviour.init_risk_factors(self)
-        self.data[col.CIRCUMCISED] = False
-        self.data[col.CIRCUMCISION_DATE] = None
-        self.data[col.VMMC] = False
-        self.data[col.HARD_REACH] = False
+        self.init_variable(col.CIRCUMCISED, False)
+        self.init_variable(col.CIRCUMCISION_DATE, None)
+        self.init_variable(col.VMMC, False)
+        self.init_variable(col.HARD_REACH, False)
+        self.init_variable(col.LOW_FERTILITY, False)
+        self.init_variable(col.PREGNANT, False)
+        self.init_variable(col.LAST_PREGNANCY_DATE, None)
+        self.init_variable(col.WANT_NO_CHILDREN, False)
+        self.init_variable(col.NUM_HIV_CHILDREN, 0)
+        self.init_variable(col.ART_NAIVE, True)
+        self.init_variable(col.ANC, False)
+        self.init_variable(col.PMTCT, False)
+
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
+        self.sexual_behaviour.init_sex_behaviour_groups(self)
+        self.sexual_behaviour.init_risk_factors(self)
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
+        self.pregnancy.init_fertility(self)
+        self.pregnancy.init_num_children(self)
         # TEMP
         self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
@@ -127,13 +140,40 @@ class Population:
         `conditions` is a list (or other iterable) of such tuples.
         """
         index = reduce(operator.and_,
-                       (op(self.data[self.get_correct_column(var)], val)
-                        for (var, op, val) in conditions))
+                       (self.disjunction(expr)
+                        for expr in conditions))
         return self.data.index[index]
+
+    def disjunction(self, expr):
+        """
+        Evaluate a disjunction so that is can be used in CNF expressions.
+        """
+        if type(expr) == list:
+            return reduce(operator.or_,
+                          (self.eval(sub_expr)
+                           for sub_expr in expr))
+        else:
+            return self.eval(expr)
+
+    def eval(self, expr):
+        var, op, val = expr
+        if val is None:
+            if op == operator.eq:
+                return self.data[self.get_correct_column(var)].isnull()
+            else:
+                return self.data[self.get_correct_column(var)].notnull()
+        else:
+            return op(self.data[self.get_correct_column(var)], val)
+
+    def apply_bool_mask(self, bool_mask, sub_pop=None):
+        if sub_pop is None:
+            return self.data.index[bool_mask]
+        else:
+            return sub_pop[bool_mask]
 
     def get_sub_pop_intersection(self, subpop_1, subpop_2):
         """
-        Get the indexing of the intersection of two subpopulations
+        Get the indexing of the intersection of two subpopulations.
         """
         return pd.Index.intersection(subpop_1, subpop_2)
 
@@ -192,7 +232,7 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`
+        by `data.loc[sub_pop]`.
         """
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))
@@ -233,6 +273,7 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
+        self.pregnancy.update_pregnancy(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
