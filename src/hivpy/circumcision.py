@@ -13,7 +13,7 @@ class CircumcisionModule:
 
     def __init__(self, **kwargs):
 
-        # init cirumcision data
+        # init circumcision data
         with importlib.resources.path("hivpy.data", "circumcision.yaml") as data_path:
             self.c_data = CircumcisionData(data_path)
 
