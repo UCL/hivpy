@@ -22,6 +22,7 @@ class HIVTestingModule:
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
 
         self.rate_first_test = 0
+        self.rate_rep_test = 0
         # FIXME: move this to a yaml later
         self.covid_disrup_affected = False
         self.testing_disrup_covid = False
@@ -39,6 +40,8 @@ class HIVTestingModule:
             self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
                                                                 - (self.date_start_testing + 5.5)) \
                                                                 * self.an_lin_incr_test
+            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
+                                  - (self.date_start_testing + 5.5)) * self.an_lin_incr_test
 
             # get population ready for testing
             testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
@@ -51,6 +54,10 @@ class HIVTestingModule:
             # first time testers
             untested_population = pop.apply_bool_mask(~pop.data.loc[testing_population, col.EVER_TESTED],
                                                       testing_population)
+            # repeat testers
+            prev_tested_population = pop.apply_bool_mask(pop.data.loc[testing_population, col.EVER_TESTED],
+                                                         testing_population)
+
             r = rng.uniform(size=len(untested_population))
             tested = r < self.rate_first_test
             # outcomes
@@ -58,3 +65,11 @@ class HIVTestingModule:
             # set last test date
             pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
                                      sub_pop=pop.apply_bool_mask(tested, untested_population))
+
+            r = rng.uniform(size=len(prev_tested_population))
+            tested = r < self.rate_rep_test
+            # outcomes
+            pop.set_present_variable(col.EVER_TESTED, tested, sub_pop=prev_tested_population)
+            # set last test date
+            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
