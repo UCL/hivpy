@@ -1,5 +1,7 @@
 date_start_testing: 2003.5
 
+init_rate_first_test: 0
+
 date_test_rate_plateau:
   Value: [2011.5, 2013.5, 2015.5, 2017.5, 2019.5]
   Probability: [0.1, 0.1, 0.2, 0.3, 0.3]

@@ -27,6 +27,7 @@ class HIVTestingData:
             self.data = yaml.safe_load(file)
         try:
             self.date_start_testing = self.data["date_start_testing"]
+            self.init_rate_first_test = self.data["init_rate_first_test"]
             self.date_test_rate_plateau = self._get_discrete_dist("date_test_rate_plateau")
             self.an_lin_incr_test = self._get_discrete_dist("an_lin_incr_test")
         except KeyError as ke:
