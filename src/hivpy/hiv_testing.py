@@ -47,6 +47,7 @@ class HIVTestingModule:
             testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
                                                   (col.AGE, op.ge, 15),
                                                   (col.DATE_OF_DEATH, op.eq, None),
+                                                  (col.HIV_STATUS, op.eq, False),
                                                   [(col.LAST_TEST_DATE, op.le, pop.date - timedelta(days=180)),
                                                    (col.LAST_TEST_DATE, op.eq, None)]
                                                   ])
@@ -58,6 +59,7 @@ class HIVTestingModule:
             prev_tested_population = pop.apply_bool_mask(pop.data.loc[testing_population, col.EVER_TESTED],
                                                          testing_population)
 
+            # test first time testers
             r = rng.uniform(size=len(untested_population))
             tested = r < self.rate_first_test
             # outcomes
@@ -65,11 +67,20 @@ class HIVTestingModule:
             # set last test date
             pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
                                      sub_pop=pop.apply_bool_mask(tested, untested_population))
+            # "reset" dummy partner columns
+            pop.set_present_variable(col.NSTP_LAST_TEST, 0,
+                                     sub_pop=pop.apply_bool_mask(tested, untested_population))
+            pop.set_present_variable(col.NP_LAST_TEST, 0,
+                                     sub_pop=pop.apply_bool_mask(tested, untested_population))
 
+            # test repeat testers
             r = rng.uniform(size=len(prev_tested_population))
             tested = r < self.rate_rep_test
-            # outcomes
-            pop.set_present_variable(col.EVER_TESTED, tested, sub_pop=prev_tested_population)
             # set last test date
             pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+            # "reset" dummy partner columns
+            pop.set_present_variable(col.NSTP_LAST_TEST, 0,
+                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+            pop.set_present_variable(col.NP_LAST_TEST, 0,
                                      sub_pop=pop.apply_bool_mask(tested, prev_tested_population))

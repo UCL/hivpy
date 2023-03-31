@@ -1,6 +1,6 @@
+import operator as op
 from datetime import date
 from math import sqrt
-import operator as op
 
 import hivpy.column_names as col
 from hivpy.population import Population

@@ -85,6 +85,8 @@ class Population:
         self.init_variable(col.ADC, False)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
+        self.init_variable(col.NSTP_LAST_TEST, 0)
+        self.init_variable(col.NP_LAST_TEST, 0)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
         self.sexual_behaviour.init_risk_factors(self)
         self.init_variable(col.CIRCUMCISED, False)
