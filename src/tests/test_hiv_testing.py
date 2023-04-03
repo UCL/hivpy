@@ -27,8 +27,9 @@ def test_first_time_testers():
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
     # all previously untested
     no_first_time_testers = len(pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)]))
-    mean = len(testing_population) * pop.hiv_testing.rate_first_test
-    stdev = sqrt(mean * (1 - pop.hiv_testing.rate_first_test))
+    prob_test = pop.hiv_testing.calc_prob_test(False, 0, 0)
+    mean = len(testing_population) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= no_first_time_testers <= mean + 3 * stdev
 
@@ -55,7 +56,8 @@ def test_repeat_testers():
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
     # all previously tested
     no_repeat_testers = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
-    mean = len(testing_population) * pop.hiv_testing.rate_first_test
-    stdev = sqrt(mean * (1 - pop.hiv_testing.rate_first_test))
+    prob_test = pop.hiv_testing.calc_prob_test(True, 0, 0)
+    mean = len(testing_population) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= no_repeat_testers <= mean + 3 * stdev
