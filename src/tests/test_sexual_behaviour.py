@@ -11,7 +11,6 @@ from hivpy.common import SexType, rng, selector
 from hivpy.population import Population
 from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
 
-
 @pytest.fixture(scope="module")
 def yaml_data():
     with importlib.resources.open_text("hivpy.data", "sex_behaviour.yaml") as file:
@@ -455,18 +454,81 @@ def test_end_ltp(longevity, rate_change):
     assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
 
 
-def test_sex_worker_status():
+# Test Sex Work related code
+
+def test_start_sex_work():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     sb_module = pop.sexual_behaviour
     pop.set_present_variable(col.SEX_WORKER, False)
-    sb_module.update_sex_worker_status(pop)
 
-    # Men and under 15s should not be sex workers
+    # dummy sex behaviour variables
+    pop.set_present_variable(col.AGE, [17, 22, 27, 37, 50]*2000)
+    sb_module.risk_population = 4
+    sb_module.base_start_sw = 0.1
+    sb_module.risk_sex_worker_age = np.array([0.5, 1.0, 2.0, 3.0])
+
+    sb_module.update_sex_worker_status(pop)
+    assert any(pop.get_variable(col.SEX_WORKER))
+
+    # Men and under 15s / over 50s should not be sex workers
     men = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
     under_15 = pop.get_sub_pop([(col.AGE, operator.lt, 15)])
+    over_50s = pop.get_sub_pop([(col.AGE, operator.ge, 50)])
     men_sex_worker = pop.get_variable(col.SEX_WORKER, men)
     assert not any(men_sex_worker)
     assert not any(pop.get_variable(col.SEX_WORKER, under_15))
+    assert not any(pop.get_variable(col.SEX_WORKER, over_50s))
 
     # Proportion of sex workers
+    n_15to19 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 17)])))
+    n_20to24 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 22)])))
+    n_25to34 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 27)])))
+    n_34to49 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 37)])))
+    P_start = np.array([0.5, 1.0, 2.0, 3.0]) * 0.2
+    E = P_start * (N * 0.1)  # only 1/5 of the population in each age group and half female
+    sigma = np.sqrt(E * (1-P_start))
+    assert (E[0] - 3*sigma[0] < n_15to19 < E[0] + 3*sigma[0])
+    assert (E[1] - 3*sigma[1] < n_20to24 < E[1] + 3*sigma[1])
+    assert (E[2] - 3*sigma[2] < n_25to34 < E[2] + 3*sigma[2])
+    assert (E[3] - 3*sigma[3] < n_34to49 < E[3] + 3*sigma[3])
+
+
+def test_stopping_sex_work():
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_module = pop.sexual_behaviour
+    # dummy sex behaviour variables
+    sb_module.risk_population = 4
+    sb_module.base_stop_sw = 0.1
+
+    pop.set_present_variable(col.SEX_WORKER, True)
+
+    # Age >= 50 means everyone should stop sex work
+    pop.set_present_variable(col.AGE, 50)
+    sb_module.update_sex_worker_status(pop)
+    assert not any(pop.get_variable(col.SEX_WORKER))
+    stop_sex_work_age = pop.get_variable(col.AGE_STOP_SEX_WORK)
+    assert all(stop_sex_work_age == 50)
+    date_stop_sex_work = pop.get_variable(col.DATE_STOP_SW)
+    assert all(date_stop_sex_work == date(1989, 1, 1))  # date hasn't changed
+
+    # Test for ages between 40 and 50
+    pop.set_present_variable(col.SEX_WORKER, True)
+    pop.set_present_variable(col.AGE, 45)
+    sb_module.update_sex_worker_status(pop)
+    num_stop = N - sum(pop.get_variable(col.SEX_WORKER))
+    P_stop_over40 = 0.15  # based on dummy variables above
+    E = P_stop_over40 * N
+    sigma = np.sqrt(E * (1 - P_stop_over40))
+    assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))
+
+    # Test for ages under 40
+    pop.set_present_variable(col.SEX_WORKER, True)
+    pop.set_present_variable(col.AGE, 30)
+    sb_module.update_sex_worker_status(pop)
+    num_stop = N - sum(pop.get_variable(col.SEX_WORKER))
+    P_stop_under40 = 0.05  # based on dummy variables above
+    E = P_stop_under40 * N
+    sigma = np.sqrt(E * (1 - P_stop_under40))
+    assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))

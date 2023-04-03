@@ -134,17 +134,15 @@ class SexualBehaviourModule:
     def update_sex_worker_status(self, population: Population):
         # Only consider female sex workers
         female_15to49_not_sw = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
-                                                 (col.AGE, operator.ge, 15),
-                                                 (col.AGE, operator.lt, 50),
-                                                 (col.SEX_WORKER, operator.eq, False)])
-        population.set_present_variable(col.SW_AGE_GROUP, np.digitize(population.get_variable(
-            col.AGE, female_15to49_not_sw), self.sw_age_bins), female_15to49_not_sw)
+                                                       (col.AGE, operator.ge, 15),
+                                                       (col.AGE, operator.lt, 50),
+                                                       (col.SEX_WORKER, operator.eq, False)])
 
         sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
 
         def start_sex_work(age_group, size):
-            sw_status = rng.random(size) < (self.base_start_sw * np.sqrt(self.risk_population)
-                                            * self.risk_sex_worker_age[age_group])
+            prob_start_sw = (self.base_start_sw * np.sqrt(self.risk_population) * self.risk_sex_worker_age[age_group])
+            sw_status = rng.random(size) < prob_start_sw
             return sw_status
 
         def stop_sex_work(age_group, size):
@@ -159,24 +157,31 @@ class SexualBehaviourModule:
             return sw_status
 
         # Women starting sex work
-        population.set_present_variable(col.SW_AGE_GROUP, np.digitize(population.get_variable(
-            col.AGE, sex_workers), [40, 50]), sex_workers
-        )
+        population.set_present_variable(col.SW_AGE_GROUP,
+                                        np.digitize(population.get_variable(col.AGE, female_15to49_not_sw),
+                                                    self.sw_age_bins),
+                                        female_15to49_not_sw)
         population.set_variable_by_group(col.SEX_WORKER,
                                          [col.SW_AGE_GROUP],
                                          start_sex_work,
                                          sub_pop=female_15to49_not_sw)
 
         # Women stopping sex work
+        # Consider 3 groups: under 40, 40-50, and 50+
+        population.set_present_variable(col.SW_AGE_GROUP,
+                                        np.digitize(population.get_variable(col.AGE, sex_workers), [40, 50]),
+                                        sex_workers)
+        # Calculate sex worker statuses: true is still a sex worker and false if no longer a sex worker
         new_sex_work_status = population.transform_group([col.SW_AGE_GROUP],
                                                          stop_sex_work,
                                                          sub_pop=sex_workers)
+        # Set new statuses and other relevant variables
         population.set_present_variable(col.SEX_WORKER, new_sex_work_status, sex_workers)
-        # We need a way of getting the indexing for a population of people 
-        # returned from a function like this
-        women_stopping_sex_work = population.get_sub_pop_from_array(new_sex_work_status, sex_workers)
+        women_stopping_sex_work = population.get_sub_pop_from_array(~new_sex_work_status, sex_workers)
         population.set_present_variable(col.DATE_STOP_SW, population.date, women_stopping_sex_work)
         population.set_present_variable(col.SW_TEST_6MONTHLY, False, women_stopping_sex_work)
+        # Currently in SAS version sex behaviour reverts to group 1 for women stopping sex work
+        population.set_present_variable(col.SEX_BEHAVIOUR, 1, women_stopping_sex_work)
         population.set_present_variable(col.AGE_STOP_SEX_WORK,
                                         population.get_variable(col.AGE, sub_pop=women_stopping_sex_work),
                                         women_stopping_sex_work)

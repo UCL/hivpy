@@ -80,6 +80,8 @@ class Population:
         self.init_variable(col.RISK_LTP, 1)
         self.init_variable(col.ADC, False)
         self.init_variable(col.SEX_WORKER, False)
+        self.init_variable(col.SW_TEST_6MONTHLY, False)
+        self.init_variable(col.AGE_STOP_SEX_WORK, None)
         self.init_variable(col.SW_AGE_GROUP, 0)
         self.init_variable(col.DATE_STOP_SW, None)
         self.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
