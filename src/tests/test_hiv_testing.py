@@ -18,6 +18,7 @@ def test_first_time_testers():
     pop.hiv_testing.init_rate_first_test = 0.1
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
+    pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
@@ -47,6 +48,7 @@ def test_repeat_testers():
     pop.hiv_testing.date_start_testing = 2003.5
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
+    pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
@@ -82,6 +84,7 @@ def test_partner_reset_after_test():
         pop.hiv_testing.init_rate_first_test = 0.1
         pop.hiv_testing.date_test_rate_plateau = 2015.5
         pop.hiv_testing.an_lin_incr_test = 0.8
+        pop.hiv_testing.no_test_if_np0 = False
         pop.hiv_testing.covid_disrup_affected = False
         pop.hiv_testing.testing_disrup_covid = False
 
@@ -112,6 +115,7 @@ def test_calc_prob_test():
     pop.hiv_testing.rate_first_test = 0.6
     pop.hiv_testing.rate_rep_test = 0.45
     pop.hiv_testing.eff_test_targeting = 1.5
+    pop.hiv_testing.no_test_if_np0 = False
 
     # check first-time tester with no partners case
     # 0.6 / 1.5 = 0.4
@@ -132,3 +136,8 @@ def test_calc_prob_test():
     # check repeat tester with stp case
     # 0.45 * 1.5 = 0.675
     assert isclose(pop.hiv_testing.calc_prob_test(True, 1, 1), 0.675)
+
+    pop.hiv_testing.no_test_if_np0 = True
+    # check no_test_if_np0 and no partners case
+    # 0
+    assert isclose(pop.hiv_testing.calc_prob_test(False, 0, 0), 0)

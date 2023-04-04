@@ -27,6 +27,7 @@ class HIVTestingData:
             self.data = yaml.safe_load(file)
         try:
             self.date_start_testing = self.data["date_start_testing"]
+            self.no_test_if_np0 = self.data["no_test_if_np0"]
             self.init_rate_first_test = self.data["init_rate_first_test"]
             self.test_targeting = self._get_discrete_dist("test_targeting")
             self.date_test_rate_plateau = self._get_discrete_dist("date_test_rate_plateau")

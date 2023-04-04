@@ -17,6 +17,7 @@ class HIVTestingModule:
             self.ht_data = HIVTestingData(data_path)
 
         self.date_start_testing = self.ht_data.date_start_testing
+        self.no_test_if_np0 = self.ht_data.no_test_if_np0
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
@@ -106,8 +107,11 @@ class HIVTestingModule:
 
         # adjust according to number of partners
         if np_last_test == 0:
-            prob_test /= self.eff_test_targeting
-        if nstp_last_test >= 1:
+            if self.no_test_if_np0:
+                prob_test = 0
+            else:
+                prob_test /= self.eff_test_targeting
+        elif nstp_last_test >= 1:
             prob_test *= self.eff_test_targeting
 
         return prob_test
