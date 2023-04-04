@@ -144,7 +144,7 @@ class Population:
         Get the indexing of the intersection of two subpopulations
         """
         return pd.Index.intersection(subpop_1, subpop_2)
-    
+
     def get_sub_pop_from_array(self, array, sub_pop=None):
         if sub_pop is None:
             return self.data.index[array]

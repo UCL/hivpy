@@ -11,6 +11,7 @@ from hivpy.common import SexType, rng, selector
 from hivpy.population import Population
 from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
 
+
 @pytest.fixture(scope="module")
 def yaml_data():
     with importlib.resources.open_text("hivpy.data", "sex_behaviour.yaml") as file:

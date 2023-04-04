@@ -28,11 +28,13 @@ class FemaleSexBehaviour(IntEnum):
     ZERO = 0
     ANY = 1
 
+
 class SexBehaviourClass(IntEnum):
     MALE = 0
     FEMALE_U25 = 1
     FEMALE_O25 = 2
     SEX_WORKER = 3
+
 
 SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
 
@@ -51,7 +53,7 @@ class SexualBehaviourModule:
             self.sb_data = SexualBehaviourData(data_path)
 
         # Randomly initialise sexual behaviour group transitions
-        # both groups of younger and older women have the same behaviour groups 
+        # both groups of younger and older women have the same behaviour groups
         self.sex_behaviour_trans = {
             SexBehaviourClass.MALE: np.array(
                 rng.choice(self.sb_data.sex_behaviour_male_options)),
@@ -127,7 +129,6 @@ class SexualBehaviourModule:
         self.update_long_term_partners(population)
         # self.update_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
-
 
     # Code for sex work ---------------------------------------------------------------------------
 
@@ -229,7 +230,7 @@ class SexualBehaviourModule:
         """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
                                              (col.AGE, operator.le, 65)])
-        print("\n",population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
+        print("\n", population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
         population.set_variable_by_group(col.NUM_PARTNERS,
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
@@ -262,7 +263,7 @@ class SexualBehaviourModule:
 
     def update_sex_behaviour_class(self, population: Population):
         """
-        Updates the sexual behaviour classification for women based on 
+        Updates the sexual behaviour classification for women based on
         being over/under the age boundary (25) or participating in sex work.
         """
         young_women_limit = 25
@@ -273,7 +274,7 @@ class SexualBehaviourModule:
                                               (col.AGE, operator.ge, young_women_limit),
                                               (col.SEX_WORKER, operator.eq, False)])
         sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
-        
+
         population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
                                         SexBehaviourClass.FEMALE_U25,
                                         younger_women)

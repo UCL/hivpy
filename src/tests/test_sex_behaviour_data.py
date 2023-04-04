@@ -45,6 +45,7 @@ def test_probability_loading():
         var = N * p * (1-p)
         assert E_count - 2*var <= count <= E_count + 2*var
 
+
 def test_sex_behaviour_matrices_diagonalisable():
     """Checks that all of the sexual behaviour transition matrices are diagonalisable
     and therefore can be used to calculate transition matrices for variable time-steps.
