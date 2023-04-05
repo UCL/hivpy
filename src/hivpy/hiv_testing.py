@@ -18,10 +18,15 @@ class HIVTestingModule:
 
         self.date_start_testing = self.ht_data.date_start_testing
         self.no_test_if_np0 = self.ht_data.no_test_if_np0
+        self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
+
+        # eff_max_freq_testing is used as an index to pick the correct
+        # minimum number of days to wait between tests from this list
+        self.days_to_wait = [365, 180, 90]  # 12 months, 6 months, 3 months
 
         self.rate_first_test = 0
         self.rate_rep_test = 0
@@ -52,7 +57,8 @@ class HIVTestingModule:
                                                   (col.AGE, op.ge, 15),
                                                   (col.DATE_OF_DEATH, op.eq, None),
                                                   (col.HIV_STATUS, op.eq, False),
-                                                  [(col.LAST_TEST_DATE, op.le, pop.date - timedelta(days=180)),
+                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
+                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
                                                    (col.LAST_TEST_DATE, op.eq, None)]
                                                   ])
 
@@ -63,33 +69,35 @@ class HIVTestingModule:
             prev_tested_population = pop.apply_bool_mask(pop.data.loc[testing_population, col.EVER_TESTED],
                                                          testing_population)
 
-            # test first time testers
-            tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
-                                         self.calc_testing_outcomes,
-                                         sub_pop=untested_population)
-            # set outcomes
-            pop.set_present_variable(col.EVER_TESTED, tested, sub_pop=untested_population)
-            # set last test date
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                     sub_pop=pop.apply_bool_mask(tested, untested_population))
-            # "reset" dummy partner columns
-            pop.set_present_variable(col.NSTP_LAST_TEST, 0,
-                                     sub_pop=pop.apply_bool_mask(tested, untested_population))
-            pop.set_present_variable(col.NP_LAST_TEST, 0,
-                                     sub_pop=pop.apply_bool_mask(tested, untested_population))
+            if len(untested_population) > 0:
+                # test first time testers
+                tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
+                                             self.calc_testing_outcomes,
+                                             sub_pop=untested_population)
+                # set outcomes
+                pop.set_present_variable(col.EVER_TESTED, tested, sub_pop=untested_population)
+                # set last test date
+                pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
+                # "reset" dummy partner columns
+                pop.set_present_variable(col.NSTP_LAST_TEST, 0,
+                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
+                pop.set_present_variable(col.NP_LAST_TEST, 0,
+                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
 
-            # test repeat testers
-            tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
-                                         self.calc_testing_outcomes,
-                                         sub_pop=prev_tested_population)
-            # set last test date
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
-            # "reset" dummy partner columns
-            pop.set_present_variable(col.NSTP_LAST_TEST, 0,
-                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
-            pop.set_present_variable(col.NP_LAST_TEST, 0,
-                                     sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+            if len(prev_tested_population) > 0:
+                # test repeat testers
+                tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
+                                             self.calc_testing_outcomes,
+                                             sub_pop=prev_tested_population)
+                # set last test date
+                pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+                # "reset" dummy partner columns
+                pop.set_present_variable(col.NSTP_LAST_TEST, 0,
+                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+                pop.set_present_variable(col.NP_LAST_TEST, 0,
+                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
 
     def calc_prob_test(self, repeat_tester, np_last_test, nstp_last_test):
         """

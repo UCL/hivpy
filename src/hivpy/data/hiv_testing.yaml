@@ -3,6 +3,8 @@ date_start_testing: 2003.5
 # TODO: this needs a clearer name
 no_test_if_np0: False
 
+eff_max_freq_testing: 1
+
 init_rate_first_test: 0
 
 test_targeting:
