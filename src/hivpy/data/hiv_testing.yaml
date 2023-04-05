@@ -1,20 +1,30 @@
+# year during which HIV testing begins
 date_start_testing: 2003.5
 
-# TODO: this needs a clearer name
-no_test_if_np0: False
-
-eff_max_freq_testing: 1
-
+# starting probability for first tests
 init_rate_first_test: 0
 
+# selects minimum wait time between tests
+eff_max_freq_testing: 1
+
+# scenario 1 usually increases effective test targeting
+test_scenario: 0
+
+# people with no partners don't test
+# TODO: this needs a nicer name
+no_test_if_np0: False
+
+# affects testing probability based on number of partners
 test_targeting:
   Value: [1, 1.25, 1.5]
   Probability: [0.2, 0.6, 0.2]
 
+# year during which testing probability plateaus
 date_test_rate_plateau:
   Value: [2011.5, 2013.5, 2015.5, 2017.5, 2019.5]
   Probability: [0.1, 0.1, 0.2, 0.3, 0.3]
 
+# multiplier for testing probability
 an_lin_incr_test:
   Value: [0.0001, 0.0005, 0.003, 0.01, 0.02, 0.03]
   Probability: [0.2, 0.25, 0.35, 0.1, 0.05, 0.05]

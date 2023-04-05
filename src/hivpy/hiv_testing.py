@@ -17,9 +17,10 @@ class HIVTestingModule:
             self.ht_data = HIVTestingData(data_path)
 
         self.date_start_testing = self.ht_data.date_start_testing
-        self.no_test_if_np0 = self.ht_data.no_test_if_np0
-        self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
         self.init_rate_first_test = self.ht_data.init_rate_first_test
+        self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
+        self.test_scenario = self.ht_data.test_scenario
+        self.no_test_if_np0 = self.ht_data.no_test_if_np0
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
@@ -32,6 +33,13 @@ class HIVTestingModule:
         self.rate_rep_test = 0
         # TODO: meant to be a personal variable but currently always just set to test_targeting
         self.eff_test_targeting = self.test_targeting
+        # scenario has a high chance to change eff_test_targeting
+        if self.test_scenario == 1:
+            r = rng.uniform()
+            if r < 0.45:
+                self.eff_test_targeting = 2
+            elif r < 0.9:
+                self.eff_test_targeting = 5
         # FIXME: move this to a yaml later
         self.covid_disrup_affected = False
         self.testing_disrup_covid = False
