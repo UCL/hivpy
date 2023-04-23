@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .population import Population
+
+import operator
+
 import numpy as np
 import pandas as pd
 
@@ -28,6 +37,7 @@ class HIVStatusModule:
             np.array([0, self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary])
         self.transmission_sigmas = np.array(
             [0, 0.000025**2, 0.0025**2, 0.0075**2, 0.015**2, 0.025**2, 0.075**2])
+        self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """
@@ -37,32 +47,41 @@ class HIVStatusModule:
         # as something more complex than a boolean, e.g. an enum.
         return pd.Series(False, population.index)
 
-    def introduce_HIV(self, population: pd.DataFrame):
+    def introduce_HIV(self, population: Population):
         """
         Initialise HIV status at the start of the pandemic.
         """
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
-        initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
+        initial_candidates = population.get_sub_pop(
+            [(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
+        # initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
         # Each of them has the same probability of being infected.
-        initial_infection = rng.uniform(size=initial_candidates.sum()) < self.initial_hiv_prob
-        hiv_status = pd.Series(False, index=population.index)
+        num_init_candidates = len(initial_candidates)
+        rands = rng.uniform(size=num_init_candidates)
+        initial_infection = rands < self.initial_hiv_prob
+        hiv_status = pd.Series(False, index=population.data.index)
         hiv_status.loc[initial_candidates] = initial_infection
         return hiv_status
 
-    def update_partner_risk_vectors(self, population):
+    def update_partner_risk_vectors(self, population: Population):
         """
-        Calculate the risk factor associated with each sex and age group.
+        calculate the risk factor associated with each sex and age group
         """
         # Should we be using for loops here or can we do better?
         for sex in SexType:
             for age_group in range(5):   # FIXME need to get number of age groups from somewhere
-                sub_pop = population.data.loc[(population.data[col.SEX] == sex) & (
-                    population.data[col.SEX_MIX_AGE_GROUP] == age_group)]
+                sub_pop = population.get_sub_pop([(col.SEX, operator.eq, sex),
+                                                  (col.SEX_MIX_AGE_GROUP, operator.eq, age_group)])
                 # total number of people partnered to people in this group
-                n_stp_total = sum(sub_pop[col.NUM_PARTNERS])
+                n_stp_total = sum(population.get_variable(col.NUM_PARTNERS, sub_pop))
                 # num people partered to HIV+ people in this group
-                n_stp_of_infected = sum(sub_pop.loc[sub_pop[col.HIV_STATUS], col.NUM_PARTNERS])
+                HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+                n_stp_of_infected = sum(population.get_variable(col.NUM_PARTNERS,
+                                                                population.get_sub_pop_intersection(
+                                                                    sub_pop,
+                                                                    HIV_positive_pop
+                                                                )))
                 # Probability of being HIV prositive
                 if n_stp_of_infected == 0:
                     self.stp_HIV_rate[sex][age_group] = 0
@@ -72,17 +91,20 @@ class HIVStatusModule:
                 # Chances of being in a given viral group
                 if n_stp_total > 0:
                     self.stp_viral_group_rate[sex][age_group] = [
-                        sum(sub_pop.loc[sub_pop[col.VIRAL_LOAD_GROUP] == vg,
-                            col.NUM_PARTNERS])/n_stp_total for vg in range(7)]
+                        sum(population.get_variable(col.NUM_PARTNERS,
+                            population.get_sub_pop_intersection(
+                                sub_pop,
+                                population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
+                            )))/n_stp_total for vg in range(7)]
                 else:
                     self.stp_viral_group_rate[sex][age_group] = np.array([1, 0, 0, 0, 0, 0, 0])
 
-    def set_dummy_viral_load(self, population):
+    def set_dummy_viral_load(self, population: Population):
         """
         Dummy function to set viral load until this
-        part of the code has been implemented properly.
+        part of the code has been implemented properly
         """
-        population.data[col.VIRAL_LOAD_GROUP] = rng.choice(7, population.size)
+        population.init_variable(col.VIRAL_LOAD_GROUP, rng.choice(7, population.size))
 
     def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
         # Slow example that avoid repeating the iterations over partners
@@ -124,11 +146,14 @@ class HIVStatusModule:
             else:
                 viral_transmission_probabilities = (viral_transmission_probabilities
                                                     * self.fold_change_w)
+        elif person[col.CIRCUMCISED]:
+            viral_transmission_probabilities = (viral_transmission_probabilities
+                                                * self.circumcision_risk_reduction)
         prob_uninfected = np.prod(1-(HIV_probabilities * viral_transmission_probabilities))
         r = rng.random()
         return r > prob_uninfected
 
-    def update_HIV_status(self, population):
+    def update_HIV_status(self, population: Population):
         """
         Update HIV status for new transmissions in the last time period.
         Super simple model where probability of being infected by a given person
@@ -138,8 +163,9 @@ class HIVStatusModule:
         so probability of infection is 1-((1-Pr)**n).
         """
         self.update_partner_risk_vectors(population)
-        HIV_neg_idx = population.data.index[(~population.data[col.HIV_STATUS]) & (
-            population.data[col.NUM_PARTNERS] > 0)]
-        sub_pop = population.data.loc[HIV_neg_idx]
-        population.data.loc[HIV_neg_idx, col.HIV_STATUS] = sub_pop.apply(
-            self.stp_HIV_transmission, axis=1)
+        HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
+                                                     (col.NUM_PARTNERS, operator.gt, 0)])
+        new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
+        population.set_present_variable(col.HIV_STATUS,
+                                        new_HIV_status,
+                                        HIV_neg_active_pop)

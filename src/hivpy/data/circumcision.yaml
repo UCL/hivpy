@@ -1,0 +1,44 @@
+# important years affecting VMMC outcomes
+vmmc_start_year: 2008
+circ_rate_change_year: 2013
+prob_circ_calc_cutoff_year: 2019
+
+# negative HIV test leads to VMMC
+circ_after_test: True
+prob_circ_after_test: 0.05
+
+# turn COVID disruption on/off
+covid_disrup_affected: False
+vmmc_disrup_covid: False
+
+# policy scenarios 1-4 begin during policy_intervention_year
+policy_intervention_year: 2022
+circ_policy_scenario: 0
+
+# rate at which cricumcision increases over time
+circ_increase_rate:
+  Value: [0.0001, 0.001, 0.003, 0.01, 0.1]
+  Probability: [0.1, 0.3, 0.4, 0.1, 0.1]
+
+# relative increase in VMCC after circ_rate_change_year
+circ_rate_change_post_2013:
+  Value: [0.8, 1, 3, 7]
+  Probability: [0.1, 0.25, 0.25, 0.4]
+
+# relative circ rate changes in age groups
+circ_rate_change_15_19:
+  Value: [1.5, 2.0, 3.0]
+  Probability: [0.33, 0.33, 0.33]
+
+circ_rate_change_20_29:
+  Value: [0.3, 0.4, 0.5]
+  Probability: [0.33, 0.33, 0.33]
+
+circ_rate_change_30_49:
+  Value: [0.15, 0.25, 0.35]
+  Probability: [0.33, 0.33, 0.33]
+
+# probability of circumcision at birth
+prob_birth_circ:
+  Value: [0.05, 0.1, 0.40, 0.9]
+  Probability: [0.30, 0.40, 0.20, 0.10]

@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .population import Population
+
 import importlib.resources
 import logging
 from math import exp
@@ -183,7 +190,7 @@ class DemographicsModule:
             params[param] = value
         self.params = params
 
-    def initialize_sex(self, count):
+    def initialise_sex(self, count):
         sex_distribution = (
             1 - self.params['female_ratio'], self.params['female_ratio'])
         return pd.Series(rng.choice(SexType, count, p=sex_distribution)).astype(SexDType)
@@ -196,22 +203,38 @@ class DemographicsModule:
 
         return age_distribution.gen_ages(count)
 
+    def initialise_hard_reach(self, population):
+        # base probabilities for being hard to reach
+        self.prob_hard_reach_f = round(rng.uniform(0.05, 0.2), 2)
+        self.prob_hard_reach_m = self.prob_hard_reach_f + round(rng.uniform(0, 0.1), 2)
+        # split population by sex
+        female_pop = population.index[(population[col.SEX] == SexType.Female)]
+        male_pop = population.index[(population[col.SEX] == SexType.Male)]
+        r_f = rng.uniform(size=len(female_pop))
+        r_m = rng.uniform(size=len(male_pop))
+        # outcomes
+        hard_reach_f = r_f < self.prob_hard_reach_f
+        hard_reach_m = r_m < self.prob_hard_reach_m
+        population.loc[female_pop, col.HARD_REACH] = hard_reach_f
+        population.loc[male_pop, col.HARD_REACH] = hard_reach_m
+
     def _probability_of_death(self, sex: SexType, age_group: int) -> float:
         rate = self.params["death_rates"][sex][age_group]
         # Probability of dying, assuming time step of 3 months
         prob_of_death = 1 - exp(-rate / 4)
         return prob_of_death
 
-    def determine_deaths(self, pop) -> pd.Series:
+    def determine_deaths(self, pop: Population) -> pd.Series:
         """
         Get which individuals die in a time step, as a boolean Series.
         """
         # This binning should perhaps happen when the date advances
         # Age groups are the same regardless of sex
         age_limits = self.data.death_age_limits
-        pop.data[col.AGE_GROUP] = np.digitize(pop.data[col.AGE], age_limits)
+        pop.set_present_variable(col.AGE_GROUP, np.digitize(pop.get_variable(col.AGE), age_limits))
 
         death_probs = pop.transform_group([col.SEX, col.AGE_GROUP],
                                           self._probability_of_death, use_size=False)
         rands = rng.random(len(pop.data))
-        return pop.data.date_of_death.isnull() & (rands < death_probs)
+
+        return pop.get_variable(col.DATE_OF_DEATH).isnull() & (rands < death_probs)

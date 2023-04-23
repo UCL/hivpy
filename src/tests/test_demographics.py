@@ -1,10 +1,12 @@
 import logging
 from datetime import date, datetime, timedelta
+from math import sqrt
 
 import numpy as np
 import pytest
 import scipy.integrate
 
+import hivpy.column_names as col
 from hivpy.common import SexType
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
@@ -26,7 +28,7 @@ def stepwise_age_module():
 def test_sex_distribution(ratio):
     module = DemographicsModule(female_ratio=ratio)
     count = 100000
-    sex = module.initialize_sex(count)
+    sex = module.initialise_sex(count)
     female = np.sum(sex == SexType.Female)
     assert female/count == pytest.approx(ratio, rel=0.01)
 
@@ -66,20 +68,46 @@ def test_stepwise_age_distribution(stepwise_age_module):
         assert pytest.approx(age_count, rel=0.1) == age_dist[i]*count
 
 
+def get_hard_reach_stats(pop, sex: SexType, prob_hard_reach):
+
+    no_hard_reach = sum((pop.data[col.SEX] == sex) & pop.data[col.HARD_REACH])
+    no_sex_type_pop = sum(pop.data[col.SEX] == sex)
+    mean = no_sex_type_pop * prob_hard_reach
+    stdev = sqrt(mean * (1 - prob_hard_reach))
+
+    return no_hard_reach, mean, stdev
+
+
+def test_hard_reach():
+
+    N = 100000
+    start_date = date(2000, 1, 1)
+
+    # build population
+    pop = Population(size=N, start_date=start_date)
+    # get stats
+    no_hard_reach_f, mean_f, stdev_f = get_hard_reach_stats(pop, SexType.Female, pop.demographics.prob_hard_reach_f)
+    no_hard_reach_m, mean_m, stdev_m = get_hard_reach_stats(pop, SexType.Male, pop.demographics.prob_hard_reach_m)
+    # check hard to reach numbers are within 3 standard deviations
+    assert mean_f - 3 * stdev_f <= no_hard_reach_f <= mean_f + 3 * stdev_f
+    assert mean_m - 3 * stdev_m <= no_hard_reach_m <= mean_m + 3 * stdev_m
+
+
 def test_date_permanent(default_module):
     """
     Check that that death is not recorded again in future steps.
     """
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
-    pop.data['date_of_death'] = [None, datetime.today(), datetime.today() - timedelta(days=1)]
-    pop.data['age'] = [30, 20, 50]
-    pop.data['sex'] = [SexType.Female, SexType.Female, SexType.Male]
+    pop.set_present_variable(
+        col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
+    pop.set_present_variable(col.AGE, [30, 20, 50])
+    pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
 
     new_deaths = default_module.determine_deaths(pop)
     # Find who already had a date of death, and check that they are not marked
     # as having died in this time step.
-    assert not new_deaths[pop.data.date_of_death.notnull()].any()
+    assert not new_deaths[pop.get_variable(col.DATE_OF_DEATH).notnull()].any()
 
 
 def test_death_rate():
@@ -97,9 +125,8 @@ def test_death_rate():
     ages = sum(([age] * group_size for age in ages_to_try), []) * 2
     sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data['date_of_death'] = None
-    pop.data['age'] = ages
-    pop.data['sex'] = sexes
+    pop.init_variable(col.AGE, ages)
+    pop.init_variable(col.SEX, sexes)
 
     # The rates in the data file are annualised
     expected_annual_deaths = {
@@ -111,9 +138,10 @@ def test_death_rate():
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
         deaths = module.determine_deaths(pop)
+        print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
-        pop.data.loc[deaths, "date_of_death"] = datetime.today()
+        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = datetime.today()
     recorded_deaths = pop.data.groupby(
-        ["sex", "age_group"]
+        [pop.get_correct_column(col.SEX), pop.get_correct_column(col.AGE_GROUP)]
         ).date_of_death.count().to_dict()
     assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)
