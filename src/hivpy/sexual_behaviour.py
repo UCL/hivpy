@@ -34,6 +34,7 @@ class SexBehaviourClass(IntEnum):
     FEMALE_U25 = 1
     FEMALE_O25 = 2
     SEX_WORKER = 3
+    SEX_WORKER_O30 = 4
 
 
 SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
@@ -230,11 +231,12 @@ class SexualBehaviourModule:
         """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
                                              (col.AGE, operator.le, 65)])
-        print("\n", population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
+        # print("\n", population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
         population.set_variable_by_group(col.NUM_PARTNERS,
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
+        # print(population.data[[col.AGE, col.SEX, col.SEX_BEHAVIOUR, col.NUM_PARTNERS]])
 
     def update_sex_groups(self, population: Population):
         """

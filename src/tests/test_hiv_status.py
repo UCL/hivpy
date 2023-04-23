@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType
+from hivpy.common import SexType, rng
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
@@ -33,7 +33,7 @@ def test_initial_hiv_threshold(pop_percentage):
     HIV_module = HIVStatusModule()
     threshold = HIV_module.initial_hiv_newp_threshold
     # select a proportion of the population to have high enough newp
-    newp = np.random.default_rng().choice(
+    newp = rng.choice(
         [threshold, threshold - 1],
         p=[pop_percentage, 1 - pop_percentage],
         size=pop.size

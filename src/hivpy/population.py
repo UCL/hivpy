@@ -61,16 +61,15 @@ class Population:
         """
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-        self.data = pd.DataFrame({
-            "Dummy": [None] * self.size,
-        })
+        self.data = pd.DataFrame()
+        self.data["Dummy"] = pd.Series([None] * self.size, dtype=object)
         self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
-        self.init_variable(col.NUM_PARTNERS, 0)
+        self.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
         self.init_variable(col.RISK, 1)
         self.init_variable(col.LONG_TERM_PARTNER, False)
         self.init_variable(col.LTP_AGE_GROUP, 0)
@@ -98,6 +97,7 @@ class Population:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
+        self.data.convert_dtypes()
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         # TEMP
@@ -107,7 +107,7 @@ class Population:
             self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
 
-    def init_variable(self, name: str, init_val, n_prev_steps=0):
+    def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
         """
            New variable will be initialised as a collection of columns.\\
            Column names (keys) will be (name, 0) ... (name, n_prev_steps).\\
@@ -116,13 +116,19 @@ class Population:
            name: string, name of variable
            n_prev_steps: integer, number of previous iterations of this variable which need
            to be stored (default 0).
-        """
+        """ 
         self.variable_history[name] = n_prev_steps + 1
         if (n_prev_steps == 0):
-            self.data[name] = init_val
+            if data_type is not None:
+                self.data[name] = pd.Series([init_val]*self.size, dtype=data_type)
+            else:
+                self.data[name] = init_val
         else:
             for i in range(0, n_prev_steps + 1):
-                self.data[self.constructParamColumn(name, i)] = init_val
+                if data_type is not None:
+                    self.data[self.constructParamColumn(name, i)] = pd.Series([init_val]*self.size, dtype=data_type)
+                else:
+                    self.data[self.constructParamColumn(name, i)] = init_val
 
     def constructParamColumn(self, name, i):
         return name + "," + str(i)

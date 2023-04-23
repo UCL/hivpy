@@ -365,13 +365,18 @@ def test_risk_personal():
 
 def test_risk_age():
     N = 11
+    # rng.set_seed(42)
     pop = Population(size=2*N, start_date=date(1989, 1, 1))
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
-    pop.data["age"] = ages
-    pop.data["sex"] = np.array([SexType.Male]*N + [SexType.Female]*N)
+    pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, 0)
+    pop.set_present_variable(col.AGE, ages)
+    pop.set_present_variable(col.SEX, np.array([SexType.Male]*N + [SexType.Female]*N))
+    # pop.set_present_variable(col.SEX_WORKER, False)
     pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
     pop.sexual_behaviour.num_short_term_partners(pop)
+    print("INIT*******************************************")
+    print(pop.data[[col.SEX, col.SEX_BEHAVIOUR, col.SEX_BEHAVIOUR_CLASS, col.NUM_PARTNERS]])
     pop.sexual_behaviour.init_risk_factors(pop)
     # select a particular risk matrix
     risk_factors = np.array(pop.data[col.RISK_AGE])
@@ -387,6 +392,7 @@ def test_risk_age():
     assert np.allclose(risk_factors[12:22], expected_risk_female)
     dt = timedelta(days=90)
     for i in range(20):
+        print(i)
         pop.evolve(dt)
     risk_factors = np.array(pop.data[col.RISK_AGE])
     print("*************************************************")
