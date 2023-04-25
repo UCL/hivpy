@@ -2,10 +2,10 @@
 Column names in the Population Data-Frame.
 """
 
-SEX = "sex"                                 # common.SexType: SexType.Male for male and SexType.Female for female
-AGE = "age"                                 # float: age at the current date
-AGE_GROUP = "age_group"                     # int: discrete age grouping based on age
-LTP_AGE_GROUP = "ltp_age_group"             # int: discrete age group for starting / longevity of ltp
+SEX = "sex"                                     # common.SexType: SexType.Male for male and SexType.Female for female
+AGE = "age"                                     # float: age at the current date
+AGE_GROUP = "age_group"                         # int: discrete age grouping based on age
+LTP_AGE_GROUP = "ltp_age_group"                 # int: discrete age group for starting / longevity of ltp
 
 RISK = "risk"                               # float: overall risk value from combined factors
 RISK_AGE = "risk_age"                       # float: risk reduction factor based on age
@@ -26,6 +26,14 @@ SEX_BEHAVIOUR = "sex_behaviour"             # int: sexual behaviour grouping
 SEX_BEHAVIOUR_CLASS = "sex_class"           # sexual_behaviour.SexBehaviourClass (enum): Men, Young Women, Older Women, or Sex Worker
 LONG_TERM_PARTNER = "long_term_partner"     # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"             # int: categorises longevity of long term partnerships (higher => more stable)
+LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
+PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
+ANC = "anc"                                     # bool: True if in antenatal care
+PMTCT = "pmtct"                                 # bool: True if undergoing prevention of mother to child transmission care
+LAST_PREGNANCY_DATE = "last_pregnancy_date"     # None | datetime.date: date of most recent pregnancy, o/w None if never pregnant
+NUM_CHILDREN = "num_children"                   # int: number of children a woman has
+NUM_HIV_CHILDREN = "num_HIV_children"           # int: number of children infected with HIV a woman has
+WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children
 
 SEX_WORKER = "sex_worker"                   # bool: True if person is a sex worker, false otherwise
 SW_AGE_GROUP = "sw_age_group"               # int: categorises sex worker behaviour by age
@@ -44,8 +52,8 @@ HIV_STATUS = "HIV_status"                   # bool: True if person is HIV positi
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"   # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"       # int: value 1-6 placing bounds on viral load for an HIV positive person
 
-ADC = "AIDS_defining_condition"             # Bool: presence of AIDS defining condition
+ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition
 
-DATE_OF_DEATH = "date_of_death"             # None | datetime.date: date of death if dead, o/w None
+DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
 
-ART_ADHERENCE = "art_adherence"        # DUMMY
+ART_ADHERENCE = "art_adherence"                 # DUMMY
