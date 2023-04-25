@@ -88,7 +88,6 @@ class Population:
         self.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
         self.sexual_behaviour.update_sex_behaviour_class(self)
         self.sexual_behaviour.init_sex_behaviour_groups(self)
-        self.data.convert_dtypes()  # Need to figure out where to put this to prevent conversions
         self.sexual_behaviour.init_risk_factors(self)
         self.data[col.CIRCUMCISED] = False
         self.data[col.CIRCUMCISION_DATE] = None
@@ -112,7 +111,6 @@ class Population:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
-        self.data.convert_dtypes()
         self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         self.pregnancy.init_fertility(self)
