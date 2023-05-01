@@ -82,6 +82,7 @@ class Population:
         self.init_variable(col.ADC, False)
         self.init_variable(col.SEX_WORKER, False)
         self.init_variable(col.SW_TEST_6MONTHLY, False)
+        self.init_variable(col.SW_PROGRAM_VISIT, False)
         self.init_variable(col.AGE_STOP_SEX_WORK, None)
         self.init_variable(col.SW_AGE_GROUP, 0)
         self.init_variable(col.DATE_STOP_SW, None)
@@ -131,7 +132,7 @@ class Population:
            name: string, name of variable
            n_prev_steps: integer, number of previous iterations of this variable which need
            to be stored (default 0).
-        """ 
+        """
         self.variable_history[name] = n_prev_steps + 1
         if (n_prev_steps == 0):
             if data_type is not None:

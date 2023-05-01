@@ -5,31 +5,23 @@ Test_Example_List:
   - Value: [1, 2, 3, 4, 5]
 
 initial_sex_behaviour_probabilities:
-  Male: 
+  Male:
     Value: [0, 1, 2, 3]
     Probability: [0.85, 0.1, 0.05, 0.003]
-  Female: 
+  Female:
     Value: [0, 1]
     Probability: [0.97, 0.03]
+  SexWorker:
+    Value: [0, 1, 2, 3, 4]
+    Probability: [0.2, 0.2, 0.2, 0.2]
 
 initial_sex_worker_probability:
   Ages: [15, 20, 25, 40, 50]
   Probability: [0.04, 0.02, 0.01, 0.002]
 
-risk_sex_worker_age: [0.8, 1.0, 0.3, 0.03]
-  # for ages [15-19, 20-24, 25-34, 35-49]
-
-risk_sw_program:
-  - Strong:
-    - Value: [0.3, 0.5, 0.6]
-  - Weak:
-    - Value: [0.7, 0.8, 0.9]
-
-# no idea what this is
-risk_sw_life_sex_risk_3: 10
-
-# sex workers who have previously been sex workers? Maybe?
-risk_sw_prev_sw: 10
+new_partner_factor:
+  Value: [0.5, 1, 2]
+  Probability: [0.33, 0.33, 0.33]
 
 # 1 month base probability of starting sex work
 base_rate_start_sex_work:
@@ -40,17 +32,13 @@ base_rate_start_sex_work:
 base_rate_stop_sex_work:
   Value: [0.010, 0.015, 0.030]
 
-new_partner_factor:
-  Value: [0.5, 1, 2]
-  Probability: [0.33, 0.33, 0.33]
-
 # Risk (rred) factors
 
-# rred_initial
+# risk_initial
 risk_initial: 1.0
 
 # p_rred_p
-population_risk_personal: 
+population_risk_personal:
   Value: [0.3, 0.5, 0.7]
   Probability: [0.33, 0.33, 0.33]
 
@@ -80,8 +68,12 @@ yearly_risk_change_10s:
   Value: [0.975, 0.99, 0.995, 1, 1.005, 1.01, 1.025]
   Probability: [0.05, 0.05, 0.15, 0.5, 0.15, 0.05, 0.05]
 
-# rred_ep / conc_ep 
-risk_partnered: 
+# rate_sw_rred_rc
+yearly_risk_change_sw:
+  Value: [0.01, 0.03, 0.1]
+
+# rred_ep / conc_ep
+risk_partnered:
   Value: [0.33, 1.0, 3.0]
   Probability: [0.33, 0.33, 0.33]
 
@@ -100,7 +92,7 @@ age_based_risk_options:
       [0.2, 0.03],
       [0.15, 0.02],
     ]
-  
+
   - [
       [0.65, 1.10],
       [0.65, 1.10],
@@ -113,7 +105,7 @@ age_based_risk_options:
       [0.35, 0.20],
       [0.30, 0.20]
     ]
-  
+
   - [
       [0.05, 2.50],
       [0.20, 2.50],
@@ -126,7 +118,7 @@ age_based_risk_options:
       [0.25, 0.01],
       [0.15, 0.01]
     ]
-  
+
   - [
       [0.05, 3.00],
       [0.30, 3.00],
@@ -140,7 +132,22 @@ age_based_risk_options:
       [0.15, 0.01]
     ]
   Probability: [0.15, 0.15, 0.35, 0.35]
-  
+
+risk_sex_worker_age: [0.8, 1.0, 0.3, 0.03]
+  # for ages [15-19, 20-24, 25-34, 35-49]
+
+risk_sw_program:
+  - Strong:
+    - Value: [0.3, 0.5, 0.6]
+  - Weak:
+    - Value: [0.7, 0.8, 0.9]
+
+# no idea what this is
+risk_sw_life_sex_risk_3: 10
+
+# sex workers who have previously been sex workers? Maybe?
+risk_sw_prev_sw: 10
+
 sex_behaviour_transition_options:
   Male:
     - [
@@ -278,7 +285,7 @@ sex_behaviour_transition_options:
     - [[0.98, 0.02], [0.85, 0.15]]
 
     - [[0.98, 0.02], [0.75, 0.25]]
-  
+
   Sex_Worker:
     - [
         [0.8, 0.17, 0.015, 0.01, 0.005],
@@ -303,7 +310,7 @@ sex_behaviour_transition_options:
         [0.05, 0.05, 0.05, 0.8, 0.05],
         [0.05, 0.05, 0.05, 0.05, 0.8]
       ]
-    
+
     - [
         [0.99, 0.01, 0.0, 0.0, 0.0],
         [0.01, 0.98, 0.01, 0.0, 0.0],

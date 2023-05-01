@@ -9,7 +9,8 @@ import yaml
 import hivpy.column_names as col
 from hivpy.common import SexType, rng, selector
 from hivpy.population import Population
-from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule, SexBehaviourClass
+from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
+                                    SexualBehaviourModule)
 
 
 @pytest.fixture(scope="module")
@@ -101,24 +102,16 @@ def check_num_partners(row):
                 else:
                     return n in range(1, 4)
         else:
-            okay = True
             if group == 0:
-                okay = n == 0
+                return n == 0
             elif group == 1:
-                okay = n in range(1, 7)
+                return n in range(1, 7)
             elif group == 2:
-                okay = n in range(7, 21)
+                return n in range(7, 21)
             elif group == 3:
-                print(f"Num partners for swo30 in group {group}= {n}")
-                okay = n in range(21, 51 if age < 30 else 31)
+                return n in range(21, 51 if age < 30 else 31)
             elif group == 4:
-                print(f"Num partners for swo30 in group {group}= {n}")
-                okay = (n in range(51, 150)) if age < 30 else (n == 30)
-            
-            if not okay:
-                print(f"Num partners for swo30 in group {group}= {n}")
-            
-            return okay
+                return (n in range(51, 150)) if age < 30 else (n == 30)
 
 
 def test_num_partners():
@@ -126,14 +119,13 @@ def test_num_partners():
     Check that number of partners are reasonable.
     """
     pop = Population(size=10000, start_date=date(1989, 1, 1))
-    print(f"Number of sex workers = {sum(pop.data[col.SEX_WORKER]==True)}")
     pop.sexual_behaviour.num_short_term_partners(pop)
     assert (any(pop.data["num_partners"] > 0))
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
     assert np.all(checks)
 
-    # set all women to sex workers 
+    # set all women to sex workers
     pop.data[col.AGE] = 35
     pop.set_present_variable(col.SEX_WORKER,
                              True,
@@ -143,8 +135,6 @@ def test_num_partners():
     pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
     pop.sexual_behaviour.num_short_term_partners(pop)
-    print(f"Number of sex workers = {sum(pop.data[col.SEX_WORKER]==True)}")
-    print(f"Num sw under 30 = {sum(pop.data[col.SEX_BEHAVIOUR_CLASS]==3)} and over 30 = {sum(pop.data[col.SEX_BEHAVIOUR_CLASS]==4)}")
     checks = pop.data.apply(check_num_partners, axis=1)
     assert np.all(checks)
 
@@ -181,7 +171,7 @@ def test_num_partner_for_behaviour_group():
                         p = 0
                     elif n == 30:
                         p = prob_ge_30
-                        
+
                 N_g = len(sub_pop)
                 E = p * N_g
                 sig = np.sqrt(p * (1-p) * N)
@@ -435,30 +425,18 @@ def test_risk_age():
     pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
     pop.sexual_behaviour.num_short_term_partners(pop)
-    print("INIT*******************************************")
-    print(pop.data[[col.SEX, col.SEX_BEHAVIOUR, col.SEX_BEHAVIOUR_CLASS, col.NUM_PARTNERS]])
     pop.sexual_behaviour.init_risk_factors(pop)
     # select a particular risk matrix
     risk_factors = np.array(pop.data[col.RISK_AGE])
     assert risk_factors[0] == 1  # no update for under 15
     assert risk_factors[11] == 1
     expected_risk_male, expected_risk_female = pop.sexual_behaviour.age_based_risk.T
-    print(expected_risk_male)
-    print("********************************************")
-    print(expected_risk_female)
-    print("*************************************************")
-    print(risk_factors)
     assert np.allclose(risk_factors[1:11], expected_risk_male)
     assert np.allclose(risk_factors[12:22], expected_risk_female)
     dt = timedelta(days=90)
     for i in range(20):
-        print(i)
         pop.evolve(dt)
     risk_factors = np.array(pop.data[col.RISK_AGE])
-    print("*************************************************")
-    print(risk_factors)
-    print("*************************************************")
-    print(np.array(pop.data[col.AGE]))
     expected_risk_male = np.append(expected_risk_male, expected_risk_male[-1])
     expected_risk_female = np.append(expected_risk_female, expected_risk_female[-1])
     assert np.allclose(risk_factors, np.append(expected_risk_male, expected_risk_female))

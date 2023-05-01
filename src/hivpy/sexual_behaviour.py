@@ -45,7 +45,7 @@ class SexBehaviourClass(IntEnum):
     SEX_WORKER_O30 = 4
 
 
-SexBehaviours = {SexBehaviourClass.MALE: MaleSexBehaviour, 
+SexBehaviours = {SexBehaviourClass.MALE: MaleSexBehaviour,
                  SexBehaviourClass.FEMALE_U25: FemaleSexBehaviour,
                  SexBehaviourClass.FEMALE_O25: FemaleSexBehaviour,
                  SexBehaviourClass.SEX_WORKER: SexWorkerSexBehaviour,
@@ -76,7 +76,8 @@ class SexualBehaviourModule:
                 rng.choice(self.sb_data.sex_behaviour_sex_worker_options))
         }
         self.sex_behaviour_trans[SexBehaviourClass.FEMALE_O25] = self.sex_behaviour_trans[SexBehaviourClass.FEMALE_U25]
-        self.sex_behaviour_trans[SexBehaviourClass.SEX_WORKER_O30] = self.sex_behaviour_trans[SexBehaviourClass.SEX_WORKER]
+        self.sex_behaviour_trans[SexBehaviourClass.SEX_WORKER_O30] = self.sex_behaviour_trans[
+            SexBehaviourClass.SEX_WORKER]
 
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.age_based_risk = self.sb_data.age_based_risk
@@ -131,6 +132,11 @@ class SexualBehaviourModule:
         self.base_stop_sw = self.sb_data.base_stop_sex_work.sample()
         self.risk_sex_worker_age = self.sb_data.risk_sex_worker_age
         self.sw_age_bins = [20, 25, 35]
+        self.sex_worker_program = True if rng.random() < 0.2 else False
+        self.sw_program_start_date = datetime.date(2015, 1, 1)
+        self.rate_engage_sw_program = 0.1
+        self.rate_disengage_sw_program = 0.025
+        self.sw_program_cost = 0.01  # placeholder
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -177,6 +183,7 @@ class SexualBehaviourModule:
                                         np.digitize(population.get_variable(col.AGE, female_15to49_not_sw),
                                                     self.sw_age_bins),
                                         female_15to49_not_sw)
+
         population.set_variable_by_group(col.SEX_WORKER,
                                          [col.SW_AGE_GROUP],
                                          start_sex_work,
@@ -196,11 +203,28 @@ class SexualBehaviourModule:
         women_stopping_sex_work = population.get_sub_pop_from_array(~new_sex_work_status, sex_workers)
         population.set_present_variable(col.DATE_STOP_SW, population.date, women_stopping_sex_work)
         population.set_present_variable(col.SW_TEST_6MONTHLY, False, women_stopping_sex_work)
+        population.set_present_variable(col.SW_PROGRAM_VISIT, False, women_stopping_sex_work)
         # Currently in SAS version sex behaviour reverts to group 1 for women stopping sex work
         population.set_present_variable(col.SEX_BEHAVIOUR, 1, women_stopping_sex_work)
         population.set_present_variable(col.AGE_STOP_SEX_WORK,
                                         population.get_variable(col.AGE, sub_pop=women_stopping_sex_work),
                                         women_stopping_sex_work)
+
+        # Modify sex behaviour classes to reflect changes in sex worker status
+        self.update_sex_behaviour_class(population)
+        self.update_sex_worker_program(population)
+
+    def update_sex_worker_program(self, population: Population):
+        if (population.date > self.sw_program_start_date):
+            not_visiting_sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
+                                                               (col.SW_PROGRAM_VISIT, operator.eq, False)])
+            visiting_sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
+                                                           (col.SW_PROGRAM_VISIT, operator.eq, False)])
+            new_engage = rng.uniform(0.0, 1.0, not_visiting_sex_workers.size) < self.rate_engage_sw_program
+            population.set_present_variable(col.SW_PROGRAM_VISIT, new_engage, not_visiting_sex_workers)
+
+            new_disengage = rng.uniform(0.0, 1.0, visiting_sex_workers.size) < self.rate_disengage_sw_program
+            population.set_present_variable(col.SW_PROGRAM_VISIT, ~new_disengage, visiting_sex_workers)
 
     # Code for short term partners ----------------------------------------------------------------
 
