@@ -9,7 +9,7 @@ import yaml
 import hivpy.column_names as col
 from hivpy.common import SexType, rng, selector
 from hivpy.population import Population
-from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule
+from hivpy.sexual_behaviour import SexBehaviours, SexualBehaviourModule, SexBehaviourClass
 
 
 @pytest.fixture(scope="module")
@@ -50,24 +50,23 @@ def test_transition_probabilities(yaml_data):
 
 
 def test_sex_behaviour_transition(yaml_data):
-    N = 100000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.set_present_variable(col.AGE, 25)  # make whole population active
     pop.set_present_variable(col.RISK, 1)  # risk factors can be tested elsewhere
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
-    for s in SexType:
-        num_sex = sum(pop.data[col.SEX] == s)
+    for s in SexBehaviourClass:
+        # num_sex = sum(pop.data[col.SEX_BEHAVIOUR_CLASS] == s)
+        pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, s)
         for g in SexBehaviours[s]:
-            print(g)
-            pop.set_present_variable(col.SEX_BEHAVIOUR, 0)
-            pop.set_present_variable(col.SEX_BEHAVIOUR, g,
-                                     pop.get_sub_pop([(col.SEX, operator.eq, s)]))
+            # pop.set_present_variable(col.SEX_BEHAVIOUR, 0)
+            pop.set_present_variable(col.SEX_BEHAVIOUR, g)
             pop.sexual_behaviour.update_sex_groups(pop)
             for g2 in SexBehaviours[s]:
-                num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2) & (pop.data[col.SEX] == s)])
+                num = len(pop.data[(pop.data[col.SEX_BEHAVIOUR] == g2)])
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
-                E = p * num_sex
+                E = p * N
                 sig = np.sqrt(E * (1-p))
                 lower = E - 5*sig
                 upper = E + 5*sig

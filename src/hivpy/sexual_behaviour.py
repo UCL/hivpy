@@ -29,6 +29,14 @@ class FemaleSexBehaviour(IntEnum):
     ANY = 1
 
 
+class SexWorkerSexBehaviour(IntEnum):
+    ZERO = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+    VERY_HIGH = 4
+
+
 class SexBehaviourClass(IntEnum):
     MALE = 0
     FEMALE_U25 = 1
@@ -37,7 +45,11 @@ class SexBehaviourClass(IntEnum):
     SEX_WORKER_O30 = 4
 
 
-SexBehaviours = {SexType.Male: MaleSexBehaviour, SexType.Female: FemaleSexBehaviour}
+SexBehaviours = {SexBehaviourClass.MALE: MaleSexBehaviour, 
+                 SexBehaviourClass.FEMALE_U25: FemaleSexBehaviour,
+                 SexBehaviourClass.FEMALE_O25: FemaleSexBehaviour,
+                 SexBehaviourClass.SEX_WORKER: SexWorkerSexBehaviour,
+                 SexBehaviourClass.SEX_WORKER_O30: SexWorkerSexBehaviour}
 
 
 date1995 = datetime.date(1995, 1, 1)
@@ -64,6 +76,7 @@ class SexualBehaviourModule:
                 rng.choice(self.sb_data.sex_behaviour_sex_worker_options))
         }
         self.sex_behaviour_trans[SexBehaviourClass.FEMALE_O25] = self.sex_behaviour_trans[SexBehaviourClass.FEMALE_U25]
+        self.sex_behaviour_trans[SexBehaviourClass.SEX_WORKER_O30] = self.sex_behaviour_trans[SexBehaviourClass.SEX_WORKER]
 
         self.init_sex_behaviour_probs = self.sb_data.init_sex_behaviour_probs
         self.age_based_risk = self.sb_data.age_based_risk
