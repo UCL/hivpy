@@ -99,7 +99,8 @@ class SexualBehaviourModule:
         self.short_term_partners = {SexBehaviourClass.MALE: self.sb_data.male_stp_dists,
                                     SexBehaviourClass.FEMALE_U25: self.sb_data.female_stp_u25_dists,
                                     SexBehaviourClass.FEMALE_O25: self.sb_data.female_stp_o25_dists,
-                                    SexBehaviourClass.SEX_WORKER: self.sb_data.sexworker_stp_dists}
+                                    SexBehaviourClass.SEX_WORKER: self.sb_data.sexworker_stp_dists,
+                                    SexBehaviourClass.SEX_WORKER_O30: self.sb_data.sexworker_stp_dists}
         self.ltp_risk_factor = self.sb_data.risk_long_term_partnered.sample()
         self.risk_diagnosis = self.sb_data.risk_diagnosis.sample()
         self.risk_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.risk_diagnosis_period
@@ -236,6 +237,8 @@ class SexualBehaviourModule:
         sex and sexual behaviour group. Args are: [sex, sexual behaviour group, size of group].
         """
         stp = self.short_term_partners[sex_class][group].sample(size)
+        if sex_class == SexBehaviourClass.SEX_WORKER_O30:
+            stp = np.minimum(30, stp)
         return stp.astype(int)
 
     def num_short_term_partners(self, population: Population):
@@ -288,7 +291,10 @@ class SexualBehaviourModule:
         older_women = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
                                               (col.AGE, operator.ge, young_women_limit),
                                               (col.SEX_WORKER, operator.eq, False)])
-        sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
+        sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
+                                              (col.AGE, operator.lt, 30)])
+        sw_over_30 = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
+                                             (col.AGE, operator.ge, 30)])
 
         population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
                                         SexBehaviourClass.FEMALE_U25,
@@ -299,6 +305,9 @@ class SexualBehaviourModule:
         population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
                                         SexBehaviourClass.SEX_WORKER,
                                         sex_workers)
+        population.set_present_variable(col.SEX_BEHAVIOUR_CLASS,
+                                        SexBehaviourClass.SEX_WORKER_O30,
+                                        sw_over_30)
 
     # code for risk factors -----------------------------------------------------------------------
 

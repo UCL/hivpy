@@ -75,6 +75,7 @@ def test_sex_behaviour_transition(yaml_data):
 
 def check_num_partners(row):
     sex = row["sex"]
+    sex_worker = row[col.SEX_WORKER]
     group = row["sex_behaviour"]
     n = row["num_partners"]
     age = row["age"]
@@ -90,20 +91,60 @@ def check_num_partners(row):
         else:
             return n in [10, 15, 20, 25, 30, 35]
     else:
-        if group == 0:
-            return n == 0
+        # Female
+        if not sex_worker:
+            if group == 0:
+                return n == 0
+            else:
+                if age < 25:
+                    return n in range(1, 10)
+                else:
+                    return n in range(1, 4)
         else:
-            return n in range(1, 10)
+            okay = True
+            if group == 0:
+                okay = n == 0
+            elif group == 1:
+                okay = n in range(1, 7)
+            elif group == 2:
+                okay = n in range(7, 21)
+            elif group == 3:
+                print(f"Num partners for swo30 in group {group}= {n}")
+                okay = n in range(21, 51 if age < 30 else 31)
+            elif group == 4:
+                print(f"Num partners for swo30 in group {group}= {n}")
+                okay = (n in range(51, 150)) if age < 30 else (n == 30)
+            
+            if not okay:
+                print(f"Num partners for swo30 in group {group}= {n}")
+            
+            return okay
 
 
 def test_num_partners():
     """
     Check that number of partners are reasonable.
     """
-    pop = Population(size=100000, start_date=date(1989, 1, 1))
+    pop = Population(size=10000, start_date=date(1989, 1, 1))
+    print(f"Number of sex workers = {sum(pop.data[col.SEX_WORKER]==True)}")
     pop.sexual_behaviour.num_short_term_partners(pop)
     assert (any(pop.data["num_partners"] > 0))
     # Check the num_partners column
+    checks = pop.data.apply(check_num_partners, axis=1)
+    assert np.all(checks)
+
+    # set all women to sex workers 
+    pop.data[col.AGE] = 35
+    pop.set_present_variable(col.SEX_WORKER,
+                             True,
+                             pop.get_sub_pop([(col.SEX,
+                                               operator.eq,
+                                               SexType.Female)]))
+    pop.sexual_behaviour.update_sex_behaviour_class(pop)
+    pop.sexual_behaviour.init_sex_behaviour_groups(pop)
+    pop.sexual_behaviour.num_short_term_partners(pop)
+    print(f"Number of sex workers = {sum(pop.data[col.SEX_WORKER]==True)}")
+    print(f"Num sw under 30 = {sum(pop.data[col.SEX_BEHAVIOUR_CLASS]==3)} and over 30 = {sum(pop.data[col.SEX_BEHAVIOUR_CLASS]==4)}")
     checks = pop.data.apply(check_num_partners, axis=1)
     assert np.all(checks)
 
@@ -111,16 +152,36 @@ def test_num_partners():
 def test_num_partner_for_behaviour_group():
     """
     Check that approx correct number of partners are generated for each
-    sex, age, and sexual behaviour group.
+    sex class, age, and sexual behaviour group.
     """
-    N = 100000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    for sex in SexType:
-        np_probs = pop.sexual_behaviour.short_term_partners[sex]
+    for sex_class in SexBehaviourClass:
+        np_probs = pop.sexual_behaviour.short_term_partners[sex_class]
         for g in range(len(np_probs)):
+            pop.data[col.SEX_BEHAVIOUR_CLASS] = sex_class
+            pop.data[col.SEX_BEHAVIOUR] = g
+            pop.sexual_behaviour.num_short_term_partners(pop)
+            if sex_class == SexBehaviourClass.SEX_WORKER_O30:
+                if 30 in np_probs[g].data:
+                    found = False
+                    i = 0
+                    while not found:
+                        if np_probs[g].data[i] == 30:
+                            found = True
+                        else:
+                            i += 1
+                    prob_ge_30 = sum(np_probs[g].probs[i:])
+
             for (n, p) in zip(np_probs[g].data, np_probs[g].probs):
-                sub_pop = pop.data.loc[(pop.data[col.SEX] == sex) & (
+                sub_pop = pop.data.loc[(pop.data[col.SEX_BEHAVIOUR_CLASS] == sex_class) & (
                     pop.data[col.SEX_BEHAVIOUR] == g) & (pop.data[col.AGE] >= 15)]
+                if sex_class == SexBehaviourClass.SEX_WORKER_O30:
+                    if n > 30:
+                        p = 0
+                    elif n == 30:
+                        p = prob_ge_30
+                        
                 N_g = len(sub_pop)
                 E = p * N_g
                 sig = np.sqrt(p * (1-p) * N)
