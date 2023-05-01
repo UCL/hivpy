@@ -107,6 +107,7 @@ class SexualBehaviourData:
 
             self.yearly_risk_change = {"1990s": self._get_discrete_dist("yearly_risk_change_90s"),
                                        "2010s": self._get_discrete_dist("yearly_risk_change_10s")}
+            self.yearly_risk_change_sw = self._get_discrete_dist("yearly_risk_change_sw")
 
             self.risk_art_adherence = self.data["risk_art_adherence"]["Value"]
             self.adherence_threshold = self.data["risk_art_adherence"]["Adherence_Threshold"]
