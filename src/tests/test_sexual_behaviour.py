@@ -503,7 +503,10 @@ def test_end_ltp(longevity, rate_change):
 
 # Test Sex Work related code
 
-@pytest.mark.parametrize(["life_sex_risk", "p_start"], [(1, np.array([0., 0., 0., 0.])), (2, np.array([0.005, 0.01, 0.02, 0.03])), (3, np.array([0.05, 0.1, 0.2, 0.3]))])
+@pytest.mark.parametrize(["life_sex_risk", "p_start"],
+                         [(1, np.array([0., 0., 0., 0.])),
+                          (2, np.array([0.005, 0.01, 0.02, 0.03])),
+                          (3, np.array([0.05, 0.1, 0.2, 0.3]))])
 def test_start_sex_work(life_sex_risk, p_start):
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))

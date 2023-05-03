@@ -5,9 +5,9 @@ import importlib.resources
 import operator
 from enum import IntEnum
 from typing import TYPE_CHECKING
-import pandas as pd 
 
 import numpy as np
+import pandas as pd
 
 import hivpy.column_names as col
 
@@ -186,18 +186,18 @@ class SexualBehaviourModule:
         # For life sex risk to be set this has to come after risk factors init
         # Only women will be sex workers
         female_15to49 = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
-                                                       (col.AGE, operator.ge, 15),
-                                                       (col.AGE, operator.lt, 50)])
-        
+                                                (col.AGE, operator.ge, 15),
+                                                (col.AGE, operator.lt, 50)])
+
         def initial_sex_worker(age_group, life_sex_risk, size):
-            if(life_sex_risk == 1):
+            if (life_sex_risk == 1):
                 return False
             prob_start_sw = self.prob_init_sex_work_age[age_group]
-            if(life_sex_risk == 3):
+            if (life_sex_risk == 3):
                 prob_start_sw *= 3  # Why is this different from the rate of starting sex work?
             sw_status = rng.random(size) < prob_start_sw
             return sw_status
-    
+
         population.set_present_variable(col.SW_AGE_GROUP,
                                         np.digitize(population.get_variable(col.AGE, female_15to49),
                                                     self.sw_age_bins),
@@ -222,10 +222,10 @@ class SexualBehaviourModule:
 
         def start_sex_work(age_group, life_sex_risk, size):
             print(f"P for lsr {life_sex_risk} and age {age_group}")
-            if(life_sex_risk == 1):
+            if (life_sex_risk == 1):
                 return False
             prob_start_sw = (self.base_start_sw * np.sqrt(self.risk_population) * self.risk_sex_worker_age[age_group])
-            if(life_sex_risk == 3):
+            if (life_sex_risk == 3):
                 prob_start_sw *= self.incr_rate_sw_high_sex_risk
             sw_status = rng.random(size) < prob_start_sw
             print(f"{prob_start_sw}, size = {size}, num sw = {sum(sw_status)}")
@@ -340,16 +340,16 @@ class SexualBehaviourModule:
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
-        
+
         # set effect of sex worker program
-        if(population.date > self.sw_program_start_date):
+        if (population.date > self.sw_program_start_date):
             # if SW_PROGRAM_VISIT is true then they must be a sex worker and the program must exist
             sex_workers_visiting = population.get_sub_pop([(col.SW_PROGRAM_VISIT, operator.eq, 1)])
             effective_program = rng.uniform(size=sex_workers_visiting.size) < self.prob_sw_program_effective
             affected_sex_workers = population.apply_bool_mask(effective_program, sex_workers_visiting)
             affected_sw_partners = population.get_variable(col.NUM_PARTNERS, sex_workers_visiting)
             population.set_present_variable(col.NUM_PARTNERS, affected_sw_partners // 3, affected_sex_workers)
-        
+
         # print(population.data[[col.AGE, col.SEX, col.SEX_BEHAVIOUR, col.NUM_PARTNERS]])
 
     def update_sex_groups(self, population: Population):
@@ -478,7 +478,7 @@ class SexualBehaviourModule:
         r = rng.uniform(size=population.size)
         mask = r < self.p_risk_p
         population.set_present_variable(col.RISK_PERSONAL, 1e-5, mask)
-        
+
         females = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
         population.set_present_variable(col.LIFE_SEX_RISK, 2, females)
         low_risk_females = population.get_sub_pop_intersection(females, population.apply_bool_mask(mask))
@@ -486,7 +486,6 @@ class SexualBehaviourModule:
         mask = r > (1 - self.prob_high_sex_risk)
         high_risk_females = population.get_sub_pop_intersection(females, population.apply_bool_mask(mask))
         population.set_present_variable(col.LIFE_SEX_RISK, 3, high_risk_females)
-        
 
     def init_risk_adc(self, population: Population):
         population.init_variable(col.RISK_ADC, 1.0)
@@ -505,7 +504,7 @@ class SexualBehaviourModule:
 
     def init_risk_population(self):
         """
-        Initialise general population risk reduction w.r.t. condomless sex with new partners
+        Initialise general population risk reduction w.r.t. condomless sex withnew partners
         """
         self.risk_population = 1.0
 
