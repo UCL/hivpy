@@ -71,26 +71,9 @@ class Population:
         self.init_variable(col.DATE_OF_DEATH, None)
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
-        self.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
-        self.init_variable(col.RISK, 1)
-        self.init_variable(col.LONG_TERM_PARTNER, False)
-        self.init_variable(col.LTP_AGE_GROUP, 0)
-        self.init_variable(col.LTP_LONGEVITY, 0)
-        self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
-        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
-        self.init_variable(col.RISK_LTP, 1)
-        self.init_variable(col.ADC, False)
-        self.init_variable(col.LIFE_SEX_RISK, 1)
-        self.init_variable(col.SEX_WORKER, False)
-        self.init_variable(col.SW_TEST_6MONTHLY, False)
-        self.init_variable(col.SW_PROGRAM_VISIT, False)
-        self.init_variable(col.AGE_STOP_SEX_WORK, None)
-        self.init_variable(col.SW_AGE_GROUP, 0)
-        self.init_variable(col.DATE_STOP_SW, None)
-        self.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
-        self.sexual_behaviour.update_sex_behaviour_class(self)
-        self.sexual_behaviour.init_sex_behaviour_groups(self)
-        self.sexual_behaviour.init_risk_factors(self)
+
+        self.sexual_behaviour.init_sex_behaviour(self)
+
         self.data[col.CIRCUMCISED] = False
         self.data[col.CIRCUMCISION_DATE] = None
         self.data[col.VMMC] = False
@@ -113,7 +96,6 @@ class Population:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
-        self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         self.pregnancy.init_fertility(self)
         self.pregnancy.init_num_children(self)

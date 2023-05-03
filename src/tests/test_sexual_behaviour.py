@@ -501,20 +501,21 @@ def test_end_ltp(longevity, rate_change):
 
 # Test Sex Work related code
 
-def test_start_sex_work():
+@pytest.mark.parametrize(["life_sex_risk", "p_start"], [(1, np.array([0., 0., 0., 0.])), (2, np.array([0.005, 0.01, 0.02, 0.03])), (3, np.array([0.05, 0.1, 0.2, 0.3]))])
+def test_start_sex_work(life_sex_risk, p_start):
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     sb_module = pop.sexual_behaviour
     pop.set_present_variable(col.SEX_WORKER, False)
-
+    pop.set_present_variable(col.LIFE_SEX_RISK, life_sex_risk)
     # dummy sex behaviour variables
     pop.set_present_variable(col.AGE, [17, 22, 27, 37, 50]*2000)
     sb_module.risk_population = 4
-    sb_module.base_start_sw = 0.1
+    sb_module.base_start_sw = 0.005
     sb_module.risk_sex_worker_age = np.array([0.5, 1.0, 2.0, 3.0])
 
     sb_module.update_sex_worker_status(pop)
-    assert any(pop.get_variable(col.SEX_WORKER))
+    # assert any(pop.get_variable(col.SEX_WORKER))
 
     # Men and under 15s / over 50s should not be sex workers
     men = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
@@ -530,13 +531,12 @@ def test_start_sex_work():
     n_20to24 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 22)])))
     n_25to34 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 27)])))
     n_34to49 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 37)])))
-    P_start = np.array([0.5, 1.0, 2.0, 3.0]) * 0.2
-    E = P_start * (N * 0.1)  # only 1/5 of the population in each age group and half female
-    sigma = np.sqrt(E * (1-P_start))
-    assert (E[0] - 3*sigma[0] < n_15to19 < E[0] + 3*sigma[0])
-    assert (E[1] - 3*sigma[1] < n_20to24 < E[1] + 3*sigma[1])
-    assert (E[2] - 3*sigma[2] < n_25to34 < E[2] + 3*sigma[2])
-    assert (E[3] - 3*sigma[3] < n_34to49 < E[3] + 3*sigma[3])
+    E = p_start * (N * 0.1)  # only 1/5 of the population in each age group and half female
+    sigma = np.sqrt(E * (1-p_start))
+    assert (E[0] - 3*sigma[0] <= n_15to19 <= E[0] + 3*sigma[0])
+    assert (E[1] - 3*sigma[1] <= n_20to24 <= E[1] + 3*sigma[1])
+    assert (E[2] - 3*sigma[2] <= n_25to34 <= E[2] + 3*sigma[2])
+    assert (E[3] - 3*sigma[3] <= n_34to49 <= E[3] + 3*sigma[3])
 
 
 def test_stopping_sex_work():

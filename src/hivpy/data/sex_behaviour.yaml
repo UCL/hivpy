@@ -37,7 +37,7 @@ population_risk_personal:
   Probability: [0.33, 0.33, 0.33]
 
 # p_hsb_p
-probability_hish_sexual_risk:
+probability_high_sexual_risk:
   Value: [0.05, 0.08, 0.15]
 
 # rred_adc
@@ -128,6 +128,7 @@ age_based_risk_options:
   Probability: [0.15, 0.15, 0.35, 0.35]
 
 risk_sex_worker_age: [0.8, 1.0, 0.3, 0.03]
+prob_init_sex_work_age: [0.04, 0.02, 0.01, 0.002]
   # for ages [15-19, 20-24, 25-34, 35-49]
 
 risk_sw_program:
