@@ -221,14 +221,12 @@ class SexualBehaviourModule:
         sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
 
         def start_sex_work(age_group, life_sex_risk, size):
-            print(f"P for lsr {life_sex_risk} and age {age_group}")
             if (life_sex_risk == 1):
                 return False
             prob_start_sw = (self.base_start_sw * np.sqrt(self.risk_population) * self.risk_sex_worker_age[age_group])
             if (life_sex_risk == 3):
                 prob_start_sw *= self.incr_rate_sw_high_sex_risk
             sw_status = rng.random(size) < prob_start_sw
-            print(f"{prob_start_sw}, size = {size}, num sw = {sum(sw_status)}")
             return sw_status
 
         def continue_sex_work(age_group, size):
@@ -335,7 +333,6 @@ class SexualBehaviourModule:
         """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
                                              (col.AGE, operator.le, 65)])
-        # print("\n", population.data.groupby([col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR]).groups.keys())
         population.set_variable_by_group(col.NUM_PARTNERS,
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
@@ -347,10 +344,8 @@ class SexualBehaviourModule:
             sex_workers_visiting = population.get_sub_pop([(col.SW_PROGRAM_VISIT, operator.eq, 1)])
             effective_program = rng.uniform(size=sex_workers_visiting.size) < self.prob_sw_program_effective
             affected_sex_workers = population.apply_bool_mask(effective_program, sex_workers_visiting)
-            affected_sw_partners = population.get_variable(col.NUM_PARTNERS, sex_workers_visiting)
+            affected_sw_partners = population.get_variable(col.NUM_PARTNERS, affected_sex_workers)
             population.set_present_variable(col.NUM_PARTNERS, affected_sw_partners // 3, affected_sex_workers)
-
-        # print(population.data[[col.AGE, col.SEX, col.SEX_BEHAVIOUR, col.NUM_PARTNERS]])
 
     def update_sex_groups(self, population: Population):
         """
