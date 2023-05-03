@@ -42,6 +42,10 @@ population_risk_personal:
   Value: [0.3, 0.5, 0.7]
   Probability: [0.33, 0.33, 0.33]
 
+# p_hsb_p
+probability_hish_sexual_risk:
+  Value: [0.05, 0.08, 0.15]
+
 # rred_adc
 risk_aids_defining_condition: 0.2
 
@@ -67,10 +71,6 @@ yearly_risk_change_90s:
 yearly_risk_change_10s:
   Value: [0.975, 0.99, 0.995, 1, 1.005, 1.01, 1.025]
   Probability: [0.05, 0.05, 0.15, 0.5, 0.15, 0.05, 0.05]
-
-# rate_sw_rred_rc
-yearly_risk_change_sw:
-  Value: [0.01, 0.03, 0.1]
 
 # rred_ep / conc_ep
 risk_partnered:

@@ -137,6 +137,8 @@ class SexualBehaviourModule:
         self.rate_engage_sw_program = 0.1
         self.rate_disengage_sw_program = 0.025
         self.sw_program_cost = 0.01  # placeholder
+        self.prob_high_sex_risk = self.sb_data.probability_hish_sexual_risk.sample()
+        self.high_sex_risk_sw_factor = 10
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -162,12 +164,16 @@ class SexualBehaviourModule:
 
         sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
 
-        def start_sex_work(age_group, size):
+        def start_sex_work(age_group, life_sex_risk, size):
+            if(life_sex_risk == 1):
+                return False
             prob_start_sw = (self.base_start_sw * np.sqrt(self.risk_population) * self.risk_sex_worker_age[age_group])
+            if(life_sex_risk == 3):
+                prob_start_sw *= self.high_sex_risk_sw_factor
             sw_status = rng.random(size) < prob_start_sw
             return sw_status
 
-        def stop_sex_work(age_group, size):
+        def continue_sex_work(age_group, size):
             # group 0: under 40, group 1 over 40, group 2 over 50
             if (age_group == 2):
                 # Over 50s stop sex work
@@ -185,7 +191,7 @@ class SexualBehaviourModule:
                                         female_15to49_not_sw)
 
         population.set_variable_by_group(col.SEX_WORKER,
-                                         [col.SW_AGE_GROUP],
+                                         [col.SW_AGE_GROUP, col.LIFE_SEX_RISK],
                                          start_sex_work,
                                          sub_pop=female_15to49_not_sw)
 
@@ -196,7 +202,7 @@ class SexualBehaviourModule:
                                         sex_workers)
         # Calculate sex worker statuses: true is still a sex worker and false if no longer a sex worker
         new_sex_work_status = population.transform_group([col.SW_AGE_GROUP],
-                                                         stop_sex_work,
+                                                         continue_sex_work,
                                                          sub_pop=sex_workers)
         # Set new statuses and other relevant variables
         population.set_present_variable(col.SEX_WORKER, new_sex_work_status, sex_workers)
@@ -404,6 +410,15 @@ class SexualBehaviourModule:
         r = rng.uniform(size=population.size)
         mask = r < self.p_risk_p
         population.set_present_variable(col.RISK_PERSONAL, 1e-5, mask)
+        
+        females = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+        population.set_present_variable(col.LIFE_SEX_RISK, 2, females)
+        low_risk_females = population.apply_bool_mask(mask, females)
+        population.set_present_variable(col.LIFE_SEX_RISK, 1, low_risk_females)
+        mask = r > (1 - self.prob_high_sex_risk)
+        high_risk_females = population.apply_bool_mask(mask, females)
+        population.set_present_variable(col.LIFE_SEX_RISK, 3, high_risk_females)
+        
 
     def init_risk_adc(self, population: Population):
         population.init_variable(col.RISK_ADC, 1.0)

@@ -46,6 +46,7 @@ SW_PROGRAM = "sw_program"                       # bool: Is a sex worker program 
 SW_PROGRAM_EFFECT = "sw_program_effect"         # enum: STRONG or WEAK program efficacy
 EVER_SEX_WORKER = "ever_sex_worker"             # bool: if person has ever been a sex worker
 AGE_STOP_SEX_WORK = "age_stop_sex_work"         # float: age at which former sex worker (last) stopped sex work
+LIFE_SEX_RISK = "life_sex_risk"                 # int: value in (1, 2, 3) indicating risk of adopting sex work
 
 HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False

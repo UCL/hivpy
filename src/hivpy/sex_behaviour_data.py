@@ -107,7 +107,6 @@ class SexualBehaviourData:
 
             self.yearly_risk_change = {"1990s": self._get_discrete_dist("yearly_risk_change_90s"),
                                        "2010s": self._get_discrete_dist("yearly_risk_change_10s")}
-            self.yearly_risk_change_sw = self._get_discrete_dist("yearly_risk_change_sw")
 
             self.risk_art_adherence = self.data["risk_art_adherence"]["Value"]
             self.adherence_threshold = self.data["risk_art_adherence"]["Adherence_Threshold"]
@@ -116,6 +115,8 @@ class SexualBehaviourData:
             self.base_start_sex_work = self._get_discrete_dist("base_rate_start_sex_work")
             self.base_stop_sex_work = self._get_discrete_dist("base_rate_stop_sex_work")
             self.risk_sex_worker_age = self.data["risk_sex_worker_age"]
+
+            self.probability_hish_sexual_risk = self._get_discrete_dist("probability_hish_sexual_risk")
 
         except KeyError as ke:
             print(ke.args)

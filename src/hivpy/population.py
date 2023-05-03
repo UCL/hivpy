@@ -80,6 +80,7 @@ class Population:
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RISK_LTP, 1)
         self.init_variable(col.ADC, False)
+        self.init_variable(col.LIFE_SEX_RISK, 1)
         self.init_variable(col.SEX_WORKER, False)
         self.init_variable(col.SW_TEST_6MONTHLY, False)
         self.init_variable(col.SW_PROGRAM_VISIT, False)
