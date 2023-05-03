@@ -116,7 +116,8 @@ class SexualBehaviourData:
             self.base_stop_sex_work = self._get_discrete_dist("base_rate_stop_sex_work")
             self.risk_sex_worker_age = self.data["risk_sex_worker_age"]
             self.prob_init_sex_work_age = self.data["prob_init_sex_work_age"]
-
+            self.prob_sw_program_effect = self._get_discrete_dist("prob_sw_program_effect")
+            self.incr_rate_sw_high_sex_risk = self.data["incr_rate_sw_high_sex_risk"]
             self.probability_high_sexual_risk = self._get_discrete_dist("probability_high_sexual_risk")
 
         except KeyError as ke:

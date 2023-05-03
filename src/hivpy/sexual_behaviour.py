@@ -136,11 +136,13 @@ class SexualBehaviourModule:
         self.sw_age_bins = [20, 25, 35]
         self.sex_worker_program = True if rng.random() < 0.2 else False
         self.sw_program_start_date = datetime.date(2015, 1, 1)
+        self.prob_sw_program_effect = 1.0
         self.rate_engage_sw_program = 0.1
         self.rate_disengage_sw_program = 0.025
         self.sw_program_cost = 0.01  # placeholder
         self.prob_high_sex_risk = self.sb_data.probability_high_sexual_risk.sample()
-        self.high_sex_risk_sw_factor = 10
+        self.incr_rate_sw_high_sex_risk = self.sb_data.incr_rate_sw_high_sex_risk
+        self.prob_sw_program_effective = self.sb_data.prob_sw_program_effect.sample()
 
     def age_index(self, age):
         return np.minimum((age.astype(int)-self.risk_min_age) //
@@ -224,7 +226,7 @@ class SexualBehaviourModule:
                 return False
             prob_start_sw = (self.base_start_sw * np.sqrt(self.risk_population) * self.risk_sex_worker_age[age_group])
             if(life_sex_risk == 3):
-                prob_start_sw *= self.high_sex_risk_sw_factor
+                prob_start_sw *= self.incr_rate_sw_high_sex_risk
             sw_status = rng.random(size) < prob_start_sw
             print(f"{prob_start_sw}, size = {size}, num sw = {sum(sw_status)}")
             return sw_status
@@ -277,7 +279,7 @@ class SexualBehaviourModule:
         self.update_sex_worker_program(population)
 
     def update_sex_worker_program(self, population: Population):
-        if (population.date > self.sw_program_start_date):
+        if (self.sex_worker_program and (population.date > self.sw_program_start_date)):
             not_visiting_sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
                                                                (col.SW_PROGRAM_VISIT, operator.eq, False)])
             visiting_sex_workers = population.get_sub_pop([(col.SEX_WORKER, operator.eq, True),
@@ -338,6 +340,16 @@ class SexualBehaviourModule:
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
                                          sub_pop=active_pop)
+        
+        # set effect of sex worker program
+        if(population.date > self.sw_program_start_date):
+            # if SW_PROGRAM_VISIT is true then they must be a sex worker and the program must exist
+            sex_workers_visiting = population.get_sub_pop([(col.SW_PROGRAM_VISIT, operator.eq, 1)])
+            effective_program = rng.uniform(size=sex_workers_visiting.size) < self.prob_sw_program_effective
+            affected_sex_workers = population.apply_bool_mask(effective_program, sex_workers_visiting)
+            affected_sw_partners = population.get_variable(col.NUM_PARTNERS, sex_workers_visiting)
+            population.set_present_variable(col.NUM_PARTNERS, affected_sw_partners // 3, affected_sex_workers)
+        
         # print(population.data[[col.AGE, col.SEX, col.SEX_BEHAVIOUR, col.NUM_PARTNERS]])
 
     def update_sex_groups(self, population: Population):

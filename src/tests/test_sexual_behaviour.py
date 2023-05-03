@@ -119,6 +119,8 @@ def test_num_partners():
     Check that number of partners are reasonable.
     """
     pop = Population(size=10000, start_date=date(1989, 1, 1))
+    # test sex worker program separately
+    pop.sexual_behaviour.sex_worker_program = False
     pop.sexual_behaviour.num_short_term_partners(pop)
     assert (any(pop.data["num_partners"] > 0))
     # Check the num_partners column

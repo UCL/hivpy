@@ -143,8 +143,12 @@ risk_sw_program:
   - Weak:
     - Value: [0.7, 0.8, 0.9]
 
-# no idea what this is
-risk_sw_life_sex_risk_3: 10
+# Likelihood of reduced partners when visiting sex worker program
+prob_sw_program_effect: 
+  Value: [0.05, 0.1, 0.2]
+
+# increased to rate of becoming sex worker if high sex risk
+incr_rate_sw_high_sex_risk: 10
 
 # sex workers who have previously been sex workers? Maybe?
 risk_sw_prev_sw: 10
