@@ -131,7 +131,7 @@ class HIVTestingModule:
         elif nstp_last_test >= 1:
             prob_test *= self.eff_test_targeting
 
-        return prob_test
+        return min(prob_test, 1)
 
     def calc_testing_outcomes(self, repeat_tester, np_last_test, nstp_last_test, size):
         """

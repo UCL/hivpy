@@ -281,6 +281,7 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
+        self.hiv_testing.update_hiv_testing(self)
         self.pregnancy.update_pregnancy(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
