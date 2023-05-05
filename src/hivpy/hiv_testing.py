@@ -16,6 +16,7 @@ class HIVTestingModule:
         with importlib.resources.path("hivpy.data", "hiv_testing.yaml") as data_path:
             self.ht_data = HIVTestingData(data_path)
 
+        self.date_start_anc_testing = self.ht_data.date_start_anc_testing
         self.date_start_testing = self.ht_data.date_start_testing
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
@@ -50,15 +51,15 @@ class HIVTestingModule:
         COVID disruption is factored in.
         """
         # testing occurs after a certain year if there is no covid disruption
-        if ((pop.date.year >= (self.date_start_testing + 5.5))
+        if ((pop.date.year >= self.date_start_testing)
            & ((not self.covid_disrup_affected) | (not self.testing_disrup_covid))):
 
             # update testing probabilities
             self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
-                                                                - (self.date_start_testing + 5.5)) \
+                                                                - self.date_start_testing) \
                                                                 * self.an_lin_incr_test
             self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
-                                  - (self.date_start_testing + 5.5)) * self.an_lin_incr_test
+                                  - self.date_start_testing) * self.an_lin_incr_test
 
             # get population ready for testing
             testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
@@ -70,7 +71,7 @@ class HIVTestingModule:
                                                    (col.LAST_TEST_DATE, op.eq, None)]
                                                   ])
 
-# first time testers
+            # first time testers
             untested_population = pop.apply_bool_mask(~pop.get_variable(col.EVER_TESTED, testing_population),
                                                       testing_population)
             # repeat testers

@@ -14,7 +14,7 @@ def test_first_time_testers():
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.AGE] = 20
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_start_testing = 2009
     pop.hiv_testing.init_rate_first_test = 0.1
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
@@ -45,7 +45,7 @@ def test_repeat_testers():
     pop.data[col.EVER_TESTED] = True
     pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_start_testing = 2009
     pop.hiv_testing.eff_max_freq_testing = 1
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
@@ -88,7 +88,7 @@ def test_partner_reset_after_test():
         pop.data[col.NP_LAST_TEST] = 2
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = 2003.5
+        pop.hiv_testing.date_start_testing = 2009
         pop.hiv_testing.eff_max_freq_testing = 1
         pop.hiv_testing.init_rate_first_test = 0.1
         pop.hiv_testing.date_test_rate_plateau = 2015.5
@@ -131,7 +131,7 @@ def test_max_frequency_testing():
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = 2003.5
+        pop.hiv_testing.date_start_testing = 2009
         pop.hiv_testing.eff_max_freq_testing = index
         pop.hiv_testing.date_test_rate_plateau = 2015.5
         # guaranteed testing

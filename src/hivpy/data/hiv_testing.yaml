@@ -1,5 +1,6 @@
-# year during which HIV testing begins
-date_start_testing: 2003.5
+# years during which HIV testing begins
+date_start_anc_testing: 2003.5
+date_start_testing: 2009
 
 # starting probability for first tests
 init_rate_first_test: 0

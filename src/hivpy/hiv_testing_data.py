@@ -26,6 +26,7 @@ class HIVTestingData:
         with open(filename, 'r') as file:
             self.data = yaml.safe_load(file)
         try:
+            self.date_start_anc_testing = self.data["date_start_anc_testing"]
             self.date_start_testing = self.data["date_start_testing"]
             self.init_rate_first_test = self.data["init_rate_first_test"]
             self.eff_max_freq_testing = self.data["eff_max_freq_testing"]
