@@ -52,7 +52,7 @@ class HIVTestingModule:
         """
         # testing occurs after a certain year if there is no covid disruption
         if ((pop.date.year >= self.date_start_testing)
-           & ((not self.covid_disrup_affected) | (not self.testing_disrup_covid))):
+           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
             # update testing probabilities
             self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)

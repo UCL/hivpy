@@ -7,6 +7,62 @@ from hivpy.common import rng
 from hivpy.population import Population
 
 
+def test_hiv_testing_covid():
+
+    # build population
+    N = 100000
+    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop.data[col.AGE] = 20
+    # covid disruption is in place
+    pop.hiv_testing.covid_disrup_affected = True
+    pop.hiv_testing.testing_disrup_covid = True
+
+    # evolve population
+    pop.hiv_testing.update_hiv_testing(pop)
+
+    # check that nobody was tested
+    assert sum(pop.get_variable(col.EVER_TESTED)) == 0
+
+
+def test_general_testing_conditions():
+
+    # build population
+    N = 100000
+    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop.data[col.AGE] = 20
+    pop.data[col.EVER_TESTED] = True
+    pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
+    # fixing some values
+    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.eff_max_freq_testing = 1
+    pop.hiv_testing.init_rate_first_test = 0.1
+    pop.hiv_testing.date_test_rate_plateau = 2015.5
+    pop.hiv_testing.an_lin_incr_test = 0.8
+    pop.hiv_testing.no_test_if_np0 = False
+    pop.hiv_testing.covid_disrup_affected = False
+    pop.hiv_testing.testing_disrup_covid = False
+
+    # diagnose roughly 20% of the population with HIV
+    r = rng.uniform(size=len(pop.data))
+    diagnosed = r < 0.2
+    pop.set_present_variable(col.HIV_STATUS, diagnosed)
+
+    # have roughly 20% of the population be dead
+    r = rng.uniform(size=len(pop.data))
+    dead = r < 0.2
+    pop.set_present_variable(col.DATE_OF_DEATH, pop.date, sub_pop=pop.apply_bool_mask(dead))
+
+    # evolve population
+    pop.hiv_testing.update_hiv_testing(pop)
+
+    # get people that were just tested
+    tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
+    # check that no people just tested were already diagnosed with HIV
+    assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
+    # check that no dead people were just tested
+    assert (pop.get_variable(col.DATE_OF_DEATH, sub_pop=tested_population).isna()).all()
+
+
 def test_first_time_testers():
 
     # build population
@@ -53,16 +109,11 @@ def test_repeat_testers():
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
-    # have roughly 20% of the population be dead
-    r = rng.uniform(size=len(pop.data))
-    dead = r < 0.2
-    pop.set_present_variable(col.DATE_OF_DEATH, pop.date, sub_pop=pop.apply_bool_mask(dead))
-
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop)
 
     # get stats
-    testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False), (col.DATE_OF_DEATH, op.eq, None)])
+    testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
     # all previously tested
     no_repeat_testers = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
     prob_test = pop.hiv_testing.calc_prob_test(True, 0, 0)
@@ -70,8 +121,6 @@ def test_repeat_testers():
     stdev = sqrt(mean * (1 - prob_test))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= no_repeat_testers <= mean + 3 * stdev
-    # check that no dead people were just tested
-    assert (pop.get_variable(col.DATE_OF_DEATH, sub_pop=testing_population).isna()).all()
 
 
 def test_partner_reset_after_test():
@@ -97,11 +146,6 @@ def test_partner_reset_after_test():
         pop.hiv_testing.covid_disrup_affected = False
         pop.hiv_testing.testing_disrup_covid = False
 
-        # diagnose roughly 20% of the population with HIV
-        r = rng.uniform(size=len(pop.data))
-        diagnosed = r < 0.2
-        pop.data[col.HIV_STATUS] = diagnosed
-
         # evolve population
         pop.hiv_testing.update_hiv_testing(pop)
 
@@ -110,8 +154,6 @@ def test_partner_reset_after_test():
         # check that partner numbers have been reset
         assert sum(pop.get_variable(col.NP_LAST_TEST, sub_pop=tested_population)) == 0
         assert sum(pop.get_variable(col.NSTP_LAST_TEST, sub_pop=tested_population)) == 0
-        # check that no people just tested were already diagnosed with HIV
-        assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
 
 
 def test_max_frequency_testing():
