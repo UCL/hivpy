@@ -70,11 +70,11 @@ class HIVTestingModule:
                                                    (col.LAST_TEST_DATE, op.eq, None)]
                                                   ])
 
-            # first time testers
-            untested_population = pop.apply_bool_mask(~pop.data.loc[testing_population, col.EVER_TESTED],
+# first time testers
+            untested_population = pop.apply_bool_mask(~pop.get_variable(col.EVER_TESTED, testing_population),
                                                       testing_population)
             # repeat testers
-            prev_tested_population = pop.apply_bool_mask(pop.data.loc[testing_population, col.EVER_TESTED],
+            prev_tested_population = pop.apply_bool_mask(pop.get_variable(col.EVER_TESTED, testing_population),
                                                          testing_population)
 
             if len(untested_population) > 0:
