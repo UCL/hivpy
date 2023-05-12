@@ -168,17 +168,18 @@ class SexualBehaviourModule:
         population.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
         self.init_risk_factors(population)
         self.init_sex_worker_status(population)
+        self.update_sex_behaviour_class(population)
         self.init_sex_behaviour_groups(population)
         self.num_short_term_partners(population)
 
     def update_sex_behaviour(self, population: Population):
+        self.update_sex_worker_status(population)
+        self.update_sex_behaviour_class(population)
         self.update_risk(population)
         self.update_sex_groups(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
         self.update_long_term_partners(population)
-        self.update_sex_worker_status(population)
-        # self.update_sex_behaviour_class(population)
 
     # Code for sex work ---------------------------------------------------------------------------
 
@@ -208,7 +209,6 @@ class SexualBehaviourModule:
                                          initial_sex_worker,
                                          sub_pop=female_15to49)
 
-        self.update_sex_behaviour_class(population)
         self.update_sex_worker_program(population)
 
     def update_sex_worker_status(self, population: Population):
@@ -256,7 +256,7 @@ class SexualBehaviourModule:
         population.set_present_variable(col.SW_AGE_GROUP,
                                         np.digitize(population.get_variable(col.AGE, sex_workers), [40, 50]),
                                         sex_workers)
-        # Calculate sex worker statuses: true is still a sex worker and false if no longer a sex worker
+        # Calculate sex worker statuses: true if still a sex worker and false if no longer a sex worker
         new_sex_work_status = population.transform_group([col.SW_AGE_GROUP],
                                                          continue_sex_work,
                                                          sub_pop=sex_workers)
@@ -273,7 +273,6 @@ class SexualBehaviourModule:
                                         women_stopping_sex_work)
 
         # Modify sex behaviour classes to reflect changes in sex worker status
-        self.update_sex_behaviour_class(population)
         self.update_sex_worker_program(population)
 
     def update_sex_worker_program(self, population: Population):
@@ -499,7 +498,7 @@ class SexualBehaviourModule:
 
     def init_risk_population(self):
         """
-        Initialise general population risk reduction w.r.t. condomless sex withnew partners
+        Initialise general population risk reduction w.r.t. condomless sex with new partners
         """
         self.risk_population = 1.0
 

@@ -72,11 +72,6 @@ class Population:
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
 
         self.sexual_behaviour.init_sex_behaviour(self)
-
-        self.data[col.CIRCUMCISED] = False
-        self.data[col.CIRCUMCISION_DATE] = None
-        self.data[col.VMMC] = False
-        self.data[col.HARD_REACH] = False
         self.init_variable(col.CIRCUMCISED, False)
         self.init_variable(col.CIRCUMCISION_DATE, None)
         self.init_variable(col.VMMC, False)

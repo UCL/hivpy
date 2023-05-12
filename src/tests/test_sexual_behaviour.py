@@ -58,10 +58,8 @@ def test_sex_behaviour_transition(yaml_data):
     # set population to each group
     trans_matrix = pop.sexual_behaviour.sex_behaviour_trans
     for s in SexBehaviourClass:
-        # num_sex = sum(pop.data[col.SEX_BEHAVIOUR_CLASS] == s)
         pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, s)
         for g in SexBehaviours[s]:
-            # pop.set_present_variable(col.SEX_BEHAVIOUR, 0)
             pop.set_present_variable(col.SEX_BEHAVIOUR, g)
             pop.sexual_behaviour.update_sex_groups(pop)
             for g2 in SexBehaviours[s]:
