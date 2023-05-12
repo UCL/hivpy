@@ -10,6 +10,7 @@ import hivpy.column_names as col
 from .circumcision import CircumcisionModule
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
+from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
 from .sexual_behaviour import SexualBehaviourModule
 
@@ -41,6 +42,7 @@ class Population:
         self.sexual_behaviour = SexualBehaviourModule()
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
+        self.hiv_testing = HIVTestingModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -81,6 +83,12 @@ class Population:
         self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
         self.init_variable(col.RRED_LTP, 1)
         self.init_variable(col.ADC, False)
+        self.init_variable(col.EVER_TESTED, False)
+        self.init_variable(col.LAST_TEST_DATE, None)
+        self.init_variable(col.NSTP_LAST_TEST, 0)
+        self.init_variable(col.NP_LAST_TEST, 0)
+        self.sexual_behaviour.init_sex_behaviour_groups(self)
+        self.sexual_behaviour.init_risk_factors(self)
         self.init_variable(col.CIRCUMCISED, False)
         self.init_variable(col.CIRCUMCISION_DATE, None)
         self.init_variable(col.VMMC, False)
@@ -273,6 +281,7 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
+        self.hiv_testing.update_hiv_testing(self)
         self.pregnancy.update_pregnancy(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
