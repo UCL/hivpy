@@ -49,6 +49,10 @@ AGE_STOP_SEX_WORK = "age_stop_sex_work"         # float: age at which former sex
 LIFE_SEX_RISK = "life_sex_risk"                 # int: value in (1, 2, 3) indicating risk of adopting sex work
 
 HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
+EVER_TESTED = "ever_tested"                     # bool: True if person has ever been tested for HIV
+LAST_TEST_DATE = "last_test_date"               # None | datetime.date: date of last HIV test
+NSTP_LAST_TEST = "nstp_last_test"               # int: Number of short term condomless sex partners since last test (DUMMY)
+NP_LAST_TEST = "np_last_test"                   # int: Total number of condomless sex partners since last test (DUMMY)
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person
