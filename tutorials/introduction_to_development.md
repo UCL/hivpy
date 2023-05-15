@@ -439,3 +439,21 @@ self.output_stats["Population (over 15)"][self.step]
 ```
 
 **This section needs to be updated once we have changed the output module to work using the new access functions.** 
+
+## Running the model
+
+You can run your model using:
+```
+run_model hivpy.yaml
+```
+
+You can also plot your PrEP results using :
+```
+python3 make_plot.py <path_to_output_file>
+```
+
+Output files will be in the `output` folder, with names corresponding to the date and time of the run. 
+
+## Exercises
+
+1. Try updating your PrEP model so that women are more likely to go on PrEP than men. Start by adding an extra variable to your PrEP module. Then change your `set_variable_by_group` and `new_prep_uptake` code to include sex _as well as_ recently tested. If you re-run your model you should see a difference in the output for men and women now!
