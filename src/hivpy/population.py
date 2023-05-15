@@ -70,21 +70,21 @@ class Population:
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
-        
+
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
         self.init_variable(col.NP_LAST_TEST, 0)
-        
+
         self.sexual_behaviour.init_sex_behaviour(self)
 
         self.init_variable(col.CIRCUMCISED, False)
         self.init_variable(col.CIRCUMCISION_DATE, None)
         self.init_variable(col.VMMC, False)
         self.init_variable(col.HARD_REACH, False)
-        
+
         self.init_variable(col.LOW_FERTILITY, False)
         self.init_variable(col.PREGNANT, False)
         self.init_variable(col.LAST_PREGNANCY_DATE, None)
