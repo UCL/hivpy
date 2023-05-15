@@ -5,6 +5,9 @@ initial_sex_behaviour_probabilities:
   Female:
     Value: [0, 1]
     Probability: [0.97, 0.03]
+  SexWorker:
+    Value: [0, 1, 2, 3, 4]
+    Probability: [0.2, 0.2, 0.2, 0.2]
 
 initial_sex_worker_probability:
   Ages: [15, 20, 25, 40, 50]
@@ -14,21 +17,34 @@ new_partner_factor:
   Value: [0.5, 1, 2]
   Probability: [0.33, 0.33, 0.33]
 
-# Risk reduction (rred) factors
+# 1 month base probability of starting sex work
+base_rate_start_sex_work:
+  Value: [0.0015, 0.0020, 0.0025]
+  Probability: [0.2, 0.6, 0.2]
 
-# rred_initial
-rred_initial: 1.0
+# 1 month base probability of stopping sex work
+base_rate_stop_sex_work:
+  Value: [0.010, 0.015, 0.030]
+
+# Risk (rred) factors
+
+# risk_initial
+risk_initial: 1.0
 
 # p_rred_p
-population_rred_personal:
+population_risk_personal:
   Value: [0.3, 0.5, 0.7]
   Probability: [0.33, 0.33, 0.33]
 
+# p_hsb_p
+probability_high_sexual_risk:
+  Value: [0.05, 0.08, 0.15]
+
 # rred_adc
-rred_aids_defining_condition: 0.2
+risk_aids_defining_condition: 0.2
 
 # rred_adhav
-rred_art_adherence:
+risk_art_adherence:
   Value: 2.0
   Adherence_Threshold: 0.8
   Probability: 0.2
@@ -36,7 +52,7 @@ rred_art_adherence:
 # rred_d
 # Take value for initial period and then sqrt value thereafter
 # Period in years
-rred_diagnosis:
+risk_diagnosis:
   Value: [0.7, 0.8, 0.9, 1.0]
   Probability: [0.25, 0.25, 0.25, 0.25]
   Period: 0.5
@@ -51,7 +67,7 @@ yearly_risk_change_10s:
   Probability: [0.05, 0.05, 0.15, 0.5, 0.15, 0.05, 0.05]
 
 # rred_ep / conc_ep
-rred_partnered:
+risk_partnered:
   Value: [0.33, 1.0, 3.0]
   Probability: [0.33, 0.33, 0.33]
 
@@ -110,6 +126,20 @@ age_based_risk_options:
       [0.15, 0.01]
     ]
   Probability: [0.15, 0.15, 0.35, 0.35]
+
+risk_sex_worker_age: [0.8, 1.0, 0.3, 0.03]
+prob_init_sex_work_age: [0.04, 0.02, 0.01, 0.002]
+  # for ages [15-19, 20-24, 25-34, 35-49]
+
+# Likelihood of reduced partners when visiting sex worker program
+prob_sw_program_effect: 
+  Value: [0.05, 0.1, 0.2]
+
+# increased to rate of becoming sex worker if high sex risk
+incr_rate_sw_high_sex_risk: 10
+
+# sex workers who have previously been sex workers? Maybe?
+risk_sw_prev_sw: 10
 
 sex_behaviour_transition_options:
   Male:

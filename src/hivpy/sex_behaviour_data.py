@@ -18,10 +18,7 @@ class SexualBehaviourData:
             N = max - min + 1
             return DiscreteChoice(np.arange(min, max+1, 1), np.array([1./N]*N))
         else:
-            values = np.array(prob_dict["Value"])
-            probs = np.array(prob_dict["Probability"])
-            probs /= sum(probs)
-            return DiscreteChoice(values, probs)
+            return self._extract_discrete_dist(prob_dict)
 
     def _get_discrete_dist_list(self, *keys):
         dist_list = self.data
@@ -33,8 +30,14 @@ class SexualBehaviourData:
         dist_data = self.data
         for k in keys:
             dist_data = dist_data[k]
+        return self._extract_discrete_dist(dist_data)
+
+    def _extract_discrete_dist(self, dist_data):
         vals = np.array(dist_data["Value"])
-        probs = np.array(dist_data["Probability"])
+        if "Probability" in dist_data:
+            probs = np.array(dist_data["Probability"])
+        else:
+            probs = np.ones(vals.size)
         probs /= sum(probs)
         return DiscreteChoice(vals, probs)
 
@@ -71,11 +74,14 @@ class SexualBehaviourData:
 
             self.sex_mixing_matrix_female_options = self.data["sex_age_mixing_matrices"]["Female"]
 
-            self.short_term_partners_male_options = self.data[
+            self.sex_behaviour_male_options = self.data[
                 "sex_behaviour_transition_options"]["Male"]
 
-            self.short_term_partners_female_options = self.data[
+            self.sex_behaviour_female_options = self.data[
                 "sex_behaviour_transition_options"]["Female"]
+
+            self.sex_behaviour_sex_worker_options = self.data[
+                "sex_behaviour_transition_options"]["Sex_Worker"]
 
             self.init_sex_behaviour_probs = {
                 SexType.Male: self._get_discrete_dist(
@@ -84,7 +90,7 @@ class SexualBehaviourData:
                     "initial_sex_behaviour_probabilities", "Female")}
 
             # risk reduction factors
-            self.rred_initial = self.data["rred_initial"]
+            self.risk_initial = self.data["risk_initial"]
 
             self.age_based_risk = np.array(
                 rng.choice(self.data["age_based_risk_options"]["risk_factor"],
@@ -92,19 +98,27 @@ class SexualBehaviourData:
 
             self.new_partner_dist = self._get_discrete_dist("new_partner_factor")
 
-            self.rred_long_term_partnered = self._get_discrete_dist("rred_partnered")
+            self.risk_long_term_partnered = self._get_discrete_dist("risk_partnered")
 
-            self.p_rred_p_dist = self._get_discrete_dist("population_rred_personal")
+            self.p_risk_p_dist = self._get_discrete_dist("population_risk_personal")
 
-            self.rred_diagnosis = self._get_discrete_dist("rred_diagnosis")
-            self.rred_diagnosis_period = self.data["rred_diagnosis"]["Period"]
+            self.risk_diagnosis = self._get_discrete_dist("risk_diagnosis")
+            self.risk_diagnosis_period = self.data["risk_diagnosis"]["Period"]
 
             self.yearly_risk_change = {"1990s": self._get_discrete_dist("yearly_risk_change_90s"),
                                        "2010s": self._get_discrete_dist("yearly_risk_change_10s")}
 
-            self.rred_art_adherence = self.data["rred_art_adherence"]["Value"]
-            self.adherence_threshold = self.data["rred_art_adherence"]["Adherence_Threshold"]
-            self.rred_art_adherence_probability = self.data["rred_art_adherence"]["Probability"]
+            self.risk_art_adherence = self.data["risk_art_adherence"]["Value"]
+            self.adherence_threshold = self.data["risk_art_adherence"]["Adherence_Threshold"]
+            self.risk_art_adherence_probability = self.data["risk_art_adherence"]["Probability"]
+
+            self.base_start_sex_work = self._get_discrete_dist("base_rate_start_sex_work")
+            self.base_stop_sex_work = self._get_discrete_dist("base_rate_stop_sex_work")
+            self.risk_sex_worker_age = self.data["risk_sex_worker_age"]
+            self.prob_init_sex_work_age = self.data["prob_init_sex_work_age"]
+            self.prob_sw_program_effect = self._get_discrete_dist("prob_sw_program_effect")
+            self.incr_rate_sw_high_sex_risk = self.data["incr_rate_sw_high_sex_risk"]
+            self.probability_high_sexual_risk = self._get_discrete_dist("probability_high_sexual_risk")
 
         except KeyError as ke:
             print(ke.args)

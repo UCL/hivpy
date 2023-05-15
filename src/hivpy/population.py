@@ -2,7 +2,6 @@ import datetime
 import operator
 from functools import reduce
 
-import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
@@ -65,34 +64,27 @@ class Population:
         """
         # NB This is a prototype. We should use the new numpy random interface:
         # https://numpy.org/doc/stable/reference/random/index.html#random-quick-start
-        self.data = pd.DataFrame({
-            "Dummy": [None] * self.size,
-        })
+        self.data = pd.DataFrame()
+        self.data["Dummy"] = pd.Series([None] * self.size, dtype=object)
         self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
+
         self.init_variable(col.HIV_STATUS, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
-        self.init_variable(col.NUM_PARTNERS, 0)
-        self.init_variable(col.RRED, 1)
-        self.init_variable(col.LONG_TERM_PARTNER, False)
-        self.init_variable(col.LTP_AGE_GROUP, 0)
-        self.init_variable(col.LTP_LONGEVITY, 0)
-        self.init_variable(col.SEX_MIX_AGE_GROUP, 0)
-        self.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*self.size))
-        self.init_variable(col.RRED_LTP, 1)
-        self.init_variable(col.ADC, False)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
         self.init_variable(col.NP_LAST_TEST, 0)
-        self.sexual_behaviour.init_sex_behaviour_groups(self)
-        self.sexual_behaviour.init_risk_factors(self)
+
+        self.sexual_behaviour.init_sex_behaviour(self)
+
         self.init_variable(col.CIRCUMCISED, False)
         self.init_variable(col.CIRCUMCISION_DATE, None)
         self.init_variable(col.VMMC, False)
         self.init_variable(col.HARD_REACH, False)
+
         self.init_variable(col.LOW_FERTILITY, False)
         self.init_variable(col.PREGNANT, False)
         self.init_variable(col.LAST_PREGNANCY_DATE, None)
@@ -107,9 +99,6 @@ class Population:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
-        self.sexual_behaviour.init_sex_behaviour_groups(self)
-        self.sexual_behaviour.init_risk_factors(self)
-        self.sexual_behaviour.num_short_term_partners(self)
         self.sexual_behaviour.assign_stp_ages(self)
         self.pregnancy.init_fertility(self)
         self.pregnancy.init_num_children(self)
@@ -120,7 +109,7 @@ class Population:
             self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
             self.HIV_introduced = True
 
-    def init_variable(self, name: str, init_val, n_prev_steps=0):
+    def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
         """
            New variable will be initialised as a collection of columns.\\
            Column names (keys) will be (name, 0) ... (name, n_prev_steps).\\
@@ -132,10 +121,16 @@ class Population:
         """
         self.variable_history[name] = n_prev_steps + 1
         if (n_prev_steps == 0):
-            self.data[name] = init_val
+            if data_type is not None:
+                self.data[name] = pd.Series([init_val]*self.size, dtype=data_type)
+            else:
+                self.data[name] = init_val
         else:
             for i in range(0, n_prev_steps + 1):
-                self.data[self.constructParamColumn(name, i)] = init_val
+                if data_type is not None:
+                    self.data[self.constructParamColumn(name, i)] = pd.Series([init_val]*self.size, dtype=data_type)
+                else:
+                    self.data[self.constructParamColumn(name, i)] = init_val
 
     def constructParamColumn(self, name, i):
         return name + "," + str(i)
@@ -184,6 +179,12 @@ class Population:
         Get the indexing of the intersection of two subpopulations.
         """
         return pd.Index.intersection(subpop_1, subpop_2)
+
+    def get_sub_pop_from_array(self, array, sub_pop=None):
+        if sub_pop is None:
+            return self.data.index[array]
+        else:
+            return self.data.loc[sub_pop].index[array]
 
     def apply_vector_func(self, params, func):
         param_cols = list(map(lambda x: self.get_variable(x), params))
