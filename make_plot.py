@@ -1,8 +1,14 @@
+import sys
 import matplotlib.pyplot as plt
 import pandas as pd
 
-outputs = pd.read_csv(r'output\simulation_output_20230515-211358.csv')
+if len(sys.argv) < 2:
+    raise Exception("File name required.")
 
+file = sys.argv[1]
+outputs = pd.read_csv(file)
+
+plt.title("Fractional PrEP Usage in Population")
 plt.plot(outputs["PrEP usage overall"], label="Overal")
 plt.plot(outputs["PrEP usage (men)"], label="Men")
 plt.plot(outputs["PrEP usage (women)"], label="Women")
