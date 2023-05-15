@@ -28,7 +28,10 @@ class SimulationOutput:
                                   ("HIV prevalence (female)", 0.0),
                                   ("HIV infections (tot)", 0),
                                   ("Population (over 15)", 0),
-                                  ("Deaths (tot)", 0.0)])
+                                  ("Deaths (tot)", 0.0),
+                                  ("PrEP usage overall", 0.0),
+                                  ("PrEP usage (men)", 0.0),
+                                  ("PrEP usage (women)", 0.0)])
         self.age_min = 15
         self.age_max = 100
         self.age_step = 10
@@ -73,10 +76,20 @@ class SimulationOutput:
         died_this_step = selector(pop_data, date_of_death=(operator.eq, self.latest_date))
         self.output_stats["Deaths (tot)"][self.step] = sum(died_this_step)
 
+    def _update_prep_stats(self, pop_data):
+        sexually_active = (pop_data["age"] >= 15) & (pop_data["age"] < 65)
+        all_on_prep = selector(pop_data, on_PrEP=(operator.eq, True)) & sexually_active
+        men_idx = selector(pop_data, sex=(operator.eq, SexType.Male)) & sexually_active
+        women_idx = selector(pop_data, sex=(operator.eq, SexType.Female)) & sexually_active
+        self.output_stats["PrEP usage overall"][self.step] = self._ratio(all_on_prep, sexually_active)
+        self.output_stats["PrEP usage (men)"][self.step] = self._ratio(all_on_prep & men_idx, men_idx)
+        self.output_stats["PrEP usage (women)"][self.step] = self._ratio(all_on_prep & women_idx, women_idx)
+
     def update_summary_stats(self, date, pop_data):
         self._update_date(date)
         self._update_HIV_prevalence(pop_data)
         self._update_deaths(pop_data)
+        self._update_prep_stats(pop_data)
         self.step += 1
 
     def write_output(self, output_path):
