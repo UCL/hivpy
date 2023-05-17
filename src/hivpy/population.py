@@ -85,14 +85,7 @@ class Population:
         self.init_variable(col.VMMC, False)
         self.init_variable(col.HARD_REACH, False)
 
-        self.init_variable(col.LOW_FERTILITY, False)
-        self.init_variable(col.PREGNANT, False)
-        self.init_variable(col.LAST_PREGNANCY_DATE, None)
-        self.init_variable(col.WANT_NO_CHILDREN, False)
-        self.init_variable(col.NUM_HIV_CHILDREN, 0)
-        self.init_variable(col.ART_NAIVE, True)
-        self.init_variable(col.ANC, False)
-        self.init_variable(col.PMTCT, False)
+        self.pregnancy.init_pregnancy(self)
 
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
@@ -100,8 +93,7 @@ class Population:
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.assign_stp_ages(self)
-        self.pregnancy.init_fertility(self)
-        self.pregnancy.init_num_children(self)
+
         # TEMP
         self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
