@@ -1,3 +1,4 @@
+import operator as op
 from datetime import date, timedelta
 from math import ceil, isclose, sqrt
 
@@ -236,7 +237,6 @@ def test_want_no_children():
     prob_preg = pop.pregnancy.prob_pregnancy_base * 2 * 0.2
     mean = want_no_children * prob_preg
     stdev = sqrt(mean * (1 - prob_preg))
-
     # check pregnancy value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
 
@@ -246,7 +246,6 @@ def test_want_no_children():
     prob_preg = pop.pregnancy.prob_pregnancy_base * 2
     mean = want_children * prob_preg
     stdev = sqrt(mean * (1 - prob_preg))
-
     # check pregnancy value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
 
@@ -287,6 +286,58 @@ def test_anc_and_pmtct():
     stdev = sqrt(mean * (1 - prob_pmtct))
     # check pmtct value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pmtct <= mean + 3 * stdev
+
+
+def test_anc_testing():
+
+    N = 1000
+    time_step = timedelta(days=180)
+
+    # build artificial population
+    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop.data[col.SEX] = SexType.Female
+    pop.data[col.AGE] = 18
+    pop.data[col.LOW_FERTILITY] = False
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LAST_PREGNANCY_DATE] = None
+    pop.data[col.NUM_CHILDREN] = 0
+    pop.data[col.HIV_STATUS] = False
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.hiv_testing.covid_disrup_affected = False
+    pop.hiv_testing.testing_disrup_covid = False
+
+    # guaranteed pregnancy
+    pop.pregnancy.prob_pregnancy_base = 1
+    # maximise anc chances
+    pop.pregnancy.prob_anc = 1
+    pop.pregnancy.rate_testanc_inc = 1
+
+    # evolve population
+    pop.pregnancy.update_pregnancy(pop)
+    # advance pregnancy to second trimester
+    pop.date += time_step
+    pop.pregnancy.update_pregnancy(pop)
+    # store people in anc
+    in_anc = pop.get_sub_pop([(col.ANC, op.eq, True)])
+
+    # get stats
+    no_tested = len(pop.get_sub_pop([(col.ANC, op.eq, True),
+                                     (col.LAST_TEST_DATE, op.eq, pop.date)]))
+    test_prob = 0.5
+    mean = len(pop.data) * test_prob
+    stdev = sqrt(mean * (1 - test_prob))
+    # check that roughly half of the population has been tested
+    assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
+
+    # final advancement into childbirth
+    pop.date += time_step
+    pop.pregnancy.update_pregnancy(pop)
+
+    no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
+    # check that everyone in anc has been tested
+    assert no_tested == len(in_anc)
 
 
 def test_infected_births():
