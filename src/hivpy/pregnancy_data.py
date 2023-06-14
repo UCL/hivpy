@@ -17,12 +17,12 @@ class PregnancyData(DataReader):
             self.date_pmtct = self.data["date_pmtct"]
             self.pmtct_inc_rate = self.data["pmtct_inc_rate"]
             self.fold_preg = self.data["fold_preg"]
-
             self.inc_cat = self._get_discrete_dist("inc_cat")
+
+            self.rate_testanc_inc = self._get_discrete_dist("rate_testanc_inc")
             self.rate_birth_with_infected_child = self._get_discrete_dist("rate_birth_with_infected_child")
             self.max_children = self.data["max_children"]
             self.init_num_children_distributions = self._get_discrete_dist_list("init_num_children_distributions")
-            self.rate_testanc_inc = self._get_discrete_dist("rate_testanc_inc")
 
         except KeyError as ke:
             print(ke.args)

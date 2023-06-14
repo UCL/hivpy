@@ -31,8 +31,9 @@ class PregnancyModule:
         self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
         self.fold_preg = self.p_data.fold_preg
         self.inc_cat = self.p_data.inc_cat.sample()
-        self.rate_testanc_inc = self.p_data.rate_testanc_inc.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
+
+        self.rate_testanc_inc = self.p_data.rate_testanc_inc.sample()
         self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
         self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions

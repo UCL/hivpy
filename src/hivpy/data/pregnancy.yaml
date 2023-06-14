@@ -17,12 +17,10 @@ fold_preg: [2.0, 1.9, 1, 0.2]
 # population growth (and pregnancy probability)
 inc_cat:
   Value: [1, 2, 3]
-  Probability: [0.33, 0.33, 0.33]
 
 # affects probability of receiving antenatal care
 rate_testanc_inc:
   Value: [0.005, 0.01, 0.03, 0.05, 0.1]
-  Probability: [0.2, 0.2, 0.2, 0.2, 0.2]
 
 # chance for mother to pass HIV on to child
 rate_birth_with_infected_child:
