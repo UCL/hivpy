@@ -103,7 +103,7 @@ class PregnancyModule:
         outcomes = self.init_num_children_distributions[index].sample(size)
         return outcomes
 
-    def update_pregnancy(self, pop: Population):
+    def update_pregnancy(self, pop: Population, time_step: timedelta):
         """
         Monitor pregnancies and model childbirth.
         """
@@ -143,11 +143,11 @@ class PregnancyModule:
                                      pop.date,
                                      pop.apply_bool_mask(pregnancy, can_get_pregnant))
 
-        self.update_antenatal_care(pop)
+        self.update_antenatal_care(pop, time_step)
         self.update_births(pop)
         self.update_want_no_children(pop)
 
-    def update_antenatal_care(self, pop: Population):
+    def update_antenatal_care(self, pop: Population, time_step: timedelta):
         """
         Determine who is in antenatal care and receiving
         prevention of mother to child transmission care.
@@ -164,7 +164,7 @@ class PregnancyModule:
         pop.set_present_variable(col.ANC, anc, pregnant_population)
 
         # anc testing
-        pop.hiv_testing.update_anc_hiv_testing(pop)
+        pop.hiv_testing.update_anc_hiv_testing(pop, time_step)
 
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission
@@ -185,7 +185,7 @@ class PregnancyModule:
         Model pregnancies that come to term, including
         births with infected children.
         """
-        # get population who give birth this timestep
+        # get population who give birth this time step
         birthing_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True),
                                                (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=270))])
 

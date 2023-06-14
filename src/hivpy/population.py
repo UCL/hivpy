@@ -129,7 +129,7 @@ class Population:
 
     def get_sub_pop(self, conditions):
         """
-        Get a dataframe representing a sub-population meeting a list conditions.\\
+        Get a dataframe representing a sub-population meeting a list of conditions.\\
         Conditions are expressed as a tuple (variable, operator, value)\\
         e.g. `(col.AGE, operator.ge, 15)` gets people who are 15 and over\\
         `conditions` is a list (or other iterable) of such tuples.
@@ -275,7 +275,7 @@ class Population:
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
         self.hiv_testing.update_hiv_testing(self)
-        self.pregnancy.update_pregnancy(self)
+        self.pregnancy.update_pregnancy(self, time_step)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
