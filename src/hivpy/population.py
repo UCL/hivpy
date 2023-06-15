@@ -278,7 +278,7 @@ class Population:
 
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
-        self.circumcision.update_vmmc(self)
+        self.circumcision.update_vmmc(self, time_step)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)

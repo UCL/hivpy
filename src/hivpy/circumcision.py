@@ -1,4 +1,5 @@
 import importlib.resources
+import operator as op
 from datetime import timedelta
 
 import numpy as np
@@ -26,6 +27,7 @@ class CircumcisionModule:
         # NOTE: the covid disrup field may not belong here
         self.covid_disrup_affected = self.c_data.covid_disrup_affected
         self.vmmc_disrup_covid = self.c_data.vmmc_disrup_covid
+
         self.circ_increase_rate = self.c_data.circ_increase_rate.sample()
         self.circ_rate_change_post_2013 = self.c_data.circ_rate_change_post_2013.sample()
         self.circ_rate_change_15_19 = self.c_data.circ_rate_change_15_19.sample()
@@ -101,7 +103,7 @@ class CircumcisionModule:
                                                   & population[col.CIRCUMCISION_DATE].isnull()]
             population.loc[circ_newborn_males, col.CIRCUMCISION_DATE] = date
 
-    def update_vmmc(self, pop):
+    def update_vmmc(self, pop, time_step):
         """
         Update voluntary medical male circumcision intervention.
         COVID disruption is factored in.
@@ -126,6 +128,7 @@ class CircumcisionModule:
                & (self.policy_intervention_year <= self.date.year):
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
+                                                        & ~pop.data[col.HIV_STATUS]
                                                         & ~pop.data[col.HARD_REACH]
                                                         & (pop.data[col.AGE] >= self.vmmc_cutoff_age)
                                                         & (pop.data[col.AGE] < self.max_vmmc_age)]
@@ -133,6 +136,7 @@ class CircumcisionModule:
             else:
                 uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                                         & ~pop.data[col.CIRCUMCISED]
+                                                        & ~pop.data[col.HIV_STATUS]
                                                         & ~pop.data[col.HARD_REACH]
                                                         & (pop.data[col.AGE] >= self.min_vmmc_age)
                                                         & (pop.data[col.AGE] < self.max_vmmc_age)]
@@ -157,6 +161,17 @@ class CircumcisionModule:
                 new_circ_males = pop.data.index[pop.data[col.CIRCUMCISED]
                                                 & pop.data[col.CIRCUMCISION_DATE].isnull()]
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
+
+                # those that just got circumcised and weren't tested last time step get tested now
+                just_tested = pop.get_sub_pop([(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                               (col.LAST_TEST_DATE, op.ne, pop.date - time_step)])
+                # correctly set up related columns
+                if len(just_tested) > 0:
+                    pop.set_present_variable(col.EVER_TESTED, True, just_tested)
+                    pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
+                    # "reset" dummy partner columns
+                    pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
+                    pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
 
     def calc_prob_circ(self, age_group):
         """
