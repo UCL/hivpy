@@ -15,6 +15,31 @@ Welcome to the HIVpy package. Below is an overview of the repository contents:
 
 ### Common Procedures
 
+#### Adding a New Module to Documentation
+
+While the documentation is auto-generated (using docstring contents), `docs/hivpy.rst` should be manually updated to let Sphinx know to include any newly created modules. The following example can be used as a template:
+```
+hivpy.<module_name> module
+-------------------------
+
+.. automodule:: hivpy.<module_name>
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :exclude-members: <function_name>
+
+hivpy.<module_name>\_data module
+-------------------------------
+
+.. automodule:: hivpy.<module_name>_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+```
+The `<module_name>_data` module is optional, as your new module may not necessarily have a YAML file, and thus not need a data module.
+
+Adding `:exclude-members:` is also optional, but it can be used to specify any functions or variables you would like to exclude from the documentation.
+
 #### Adding a New Variable
 
 If you would like to add a new data variable to one of your modules, first add it to the relevant `src/hivpy/data/<module_name>.yaml` file. Then add it to `__init__` in `src/hivpy/<module_name>_data.py`:
