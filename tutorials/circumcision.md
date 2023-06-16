@@ -93,24 +93,6 @@ If you would like to change the age range at which VMMC can be applied (*10 =< a
 
 If you would like to change the age groups ([10-19, 20-29, 30-49] by default) used for calculating different VMMC probabilities, you can edit *`vmmc_age_bound_1`* (20 by default) and *`vmmc_age_bound_2`* (30 by default) in `__init__` to change the boundary ages at which age groups are divided. If you would like to change the *number* of age groups, introduce any new *`vmmc_age_bound_x`* variables as necessary and edit *`age_groups`* in `update_vmmc` to achieve the desired number of groups by adding or removing age bounds. Additionally, `calc_prob_circ` may need to be updated to change the VMMC probability age modifier for any newly added age groups.
 
-#### Adding a New VMMC Scenario or Variable
+#### Adding a New VMMC Scenario
 
 If you would like to add a new *`circ_policy_scenario`*, there is currently no simple way to do so. You will need to edit `update_vmmc` to exhibit the new branching logic you expect, as well as potentially edit `calc_prob_circ` if your new scenario affects VMMC probability calculations.
-
-If you would like to add a new circumcision data variable, first add it to `circumcision.yaml`. Then add it to `__init__` in `circumcision_data.py`:
-```python
-self.your_var_name_here = self.data["your_var_name_here"]
-```
-If your variable is more than just a single value, use an appropriate data reader method instead:
-```python
-# e.g. reading in a discrete distribution
-self.your_var_name_here = self._get_discrete_dist("your_var_name_here")
-```
-Now add your variable to `__init__` in `circumcision.py`:
-```python
-self.your_var_name_here = self.c_data.your_var_name_here
-```
-If your variable needs to be picked from a distribution, use the sample method:
-```python
-self.your_var_name_here = self.c_data.your_var_name_here.sample()
-```
