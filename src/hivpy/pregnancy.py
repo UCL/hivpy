@@ -37,6 +37,7 @@ class PregnancyModule:
         self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
         self.prob_anc = 0
+        self.prob_pmtct = 0
 
     def generate_prob_pregnancy_base(self):
         """
@@ -153,14 +154,14 @@ class PregnancyModule:
         # If date is after introduction of prevention of mother to child transmission
         if pop.date.year >= self.date_pmtct:
             # probability of prevention of mother to child transmission care
-            prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
+            self.prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
             # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
             # this expression assumed ANC can only be true if pregnant
             in_anc = pop.get_sub_pop([(col.ART_NAIVE, op.eq, True),
                                       (col.ANC, op.eq, True)])
             # pmtct outcomes
             r = rng.uniform(size=len(in_anc))
-            pmtct = r < prob_pmtct
+            pmtct = r < self.prob_pmtct
             pop.set_present_variable(col.PMTCT, pmtct, in_anc)
 
     def update_births(self, pop: Population):
