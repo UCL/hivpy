@@ -40,7 +40,7 @@ The `<module_name>_data` module is optional, as your new module may not necessar
 
 Adding `:exclude-members:` is also optional, but it can be used to specify any functions or variables you would like to exclude from the documentation.
 
-#### Adding a New Variable
+#### Adding a New Data Variable to a Module
 
 If you would like to add a new data variable to one of your modules, first add it to the relevant `src/hivpy/data/<module_name>.yaml` file. Then add it to `__init__` in `src/hivpy/<module_name>_data.py`:
 ```python

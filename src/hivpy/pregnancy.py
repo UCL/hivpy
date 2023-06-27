@@ -29,11 +29,11 @@ class PregnancyModule:
         self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
         self.date_pmtct = self.p_data.date_pmtct
         self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
-        self.fold_preg = self.p_data.fold_preg
+        self.fertility_factor = self.p_data.fertility_factor
         self.inc_cat = self.p_data.inc_cat.sample()
-        self.rate_testanc_inc = self.p_data.rate_testanc_inc.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
-        self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
+        self.rate_test_anc_inc = self.p_data.rate_test_anc_inc.sample()
+        self.prob_birth_with_infected_child = self.p_data.prob_birth_with_infected_child.sample()
         self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
         self.prob_anc = 0
@@ -143,7 +143,7 @@ class PregnancyModule:
         # get pregnant population
         pregnant_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True)])
         # update probability of antenatal care attendance
-        self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_testanc_inc, 0.975)
+        self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_test_anc_inc, 0.975)
 
         # anc outcomes
         r = rng.uniform(size=len(pregnant_population))
@@ -226,7 +226,7 @@ class PregnancyModule:
         ltp_prob_no_preg = 1
         stp_prob_no_preg = 1
         # base probability adjusted according to age factor
-        base_prob_adjusted = self.prob_pregnancy_base * self.fold_preg[int(age_group)-1]
+        base_prob_adjusted = self.prob_pregnancy_base * self.fertility_factor[int(age_group)-1]
         # wanting no more children decreases pregnancy probability by 80%
         if want_no_children:
             base_prob_adjusted *= 0.2
@@ -269,6 +269,6 @@ class PregnancyModule:
             vl_multiplier = 0.5
         # outcomes
         r = rng.uniform(size=size) * vl_multiplier
-        infected_children = r < self.rate_birth_with_infected_child
+        infected_children = r < self.prob_birth_with_infected_child
 
         return infected_children
