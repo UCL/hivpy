@@ -9,6 +9,14 @@ Welcome to the circumcision module. This code deals with circumcision at birth a
 
 If there are any circumcision-related variables you would like to change before running your simulation, please change them in `circumcision.yaml`.
 
+### Module Overview
+
+At the start of the simulation, all men have a chance to be circumcised at birth due to traditional circumcision practices. This is not part of VMMC intervention.
+
+When circumcision is updated, the eligible population is grouped by age, and VMMC outcomes are probabilistically determined. The outcomes are then assigned to the newly circumcised sub-population and their circumcision date is set to the date of the current time step.
+
+Then, newly circumcised men get tested for HIV, so long as they weren't tested last time step.
+
 ### Circumcision Data Variables
 
 - *`vmmc_start_year`* - The year during which VMMC intervention begins (2008 by default).
