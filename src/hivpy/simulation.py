@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-
-from .population import Population
-
 import logging
 import operator
 from datetime import datetime
@@ -16,6 +11,7 @@ import hivpy.column_names as col
 
 from .common import SexType
 from .config import SimulationConfig
+from .population import Population
 
 
 class SimulationOutput:
