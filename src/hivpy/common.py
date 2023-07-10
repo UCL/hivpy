@@ -146,10 +146,10 @@ class LogicExpr(ABC):
     """
     Abstract class for representing general logical expressions as applied to a population.
     Derived classes are: COND for individual conditions (e.g. age > 15)
-                         AND for conjunctions 
+                         AND for conjunctions
                          OR for disjunctions
     AND and OR can take a list of LogicExpr which may be of any of the three types to
-    give full freedom to create any logical statement without being beholden to e.g. 
+    give full freedom to create any logical statement without being beholden to e.g.
     conjunctive normal form.
     """
     @abstractmethod
@@ -164,7 +164,7 @@ class COND(LogicExpr):
     var: The variable you want to check as a dataframe column e.g. col.AGE
     op: The operator you want to apply, such as op.eq, op.le, op.gt etc.
     val: The value you want to compare the variable to
-    As an example, expressing "age > 15" would be 
+    As an example, expressing "age > 15" would be
     COND(col.AGE, op.gt, 15)
     """
     def __init__(self, var, op, val):
