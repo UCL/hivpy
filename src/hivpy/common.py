@@ -1,9 +1,16 @@
 """
 Functionality shared between multiple parts of the framework.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .population import Population
 
 import datetime
 import operator
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import IntEnum
 from functools import reduce
@@ -133,3 +140,75 @@ class ResettableRandomState:
 # A shared random number generator to be used from different modules.
 # Will be initialised at first import.
 rng = ResettableRandomState()
+
+
+class LogicExpr(ABC):
+    """
+    Abstract class for representing general logical expressions as applied to a population.
+    Derived classes are: COND for individual conditions (e.g. age > 15)
+                         AND for conjunctions 
+                         OR for disjunctions
+    AND and OR can take a list of LogicExpr which may be of any of the three types to
+    give full freedom to create any logical statement without being beholden to e.g. 
+    conjunctive normal form.
+    """
+    @abstractmethod
+    def eval(self, pop: Population):
+        pass
+
+
+class COND(LogicExpr):
+    """
+    LogicExpr type for individual conditions. These are initialised in the form:
+    COND(var, op, val) where:
+    var: The variable you want to check as a dataframe column e.g. col.AGE
+    op: The operator you want to apply, such as op.eq, op.le, op.gt etc.
+    val: The value you want to compare the variable to
+    As an example, expressing "age > 15" would be 
+    COND(col.AGE, op.gt, 15)
+    """
+    def __init__(self, var, op, val):
+        self.var = var
+        self.op = op
+        self.val = val
+
+    def eval(self, pop: Population):
+        if self.val is None:
+            if self.op == operator.eq:
+                return pop.data[pop.get_correct_column(self.var)].isnull()
+            else:
+                return pop.data[pop.get_correct_column(self.var)].notnull()
+        else:
+            return self.op(pop.data[pop.get_correct_column(self.var)], self.val)
+
+
+class AND(LogicExpr):
+    """
+    LogicExpr for expressing conjunctions.
+    You can call the constructor with an arbitrary number of arguments, where
+    each argument is a LogicExpr type (i.e. COND, AND, or OR).
+    For example to express age > 15 and age < 65 we can write:
+    `AND(COND(col.AGE, op.gt, 15), COND(col.AGE, op.lt, 65))`
+    """
+    def __init__(self, *props):
+        self.props = props
+
+    def eval(self, pop: Population):
+        return reduce(operator.and_,
+                      (p.eval(pop) for p in self.props))
+
+
+class OR(LogicExpr):
+    """
+    LogicExpr for expressing disjunctions.
+    You can call the constructor with an arbitrary number of arguments, where
+    each argument is a LogicExpr type (i.e. COND, AND, or OR).
+    For example to express age < 15 or age > 65 we can write:
+    `OR(COND(col.AGE, op.lt, 15), COND(col.AGE, op.gt, 65))`
+    """
+    def __init__(self, *props):
+        self.props = props
+
+    def eval(self, pop: Population):
+        return reduce(operator.or_,
+                      (p.eval(pop) for p in self.props))
