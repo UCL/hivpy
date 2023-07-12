@@ -151,7 +151,7 @@ def test_childbirth():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for i in range(0, ceil(timedelta(days=270)/time_step)):
+    for _ in range(0, ceil(timedelta(days=270)/time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop, time_step)
         pop.date += time_step
@@ -197,7 +197,7 @@ def test_child_cap():
 
     # evolve population
     # get through pregnancy, childbirth, and pregnancy pause period
-    for i in range(0, ceil(timedelta(days=450)/time_step)):
+    for _ in range(0, ceil(timedelta(days=450)/time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop, time_step)
         pop.date += time_step
@@ -316,43 +316,45 @@ def test_anc_testing():
 
     # advance pregnancy to start of second trimester
     pop.pregnancy.update_pregnancy(pop, time_step)
-    for i in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop, time_step)
 
+    # store people not in anc
+    not_inc_anc = pop.get_sub_pop([(col.ANC, op.eq, False)])
     # store number of people in anc
-    no_in_anc = len(pop.get_sub_pop([(col.ANC, op.eq, True)]))
+    in_anc = len(pop.get_sub_pop([(col.ANC, op.eq, True)]))
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
     test_prob = pop.hiv_testing.prob_anc_test_trim1
-    mean = no_in_anc * test_prob
+    mean = in_anc * test_prob
     stdev = sqrt(mean * (1 - test_prob))
     # check the correct proportion of the population has been tested
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # advance pregnancy to start of third trimester
-    for i in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop, time_step)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
     test_prob = pop.hiv_testing.prob_anc_test_trim2
-    mean = no_in_anc * test_prob
+    mean = in_anc * test_prob
     stdev = sqrt(mean * (1 - test_prob))
     # check the correct proportion of the population has been tested
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # final advancement into childbirth
-    for i in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop, time_step)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
     test_prob = pop.hiv_testing.prob_anc_test_trim3
-    mean = no_in_anc * test_prob
+    mean = in_anc * test_prob
     stdev = sqrt(mean * (1 - test_prob))
     # check the correct proportion of the population has been tested
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
@@ -364,10 +366,14 @@ def test_anc_testing():
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
     test_prob = pop.hiv_testing.prob_anc_test_trim3 * pop.hiv_testing.prob_test_postdel
-    mean = no_in_anc * test_prob
+    mean = in_anc * test_prob
     stdev = sqrt(mean * (1 - test_prob))
     # check the correct proportion of the population has been tested
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
+
+    # check that nobody not in ANC has been tested
+    assert len(pop.get_sub_pop_intersection(not_inc_anc,
+                                            pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)]))) == 0
 
 
 def test_infected_births():
@@ -391,7 +397,7 @@ def test_infected_births():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for i in range(0, ceil(timedelta(days=270)/time_step)):
+    for _ in range(0, ceil(timedelta(days=270)/time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop, time_step)
         pop.date += time_step
