@@ -11,7 +11,7 @@ date_pmtct: 2004
 pmtct_inc_rate: 0.2
 
 # fertility factor that changes with age
-fold_preg: [2.0, 1.9, 1, 0.2]
+fertility_factor: [2.0, 1.9, 1, 0.2]
 
 # TODO: move this, it's a demographics variable that affects
 # population growth (and pregnancy probability)
@@ -19,11 +19,11 @@ inc_cat:
   Value: [1, 2, 3]
 
 # affects probability of receiving antenatal care
-rate_testanc_inc:
+rate_test_anc_inc:
   Value: [0.005, 0.01, 0.03, 0.05, 0.1]
 
 # chance for mother to pass HIV on to child
-rate_birth_with_infected_child:
+prob_birth_with_infected_child:
   Value: [0.3, 0.4, 0.5, 0.6]
   Probability: [0.05, 0.25, 0.6, 0.1]
 

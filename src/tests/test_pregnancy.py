@@ -88,7 +88,7 @@ def test_ltp_preg():
                                    & ((pop.data[col.NUM_PARTNERS] > 0)
                                       | pop.data[col.LONG_TERM_PARTNER]))
             no_pregnant = sum(pop.data[col.PREGNANT])
-            prob_preg = pop.pregnancy.prob_pregnancy_base * pop.pregnancy.fold_preg[test_ages.index(age)-1]
+            prob_preg = pop.pregnancy.prob_pregnancy_base * pop.pregnancy.fertility_factor[test_ages.index(age)-1]
             mean = no_active_female * prob_preg
             stdev = sqrt(mean * (1 - prob_preg))
             # check pregnancy value is within 3 standard deviations
@@ -265,7 +265,7 @@ def test_anc_and_pmtct():
     pop.data[col.WANT_NO_CHILDREN] = False
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
-    pop.pregnancy.rate_testanc_inc = 1
+    pop.pregnancy.rate_test_anc_inc = 1
     pop.pregnancy.date_pmtct = 2004
     pop.pregnancy.pmtct_inc_rate = 1
 
@@ -408,8 +408,8 @@ def test_infected_births():
 
     # get stats
     no_infected_births = sum(pop.data[col.NUM_HIV_CHILDREN])
-    mean = len(pop.data) * pop.pregnancy.rate_birth_with_infected_child
-    stdev = sqrt(mean * (1 - pop.pregnancy.rate_birth_with_infected_child))
+    mean = len(pop.data) * pop.pregnancy.prob_birth_with_infected_child
+    stdev = sqrt(mean * (1 - pop.pregnancy.prob_birth_with_infected_child))
     # check infected birth value is within 3 standard deviations
     assert mean - 3 * stdev <= no_infected_births <= mean + 3 * stdev
 
@@ -420,7 +420,7 @@ def test_calc_prob_preg():
     pop = Population(size=1, start_date=date(1990, 1, 1))
     # fixing some probabilities
     pop.pregnancy.can_be_pregnant = 0.95
-    pop.pregnancy.fold_preg = [2.0, 1.5, 1, 0.1]
+    pop.pregnancy.fertility_factor = [2.0, 1.5, 1, 0.1]
     pop.pregnancy.prob_pregnancy_base = 0.1
     pop.pregnancy.fold_tr_newp = 0.5
 
