@@ -84,7 +84,7 @@ class PregnancyModule:
                                              (col.LOW_FERTILITY, op.eq, False),
                                              (col.AGE, op.ge, 15)])
         # group females by age groups
-        age_groups = np.digitize(pop.data.loc[female_population, col.AGE],
+        age_groups = np.digitize(pop.get_variable(col.AGE, female_population),
                                  [15, 25, 35, 45])
         pop.set_present_variable(col.AGE_GROUP, age_groups, female_population)
         # outcomes

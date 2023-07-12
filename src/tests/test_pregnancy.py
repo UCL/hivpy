@@ -312,7 +312,7 @@ def test_anc_testing():
     pop.pregnancy.prob_pregnancy_base = 1
     # maximise anc chances
     pop.pregnancy.prob_anc = 1
-    pop.pregnancy.rate_testanc_inc = 1
+    pop.pregnancy.rate_test_anc_inc = 1
 
     # advance pregnancy to start of second trimester
     pop.pregnancy.update_pregnancy(pop, time_step)
