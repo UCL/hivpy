@@ -159,7 +159,7 @@ class HIVTestingModule:
             # get post-delivery population tested during the previous time step
             post_delivery_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
                                                  (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
-                                                 (col.LAST_PREGNANCY_DATE, op.le, pop.date
+                                                 (col.LAST_PREGNANCY_DATE, op.eq, pop.date
                                                   - (timedelta(days=270) + time_step))])
             self.update_sub_pop_test_date(pop, post_delivery_pop, self.prob_test_postdel)
 
