@@ -127,20 +127,20 @@ class CircumcisionModule:
                 | (self.circ_policy_scenario == 3)
                 | (self.circ_policy_scenario == 4)) \
                & (self.policy_intervention_year <= self.date.year):
-                uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                                        & ~pop.data[col.CIRCUMCISED]
-                                                        & ~pop.data[col.HIV_STATUS]
-                                                        & ~pop.data[col.HARD_REACH]
-                                                        & (pop.data[col.AGE] >= self.vmmc_cutoff_age)
-                                                        & (pop.data[col.AGE] < self.max_vmmc_age)]
+                uncirc_male_population = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                          (col.CIRCUMCISED, op.eq, False),
+                                                          (col.HIV_STATUS, op.eq, False),
+                                                          (col.HARD_REACH, op.eq, False),
+                                                          (col.AGE, op.ge, self.vmmc_cutoff_age),
+                                                          (col.AGE, op.lt, self.max_vmmc_age)])
             # get uncircumcised male population of specific ages
             else:
-                uncirc_male_population = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                                        & ~pop.data[col.CIRCUMCISED]
-                                                        & ~pop.data[col.HIV_STATUS]
-                                                        & ~pop.data[col.HARD_REACH]
-                                                        & (pop.data[col.AGE] >= self.min_vmmc_age)
-                                                        & (pop.data[col.AGE] < self.max_vmmc_age)]
+                uncirc_male_population = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                          (col.CIRCUMCISED, op.eq, False),
+                                                          (col.HIV_STATUS, op.eq, False),
+                                                          (col.HARD_REACH, op.eq, False),
+                                                          (col.AGE, op.ge, self.min_vmmc_age),
+                                                          (col.AGE, op.lt, self.max_vmmc_age)])
 
             # continue if uncircumcised males are present this timestep
             if len(uncirc_male_population) > 0:
@@ -163,8 +163,8 @@ class CircumcisionModule:
                 pop.hiv_testing.update_vmmc_after_test(pop, time_step)
 
                 # newly circumcised males get the current date set as their circumcision date
-                new_circ_males = pop.data.index[pop.data[col.CIRCUMCISED]
-                                                & pop.data[col.CIRCUMCISION_DATE].isnull()]
+                new_circ_males = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
+                                                  (col.CIRCUMCISION_DATE, op.eq, None)])
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
 
                 # vmmc testing
