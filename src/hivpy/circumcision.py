@@ -160,38 +160,15 @@ class CircumcisionModule:
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
 
                 # chance to get vmmc after a negative HIV test
-                if self.circ_after_test:
-                    # select uncircumcised men tested last timestep
-                    tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                                                              (col.CIRCUMCISED, op.eq, False),
-                                                              (col.HIV_STATUS, op.eq, False),
-                                                              (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
-                                                              (col.HARD_REACH, op.eq, False),
-                                                              (col.AGE, op.le, self.max_vmmc_age)])
-                    # continue if eligible men are present this timestep
-                    if len(tested_uncirc_male_pop) > 0:
-                        # calculate post-test vmmc outcomes
-                        r = rng.uniform(size=len(tested_uncirc_male_pop))
-                        circumcision = r < self.prob_circ_after_test
-                        # assign outcomes
-                        pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
-                        pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
+                pop.hiv_testing.update_vmmc_after_test(pop, time_step)
 
                 # newly circumcised males get the current date set as their circumcision date
                 new_circ_males = pop.data.index[pop.data[col.CIRCUMCISED]
                                                 & pop.data[col.CIRCUMCISION_DATE].isnull()]
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
 
-                # those that just got circumcised and weren't tested last time step get tested now
-                just_tested = pop.get_sub_pop([(col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                               (col.LAST_TEST_DATE, op.ne, pop.date - time_step)])
-                # correctly set up related columns
-                if len(just_tested) > 0:
-                    pop.set_present_variable(col.EVER_TESTED, True, just_tested)
-                    pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
-                    # "reset" dummy partner columns
-                    pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
-                    pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
+                # vmmc testing
+                pop.hiv_testing.update_vmmc_hiv_testing(pop, time_step)
 
     def calc_prob_circ(self, age_group):
         """
