@@ -392,6 +392,43 @@ def test_circ_covid():
     assert sum(pop.data[col.CIRCUMCISED]) == 0
 
 
+def test_vmmc_after_testing():
+
+    N = 10000
+    start_date = date(2014, 12, 1)
+    time_step = timedelta(days=30)
+
+    # build artificial population
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.SEX] = SexType.Male
+    pop.data[col.AGE] = 18
+    # everyone marked as tested last timestep
+    pop.data[col.EVER_TESTED] = True
+    pop.data[col.LAST_TEST_DATE] = start_date - time_step
+    reset_pop_circ(pop)
+
+    pop.circumcision.circ_policy_scenario = 0
+    set_covid(pop.circumcision, False)
+    set_vmmc_default_dates(pop.circumcision)
+
+    # make regular vmmc impossible
+    pop.circumcision.circ_increase_rate = 0
+    pop.circumcision.circ_rate_change_post_2013 = 0
+    pop.circumcision.circ_rate_change_15_19 = 0
+    # but allow for vmmc after testing
+    pop.circumcision.circ_after_test = True
+    pop.circumcision.prob_circ_after_test = 0.5
+
+    # evolve population
+    pop.circumcision.update_vmmc(pop, time_step)
+
+    # get stats
+    prob_circ = pop.circumcision.prob_circ_after_test
+    no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
+    # check the correct proportion of the population has been circumcised
+    assert mean - 3 * stdev <= no_vmmc <= mean + 3 * stdev
+
+
 def test_vmmc_testing():
 
     N = 10000

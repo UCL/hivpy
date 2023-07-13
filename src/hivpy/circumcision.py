@@ -21,6 +21,7 @@ class CircumcisionModule:
         self.vmmc_start_year = self.c_data.vmmc_start_year
         self.circ_rate_change_year = self.c_data.circ_rate_change_year
         self.prob_circ_calc_cutoff_year = self.c_data.prob_circ_calc_cutoff_year
+        self.circ_after_test = self.c_data.circ_after_test
         self.prob_circ_after_test = self.c_data.prob_circ_after_test
         self.policy_intervention_year = self.c_data.policy_intervention_year
         self.circ_policy_scenario = self.c_data.circ_policy_scenario
@@ -112,14 +113,14 @@ class CircumcisionModule:
         # the function passed to transform_group
         self.date = pop.date
 
-        # no further circumcision
-        if self.vmmc_disrup_covid \
-           | ((self.policy_intervention_year <= self.date.year) & (self.circ_policy_scenario == 2)) \
-           | ((self.policy_intervention_year + 5 <= self.date.year) & (self.circ_policy_scenario == 4)):
-            self.prob_circ_after_test = 0
-
-        # only begin VMMC after a specific year
-        elif self.vmmc_start_year <= self.date.year:
+        # only apply VMMC after a specific year
+        # unless a scenario allows no further circumcision
+        if ((self.vmmc_start_year <= self.date.year)
+            & (not (self.vmmc_disrup_covid
+                    | ((self.policy_intervention_year <= self.date.year)
+                       & (self.circ_policy_scenario == 2))
+                    | ((self.policy_intervention_year + 5 <= self.date.year)
+                       & (self.circ_policy_scenario == 4))))):
 
             # circumcision stops in 10-14 year olds
             if ((self.circ_policy_scenario == 1)
@@ -157,6 +158,25 @@ class CircumcisionModule:
                                                    sub_pop=uncirc_male_population)
                 pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
+
+                # chance to get vmmc after a negative HIV test
+                if self.circ_after_test:
+                    # select uncircumcised men tested last timestep
+                    tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                              (col.CIRCUMCISED, op.eq, False),
+                                                              (col.HIV_STATUS, op.eq, False),
+                                                              (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
+                                                              (col.HARD_REACH, op.eq, False),
+                                                              (col.AGE, op.le, self.max_vmmc_age)])
+                    # continue if eligible men are present this timestep
+                    if len(tested_uncirc_male_pop) > 0:
+                        # calculate post-test vmmc outcomes
+                        r = rng.uniform(size=len(tested_uncirc_male_pop))
+                        circumcision = r < self.prob_circ_after_test
+                        # assign outcomes
+                        pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
+                        pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
+
                 # newly circumcised males get the current date set as their circumcision date
                 new_circ_males = pop.data.index[pop.data[col.CIRCUMCISED]
                                                 & pop.data[col.CIRCUMCISION_DATE].isnull()]
