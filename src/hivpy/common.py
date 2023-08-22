@@ -13,6 +13,7 @@ import operator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import IntEnum
+from functools import reduce
 
 import numpy as np
 import scipy.stats as stat
