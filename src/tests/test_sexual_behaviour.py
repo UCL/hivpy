@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, selector
+from hivpy.common import SexType, rng
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
@@ -197,22 +197,22 @@ def test_initial_sex_behaviour_groups(yaml_data):
     is within 3-sigma of the expectation value, as calculated by a binomial distribution.
     """
     N = 10000
-    pop_data = Population(size=N, start_date=date(1989, 1, 1)).data
+    pop = Population(size=N, start_date=date(1989, 1, 1))
     probs = {SexType.Male:
              yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
              SexType.Female:
              yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probability"]}
     for sex in SexType:
-        index_sex = selector(pop_data, sex=(operator.eq, sex))
-        n_sex = sum(index_sex)
+        sex_sub_pop = pop.get_sub_pop([(col.SEX, operator.eq, sex)])
+        n_sex = len(sex_sub_pop)
         Prob_sex = np.array(probs[sex])
         Prob_sex /= sum(Prob_sex)
         for g in SexBehaviours[sex]:
-            index_group = selector(pop_data, sex_behaviour=(operator.eq, g))
+            group_sub_pop = pop.get_sub_pop([(col.SEX_BEHAVIOUR, operator.eq, g)])
             p = Prob_sex[g]
             sigma = np.sqrt(p*(1-p)*float(n_sex))
             Expectation = float(n_sex)*p
-            N_g = sum(index_sex & index_group)
+            N_g = len(pop.get_sub_pop_intersection(sex_sub_pop, group_sub_pop))
             assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
 
 
@@ -280,51 +280,39 @@ def test_risk_diagnosis():
 
 
 def test_risk_balance():
-    N = 1000
+    N = 2000
     n_partners = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     # need to set the number of new partners to test for risk reduction cases
-    pop.data["num_partners"] = 0
-    men = selector(pop.data, sex=(operator.eq, SexType.Male))
-    women = selector(pop.data, sex=(operator.eq, SexType.Female))
+    men = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+    women = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+
+    def test_partner_ratios(male_ratio, balance_male, balance_female):
+        pop.data["num_partners"] = 0
+        n_partners_men = int(n_partners * male_ratio)
+        n_partners_women = int(n_partners * (1-male_ratio))
+        # distribute partners amongst the men and women
+        random_men = rng.choice(men, size=n_partners_men, replace=False)
+        pop.set_present_variable(col.NUM_PARTNERS,
+                                 pop.get_variable(col.NUM_PARTNERS, random_men) + 1,
+                                 random_men)
+        random_women = rng.choice(women, size=n_partners_women, replace=False)
+        pop.set_present_variable(col.NUM_PARTNERS,
+                                 pop.get_variable(col.NUM_PARTNERS, random_women) + 1,
+                                 random_women)
+        SBM.update_risk_balance(pop)
+        assert np.all(pop.data.loc[men, "risk_balance"] == balance_male)
+        assert np.all(pop.data.loc[women, "risk_balance"] == balance_female)
 
     # equal numbers of partners
-    n_partners_men = n_partners_women = n_partners//2
-    # distribute partners amongst the men and women
-    men_idx = pop.data.loc[men].index
-    women_idx = pop.data.loc[women].index
-    for rand_man in rng.choice(men_idx, size=n_partners_men):
-        pop.data.loc[rand_man, "num_partners"] += 1
-    for rand_woman in rng.choice(women_idx, size=n_partners_women):
-        pop.data.loc[rand_woman, "num_partners"] += 1
-    SBM.update_risk_balance(pop)
-    assert np.all(pop.data.loc[men, "risk_balance"] == 1)
-    assert np.all(pop.data.loc[women, "risk_balance"] == 1)
+    test_partner_ratios(0.5, 1, 1)
 
     # ~ -1 % discrepancy
-    pop.data["num_partners"] = 0
-    n_partners_men = int(n_partners * 0.495)
-    n_partners_women = int(n_partners * 0.505)
-    for i in range(n_partners_men):
-        pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
-    for i in range(n_partners_women):
-        pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
-    SBM.update_risk_balance(pop)
-    assert np.allclose(pop.data.loc[men, "risk_balance"], 1/0.7)
-    assert np.allclose(pop.data.loc[women, "risk_balance"], 0.7)
+    test_partner_ratios(0.495, 1/0.7, 0.7)
 
     # > 10 % discrepancy
-    pop.data["num_partners"] = 0
-    n_partners_men = int(n_partners * 0.6)
-    n_partners_women = int(n_partners * 0.45)
-    for i in range(n_partners_men):
-        pop.data.loc[rng.choice(men_idx), "num_partners"] += 1
-    for i in range(n_partners_women):
-        pop.data.loc[rng.choice(women_idx), "num_partners"] += 1
-    SBM.update_risk_balance(pop)
-    assert np.all(pop.data.loc[men, "risk_balance"] == 0.1)
-    assert np.all(pop.data.loc[women, "risk_balance"] == 10)
+    test_partner_ratios(0.6, 0.1, 10)
 
 
 def test_risk_art_adherence():
@@ -335,16 +323,16 @@ def test_risk_art_adherence():
     SBM.init_risk_factors(pop)
     # art adherence flag off
     SBM.use_risk_art_adherence = False
-    above_idx = selector(pop.data, art_adherence=(operator.ge, 0.8))
-    below_idx = selector(pop.data, art_adherence=(operator.lt, 0.8))
+    pop_over_threshold = pop.get_sub_pop([(col.ART_ADHERENCE, operator.ge, 0.8)])
+    pop_under_threshold = pop.get_sub_pop([(col.ART_ADHERENCE, operator.lt, 0.8)])
     SBM.update_risk(pop)
     assert np.allclose(pop.data["risk_art_adherence"], 1)
 
     # art adherence flag on
     SBM.use_risk_art_adherence = True
     SBM.update_risk(pop)
-    assert np.all(pop.data.loc[above_idx, "risk_art_adherence"] == 1)
-    assert np.all(pop.data.loc[below_idx, "risk_art_adherence"] == 2)
+    assert np.all(pop.get_variable(col.RISK_ART_ADHERENCE, pop_over_threshold) == 1)
+    assert np.all(pop.get_variable(col.RISK_ART_ADHERENCE, pop_under_threshold) == 2)
 
 
 def test_risk_art_adherence_usage():
@@ -403,7 +391,7 @@ def test_risk_personal():
     for i in range(100):
         SBM = SexualBehaviourModule()
         SBM.init_risk_factors(pop)
-        risk_count = sum(selector(pop.data, risk_personal=(operator.lt, 1)))
+        risk_count = len(pop.get_sub_pop([(col.RISK_PERSONAL, operator.lt, 1)]))
         count03 += (0.2 < (risk_count/N) < 0.4)  # check consistency with threshold
         count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
         count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold

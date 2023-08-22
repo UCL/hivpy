@@ -13,7 +13,6 @@ import operator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import IntEnum
-from functools import reduce
 
 import numpy as np
 import scipy.stats as stat
@@ -54,16 +53,6 @@ def opposite_sex(sex: SexType):
 
 def diff_years(date_begin, date_end):
     return (date_end - date_begin) / datetime.timedelta(days=365.25)
-
-
-def selector(population, **kwargs):
-    """
-    Select the rows of a population data frame matching a set of criteria.
-    """
-    # FIXME Describe usage in more detail.
-    index = reduce(operator.and_,
-                   (op(population[kw], val) for kw, (op, val) in kwargs.items()))
-    return index
 
 
 def between(values, limits):

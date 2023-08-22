@@ -19,6 +19,11 @@ class HIVTestingData(DataReader):
             self.test_scenario = self.data["test_scenario"]
             self.no_test_if_np0 = self.data["no_test_if_np0"]
 
+            self.prob_anc_test_trim1 = self.data["prob_anc_test_trim1"]
+            self.prob_anc_test_trim2 = self._get_discrete_dist("prob_anc_test_trim2")
+            self.prob_anc_test_trim3 = self.data["prob_anc_test_trim3"]
+            self.prob_test_postdel = self.data["prob_test_postdel"]
+
             self.test_targeting = self._get_discrete_dist("test_targeting")
             self.date_test_rate_plateau = self._get_discrete_dist("date_test_rate_plateau")
             self.an_lin_incr_test = self._get_discrete_dist("an_lin_incr_test")
