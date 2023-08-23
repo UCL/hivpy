@@ -7,6 +7,7 @@ import pandas as pd
 import hivpy.column_names as col
 
 from .circumcision import CircumcisionModule
+from .common import LogicExpr
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
@@ -134,16 +135,21 @@ class Population:
         e.g. `(col.AGE, operator.ge, 15)` gets people who are 15 and over\\
         `conditions` is a list (or other iterable) of such tuples.
         """
-        index = reduce(operator.and_,
-                       (self.disjunction(expr)
-                        for expr in conditions))
-        return self.data.index[index]
+        # if / else statements here for backwards compatibility
+        # (Python doesn't allow overloaded functions)
+        if (isinstance(conditions, LogicExpr)):
+            return self.data.index[conditions.eval(self)]
+        else:
+            index = reduce(operator.and_,
+                           (self.disjunction(expr)
+                            for expr in conditions))
+            return self.data.index[index]
 
     def disjunction(self, expr):
         """
         Evaluate a disjunction so that is can be used in CNF expressions.
         """
-        if type(expr) == list:
+        if isinstance(expr, list):
             return reduce(operator.or_,
                           (self.eval(sub_expr)
                            for sub_expr in expr))
