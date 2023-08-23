@@ -149,7 +149,7 @@ class Population:
         """
         Evaluate a disjunction so that is can be used in CNF expressions.
         """
-        if type(expr) == list:
+        if isinstance(expr, list):
             return reduce(operator.or_,
                           (self.eval(sub_expr)
                            for sub_expr in expr))
