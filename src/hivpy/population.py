@@ -7,6 +7,7 @@ import pandas as pd
 import hivpy.column_names as col
 
 from .circumcision import CircumcisionModule
+from .common import LogicExpr
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
@@ -86,14 +87,7 @@ class Population:
         self.init_variable(col.VMMC, False)
         self.init_variable(col.HARD_REACH, False)
 
-        self.init_variable(col.LOW_FERTILITY, False)
-        self.init_variable(col.PREGNANT, False)
-        self.init_variable(col.LAST_PREGNANCY_DATE, None)
-        self.init_variable(col.WANT_NO_CHILDREN, False)
-        self.init_variable(col.NUM_HIV_CHILDREN, 0)
-        self.init_variable(col.ART_NAIVE, True)
-        self.init_variable(col.ANC, False)
-        self.init_variable(col.PMTCT, False)
+        self.pregnancy.init_pregnancy(self)
 
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
@@ -101,8 +95,7 @@ class Population:
         else:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.assign_stp_ages(self)
-        self.pregnancy.init_fertility(self)
-        self.pregnancy.init_num_children(self)
+
         # TEMP
         self.hiv_status.set_dummy_viral_load(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
@@ -138,21 +131,26 @@ class Population:
 
     def get_sub_pop(self, conditions):
         """
-        Get a dataframe representing a sub-population meeting a list conditions.\\
+        Get a dataframe representing a sub-population meeting a list of conditions.\\
         Conditions are expressed as a tuple (variable, operator, value)\\
         e.g. `(col.AGE, operator.ge, 15)` gets people who are 15 and over\\
         `conditions` is a list (or other iterable) of such tuples.
         """
-        index = reduce(operator.and_,
-                       (self.disjunction(expr)
-                        for expr in conditions))
-        return self.data.index[index]
+        # if / else statements here for backwards compatibility
+        # (Python doesn't allow overloaded functions)
+        if (isinstance(conditions, LogicExpr)):
+            return self.data.index[conditions.eval(self)]
+        else:
+            index = reduce(operator.and_,
+                           (self.disjunction(expr)
+                            for expr in conditions))
+            return self.data.index[index]
 
     def disjunction(self, expr):
         """
         Evaluate a disjunction so that is can be used in CNF expressions.
         """
-        if type(expr) == list:
+        if isinstance(expr, list):
             return reduce(operator.or_,
                           (self.eval(sub_expr)
                            for sub_expr in expr))
@@ -284,7 +282,7 @@ class Population:
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
         self.hiv_testing.update_hiv_testing(self)
-        self.pregnancy.update_pregnancy(self)
+        self.pregnancy.update_pregnancy(self, time_step)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:

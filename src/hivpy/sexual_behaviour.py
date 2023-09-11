@@ -11,7 +11,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, diff_years, rng
+from .common import AND, COND, SexType, diff_years, rng
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:
@@ -186,9 +186,12 @@ class SexualBehaviourModule:
     def init_sex_worker_status(self, population: Population):
         # For life sex risk to be set this has to come after risk factors init
         # Only women will be sex workers
-        female_15to49 = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
-                                                (col.AGE, operator.ge, 15),
-                                                (col.AGE, operator.lt, 50)])
+        # female_15to49 = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+        #                                         (col.AGE, operator.ge, 15),
+        #                                         (col.AGE, operator.lt, 50)])
+        female_15to49 = population.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Female),
+                                                   COND(col.AGE, operator.ge, 15),
+                                                   COND(col.AGE, operator.lt, 50)))
 
         def initial_sex_worker(age_group, life_sex_risk, size):
             if (life_sex_risk == 1):

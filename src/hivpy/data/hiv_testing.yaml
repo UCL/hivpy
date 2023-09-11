@@ -15,6 +15,15 @@ test_scenario: 0
 # TODO: this needs a nicer name
 no_test_if_np0: False
 
+# probability of getting tested in antenatal care at the end of each trimester
+prob_anc_test_trim1: 0.5
+prob_anc_test_trim2:
+  Value: [0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]
+prob_anc_test_trim3: 0.1
+
+# probability of being tested after delivery
+prob_test_postdel: 0.95
+
 # affects testing probability based on number of partners
 test_targeting:
   Value: [1, 1.25, 1.5]

@@ -1,21 +1,25 @@
-import yaml
+from hivpy.exceptions import DataLoadException
 
 from .common import SexType
+from .data_reader import DataReader
 
 
-class DemographicsData:
+class DemographicsData(DataReader):
     """
-    A class for holding demographics-related data loaded from a file.
+    Class to hold and interpret demographics data loaded from a yaml file.
     """
 
     def __init__(self, filename):
-        with open(filename, 'r') as file:
-            data = yaml.safe_load(file)
+        super().__init__(filename)
 
-        self.female_ratio = data["female_ratio"]
+        try:
+            self.female_ratio = self.data["female_ratio"]
+            self.death_age_limits = self.data["death_rates"]["Age_limits"]
+            self.death_rates = {
+                SexType.Female: [0] + self.data["death_rates"]["Female"],
+                SexType.Male: [0] + self.data["death_rates"]["Male"]
+            }
 
-        self.death_age_limits = data["death_rates"]["Age_limits"]
-        self.death_rates = {
-            SexType.Female: [0] + data["death_rates"]["Female"],
-            SexType.Male: [0] + data["death_rates"]["Male"]
-        }
+        except KeyError as ke:
+            print(ke.args)
+            raise DataLoadException

@@ -110,10 +110,42 @@ hivpy.hiv\_status module
    :show-inheritance:
    :exclude-members: initial_hiv_newp_threshold, initial_hiv_prob
 
+hivpy.hiv\_testing module
+-------------------------
+
+.. automodule:: hivpy.hiv_testing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hivpy.hiv\_testing\_data module
+-------------------------------
+
+.. automodule:: hivpy.hiv_testing_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 hivpy.population module
 -----------------------
 
 .. automodule:: hivpy.population
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hivpy.pregnancy module
+-------------------------
+
+.. automodule:: hivpy.pregnancy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+hivpy.pregnancy\_data module
+-------------------------------
+
+.. automodule:: hivpy.pregnancy_data
    :members:
    :undoc-members:
    :show-inheritance:
