@@ -63,3 +63,5 @@ ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS definin
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
+
+RECENTLY_TESTED = "recently_tested"             # Bool: true if tested this timestep

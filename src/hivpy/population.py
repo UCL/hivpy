@@ -12,6 +12,7 @@ from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
+from .prep import PrepModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = datetime.date(1989, 1, 1)
