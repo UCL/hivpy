@@ -65,3 +65,5 @@ DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
 RECENTLY_TESTED = "recently_tested"             # Bool: true if tested this timestep
+ON_PREP = "on_PrEP"                             # Bool: true if taking PrEP, false otherwise
+

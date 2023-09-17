@@ -96,7 +96,7 @@ class SimulationOutput:
         self._update_date(date)
         self._update_HIV_prevalence(pop_data)
         self._update_deaths(pop_data)
-        self._update_prep_stats(pop_data)
+        self._update_prep_stats(pop_data.data)
         self.step += 1
 
     def write_output(self, output_path):

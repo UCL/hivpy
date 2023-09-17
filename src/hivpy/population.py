@@ -44,6 +44,7 @@ class Population:
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
         self.hiv_testing = HIVTestingModule()
+        self.prep = PrepModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -79,8 +80,10 @@ class Population:
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
         self.init_variable(col.NP_LAST_TEST, 0)
+        self.init_variable(col.ON_PREP, False)
 
         self.sexual_behaviour.init_sex_behaviour(self)
+        self.prep.init_prep_variables(self)
 
         self.init_variable(col.CIRCUMCISED, False)
         self.init_variable(col.CIRCUMCISION_DATE, None)
@@ -283,6 +286,7 @@ class Population:
         self.hiv_status.update_HIV_status(self)
         self.hiv_testing.update_hiv_testing(self)
         self.pregnancy.update_pregnancy(self, time_step)
+        self.prep.update_prep_status(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
