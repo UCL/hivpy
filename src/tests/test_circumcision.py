@@ -53,7 +53,7 @@ def get_vmmc_stats(pop, prob_circ):
     no_vmmc = sum(pop.data[col.VMMC])
     no_male = sum((pop.data[col.SEX] == SexType.Male)
                   & ~pop.data[col.HARD_REACH]
-                  & ~pop.data[col.HIV_STATUS]
+                  & ~pop.data[col.HIV_DIAGNOSIS]
                   & (pop.data[col.AGE] >= 10)
                   & (pop.data[col.AGE] < 50))
     mean = no_male * prob_circ
