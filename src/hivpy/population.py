@@ -94,6 +94,8 @@ class Population:
         self.init_variable(col.ANC, False)
         self.init_variable(col.PMTCT, False)
 
+        self.init_variable(col.HIV_DIAGNOSED, False)
+
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.init_birth_circumcision_born(self.data, self.date)
