@@ -29,14 +29,15 @@ class PregnancyModule:
         self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
         self.date_pmtct = self.p_data.date_pmtct
         self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
-        self.fold_preg = self.p_data.fold_preg
+        self.fertility_factor = self.p_data.fertility_factor
         self.inc_cat = self.p_data.inc_cat.sample()
-        self.rate_testanc_inc = self.p_data.rate_testanc_inc.sample()
         self.prob_pregnancy_base = self.generate_prob_pregnancy_base()  # dependent on time step length
-        self.rate_birth_with_infected_child = self.p_data.rate_birth_with_infected_child.sample()
+        self.rate_test_anc_inc = self.p_data.rate_test_anc_inc.sample()
+        self.prob_birth_with_infected_child = self.p_data.prob_birth_with_infected_child.sample()
         self.max_children = self.p_data.max_children
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
         self.prob_anc = 0
+        self.prob_pmtct = 0
 
     def generate_prob_pregnancy_base(self):
         """
@@ -50,11 +51,23 @@ class PregnancyModule:
             prob_pregnancy_base /= 1.75
         return round(prob_pregnancy_base, 3)
 
+    def init_pregnancy(self, pop: Population):
+        self.init_fertility(pop)
+        pop.init_variable(col.PREGNANT, False)
+        pop.init_variable(col.LAST_PREGNANCY_DATE, None)
+        pop.init_variable(col.ANC, False)
+        pop.init_variable(col.PMTCT, False)
+        pop.init_variable(col.ART_NAIVE, True)
+        self.init_num_children(pop)
+        pop.init_variable(col.NUM_HIV_CHILDREN, 0)
+        pop.init_variable(col.WANT_NO_CHILDREN, False)
+
     def init_fertility(self, pop: Population):
         """
         Initialise who has a nonzero chance of getting pregnant
         for the entire female population.
         """
+        pop.init_variable(col.LOW_FERTILITY, False)
         female_population = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])
         r = rng.uniform(size=len(female_population))
         fertility = r > self.can_be_pregnant
@@ -71,7 +84,7 @@ class PregnancyModule:
                                              (col.LOW_FERTILITY, op.eq, False),
                                              (col.AGE, op.ge, 15)])
         # group females by age groups
-        age_groups = np.digitize(pop.data.loc[female_population, col.AGE],
+        age_groups = np.digitize(pop.get_variable(col.AGE, female_population),
                                  [15, 25, 35, 45])
         pop.set_present_variable(col.AGE_GROUP, age_groups, female_population)
         # outcomes
@@ -90,7 +103,7 @@ class PregnancyModule:
         outcomes = self.init_num_children_distributions[index].sample(size)
         return outcomes
 
-    def update_pregnancy(self, pop: Population):
+    def update_pregnancy(self, pop: Population, time_step: timedelta):
         """
         Monitor pregnancies and model childbirth.
         """
@@ -117,7 +130,7 @@ class PregnancyModule:
             age_groups = np.digitize(pop.get_variable(col.AGE, can_get_pregnant),
                                      [15, 25, 35, 45, 55])
             # TODO: change age group col name to be more descriptive
-            pop.set_present_variable(col.AGE_GROUP, age_groups, sub_pop=can_get_pregnant)
+            pop.set_present_variable(col.AGE_GROUP, age_groups, can_get_pregnant)
             # calculate pregnancy outcomes
             pregnancy = pop.transform_group([col.AGE_GROUP, col.LONG_TERM_PARTNER,
                                              col.NUM_PARTNERS, col.WANT_NO_CHILDREN],
@@ -130,37 +143,41 @@ class PregnancyModule:
                                      pop.date,
                                      pop.apply_bool_mask(pregnancy, can_get_pregnant))
 
-        self.update_antenatal_care_testing(pop)
+        self.update_antenatal_care(pop, time_step)
         self.update_births(pop)
         self.update_want_no_children(pop)
 
-    def update_antenatal_care_testing(self, pop: Population):
+    def update_antenatal_care(self, pop: Population, time_step: timedelta):
         """
         Determine who is in antenatal care and receiving
         prevention of mother to child transmission care.
         """
-        # get pregnant population
-        pregnant_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True)])
+        # get population that became pregnant this time step
+        pregnant_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True),
+                                               (col.LAST_PREGNANCY_DATE, op.eq, pop.date)])
         # update probability of antenatal care attendance
-        self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_testanc_inc, 0.975)
+        self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_test_anc_inc, 0.975)
 
         # anc outcomes
         r = rng.uniform(size=len(pregnant_population))
         anc = r < self.prob_anc
         pop.set_present_variable(col.ANC, anc, pregnant_population)
 
+        # anc testing
+        pop.hiv_testing.update_anc_hiv_testing(pop, time_step)
+
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission
         if pop.date.year >= self.date_pmtct:
             # probability of prevention of mother to child transmission care
-            prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
+            self.prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
             # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
             # this expression assumed ANC can only be true if pregnant
             in_anc = pop.get_sub_pop([(col.ART_NAIVE, op.eq, True),
                                       (col.ANC, op.eq, True)])
             # pmtct outcomes
             r = rng.uniform(size=len(in_anc))
-            pmtct = r < prob_pmtct
+            pmtct = r < self.prob_pmtct
             pop.set_present_variable(col.PMTCT, pmtct, in_anc)
 
     def update_births(self, pop: Population):
@@ -168,7 +185,7 @@ class PregnancyModule:
         Model pregnancies that come to term, including
         births with infected children.
         """
-        # get population who give birth this timestep
+        # get population who give birth this time step
         birthing_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True),
                                                (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=270))])
 
@@ -225,7 +242,7 @@ class PregnancyModule:
         ltp_prob_no_preg = 1
         stp_prob_no_preg = 1
         # base probability adjusted according to age factor
-        base_prob_adjusted = self.prob_pregnancy_base * self.fold_preg[int(age_group)-1]
+        base_prob_adjusted = self.prob_pregnancy_base * self.fertility_factor[int(age_group)-1]
         # wanting no more children decreases pregnancy probability by 80%
         if want_no_children:
             base_prob_adjusted *= 0.2
@@ -268,6 +285,6 @@ class PregnancyModule:
             vl_multiplier = 0.5
         # outcomes
         r = rng.uniform(size=size) * vl_multiplier
-        infected_children = r < self.rate_birth_with_infected_child
+        infected_children = r < self.prob_birth_with_infected_child
 
         return infected_children

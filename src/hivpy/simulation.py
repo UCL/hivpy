@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import operator
 from datetime import datetime
@@ -5,7 +7,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from .common import SexType, selector
+import hivpy.column_names as col
+
+from .common import SexType
 from .config import SimulationConfig
 from .population import Population
 
@@ -39,44 +43,47 @@ class SimulationOutput:
         self.output_stats["Date"][self.step] = self.latest_date
 
     def _ratio(self, subpop, pop):
-        if sum(pop) != 0:
-            return sum(subpop)/sum(pop)
+        if len(pop) != 0:
+            return len(subpop)/len(pop)
         else:
             return 0
 
-    def _update_HIV_prevalence(self, pop_data):
+    def _update_HIV_prevalence(self, pop: Population):
         # Update total HIV cases and population
-        over_15_idx = selector(pop_data, age=(operator.gt, 15))
-        HIV_pos_idx = selector(pop_data, HIV_status=(operator.eq, True))
+        over_15_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15)])
+        HIV_pos_idx = pop.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
         self.output_stats["HIV prevalence (tot)"][self.step] = self._ratio(HIV_pos_idx, over_15_idx)
-        self.output_stats["HIV infections (tot)"][self.step] = sum(HIV_pos_idx)
-        self.output_stats["Population (over 15)"][self.step] = sum(over_15_idx)
+        self.output_stats["HIV infections (tot)"][self.step] = len(HIV_pos_idx)
+        self.output_stats["Population (over 15)"][self.step] = len(over_15_idx)
 
         # Update HIV prevalence by sex
-        men_idx = selector(pop_data, sex=(operator.eq, SexType.Male))
+        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         self.output_stats["HIV prevalence (male)"][self.step] = (
-            self._ratio(HIV_pos_idx & men_idx, men_idx & over_15_idx))
-        women_idx = selector(pop_data, sex=(operator.eq, SexType.Female))
-        self.output_stats["HIV prevalence (female)"][self.step] = self._ratio(
-            HIV_pos_idx & women_idx, women_idx & over_15_idx)
+            self._ratio(pop.get_sub_pop_intersection(men_idx, HIV_pos_idx),
+                        pop.get_sub_pop_intersection(men_idx, over_15_idx)))
+        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+        self.output_stats["HIV prevalence (female)"][self.step] = (
+            self._ratio(pop.get_sub_pop_intersection(women_idx, HIV_pos_idx),
+                        pop.get_sub_pop_intersection(women_idx, over_15_idx)))
 
         # Update HIV prevalence by age
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
-            age_idx = (pop_data["age"] >= age_bound) & (
-                pop_data["age"] < (age_bound + self.age_step))
+            age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
+                                       (col.AGE, operator.lt, age_bound+self.age_step)])
             if (key not in self.output_stats.keys()):
                 self._init_output_field(key, 0.0)
-            self.output_stats[key][self.step] = self._ratio(HIV_pos_idx & age_idx, age_idx)
+            self.output_stats[key][self.step] = self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx, age_idx),
+                                                            age_idx)
 
-    def _update_deaths(self, pop_data):
-        died_this_step = selector(pop_data, date_of_death=(operator.eq, self.latest_date))
-        self.output_stats["Deaths (tot)"][self.step] = sum(died_this_step)
+    def _update_deaths(self, pop: Population):
+        died_this_step = pop.get_sub_pop([(col.DATE_OF_DEATH, operator.eq, self.latest_date)])
+        self.output_stats["Deaths (tot)"][self.step] = len(died_this_step)
 
-    def update_summary_stats(self, date, pop_data):
+    def update_summary_stats(self, date, pop: Population):
         self._update_date(date)
-        self._update_HIV_prevalence(pop_data)
-        self._update_deaths(pop_data)
+        self._update_HIV_prevalence(pop)
+        self._update_deaths(pop)
         self.step += 1
 
     def write_output(self, output_path):
@@ -111,7 +118,7 @@ class SimulationHandler:
             logging.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
-            self.output.update_summary_stats(date, self.population.data)
+            self.output.update_summary_stats(date, self.population)
             date = date + time_step
         logging.info("finished")
         self.output.write_output(self.output_path)

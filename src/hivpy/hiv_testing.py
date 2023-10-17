@@ -22,6 +22,12 @@ class HIVTestingModule:
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
         self.test_scenario = self.ht_data.test_scenario
         self.no_test_if_np0 = self.ht_data.no_test_if_np0
+
+        self.prob_anc_test_trim1 = self.ht_data.prob_anc_test_trim1
+        self.prob_anc_test_trim2 = self.ht_data.prob_anc_test_trim2.sample()
+        self.prob_anc_test_trim3 = self.ht_data.prob_anc_test_trim3
+        self.prob_test_postdel = self.ht_data.prob_test_postdel
+
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
@@ -84,29 +90,87 @@ class HIVTestingModule:
                                              self.calc_testing_outcomes,
                                              sub_pop=untested_population)
                 # set outcomes
-                pop.set_present_variable(col.EVER_TESTED, tested, sub_pop=untested_population)
-                # set last test date
-                pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
-                # "reset" dummy partner columns
-                pop.set_present_variable(col.NSTP_LAST_TEST, 0,
-                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
-                pop.set_present_variable(col.NP_LAST_TEST, 0,
-                                         sub_pop=pop.apply_bool_mask(tested, untested_population))
+                pop.set_present_variable(col.EVER_TESTED, tested, untested_population)
+                self.apply_test_outcomes_to_sub_pop(pop, tested, untested_population)
 
             if len(prev_tested_population) > 0:
                 # test repeat testers
                 tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
                                              self.calc_testing_outcomes,
                                              sub_pop=prev_tested_population)
-                # set last test date
-                pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+                self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
+
+    def apply_test_outcomes_to_sub_pop(self, pop, tested, sub_pop):
+        """
+        Uses HIV testing outcomes for a given sub-population to
+        set last test date and reset number of partners since last test.
+        """
+        # set last test date
+        pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        # "reset" dummy partner columns
+        pop.set_present_variable(col.NSTP_LAST_TEST, 0,
+                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        pop.set_present_variable(col.NP_LAST_TEST, 0,
+                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+
+    def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
+        """
+        Update the last test date of a sub-population based on a given probability.
+        """
+        if len(sub_pop) > 0:
+            r = rng.uniform(size=len(sub_pop))
+            tested = r < prob_test
+            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(tested, sub_pop))
+
+    def update_anc_hiv_testing(self, pop, time_step):
+        """
+        Update which pregnant women are tested while in antenatal care.
+        COVID disruption is factored in.
+        """
+        # conduct up to three tests in anc during pregnancy if there is no covid disruption
+        if not (self.covid_disrup_affected | self.testing_disrup_covid):
+            # get population at the end of the first trimester
+            first_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+                                                   (col.ANC, op.eq, True),
+                                                   (col.LAST_PREGNANCY_DATE, op.le, pop.date
+                                                    - timedelta(days=90)),
+                                                   (col.LAST_PREGNANCY_DATE, op.gt, pop.date
+                                                    - (timedelta(days=90) + time_step))])
+            self.update_sub_pop_test_date(pop, first_trimester_pop, self.prob_anc_test_trim1)
+
+            # get population at the end of the second trimester
+            second_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+                                                    (col.ANC, op.eq, True),
+                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
+                                                     - timedelta(days=180)),
+                                                    (col.LAST_PREGNANCY_DATE, op.gt, pop.date
+                                                     - (timedelta(days=180) + time_step))])
+            self.update_sub_pop_test_date(pop, second_trimester_pop, self.prob_anc_test_trim2)
+
+            # get population at the end of the third trimester
+            third_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+                                                   (col.ANC, op.eq, True),
+                                                   (col.LAST_PREGNANCY_DATE, op.le, pop.date
+                                                    - timedelta(days=270))])
+            self.update_sub_pop_test_date(pop, third_trimester_pop, self.prob_anc_test_trim3)
+
+            # get post-delivery population tested during the previous time step
+            post_delivery_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+                                                 (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
+                                                 (col.LAST_PREGNANCY_DATE, op.eq, pop.date
+                                                  - (timedelta(days=270) + time_step))])
+            self.update_sub_pop_test_date(pop, post_delivery_pop, self.prob_test_postdel)
+
+            # get population tested this time step
+            just_tested = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
+            # correctly set up related columns
+            if len(just_tested) > 0:
+                pop.set_present_variable(col.EVER_TESTED, True, just_tested)
                 # "reset" dummy partner columns
-                pop.set_present_variable(col.NSTP_LAST_TEST, 0,
-                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
-                pop.set_present_variable(col.NP_LAST_TEST, 0,
-                                         sub_pop=pop.apply_bool_mask(tested, prev_tested_population))
+                pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
+                pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
 
     def update_vmmc_after_test(self, pop, time_step):
         """
