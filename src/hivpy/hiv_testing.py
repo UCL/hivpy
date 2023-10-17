@@ -134,8 +134,8 @@ class HIVTestingModule:
         Update HIV testing status after VMMC.
         """
         # those that just got circumcised and weren't tested last time step get tested now
-        just_tested = pop.get_sub_pop([(col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                       (col.LAST_TEST_DATE, op.ne, pop.date - timedelta(days=90))])
+        just_tested = pop.get_sub_pop((col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                       (col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90))])
         # correctly set up related columns
         if len(just_tested) > 0:
             pop.set_present_variable(col.EVER_TESTED, True, just_tested)
