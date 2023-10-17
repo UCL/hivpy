@@ -159,9 +159,6 @@ class CircumcisionModule:
                 pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
 
-                # standard HIV testing after circumcision
-                pop.hiv_testing.update_post_vmmc_testing(pop, time_step)
-
                 # chance to get vmmc after a negative HIV test
                 pop.hiv_testing.update_vmmc_after_test(pop, time_step)
 
@@ -169,6 +166,9 @@ class CircumcisionModule:
                 new_circ_males = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
                                                   (col.CIRCUMCISION_DATE, op.eq, None)])
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
+
+                # standard HIV testing after circumcision
+                pop.hiv_testing.update_post_vmmc_testing(pop, time_step)
 
     def calc_prob_circ(self, age_group):
         """

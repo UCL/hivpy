@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import hivpy.column_names as col
 
-from .common import SexType, rng
+from .common import AND, COND, OR, SexType, rng
 from .hiv_testing_data import HIVTestingData
 
 
@@ -198,8 +198,9 @@ class HIVTestingModule:
         Update HIV testing status after VMMC.
         """
         # those that just got circumcised and weren't tested last time step get tested now
-        just_tested = pop.get_sub_pop((col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                       (col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90))])
+        just_tested = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                          OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
+                                             COND(col.LAST_TEST_DATE, op.eq, None))))
         # correctly set up related columns
         if len(just_tested) > 0:
             pop.set_present_variable(col.EVER_TESTED, True, just_tested)
