@@ -170,8 +170,6 @@ class CircumcisionModule:
                                                   (col.CIRCUMCISION_DATE, op.eq, None)])
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
 
-                
-
     def calc_prob_circ(self, age_group):
         """
         Calculates the circumcision probability for a given
