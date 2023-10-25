@@ -193,7 +193,7 @@ class HIVTestingModule:
                 pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
                 pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
 
-    def update_post_vmmc_testing(self, pop, time_step):
+    def update_post_vmmc_testing(self, pop):
         """
         Update HIV testing status after VMMC.
         """

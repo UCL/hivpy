@@ -73,6 +73,7 @@ class Population:
         self.init_variable(col.DATE_OF_DEATH, None)
 
         self.init_variable(col.HIV_STATUS, False)
+        self.init_variable(col.HIV_DIAGNOSED, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
@@ -87,8 +88,6 @@ class Population:
         self.init_variable(col.HARD_REACH, False)
 
         self.pregnancy.init_pregnancy(self)
-
-        self.init_variable(col.HIV_DIAGNOSED, False)
 
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:

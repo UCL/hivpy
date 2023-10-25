@@ -168,7 +168,7 @@ class CircumcisionModule:
                 pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
 
                 # standard HIV testing after circumcision
-                pop.hiv_testing.update_post_vmmc_testing(pop, time_step)
+                pop.hiv_testing.update_post_vmmc_testing(pop)
 
     def calc_prob_circ(self, age_group):
         """
