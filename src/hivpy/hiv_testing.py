@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import hivpy.column_names as col
 
-from .common import rng
+from .common import AND, COND, OR, SexType, rng
 from .hiv_testing_data import HIVTestingData
 
 
@@ -171,6 +171,43 @@ class HIVTestingModule:
                 # "reset" dummy partner columns
                 pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
                 pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
+
+    def update_vmmc_after_test(self, pop, time_step):
+        """
+        Update VMMC in individuals that tested HIV negative last time step.
+        """
+        if pop.circumcision.circ_after_test:
+            # select uncircumcised men tested last timestep
+            tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                      (col.CIRCUMCISED, op.eq, False),
+                                                      (col.HIV_DIAGNOSED, op.eq, False),
+                                                      (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
+                                                      (col.HARD_REACH, op.eq, False),
+                                                      (col.AGE, op.le, pop.circumcision.max_vmmc_age)])
+            # continue if eligible men are present this timestep
+            if len(tested_uncirc_male_pop) > 0:
+                # calculate post-test vmmc outcomes
+                r = rng.uniform(size=len(tested_uncirc_male_pop))
+                circumcision = r < pop.circumcision.prob_circ_after_test
+                # assign outcomes
+                pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
+                pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
+
+    def update_post_vmmc_testing(self, pop):
+        """
+        Update HIV testing status after VMMC.
+        """
+        # those that just got circumcised and weren't tested last time step get tested now
+        just_tested = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                          OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
+                                             COND(col.LAST_TEST_DATE, op.eq, None))))
+        # correctly set up related columns
+        if len(just_tested) > 0:
+            pop.set_present_variable(col.EVER_TESTED, True, just_tested)
+            pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
+            # "reset" dummy partner columns
+            pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
+            pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
 
     def calc_prob_test(self, repeat_tester, np_last_test, nstp_last_test):
         """

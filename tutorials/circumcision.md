@@ -78,7 +78,7 @@ There is no VMMC during a given time step if one of the following conditions is 
 
 Otherwise, VMMC occurs only if the current *year > `vmmc_start_year`*. Typically uncircumcised males of *10 =< age < 50* are eligible for VMMC, but if *`circ_policy_scenario`* is one of 1, 3, or 4 and *`policy_intervention_year` <= year* then circumcision stops in 10-14 year olds.
 
-Individuals are chosen for VMMC by first finding all eligible males that have not yet been circumcised. If uncircumcised males are present during a given time step, then males are grouped by age [10-19 (or 15-19), 20-29, 30-49] and VMMC outcomes are assigned according to the different VMMC probabilities for each age group.
+The probability of VMMC is the probability of someone putting themselves forward for circumcision. In the code, individuals are chosen for VMMC by first finding all eligible males that have not yet been circumcised. If uncircumcised males are present during a given time step, then males are grouped by age [10-19 (or 15-19), 20-29, 30-49] and VMMC outcomes are assigned according to the different VMMC probabilities for each age group.
 
 VMMC probabilities are calculated in the following way:
 - An age modifier is determined based on age group and the year used in calculations is capped at *`prob_circ_calc_cutoff_year`* (2019 by default) if the current year exceeds this date.

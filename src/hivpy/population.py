@@ -73,6 +73,7 @@ class Population:
         self.init_variable(col.DATE_OF_DEATH, None)
 
         self.init_variable(col.HIV_STATUS, False)
+        self.init_variable(col.HIV_DIAGNOSED, False)
         self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
@@ -276,7 +277,7 @@ class Population:
 
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
-        self.circumcision.update_vmmc(self)
+        self.circumcision.update_vmmc(self, time_step)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
