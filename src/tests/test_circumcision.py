@@ -445,9 +445,9 @@ def test_vmmc_testing():
     set_covid(pop.circumcision, False)
     set_vmmc_default_dates(pop.circumcision)
 
-    # make circumcision certain (for the eligible)
+    # fix circumcision probability to 60%
     pop.circumcision.circ_increase_rate = 0.1
-    pop.circumcision.circ_rate_change_post_2013 = 7
+    pop.circumcision.circ_rate_change_post_2013 = 1
     pop.circumcision.circ_rate_change_15_19 = 3
 
     # evolve population
