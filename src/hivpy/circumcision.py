@@ -172,8 +172,8 @@ class CircumcisionModule:
 
     def calc_prob_circ(self, age_group):
         """
-        Calculates the circumcision probability for a given
-        age group and returns it.
+        Calculates the probability of individuals putting themselves forward
+        for circumcision for a given age group and returns it.
         """
         age_mod = 1
         # age group 1 has no modifier in most cases
