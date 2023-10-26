@@ -124,12 +124,12 @@ Short term partners are condomless sex partners for this time step only. They ar
     - We call `get_partners_for_group` which calculates short term partners on a group by group basis for different sexual behaviour groups. 
     - For a given behaviour group, the probability distributions of sexual partners for a given time step is given in `short_term_partner_distributions` in the data file. 
         - Sex workers over 30 have their number of sexual partners in a given timestep capped at a lower level than sex workers under 30.
-- `update_sex_groups` changes sexually active peoples sexual behaviour groups based on the probabilities described above. 
+- `update_sex_groups` changes sexually active people's sexual behaviour groups based on the probabilities described above. 
 - `update_sex_behaviour_class` only needs to change the sex behaviour class of women, as there is only one category for men. For women, it may change if their sex worker status changes, or they move over an age threshold in this timestep.  
 
 ### Risk Factors 
 
-There are a number of risk factors calculated for individuals and for the population. These risk factors may raise or lower risk behaviour, based on whether they are greater or less than 1. An individuals total personal risk is a product of risk factors. Most risk factors have both an `init_risk...` and `update_risk...` function to give initial and then subsequent values. The list of risk factors, and how to set them, is as follows:
+There are a number of risk factors calculated for individuals and for the population. These risk factors may raise or lower risk behaviour, based on whether they are greater or less than 1. An individual's total personal risk is a product of risk factors. Most risk factors have both an `init_risk...` and `update_risk...` function to give initial and then subsequent values. The list of risk factors, and how to set them, is as follows:
 
 - `RISK_PERSONAL`: An individual risk factor that is given to each person. The value `population_risk_personal` in the data gives possible probabilities of a person being designated low risk, and is sampled during the `__init__`. For each person, `RISK_PERSONAL` is set to $10^{-5}$ with this probability, and $1$ otherwise. This is not updated during the simulation. 
 - `RISK_AGE`: Age related risk factor. Set this in `age_based_risk_options` in the data file; these options are sampled during `__init__` to give the age based risk factors for a given simulation.  
@@ -145,10 +145,10 @@ There are a number of risk factors calculated for individuals and for the popula
         - $D > 0.001 \implies R_b = 0.97$
         - otherwise $R_b = 1$
     - `RISK_BALANCE` is set to $R_b$ for the sex with the excess, and $R_b^{-1}$ for the other sex. 
-- `RISK_DIAGNOSIS`: Change in risk behaviour associated with recent HIV diagnosis. Under `risk_diagnosis` in the data file you can set the values it can take, and the probabilities of that (which are samples at the `__init__` for the simulation), as well as the `Period` which is the length of time after an HIV diagnosis for which this effect lasts. For anyone without a recent HIV diagnosis, this is 1. 
+- `RISK_DIAGNOSIS`: Change in risk behaviour associated with recent HIV diagnosis. Under `risk_diagnosis` in the data file you can set the values it can take and their probabilities (which are sampled at the `__init__` for the simulation), as well as the `Period` which is the length of time after an HIV diagnosis for which this effect lasts. For anyone without a recent HIV diagnosis, this is 1. 
 - `RISK_LTP`: Change in risk behaviour associated with being in a long term partnership. Set the possible values for this in `risk_partnered`. Sampled during `__init__`. Set to 1 for anyone without a long term partner. 
 - `RISK_ART_ADHERENCE`: Change in risk behaviour associated with low ART adherence. If a person is on ART and their adherence falls below the given threshold, then `RISK_ART_ADHERENCE` takes the value given in the data file, otherwise it is 1. This factor is only considered in a fraction of simulations. In the data file under `risk_art_adherence` you can set the `Value` of the risk factor, the `Adherence_Threshold`, and the `Probability` of this factor being included in a simulation.  
-- `risk_population`: This is a population level risk. Unlike the other risk factors, which apply to individuals and are therefore stored as columns in the population data frame, this applies to the everyone and so is only stored as a single value in the sexual behaviour module itself. The value is:
+- `risk_population`: This is a population level risk. Unlike the other risk factors, which apply to individuals and are therefore stored as columns in the population dataframe, this applies to everyone and so is only stored as a single value in the sexual behaviour module itself. The value is:
     - $R_\text{pop} = 1$ before 1995
     - $R_\text{pop} = C_{95}^{y - 1995}$ between 1995 and 2000, where $C_{95}$ is the yearly risk change from 1995 and $y$ is the date in years. 
     - $R_\text{pop} = C_{95}^5$ from 2000 to 2010 (i.e. stops changing during this time).
@@ -175,10 +175,10 @@ Individuals in the simulation can form longer term partnerships. An individual c
         - $\frac{1}{2}$ for 35 to 45
         - $\frac{1}{3}$ for 45 to 55
         - $\frac{1}{5}$ for 55+
-    - The base rate of forming an long term partnership is sampled in the `__init__` as $0.1 \times e^{-x/4}$ where $x$ is drawn from $\mathcal{N}(0, 1)$.
+    - The base rate of forming a long term partnership is sampled in the `__init__` as $0.1 \times e^{-x/4}$ where $x$ is drawn from $\mathcal{N}(0, 1)$.
     - The final probability is the product of these three factors. 
-- `new_ltp_longevity`: The longevity is determined for each new partnership, and determines how likely it is to end in any given timestep. It is also dependent on the agre groups described above. 
-    - For those under 45s:
+- `new_ltp_longevity`: The longevity is determined for each new partnership, and determines how likely it is to end in any given timestep. It is also dependent on the age groups described above. 
+    - For those under 45
         - $P(L = 1) = 0.3$
         - $P(L = 2) = 0.3$
         - $P(L = 3) = 0.4$
@@ -192,5 +192,5 @@ Individuals in the simulation can form longer term partnerships. An individual c
         - $P(L = 3) = 0.0$
 - `continue_ltp`: determines which long term partnerships continue or end. 
     - The probability to end a long term partnership depends on the longevity and a population wide rate change. 
-    - The longevity factor is 0.25, 0.05, and 0.02 for $L = $ 1, 2, and 3 respectively. 
+    - The longevity factor is 0.25, 0.05, and 0.02 for $L =$ 1, 2, and 3 respectively. 
     - The population wide factor `ltp_rate_change`
