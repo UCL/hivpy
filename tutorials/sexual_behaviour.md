@@ -102,7 +102,7 @@ Women between the ages of 15 and 50 have a chance of engaging in sex work, which
 
 Short term partners are condomless sex partners for this time step only. They are treated independently, with no continuation, and are not linked to other people in the model population. The population data is only used to calculate the demographic probabilities for short term partners, such as the probability of being HIV positive. 
 
-- `init_sex_behaviour_groups` is used to give everyone in the population their initial sexual behaviour group. This group is used to determine the probability of each person having a particular number of sexual partners in a given timestep. For men, these groups are $[0,1,2,3]$, for women they are $[0,1]$ women not engaged in sex work and $[0,1,2,3,4]$ for sex workers.
+- `init_sex_behaviour_groups` is used to give everyone in the population their initial sexual behaviour group. This group is used to determine the probability of each person having a particular number of sexual partners in a given timestep. For men, these groups are $[0,1,2,3]$; for women they are $[0,1]$ for those not engaged in sex work and $[0,1,2,3,4]$ for sex workers.
     - The probability of beginning the simulation in each of these groups is given by `initial_sex_behaviour_probabilities` in the data file. 
 - `prob_transition` gives the probability of transition between sexual behaviour groups, given ones sexual behaviour class and personal risk factors. 
     - This transition probability is given by the `sex_behaviour_transition_options` in the data file. 
