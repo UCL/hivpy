@@ -26,14 +26,15 @@ class HIVStatusModule:
                                      SexType.Female: np.array([np.zeros(7)]*5)}
         # FIXME move these to data file
         # a more descriptive name would be nice
-        self.fold_tr_newp = rng.choice(
+        self.tr_rate_primary = 0.16
+        self.tr_rate_undetectable_vl = rng.choice([0.0000, 0.0001, 0.0010], p=[0.7, 0.2, 0.1])
+        self.transmission_factor = rng.choice([1/1.5, 1, 1.5])
+        self.newp_transmission_factor = rng.choice(
             [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1/0.8, 1/0.6, 1/0.4])
         self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
         self.fold_change_sti = rng.choice([2., 3.])
-        self.tr_rate_primary = 0.16
-        self.tr_rate_undetectable_vl = rng.choice([0.0000, 0.0001, 0.0010], p=[0.7, 0.2, 0.1])
-        self.transmission_means = self.fold_tr_newp * \
+        self.transmission_means = self.newp_transmission_factor * \
             np.array([0, self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary])
         self.transmission_sigmas = np.array(
             [0, 0.000025**2, 0.0025**2, 0.0075**2, 0.015**2, 0.025**2, 0.075**2])
@@ -75,14 +76,14 @@ class HIVStatusModule:
                                                   (col.SEX_MIX_AGE_GROUP, operator.eq, age_group)])
                 # total number of people partnered to people in this group
                 n_stp_total = sum(population.get_variable(col.NUM_PARTNERS, sub_pop))
-                # num people partered to HIV+ people in this group
+                # num people partnered to HIV+ people in this group
                 HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
                 n_stp_of_infected = sum(population.get_variable(col.NUM_PARTNERS,
                                                                 population.get_sub_pop_intersection(
                                                                     sub_pop,
                                                                     HIV_positive_pop
                                                                 )))
-                # Probability of being HIV prositive
+                # Probability of being HIV positive
                 if n_stp_of_infected == 0:
                     self.stp_HIV_rate[sex][age_group] = 0
                 else:
