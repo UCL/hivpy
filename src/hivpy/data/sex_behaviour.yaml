@@ -7,7 +7,7 @@ initial_sex_behaviour_probabilities:
     Probability: [0.97, 0.03]
   SexWorker:
     Value: [0, 1, 2, 3, 4]
-    Probability: [0.2, 0.2, 0.2, 0.2]
+    Probability: [0.2, 0.2, 0.2, 0.2, 0.2]
 
 initial_sex_worker_probability:
   Ages: [15, 20, 25, 40, 50]

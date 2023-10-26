@@ -12,6 +12,7 @@ Welcome to the HIVpy package. Below is an overview of the repository contents:
 
 - [Circumcision Tutorial](circumcision.md)
 - [Pregnancy Tutorial](pregnancy.md)
+- [Sexual Behaviour Tutorial](sexual_behaviour.md)
 
 ### Common Procedures
 

@@ -166,6 +166,7 @@ class SexualBehaviourModule:
         population.init_variable(col.SW_AGE_GROUP, 0)
         population.init_variable(col.DATE_STOP_SW, None)
         population.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
+        population.init_variable(col.SEX_BEHAVIOUR, 0)
         self.init_risk_factors(population)
         self.init_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
@@ -292,10 +293,7 @@ class SexualBehaviourModule:
 
     # Code for short term partners ----------------------------------------------------------------
 
-    # Haven't been able to locate the probabilities for this yet
-    # Doing them uniform for now
     def init_sex_behaviour_groups(self, population: Population):
-        population.init_variable(col.SEX_BEHAVIOUR, None)
         population.set_variable_by_group(col.SEX_BEHAVIOUR,
                                          [col.SEX],
                                          lambda sex, n:
@@ -334,7 +332,7 @@ class SexualBehaviourModule:
         Calculate the number of short term partners for the whole population
         """
         active_pop = population.get_sub_pop([(col.AGE, operator.ge, 15),
-                                             (col.AGE, operator.le, 65)])
+                                             (col.AGE, operator.lt, 65)])
         population.set_variable_by_group(col.NUM_PARTNERS,
                                          [col.SEX_BEHAVIOUR_CLASS, col.SEX_BEHAVIOUR],
                                          self.get_partners_for_group,
