@@ -124,7 +124,7 @@ Short term partners are condomless sex partners for this time step only. They ar
     - We call `get_partners_for_group` which calculates short term partners on a group by group basis for different sexual behaviour groups. 
     - For a given behaviour group, the probability distributions of sexual partners for a given time step is given in `short_term_partner_distributions` in the data file. 
         - Sex workers over 30 have their number of sexual partners in a given timestep capped at a lower level than sex workers under 30.
-- `update_sex_groups` changes sexually active peoples sexual behaviour groups based on the probabilities described above. 
+- `update_sex_groups` changes sexually active people's sexual behaviour groups based on the probabilities described above. 
 - `update_sex_behaviour_class` only needs to change the sex behaviour class of women, as there is only one category for men. For women, it may change if their sex worker status changes, or they move over an age threshold in this timestep.  
 
 ### Risk Factors 
