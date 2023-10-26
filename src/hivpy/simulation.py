@@ -59,11 +59,11 @@ class SimulationOutput:
         # Update HIV prevalence by sex
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         self.output_stats["HIV prevalence (male)"][self.step] = (
-            self._ratio(pop.get_sub_pop_intersection(men_idx, over_15_idx),
+            self._ratio(pop.get_sub_pop_intersection(men_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(men_idx, over_15_idx)))
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
         self.output_stats["HIV prevalence (female)"][self.step] = (
-            self._ratio(pop.get_sub_pop_intersection(women_idx, over_15_idx),
+            self._ratio(pop.get_sub_pop_intersection(women_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(women_idx, over_15_idx)))
 
         # Update HIV prevalence by age
