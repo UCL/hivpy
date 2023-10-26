@@ -14,7 +14,7 @@ As one can see there's quite a bit covered here, so sexual behaviour is one of t
 
 - The module initialisation is laid out in the `__init__` function. This is automatically called as soon as the object is created. 
 
-    The module is initialised using the `sex_behaviour.yaml` file in the `data` folder. This contains the a wide variety of values that we will discuss in the relevant sub-sections below for the sake of clarity. Parameters in the data file can be assigned fixed values, vectors, matrices, or probability distributions which are sampled. 
+    The module is initialised using the `sex_behaviour.yaml` file in the `data` folder. This contains a wide variety of values that we will discuss in the relevant sub-sections below for the sake of clarity. Parameters in the data file can be assigned fixed values, vectors, matrices, or probability distributions which are sampled. 
 
     After the data has been loaded and converted into the appropriate forms by the `SexualBehaviourData` module, the `sexual_behaviour` module will get the final values by any probability distributions. This is so we in principle when running an ensemble of simluations, one can run simulations with varying properties while only reading the data file once, with just one `SexualBehaviourData` module, and each individual simulation, with its own `sexual_behaviour` module, can sample their own random values. 
 
