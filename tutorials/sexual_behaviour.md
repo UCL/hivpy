@@ -106,7 +106,7 @@ Short term partners are condomless sex partners for this time step only. They ar
     - The probability of beginning the simulation in each of these groups is given by `initial_sex_behaviour_probabilities` in the data file. 
 - `prob_transition` gives the probability of transition between sexual behaviour groups, given one's sexual behaviour class and personal risk factors. 
     - This transition probability is given by the `sex_behaviour_transition_options` in the data file. 
-    - Are are different options for `Male`, `Female`, and `Sex Worker`. 
+    - There are different options for `Male`, `Female`, and `Sex Worker`. 
     - These options are sampled during `__init__` so that one transition matrix for each category of people is used for a given simulation. 
     - These matrices are normalised by the code to avoid issues with probabilities! 
     - For a given transition matrix $T$, the probability of transitioning from group $i$ to $j$ is given by:
