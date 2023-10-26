@@ -30,7 +30,7 @@ As one can see there's quite a bit covered here, so sexual behaviour is one of t
     - `STP_AGE_GROUPS`: Age group for each of the person's short term partners. 
     - `RISK_LTP`: Risk factor associated with long term partnership. 
     - `ADC`: Whether a person has an AIDS Defining Condition 
-    - `LIFE_SEX_RISK`: 
+    - `LIFE_SEX_RISK`: Risk category for engaging in sex work (value betweeen 1 and 3).
     - `SEX_WORKER`: Whether a person is engaged in sex work at this time step (True/False)
     - `SW_TEST_6MONTHLY`: Sex worker engagement in six monthly HIV testing (True/False)
     - `AGE_STOP_SEX_WORK`: Age at which a person last stopped sex work 
