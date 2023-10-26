@@ -129,7 +129,7 @@ Short term partners are condomless sex partners for this time step only. They ar
 
 ### Risk Factors 
 
-There are a number of risk factors calculated for individuals and for the population. These risk factors may raise or lower risk behaviour, based on whether they are greater or less than 1. An individuals total personal risk is a product of risk factors. Most risk factors have both an `init_risk...` and `update_risk...` function to give initial and then subsequent values. The list of risk factors, and how to set them, is as follows:
+There are a number of risk factors calculated for individuals and for the population. These risk factors may raise or lower risk behaviour, based on whether they are greater or less than 1. An individual's total personal risk is a product of risk factors. Most risk factors have both an `init_risk...` and `update_risk...` function to give initial and then subsequent values. The list of risk factors, and how to set them, is as follows:
 
 - `RISK_PERSONAL`: An individual risk factor that is given to each person. The value `population_risk_personal` in the data gives possible probabilities of a person being designated low risk, and is sampled during the `__init__`. For each person, `RISK_PERSONAL` is set to $10^{-5}$ with this probability, and $1$ otherwise. This is not updated during the simulation. 
 - `RISK_AGE`: Age related risk factor. Set this in `age_based_risk_options` in the data file; these options are sampled during `__init__` to give the age based risk factors for a given simulation.  
