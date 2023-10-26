@@ -75,7 +75,7 @@ Women between the ages of 15 and 50 have a chance of engaging in sex work, which
     - Starting sex work with probability $P$:
         - Depends on age group and `LIFE_SEX_RISK`
         - $P = 0$ if `LIFE_SEX_RISK` is 1
-        - $P = P_{SW} = P_\text{base} \times \sqrt{R_\text{pop}} \times R_\text{SW}(a) $ if `LIFE_SEX_RISK` is 2, where:
+        - $P = P_{SW} = P_\text{base} \times \sqrt{R_\text{pop}} \times R_\text{SW}(a)$ if `LIFE_SEX_RISK` is 2, where:
             - $P_\text{base}$ is base probability of starting sex work, set by `base_rate_start_sex_work` in data file and sampled. 
             - $R_\text{pop}$ is population wide risk factor. (See Risk Factors section below.)
             - $R_\text{SW}$ is age dependent sex work risk factor, set by `risk_sex_worker_age` in data file. 
@@ -102,11 +102,11 @@ Women between the ages of 15 and 50 have a chance of engaging in sex work, which
 
 Short term partners are condomless sex partners for this time step only. They are treated independently, with no continuation, and are not linked to other people in the model population. The population data is only used to calculate the demographic probabilities for short term partners, such as the probability of being HIV positive. 
 
-- `init_sex_behaviour_groups` is used to give everyone in the population their initial sexual behaviour group. This group is used to determine the probability of each person having a particular number of sexual partners in a given timestep. For men, these groups are $[0,1,2,3]$, for women they are $[0,1]$ women not engaged in sex work and $[0,1,2,3,4]$ for sex workers.
+- `init_sex_behaviour_groups` is used to give everyone in the population their initial sexual behaviour group. This group is used to determine the probability of each person having a particular number of sexual partners in a given timestep. For men, these groups are $[0,1,2,3]$; for women they are $[0,1]$ for those not engaged in sex work and $[0,1,2,3,4]$ for sex workers.
     - The probability of beginning the simulation in each of these groups is given by `initial_sex_behaviour_probabilities` in the data file. 
-- `prob_transition` gives the probability of transition between sexual behaviour groups, given ones sexual behaviour class and personal risk factors. 
+- `prob_transition` gives the probability of transition between sexual behaviour groups, given one's sexual behaviour class and personal risk factors. 
     - This transition probability is given by the `sex_behaviour_transition_options` in the data file. 
-    - Are are different options for `Male`, `Female`, and `Sex Worker`. 
+    - There are different options for `Male`, `Female`, and `Sex Worker`. 
     - These options are sampled during `__init__` so that one transition matrix for each category of people is used for a given simulation. 
     - These matrices are normalised by the code to avoid issues with probabilities! 
     - For a given transition matrix $T$, the probability of transitioning from group $i$ to $j$ is given by:
