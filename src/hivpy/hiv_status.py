@@ -29,12 +29,12 @@ class HIVStatusModule:
         self.tr_rate_primary = 0.16
         self.tr_rate_undetectable_vl = rng.choice([0.0000, 0.0001, 0.0010], p=[0.7, 0.2, 0.1])
         self.transmission_factor = rng.choice([1/1.5, 1, 1.5])
-        self.newp_transmission_factor = rng.choice(
+        self.stp_transmission_factor = rng.choice(
             [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1/0.8, 1/0.6, 1/0.4])
         self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
         self.fold_change_sti = rng.choice([2., 3.])
-        self.transmission_means = self.newp_transmission_factor * \
+        self.transmission_means = self.stp_transmission_factor * \
             np.array([0, self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary])
         self.transmission_sigmas = np.array(
             [0, 0.000025**2, 0.0025**2, 0.0075**2, 0.015**2, 0.025**2, 0.075**2])

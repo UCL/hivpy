@@ -422,7 +422,7 @@ def test_calc_prob_preg():
     pop.pregnancy.can_be_pregnant = 0.95
     pop.pregnancy.fertility_factor = [2.0, 1.5, 1, 0.1]
     pop.pregnancy.prob_pregnancy_base = 0.1
-    pop.pregnancy.fold_tr_newp = 0.5
+    pop.pregnancy.stp_transmission_factor = 0.5
 
     # check basic ltp case
     # (0.1 * 2) = 0.2
