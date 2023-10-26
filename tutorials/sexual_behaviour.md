@@ -178,7 +178,7 @@ Individuals in the simulation can form longer term partnerships. An individual c
     - The base rate of forming a long term partnership is sampled in the `__init__` as $0.1 \times e^{-x/4}$ where $x$ is drawn from $\mathcal{N}(0, 1)$.
     - The final probability is the product of these three factors. 
 - `new_ltp_longevity`: The longevity is determined for each new partnership, and determines how likely it is to end in any given timestep. It is also dependent on the age groups described above. 
-    - For those under 45s:
+    - For those under 45
         - $P(L = 1) = 0.3$
         - $P(L = 2) = 0.3$
         - $P(L = 3) = 0.4$
