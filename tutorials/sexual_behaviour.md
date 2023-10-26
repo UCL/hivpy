@@ -104,7 +104,7 @@ Short term partners are condomless sex partners for this time step only. They ar
 
 - `init_sex_behaviour_groups` is used to give everyone in the population their initial sexual behaviour group. This group is used to determine the probability of each person having a particular number of sexual partners in a given timestep. For men, these groups are $[0,1,2,3]$; for women they are $[0,1]$ for those not engaged in sex work and $[0,1,2,3,4]$ for sex workers.
     - The probability of beginning the simulation in each of these groups is given by `initial_sex_behaviour_probabilities` in the data file. 
-- `prob_transition` gives the probability of transition between sexual behaviour groups, given ones sexual behaviour class and personal risk factors. 
+- `prob_transition` gives the probability of transition between sexual behaviour groups, given one's sexual behaviour class and personal risk factors. 
     - This transition probability is given by the `sex_behaviour_transition_options` in the data file. 
     - Are are different options for `Male`, `Female`, and `Sex Worker`. 
     - These options are sampled during `__init__` so that one transition matrix for each category of people is used for a given simulation. 
