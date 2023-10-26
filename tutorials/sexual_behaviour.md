@@ -75,7 +75,7 @@ Women between the ages of 15 and 50 have a chance of engaging in sex work, which
     - Starting sex work with probability $P$:
         - Depends on age group and `LIFE_SEX_RISK`
         - $P = 0$ if `LIFE_SEX_RISK` is 1
-        - $P = P_{SW} = P_\text{base} \times \sqrt{R_\text{pop}} \times R_\text{SW}(a) $ if `LIFE_SEX_RISK` is 2, where:
+        - $P = P_{SW} = P_\text{base} \times \sqrt{R_\text{pop}} \times R_\text{SW}(a)$ if `LIFE_SEX_RISK` is 2, where:
             - $P_\text{base}$ is base probability of starting sex work, set by `base_rate_start_sex_work` in data file and sampled. 
             - $R_\text{pop}$ is population wide risk factor. (See Risk Factors section below.)
             - $R_\text{SW}$ is age dependent sex work risk factor, set by `risk_sex_worker_age` in data file. 
