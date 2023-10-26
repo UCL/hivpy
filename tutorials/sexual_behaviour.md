@@ -192,5 +192,5 @@ Individuals in the simulation can form longer term partnerships. An individual c
         - $P(L = 3) = 0.0$
 - `continue_ltp`: determines which long term partnerships continue or end. 
     - The probability to end a long term partnership depends on the longevity and a population wide rate change. 
-    - The longevity factor is 0.25, 0.05, and 0.02 for $L = $ 1, 2, and 3 respectively. 
+    - The longevity factor is 0.25, 0.05, and 0.02 for $L =$ 1, 2, and 3 respectively. 
     - The population wide factor `ltp_rate_change`
