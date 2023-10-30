@@ -19,6 +19,7 @@ RISK_INTIIAL = "risk_initial"                   # float: initial risk reduction 
 CIRCUMCISED = "circumcised"                     # bool: True if a man is circumcised
 CIRCUMCISION_DATE = "circumcision_date"         # None | datetime.date: date of circumcision if circumcised, o/w None
 VMMC = "vmmc"                                   # bool: True if voluntary medical male circumcision was applied
+
 NUM_PARTNERS = "num_partners"                   # float: number of short term condomless sex partners during the current time step
 SEX_MIX_AGE_GROUP = "sex_mix_age_group"         # int: Discrete age group for sexual mixing
 STP_AGE_GROUPS = "stp_age_groups"               # int array: ages groups of short term partners
@@ -64,3 +65,28 @@ ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS definin
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
+
+TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (#TODO: all 24 currently DUMMIED)
+M184_MUTATION = "m184m"
+K65_MUTATION = "k65m"
+Q151_MUTATION = "q151m"
+K103_MUTATION = "k103m"
+Y181_MUTATION = "y181m"
+G190_MUTATION = "g190m"
+P32_MUTATION = "p32m"
+P33_MUTATION = "p33m"
+P46_MUTATION = "p46m"
+P47_MUTATION = "p47m"
+P50L_MUTATION = "p50lm"
+P50V_MUTATION = "p50vm"
+P54_MUTATION = "p54m"
+P76_MUTATION = "p76m"
+P82_MUTATION = "p82m"
+P84_MUTATION = "p84m"
+P88_MUTATION = "p88m"
+P90_MUTATION = "p90m"
+IN118_MUTATION = "in118m"
+IN140_MUTATION = "in140m"
+IN148_MUTATION = "in148m"
+IN155_MUTATION = "in155m"
+IN263_MUTATION = "in263m"

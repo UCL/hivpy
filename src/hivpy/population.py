@@ -98,6 +98,7 @@ class Population:
 
         # TEMP
         self.hiv_status.set_dummy_viral_load(self)
+        self.hiv_status.init_resistance_mutations(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))

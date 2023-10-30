@@ -107,6 +107,35 @@ class HIVStatusModule:
         """
         population.init_variable(col.VIRAL_LOAD_GROUP, rng.choice(7, population.size))
 
+    def init_resistance_mutations(self, population: Population):
+        """
+        Initialise drug resistance mutations at the start of the simulation to false.
+        """
+        population.init_variable(col.TA_MUTATION, False)
+        population.init_variable(col.M184_MUTATION, False)
+        population.init_variable(col.K65_MUTATION, False)
+        population.init_variable(col.Q151_MUTATION, False)
+        population.init_variable(col.K103_MUTATION, False)
+        population.init_variable(col.Y181_MUTATION, False)
+        population.init_variable(col.G190_MUTATION, False)
+        population.init_variable(col.P32_MUTATION, False)
+        population.init_variable(col.P33_MUTATION, False)
+        population.init_variable(col.P46_MUTATION, False)
+        population.init_variable(col.P47_MUTATION, False)
+        population.init_variable(col.P50L_MUTATION, False)
+        population.init_variable(col.P50V_MUTATION, False)
+        population.init_variable(col.P54_MUTATION, False)
+        population.init_variable(col.P76_MUTATION, False)
+        population.init_variable(col.P82_MUTATION, False)
+        population.init_variable(col.P84_MUTATION, False)
+        population.init_variable(col.P88_MUTATION, False)
+        population.init_variable(col.P90_MUTATION, False)
+        population.init_variable(col.IN118_MUTATION, False)
+        population.init_variable(col.IN140_MUTATION, False)
+        population.init_variable(col.IN148_MUTATION, False)
+        population.init_variable(col.IN155_MUTATION, False)
+        population.init_variable(col.IN263_MUTATION, False)
+
     def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
         # Slow example that avoid repeating the iterations over partners
         # three time by putting them as part of
