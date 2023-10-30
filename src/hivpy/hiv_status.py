@@ -24,7 +24,7 @@ class HIVStatusModule:
                              SexType.Female: np.zeros(5)}  # FIXME
         self.stp_viral_group_rate = {SexType.Male: np.array([np.zeros(7)]*5),
                                      SexType.Female: np.array([np.zeros(7)]*5)}
-        # FIXME move these to data file
+        # FIXME: move these to data file
         # a more descriptive name would be nice
         self.tr_rate_primary = 0.16
         self.tr_rate_undetectable_vl = rng.choice([0.0000, 0.0001, 0.0010], p=[0.7, 0.2, 0.1])
@@ -67,7 +67,7 @@ class HIVStatusModule:
 
     def update_partner_risk_vectors(self, population: Population):
         """
-        calculate the risk factor associated with each sex and age group
+        Calculate the risk factor associated with each sex and age group.
         """
         # Should we be using for loops here or can we do better?
         for sex in SexType:
@@ -103,13 +103,13 @@ class HIVStatusModule:
     def set_dummy_viral_load(self, population: Population):
         """
         Dummy function to set viral load until this
-        part of the code has been implemented properly
+        part of the code has been implemented properly.
         """
         population.init_variable(col.VIRAL_LOAD_GROUP, rng.choice(7, population.size))
 
     def init_resistance_mutations(self, population: Population):
         """
-        Initialise drug resistance mutations at the start of the simulation to false.
+        Initialise drug resistance mutations at the start of the simulation to False.
         """
         population.init_variable(col.TA_MUTATION, False)
         population.init_variable(col.M184_MUTATION, False)
@@ -137,8 +137,8 @@ class HIVStatusModule:
         population.init_variable(col.IN263_MUTATION, False)
 
     def get_infection_prob(self, sex, age, n_partners, stp_age_groups):
-        # Slow example that avoid repeating the iterations over partners
-        # three time by putting them as part of
+        # Slow example that avoids repeating the iterations over partners
+        # three times by putting them as part of
         # one for loop, but for loops in python will be slow.
         target_sex = opposite_sex(sex)
         infection_prob = np.zeros(n_partners)
