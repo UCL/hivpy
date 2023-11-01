@@ -12,10 +12,11 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, opposite_sex, rng
+from .common import AND, COND, SexType, opposite_sex, rng
 
 
 class HIVStatusModule:
+
     initial_hiv_newp_threshold = 7  # lower limit for HIV infection at start of epidemic
     initial_hiv_prob = 0.8  # for those with enough partners at start of epidemic
 
@@ -31,6 +32,10 @@ class HIVStatusModule:
         self.transmission_factor = rng.choice([1/1.5, 1, 1.5])
         self.stp_transmission_factor = rng.choice(
             [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1/0.8, 1/0.6, 1/0.4])
+        # proportion of infected stps in population by sex and age group
+        # age groups: 15-24, 25-34, 35-44, 45-54, 55-64
+        self.ratio_infected_stp = {SexType.Male: np.zeros(5),
+                                   SexType.Female: np.zeros(5)}
         self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
         self.fold_change_sti = rng.choice([2., 3.])
@@ -71,7 +76,7 @@ class HIVStatusModule:
         """
         # Should we be using for loops here or can we do better?
         for sex in SexType:
-            for age_group in range(5):   # FIXME need to get number of age groups from somewhere
+            for age_group in range(5):   # FIXME: need to get number of age groups from somewhere
                 sub_pop = population.get_sub_pop([(col.SEX, operator.eq, sex),
                                                   (col.SEX_MIX_AGE_GROUP, operator.eq, age_group)])
                 # total number of people partnered to people in this group
@@ -83,13 +88,13 @@ class HIVStatusModule:
                                                                     sub_pop,
                                                                     HIV_positive_pop
                                                                 )))
-                # Probability of being HIV positive
+                # probability of being HIV positive
                 if n_stp_of_infected == 0:
                     self.stp_HIV_rate[sex][age_group] = 0
                 else:
                     self.stp_HIV_rate[sex][age_group] = n_stp_of_infected / \
                         n_stp_total  # TODO: need to double check this definition
-                # Chances of being in a given viral group
+                # chances of being in a given viral group
                 if n_stp_total > 0:
                     self.stp_viral_group_rate[sex][age_group] = [
                         sum(population.get_variable(col.NUM_PARTNERS,
@@ -156,11 +161,76 @@ class HIVStatusModule:
                     infection_prob[i] *= self.fold_change_w
         return infection_prob
 
+    def update_infected_stp(self, population: Population):
+        """
+        Update a dictionary containing information about the proportion of infected
+        short-term partners in the population grouped by sex and age group.
+        """
+
+        # people with HIV
+        infected_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
+
+        # sexually active people by sex
+        active_male_pop = population.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Male),
+                                                     COND(col.NUM_PARTNERS, operator.gt, 0)))
+        active_female_pop = population.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Female),
+                                                       COND(col.NUM_PARTNERS, operator.gt, 0)))
+
+        # people by age group
+        age_group_1_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 15),
+                                                     COND(col.AGE, operator.lt, 25)))
+        age_group_2_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 25),
+                                                     COND(col.AGE, operator.lt, 35)))
+        age_group_3_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 35),
+                                                     COND(col.AGE, operator.lt, 45)))
+        age_group_4_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 45),
+                                                     COND(col.AGE, operator.lt, 55)))
+        age_group_5_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 55),
+                                                     COND(col.AGE, operator.lt, 65)))
+
+        # sexually active men of various age groups
+        active_male_pop_1 = population.get_sub_pop_intersection(active_male_pop, age_group_1_pop)
+        active_male_pop_2 = population.get_sub_pop_intersection(active_male_pop, age_group_2_pop)
+        active_male_pop_3 = population.get_sub_pop_intersection(active_male_pop, age_group_3_pop)
+        active_male_pop_4 = population.get_sub_pop_intersection(active_male_pop, age_group_4_pop)
+        active_male_pop_5 = population.get_sub_pop_intersection(active_male_pop, age_group_5_pop)
+        active_male_pop_by_age = [active_male_pop_1, active_male_pop_2, active_male_pop_3, active_male_pop_4, active_male_pop_5]
+
+        # sexually active men with HIV of various age groups
+        infected_male_pop_1 = population.get_sub_pop_intersection(active_male_pop_1, infected_pop)
+        infected_male_pop_2 = population.get_sub_pop_intersection(active_male_pop_2, infected_pop)
+        infected_male_pop_3 = population.get_sub_pop_intersection(active_male_pop_3, infected_pop)
+        infected_male_pop_4 = population.get_sub_pop_intersection(active_male_pop_4, infected_pop)
+        infected_male_pop_5 = population.get_sub_pop_intersection(active_male_pop_5, infected_pop)
+        infected_male_pop_by_age = [infected_male_pop_1, infected_male_pop_2, infected_male_pop_3, infected_male_pop_4, infected_male_pop_5]
+
+        # sexually active women of various age groups
+        active_female_pop_1 = population.get_sub_pop_intersection(active_female_pop, age_group_1_pop)
+        active_female_pop_2 = population.get_sub_pop_intersection(active_female_pop, age_group_2_pop)
+        active_female_pop_3 = population.get_sub_pop_intersection(active_female_pop, age_group_3_pop)
+        active_female_pop_4 = population.get_sub_pop_intersection(active_female_pop, age_group_4_pop)
+        active_female_pop_5 = population.get_sub_pop_intersection(active_female_pop, age_group_5_pop)
+        active_female_pop_by_age = [active_female_pop_1, active_female_pop_2, active_female_pop_3, active_female_pop_4, active_female_pop_5]
+
+        # sexually active women with HIV of various age groups
+        infected_female_pop_1 = population.get_sub_pop_intersection(active_female_pop_1, infected_pop)
+        infected_female_pop_2 = population.get_sub_pop_intersection(active_female_pop_2, infected_pop)
+        infected_female_pop_3 = population.get_sub_pop_intersection(active_female_pop_3, infected_pop)
+        infected_female_pop_4 = population.get_sub_pop_intersection(active_female_pop_4, infected_pop)
+        infected_female_pop_5 = population.get_sub_pop_intersection(active_female_pop_5, infected_pop)
+        infected_female_pop_by_age = [infected_female_pop_1, infected_female_pop_2, infected_female_pop_3, infected_female_pop_4, infected_female_pop_5]
+
+        # update proportion of infected stps
+        for i in range(5):
+            self.ratio_infected_stp[SexType.Male][i] = len(infected_male_pop_by_age[i])/len(active_male_pop_by_age[i]) if len(active_male_pop_by_age[i]) > 0 else 0
+            self.ratio_infected_stp[SexType.Female][i] = len(infected_female_pop_by_age[i])/len(active_female_pop_by_age[i]) if len(active_female_pop_by_age[i]) > 0 else 0
+
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
         """
         Returns True if HIV transmission occurs, and False otherwise.
         """
+
         stp_viral_groups = np.array([
             rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(person[col.SEX])][age_group])
             for age_group in person[col.STP_AGE_GROUPS]])
@@ -193,9 +263,12 @@ class HIVStatusModule:
         so probability of infection is 1-((1-Pr)**n).
         """
         self.update_partner_risk_vectors(population)
+        # select uninfected people that have at least one short-term partner
         HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
+        # determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
+        # apply HIV status to sub-population
         population.set_present_variable(col.HIV_STATUS,
                                         new_HIV_status,
                                         HIV_neg_active_pop)
