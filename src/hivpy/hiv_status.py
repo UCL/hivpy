@@ -194,7 +194,8 @@ class HIVStatusModule:
         active_male_pop_3 = population.get_sub_pop_intersection(active_male_pop, age_group_3_pop)
         active_male_pop_4 = population.get_sub_pop_intersection(active_male_pop, age_group_4_pop)
         active_male_pop_5 = population.get_sub_pop_intersection(active_male_pop, age_group_5_pop)
-        active_male_pop_by_age = [active_male_pop_1, active_male_pop_2, active_male_pop_3, active_male_pop_4, active_male_pop_5]
+        active_male_pop_by_age = [active_male_pop_1, active_male_pop_2, active_male_pop_3,
+                                  active_male_pop_4, active_male_pop_5]
 
         # sexually active men with HIV of various age groups
         infected_male_pop_1 = population.get_sub_pop_intersection(active_male_pop_1, infected_pop)
@@ -202,7 +203,8 @@ class HIVStatusModule:
         infected_male_pop_3 = population.get_sub_pop_intersection(active_male_pop_3, infected_pop)
         infected_male_pop_4 = population.get_sub_pop_intersection(active_male_pop_4, infected_pop)
         infected_male_pop_5 = population.get_sub_pop_intersection(active_male_pop_5, infected_pop)
-        infected_male_pop_by_age = [infected_male_pop_1, infected_male_pop_2, infected_male_pop_3, infected_male_pop_4, infected_male_pop_5]
+        infected_male_pop_by_age = [infected_male_pop_1, infected_male_pop_2, infected_male_pop_3,
+                                    infected_male_pop_4, infected_male_pop_5]
 
         # sexually active women of various age groups
         active_female_pop_1 = population.get_sub_pop_intersection(active_female_pop, age_group_1_pop)
@@ -210,7 +212,8 @@ class HIVStatusModule:
         active_female_pop_3 = population.get_sub_pop_intersection(active_female_pop, age_group_3_pop)
         active_female_pop_4 = population.get_sub_pop_intersection(active_female_pop, age_group_4_pop)
         active_female_pop_5 = population.get_sub_pop_intersection(active_female_pop, age_group_5_pop)
-        active_female_pop_by_age = [active_female_pop_1, active_female_pop_2, active_female_pop_3, active_female_pop_4, active_female_pop_5]
+        active_female_pop_by_age = [active_female_pop_1, active_female_pop_2, active_female_pop_3,
+                                    active_female_pop_4, active_female_pop_5]
 
         # sexually active women with HIV of various age groups
         infected_female_pop_1 = population.get_sub_pop_intersection(active_female_pop_1, infected_pop)
@@ -218,12 +221,17 @@ class HIVStatusModule:
         infected_female_pop_3 = population.get_sub_pop_intersection(active_female_pop_3, infected_pop)
         infected_female_pop_4 = population.get_sub_pop_intersection(active_female_pop_4, infected_pop)
         infected_female_pop_5 = population.get_sub_pop_intersection(active_female_pop_5, infected_pop)
-        infected_female_pop_by_age = [infected_female_pop_1, infected_female_pop_2, infected_female_pop_3, infected_female_pop_4, infected_female_pop_5]
+        infected_female_pop_by_age = [infected_female_pop_1, infected_female_pop_2, infected_female_pop_3,
+                                      infected_female_pop_4, infected_female_pop_5]
 
         # update proportion of infected stps
         for i in range(5):
-            self.ratio_infected_stp[SexType.Male][i] = len(infected_male_pop_by_age[i])/len(active_male_pop_by_age[i]) if len(active_male_pop_by_age[i]) > 0 else 0
-            self.ratio_infected_stp[SexType.Female][i] = len(infected_female_pop_by_age[i])/len(active_female_pop_by_age[i]) if len(active_female_pop_by_age[i]) > 0 else 0
+            self.ratio_infected_stp[SexType.Male][i] = \
+                len(infected_male_pop_by_age[i])/len(active_male_pop_by_age[i]) \
+                if len(active_male_pop_by_age[i]) > 0 else 0
+            self.ratio_infected_stp[SexType.Female][i] = \
+                len(infected_female_pop_by_age[i])/len(active_female_pop_by_age[i]) \
+                if len(active_female_pop_by_age[i]) > 0 else 0
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
