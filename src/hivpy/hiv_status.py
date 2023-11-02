@@ -36,6 +36,11 @@ class HIVStatusModule:
         # age groups: 15-24, 25-34, 35-44, 45-54, 55-64
         self.ratio_infected_stp = {SexType.Male: np.zeros(5),
                                    SexType.Female: np.zeros(5)}
+        # viral load ratios in general population for each sex and age group
+        self.ratio_vl_stp = {SexType.Male: [np.zeros(6), np.zeros(6), np.zeros(6),
+                                                 np.zeros(6), np.zeros(6)],
+                                  SexType.Female: [np.zeros(6), np.zeros(6), np.zeros(6),
+                                                   np.zeros(6), np.zeros(6)]}
         self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
         self.fold_change_sti = rng.choice([2., 3.])
@@ -161,10 +166,12 @@ class HIVStatusModule:
                     infection_prob[i] *= self.fold_change_w
         return infection_prob
 
-    def update_infected_stp(self, population: Population):
+    def update_infected_stp_stats(self, population: Population):
         """
-        Update a dictionary containing information about the proportion of infected
-        short-term partners in the population grouped by sex and age group.
+        Update a dictionary containing information about the proportion of infected short-term
+        partners in the population, as well as a dictionary containing information about
+        viral load group proportions of sexually active people in the population.
+        Both dictionaries group the information by sex and age group.
         """
 
         # people with HIV
@@ -224,14 +231,32 @@ class HIVStatusModule:
         infected_female_pop_by_age = [infected_female_pop_1, infected_female_pop_2, infected_female_pop_3,
                                       infected_female_pop_4, infected_female_pop_5]
 
-        # update proportion of infected stps
-        for i in range(5):
-            self.ratio_infected_stp[SexType.Male][i] = \
-                len(infected_male_pop_by_age[i])/len(active_male_pop_by_age[i]) \
-                if len(active_male_pop_by_age[i]) > 0 else 0
-            self.ratio_infected_stp[SexType.Female][i] = \
-                len(infected_female_pop_by_age[i])/len(active_female_pop_by_age[i]) \
-                if len(active_female_pop_by_age[i]) > 0 else 0
+        for age_group in range(5):
+
+            # update proportion of infected stps
+            self.ratio_infected_stp[SexType.Male][age_group] = \
+                len(infected_male_pop_by_age[age_group])/len(active_male_pop_by_age[age_group]) \
+                if len(active_male_pop_by_age[age_group]) > 0 else 0
+            self.ratio_infected_stp[SexType.Female][age_group] = \
+                len(infected_female_pop_by_age[age_group])/len(active_female_pop_by_age[age_group]) \
+                if len(active_female_pop_by_age[age_group]) > 0 else 0
+
+            for vl_group in range(6):
+
+                # populations with given viral load group
+                vl_group_pop = population.get_sub_pop(COND(col.VIRAL_LOAD_GROUP, operator.eq, vl_group+1))
+                male_vl_group_pop = population.get_sub_pop_intersection(infected_male_pop_by_age[age_group],
+                                                                        vl_group_pop)
+                female_vl_group_pop = population.get_sub_pop_intersection(infected_female_pop_by_age[age_group],
+                                                                          vl_group_pop)
+
+                # update proportion of stps with each viral load group
+                self.ratio_vl_stp[SexType.Male][age_group][vl_group] = \
+                    len(male_vl_group_pop)/len(active_male_pop_by_age[age_group]) \
+                    if len(active_male_pop_by_age[age_group]) > 0 else 0
+                self.ratio_vl_stp[SexType.Female][age_group][vl_group] = \
+                    len(female_vl_group_pop)/len(active_female_pop_by_age[age_group]) \
+                    if len(active_female_pop_by_age[age_group]) > 0 else 0
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
