@@ -174,6 +174,10 @@ class HIVStatusModule:
         Both dictionaries group the information by sex and age group.
         """
 
+        def num_stp_of_subpop(subpop):
+            n_partners = population.get_variable(col.NUM_PARTNERS, subpop)
+            return sum(n_partners)
+
         # people with HIV
         infected_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
 
@@ -233,11 +237,11 @@ class HIVStatusModule:
 
             # update proportion of infected stps
             self.ratio_infected_stp[SexType.Male][age_group] = \
-                len(infected_male_pop_by_age[age_group])/len(active_male_pop_by_age[age_group]) \
-                if len(active_male_pop_by_age[age_group]) > 0 else 0
+                num_stp_of_subpop(infected_male_pop_by_age[age_group])/num_stp_of_subpop(active_male_pop_by_age[age_group]) \
+                if num_stp_of_subpop(active_male_pop_by_age[age_group]) > 0 else 0
             self.ratio_infected_stp[SexType.Female][age_group] = \
-                len(infected_female_pop_by_age[age_group])/len(active_female_pop_by_age[age_group]) \
-                if len(active_female_pop_by_age[age_group]) > 0 else 0
+                num_stp_of_subpop(infected_female_pop_by_age[age_group])/num_stp_of_subpop(active_female_pop_by_age[age_group]) \
+                if num_stp_of_subpop(active_female_pop_by_age[age_group]) > 0 else 0
 
             for vl_group in range(6):
 
@@ -251,11 +255,11 @@ class HIVStatusModule:
 
                 # update proportion of stps with each viral load group
                 self.ratio_vl_stp[SexType.Male][age_group][vl_group] = \
-                    len(male_vl_group_pop)/len(infected_male_pop_by_age[age_group]) \
-                    if len(infected_male_pop_by_age[age_group]) > 0 else 0
+                    num_stp_of_subpop(male_vl_group_pop)/num_stp_of_subpop(infected_male_pop_by_age[age_group]) \
+                    if num_stp_of_subpop(infected_male_pop_by_age[age_group]) > 0 else 0
                 self.ratio_vl_stp[SexType.Female][age_group][vl_group] = \
-                    len(female_vl_group_pop)/len(infected_female_pop_by_age[age_group]) \
-                    if len(infected_female_pop_by_age[age_group]) > 0 else 0
+                    num_stp_of_subpop(female_vl_group_pop)/num_stp_of_subpop(infected_female_pop_by_age[age_group]) \
+                    if num_stp_of_subpop(infected_female_pop_by_age[age_group]) > 0 else 0
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
