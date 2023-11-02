@@ -178,10 +178,8 @@ class HIVStatusModule:
         infected_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
 
         # sexually active people by sex
-        active_male_pop = population.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Male),
-                                                     COND(col.NUM_PARTNERS, operator.gt, 0)))
-        active_female_pop = population.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Female),
-                                                       COND(col.NUM_PARTNERS, operator.gt, 0)))
+        male_pop = population.get_sub_pop(COND(col.SEX, operator.eq, SexType.Male))
+        female_pop = population.get_sub_pop(COND(col.SEX, operator.eq, SexType.Female))
 
         # people by age group
         age_group_1_pop = population.get_sub_pop(AND(COND(col.AGE, operator.ge, 15),
@@ -196,11 +194,11 @@ class HIVStatusModule:
                                                      COND(col.AGE, operator.lt, 65)))
 
         # sexually active men of various age groups
-        active_male_pop_1 = population.get_sub_pop_intersection(active_male_pop, age_group_1_pop)
-        active_male_pop_2 = population.get_sub_pop_intersection(active_male_pop, age_group_2_pop)
-        active_male_pop_3 = population.get_sub_pop_intersection(active_male_pop, age_group_3_pop)
-        active_male_pop_4 = population.get_sub_pop_intersection(active_male_pop, age_group_4_pop)
-        active_male_pop_5 = population.get_sub_pop_intersection(active_male_pop, age_group_5_pop)
+        active_male_pop_1 = population.get_sub_pop_intersection(male_pop, age_group_1_pop)
+        active_male_pop_2 = population.get_sub_pop_intersection(male_pop, age_group_2_pop)
+        active_male_pop_3 = population.get_sub_pop_intersection(male_pop, age_group_3_pop)
+        active_male_pop_4 = population.get_sub_pop_intersection(male_pop, age_group_4_pop)
+        active_male_pop_5 = population.get_sub_pop_intersection(male_pop, age_group_5_pop)
         active_male_pop_by_age = [active_male_pop_1, active_male_pop_2, active_male_pop_3,
                                   active_male_pop_4, active_male_pop_5]
 
@@ -214,11 +212,11 @@ class HIVStatusModule:
                                     infected_male_pop_4, infected_male_pop_5]
 
         # sexually active women of various age groups
-        active_female_pop_1 = population.get_sub_pop_intersection(active_female_pop, age_group_1_pop)
-        active_female_pop_2 = population.get_sub_pop_intersection(active_female_pop, age_group_2_pop)
-        active_female_pop_3 = population.get_sub_pop_intersection(active_female_pop, age_group_3_pop)
-        active_female_pop_4 = population.get_sub_pop_intersection(active_female_pop, age_group_4_pop)
-        active_female_pop_5 = population.get_sub_pop_intersection(active_female_pop, age_group_5_pop)
+        active_female_pop_1 = population.get_sub_pop_intersection(female_pop, age_group_1_pop)
+        active_female_pop_2 = population.get_sub_pop_intersection(female_pop, age_group_2_pop)
+        active_female_pop_3 = population.get_sub_pop_intersection(female_pop, age_group_3_pop)
+        active_female_pop_4 = population.get_sub_pop_intersection(female_pop, age_group_4_pop)
+        active_female_pop_5 = population.get_sub_pop_intersection(female_pop, age_group_5_pop)
         active_female_pop_by_age = [active_female_pop_1, active_female_pop_2, active_female_pop_3,
                                     active_female_pop_4, active_female_pop_5]
 
@@ -244,6 +242,7 @@ class HIVStatusModule:
             for vl_group in range(6):
 
                 # populations with given viral load group
+                # viral load groups are normally numbered 1-6 instead but indexing is 0-5
                 vl_group_pop = population.get_sub_pop(COND(col.VIRAL_LOAD_GROUP, operator.eq, vl_group+1))
                 male_vl_group_pop = population.get_sub_pop_intersection(infected_male_pop_by_age[age_group],
                                                                         vl_group_pop)
@@ -252,11 +251,11 @@ class HIVStatusModule:
 
                 # update proportion of stps with each viral load group
                 self.ratio_vl_stp[SexType.Male][age_group][vl_group] = \
-                    len(male_vl_group_pop)/len(active_male_pop_by_age[age_group]) \
-                    if len(active_male_pop_by_age[age_group]) > 0 else 0
+                    len(male_vl_group_pop)/len(infected_male_pop_by_age[age_group]) \
+                    if len(infected_male_pop_by_age[age_group]) > 0 else 0
                 self.ratio_vl_stp[SexType.Female][age_group][vl_group] = \
-                    len(female_vl_group_pop)/len(active_female_pop_by_age[age_group]) \
-                    if len(active_female_pop_by_age[age_group]) > 0 else 0
+                    len(female_vl_group_pop)/len(infected_female_pop_by_age[age_group]) \
+                    if len(infected_female_pop_by_age[age_group]) > 0 else 0
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
