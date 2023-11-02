@@ -36,11 +36,11 @@ class HIVStatusModule:
         # age groups: 15-24, 25-34, 35-44, 45-54, 55-64
         self.ratio_infected_stp = {SexType.Male: np.zeros(5),
                                    SexType.Female: np.zeros(5)}
-        # viral load ratios in general population for each sex and age group
+        # proportion of stps with different viral load groups in general population for each sex and age group
         self.ratio_vl_stp = {SexType.Male: [np.zeros(6), np.zeros(6), np.zeros(6),
-                                                 np.zeros(6), np.zeros(6)],
-                                  SexType.Female: [np.zeros(6), np.zeros(6), np.zeros(6),
-                                                   np.zeros(6), np.zeros(6)]}
+                                            np.zeros(6), np.zeros(6)],
+                             SexType.Female: [np.zeros(6), np.zeros(6), np.zeros(6),
+                                              np.zeros(6), np.zeros(6)]}
         self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
         self.fold_change_sti = rng.choice([2., 3.])
