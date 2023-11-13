@@ -6,15 +6,14 @@ if TYPE_CHECKING:
     from .population import Population
 
 import operator
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, opposite_sex, rng
-
-from datetime import timedelta
+from .common import SexType, opposite_sex, rng
 
 
 class HIVStatusModule:
