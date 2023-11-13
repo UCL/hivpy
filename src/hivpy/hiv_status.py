@@ -22,10 +22,10 @@ class HIVStatusModule:
     initial_hiv_prob = 0.8  # for those with enough partners at start of epidemic
 
     def __init__(self):
-        self.stp_HIV_rate = {SexType.Male: np.zeros(5),
-                             SexType.Female: np.zeros(5)}  # FIXME
-        self.stp_viral_group_rate = {SexType.Male: np.array([np.zeros(7)]*5),
-                                     SexType.Female: np.array([np.zeros(7)]*5)}
+        # self.stp_HIV_rate = {SexType.Male: np.zeros(5),
+        #                      SexType.Female: np.zeros(5)}  # FIXME
+        # self.stp_viral_group_rate = {SexType.Male: np.array([np.zeros(7)]*5),
+        #                              SexType.Female: np.array([np.zeros(7)]*5)}
         # FIXME: move these to data file
         # a more descriptive name would be nice
         self.tr_rate_primary = 0.16

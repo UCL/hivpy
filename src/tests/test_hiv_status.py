@@ -152,8 +152,8 @@ def test_HIV_risk_vector():
     # probability of being with someone with HIV should be = HIV prevalence
     hiv_module.update_partner_risk_vectors(pop)
     expectation = np.array([0.1]*5)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Male], expectation)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Female], expectation)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Male], expectation)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Female], expectation)
 
     # Check for differences in male and female rate correctly
     # change HIV rate in men to double
@@ -165,8 +165,8 @@ def test_HIV_risk_vector():
         [False] * (N_group - 2*N_group // HIV_ratio)), False, males)
     pop.data.loc[males, col.HIV_STATUS] = male_HIV_status
     hiv_module.update_partner_risk_vectors(pop)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Male], 2*expectation)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Female], expectation)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Male], 2*expectation)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Female], expectation)
 
     # Check for difference when changing number of partners between HIV + / - people
     HIV_positive = pop.data.index[pop.data[col.HIV_STATUS]]
@@ -175,8 +175,8 @@ def test_HIV_risk_vector():
     expectation_male = (2 * 0.2) / (2*0.2 + 0.8)
     expectation_female = (2 * 0.1) / (2*0.1 + 0.9)
     hiv_module.update_partner_risk_vectors(pop)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Male], expectation_male)
-    assert np.allclose(hiv_module.stp_HIV_rate[SexType.Female], expectation_female)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Male], expectation_male)
+    assert np.allclose(hiv_module.ratio_infected_stp[SexType.Female], expectation_female)
 
 
 def test_viral_group_risk_vector():
@@ -195,24 +195,25 @@ def test_viral_group_risk_vector():
             sex_list += [sex] * N_group
             age_group_list += [age_group] * N_group
             HIV_list += [True] * (N_group // HIV_ratio) + [False] * (N_group - N_group//HIV_ratio)
+    pop.data[col.HIV_STATUS] = HIV_list
     pop.data[col.SEX] = np.array(sex_list)
     pop.data[col.SEX_MIX_AGE_GROUP] = np.array(age_group_list)
-    pop.data[col.NUM_PARTNERS] = 1  # give everyone a single stp to start with]
-    pop.data[col.VIRAL_LOAD_GROUP] = 1  # put everyone in the same viral load group to begin with
+    pop.data[col.NUM_PARTNERS] = 1  # give everyone a single stp to start with
+    pop.data[col.VIRAL_LOAD] = 3.0  # put everyone in the same viral load group to begin with
     hiv_module.update_partner_risk_vectors(pop)  # probability of group 1 should be 100%
-    expectation = np.array([0., 1., 0., 0., 0., 0., 0.])
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Male], expectation)
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Female], expectation)
-    pop.data[col.VIRAL_LOAD_GROUP] = np.array([1, 2] * (N // 2))  # alternate groups 1 & 2
-    pop.data.loc[pop.data[col.VIRAL_LOAD_GROUP] == 1, col.NUM_PARTNERS] = 2
+    expectation = np.array([0., 1., 0., 0., 0., 0.])
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
+    pop.data[col.VIRAL_LOAD] = np.array([3.0, 4.0] * (N // 2))  # alternate groups 1 & 2
+    pop.data.loc[pop.data[col.VIRAL_LOAD] == 3.0, col.NUM_PARTNERS] = 2
     hiv_module.update_partner_risk_vectors(pop)
-    expectation = np.array([0., 2/3, 1/3, 0., 0., 0., 0.])
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Male], expectation)
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Female], expectation)
+    expectation = np.array([0., 2/3, 1/3, 0., 0., 0.])
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
     # check for appropriate sex differences
-    pop.data.loc[(pop.data[col.VIRAL_LOAD_GROUP] == 1) & (
-        pop.data[col.SEX] == SexType.Female), col.VIRAL_LOAD_GROUP] = 3
+    pop.data.loc[(pop.data[col.VIRAL_LOAD] == 3.0) & (
+        pop.data[col.SEX] == SexType.Female), col.VIRAL_LOAD] = 5.0
     hiv_module.update_partner_risk_vectors(pop)
-    expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0., 0.])
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Male], expectation)
-    assert np.allclose(hiv_module.stp_viral_group_rate[SexType.Female], expecation_female)
+    expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0.])
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
+    assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expecation_female)
