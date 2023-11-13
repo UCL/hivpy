@@ -14,6 +14,8 @@ import hivpy.column_names as col
 
 from .common import AND, COND, SexType, opposite_sex, rng
 
+from datetime import timedelta
+
 
 class HIVStatusModule:
 
@@ -37,8 +39,8 @@ class HIVStatusModule:
         self.ratio_infected_stp = {SexType.Male: np.zeros(5),
                                    SexType.Female: np.zeros(5)}
         # proportion of stps with different viral load groups in general population for each sex and age group
-        self.ratio_vl_stp = {SexType.Male: [np.zeros(6)*5],
-                             SexType.Female: [np.zeros(6)*5]}
+        self.ratio_vl_stp = {SexType.Male: [np.zeros(6)]*5,
+                             SexType.Female: [np.zeros(6)]*5}
         self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
         self.sti_transmission_factor = rng.choice([2., 3.])
@@ -48,6 +50,18 @@ class HIVStatusModule:
         self.stp_transmission_sigmas = np.array(
             [0, 0.000025, 0.0025, 0.0075, 0.015, 0.025, 0.075])
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
+
+        self.initial_mean_sqrt_cd4 = 27.5
+
+    def init_HIV_variables(self, population: Population):
+        population.init_variable(col.HIV_STATUS, False)
+        population.init_variable(col.DATE_HIV_INFECTION, None)
+        population.init_variable(col.CD4, None)
+        population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
+        population.init_variable(col.HIV_DIAGNOSED, False)
+        population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        population.init_variable(col.VIRAL_LOAD_GROUP, None)
+        population.init_variable(col.VIRAL_LOAD, 0.0)
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """
@@ -70,14 +84,25 @@ class HIVStatusModule:
         num_init_candidates = len(initial_candidates)
         rands = rng.uniform(size=num_init_candidates)
         initial_infection = rands < self.initial_hiv_prob
-        hiv_status = pd.Series(False, index=population.data.index)
-        hiv_status.loc[initial_candidates] = initial_infection
-        return hiv_status
+        population.set_present_variable(col.HIV_STATUS, initial_infection, sub_pop=initial_candidates)
+        newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+        self.initialise_HIV_progression(population, newly_infected)
 
     def update_partner_risk_vectors(self, population: Population):
         """
         Calculate the risk factor associated with each sex and age group.
         """
+        # Update viral load groups based on viral load / primary infection
+        HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+        population.set_present_variable(col.VIRAL_LOAD_GROUP,
+                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
+                                                    np.array([2.7, 3.7, 4.7, 5.7])),
+                                        HIV_positive_pop)
+        in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
+                                                        operator.ge,
+                                                        population.date - timedelta(days=90))])
+        population.set_present_variable(col.VIRAL_LOAD, 5, in_primary_infection)
+
         # Should we be using for loops here or can we do better?
         for sex in SexType:
             for age_group in range(5):   # FIXME: need to get number of age groups from somewhere
@@ -86,35 +111,29 @@ class HIVStatusModule:
                 # total number of people partnered to people in this group
                 n_stp_total = sum(population.get_variable(col.NUM_PARTNERS, sub_pop))
                 # num people partnered to HIV+ people in this group
-                HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-                n_stp_of_infected = sum(population.get_variable(col.NUM_PARTNERS,
-                                                                population.get_sub_pop_intersection(
-                                                                    sub_pop,
-                                                                    HIV_positive_pop
-                                                                )))
+                HIV_positive_subpop = population.get_sub_pop_intersection(sub_pop, HIV_positive_pop)
+                n_stp_of_infected = sum(population.get_variable(col.NUM_PARTNERS, HIV_positive_subpop))
                 # probability of being HIV positive
                 if n_stp_of_infected == 0:
-                    self.stp_HIV_rate[sex][age_group] = 0
+                    self.ratio_infected_stp[sex][age_group] = 0
                 else:
-                    self.stp_HIV_rate[sex][age_group] = n_stp_of_infected / \
+                    self.ratio_infected_stp[sex][age_group] = n_stp_of_infected / \
                         n_stp_total  # TODO: need to double check this definition
                 # chances of being in a given viral group
-                if n_stp_total > 0:
-                    self.stp_viral_group_rate[sex][age_group] = [
+                if n_stp_of_infected > 0:
+                    self.ratio_vl_stp[sex][age_group] = [
                         sum(population.get_variable(col.NUM_PARTNERS,
                             population.get_sub_pop_intersection(
-                                sub_pop,
+                                HIV_positive_subpop,
                                 population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
-                            )))/n_stp_total for vg in range(7)]
-                else:
-                    self.stp_viral_group_rate[sex][age_group] = np.array([1, 0, 0, 0, 0, 0, 0])
+                            )))/n_stp_of_infected for vg in range(6)]
 
     def set_dummy_viral_load(self, population: Population):
         """
         Dummy function to set viral load until this
         part of the code has been implemented properly.
         """
-        population.init_variable(col.VIRAL_LOAD_GROUP, rng.choice(7, population.size))
+        population.set_present_variable(col.VIRAL_LOAD_GROUP, rng.choice(6, size=population.size))
 
     def init_resistance_mutations(self, population: Population):
         """
@@ -265,39 +284,35 @@ class HIVStatusModule:
         """
         Returns True if HIV transmission occurs, and False otherwise.
         """
-        stp_viral_groups = np.array([rng.choice(6, p=self.ratio_vl_stp[opposite_sex(person[col.SEX])][age_group])
-                                     for age_group in person[col.STP_AGE_GROUPS]])
         HIV_probabilities = np.array([self.ratio_infected_stp[opposite_sex(
             person[col.SEX])][age_group] for age_group in person[col.STP_AGE_GROUPS]])
-        viral_transmission_probabilities = np.array([max(0, rng.normal(
-            self.stp_transmission_means[group], self.stp_transmission_sigmas[group]))
-            for group in stp_viral_groups])
-        if person[col.SEX] is SexType.Female:
-            if person[col.AGE] < 20:
-                viral_transmission_probabilities = (viral_transmission_probabilities
-                                                    * self.young_women_transmission_factor)
-            else:
-                viral_transmission_probabilities = (viral_transmission_probabilities
-                                                    * self.women_transmission_factor)
-        elif person[col.CIRCUMCISED]:
-            viral_transmission_probabilities = (viral_transmission_probabilities
-                                                * self.circumcision_risk_reduction)
 
-        if person[col.STI]:
-            viral_transmission_probabilities = viral_transmission_probabilities * self.sti_transmission_factor
-        # TODO: Replace this with a loop over partners
-        # First check if partner is HIV positive
-        # Then call a transmission function which will calculate the chance of transmission
-        # and mutations and so on.
         infection = False
         for partner in range(person[col.NUM_PARTNERS]):
-            if (rng.random() < HIV_probabilities[partner]) and \
-               (rng.random() < viral_transmission_probabilities[partner]):
-                # TODO: Superinfection, PREP, etc.
-                if person[col.HIV_STATUS] is False:
+            if (rng.random() < HIV_probabilities[partner]):
+                stp_viral_group = rng.choice(6, p=self.ratio_vl_stp[opposite_sex(person[col.SEX])]
+                                                                   [person[col.STP_AGE_GROUPS][partner]])
+                viral_transmission_probability = max(0, rng.normal(self.stp_transmission_means[stp_viral_group],
+                                                                   self.stp_transmission_sigmas[stp_viral_group]))
+                if person[col.SEX] is SexType.Female:
+                    if person[col.AGE] < 20:
+                        viral_transmission_probability = (viral_transmission_probability
+                                                          * self.young_women_transmission_factor)
+                    else:
+                        viral_transmission_probability = (viral_transmission_probability
+                                                          * self.women_transmission_factor)
+                elif person[col.CIRCUMCISED]:
+                    viral_transmission_probability = (viral_transmission_probability
+                                                      * self.circumcision_risk_reduction)
+
+                if person[col.STI]:
+                    viral_transmission_probability = viral_transmission_probability * self.sti_transmission_factor
+
+                if (rng.random() < viral_transmission_probability):
+                    # TODO: Superinfection, PREP, etc.
                     # TODO: Outputs for stats
                     infection = True
-                    break  # remove break point when superinfection added
+
         return infection
 
     def update_HIV_status(self, population: Population):
@@ -321,4 +336,36 @@ class HIVStatusModule:
                                         HIV_neg_active_pop)
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                  (col.DATE_HIV_INFECTION, operator.is_, None)])
+        self.initialise_HIV_progression(population, newly_infected)
+
+    def initialise_HIV_progression(self, population: Population, newly_infected):
+        """
+        Sets the initial viral load and CD4 counts for people with newly acquired HIV.
+        Depends on sex and age (not age group). CD4 counts depend on viral load, so is
+        necessarily calculated second.
+        Sets the date of HIV infection.
+        """
         population.set_present_variable(col.DATE_HIV_INFECTION, population.date, newly_infected)
+
+        def set_initial_viral_load(person):
+            initial_vl = 4.075 + (0.5 * rng.normal()) + (person[col.AGE] - 35)*0.005
+            if person[col.SEX] == SexType.Female:
+                initial_vl = initial_vl - 0.2
+            initial_vl = min(6.5, initial_vl)
+            return initial_vl
+
+        population.set_present_variable(col.VIRAL_LOAD,
+                                        population.apply_function(set_initial_viral_load, 1, sub_pop=newly_infected),
+                                        sub_pop=newly_infected)
+
+        def set_initial_CD4(person):
+            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + 2*rng.normal() \
+                       - (person[col.AGE] - 35)*0.05
+            upper_sqrt_cd4 = np.sqrt(1500)
+            lower_sqrt_cd4 = 18
+            sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits
+            person[col.CD4] = sqrt_cd4**2
+
+        population.set_present_variable(col.CD4,
+                                        population.apply_function(set_initial_CD4, 1, sub_pop=newly_infected),
+                                        sub_pop=newly_infected)

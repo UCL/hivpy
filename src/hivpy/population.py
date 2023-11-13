@@ -72,10 +72,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
 
-        self.init_variable(col.HIV_STATUS, False)
-        self.init_variable(col.DATE_HIV_INFECTION, None)
-        self.init_variable(col.HIV_DIAGNOSED, False)
-        self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        self.hiv_status.init_HIV_variables(self)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
@@ -99,11 +96,10 @@ class Population:
         self.sexual_behaviour.assign_stp_ages(self)
 
         # TEMP
-        self.hiv_status.set_dummy_viral_load(self)
         self.hiv_status.init_resistance_mutations(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
+            self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
 
     def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
@@ -292,7 +288,7 @@ class Population:
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
+            self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
 
         # We should think about whether we want to return a copy or evolve

@@ -41,7 +41,8 @@ def test_initial_hiv_threshold(pop_percentage):
     print("newp = ", newp)
     print("sum newp = ", sum(newp))
     pop.set_present_variable(col.NUM_PARTNERS, newp)
-    initial_status = HIV_module.introduce_HIV(pop)
+    HIV_module.introduce_HIV(pop)
+    initial_status = pop.get_variable(col.HIV_STATUS)
     print(pop.get_variable(col.NUM_PARTNERS))
     print(sum(pop.get_variable(col.NUM_PARTNERS)))
     print(initial_status)
@@ -58,7 +59,8 @@ def test_initial_hiv_probability():
     # Have everyone be a candidate for initial introduction
     pop.set_present_variable(col.NUM_PARTNERS, HIV_module.initial_hiv_newp_threshold)
     expected_infections = HIV_module.initial_hiv_prob * pop.size
-    initial_status = HIV_module.introduce_HIV(pop)
+    HIV_module.introduce_HIV(pop)
+    initial_status = pop.get_variable(col.HIV_STATUS)
     # TODO Could check against variance of binomial distribution, see issue #45
     assert initial_status.sum() == pytest.approx(expected_infections, rel=0.05)
 
@@ -67,7 +69,7 @@ def test_hiv_introduced_only_once(mocker):
     """
     Check that we do not initialise HIV status repeatedly.
     """
-    pop = Population(size=1000, start_date=date(1988, 12, 1))
+    pop = Population(size=10000, start_date=date(1988, 12, 1))
     spy = mocker.spy(pop.hiv_status, "introduce_HIV")
     pop.evolve(timedelta(days=31))
     spy.assert_not_called()

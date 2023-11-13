@@ -60,6 +60,9 @@ DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: Date of HIV infec
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if you have had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person
+VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ person
+CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter. Set to None for people w/o HIV
+MAX_CD4 = "max_cd4"                             # float: Maximum CD4 count to which a person can return when on ART
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
 
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition
