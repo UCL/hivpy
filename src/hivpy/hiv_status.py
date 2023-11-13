@@ -37,17 +37,16 @@ class HIVStatusModule:
         self.ratio_infected_stp = {SexType.Male: np.zeros(5),
                                    SexType.Female: np.zeros(5)}
         # proportion of stps with different viral load groups in general population for each sex and age group
-        self.ratio_vl_stp = {SexType.Male: [np.zeros(6), np.zeros(6), np.zeros(6),
-                                            np.zeros(6), np.zeros(6)],
-                             SexType.Female: [np.zeros(6), np.zeros(6), np.zeros(6),
-                                              np.zeros(6), np.zeros(6)]}
-        self.fold_change_w = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
-        self.fold_change_yw = rng.choice([1., 2., 3.]) * self.fold_change_w
-        self.fold_change_sti = rng.choice([2., 3.])
-        self.transmission_means = self.stp_transmission_factor * \
-            np.array([0, self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary])
-        self.transmission_sigmas = np.array(
-            [0, 0.000025**2, 0.0025**2, 0.0075**2, 0.015**2, 0.025**2, 0.075**2])
+        self.ratio_vl_stp = {SexType.Male: [np.zeros(6)*5],
+                             SexType.Female: [np.zeros(6)*5]}
+        self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
+        self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
+        self.sti_transmission_factor = rng.choice([2., 3.])
+        self.stp_transmission_means = self.transmission_factor * self.stp_transmission_factor * \
+            np.array([0, self.tr_rate_undetectable_vl / self.transmission_factor, 0.01,
+                      0.03, 0.06, 0.1, self.tr_rate_primary])
+        self.stp_transmission_sigmas = np.array(
+            [0, 0.000025, 0.0025, 0.0075, 0.015, 0.025, 0.075])
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
 
     def initial_HIV_status(self, population: pd.DataFrame):
@@ -157,13 +156,13 @@ class HIVStatusModule:
                 7, p=self.stp_viral_group_rate[target_sex][stp_age_groups[i]])
             HIV_probability = self.stp_HIV_rate[opposite_sex(target_sex)][stp_age_groups[i]]
             infection_prob[i] = HIV_probability * max(0, rng.normal(
-                self.transmission_means[stp_viral_group],
-                self.transmission_sigmas[stp_viral_group]))
+                self.stp_transmission_means[stp_viral_group],
+                self.stp_transmission_sigmas[stp_viral_group]))
             if (sex == SexType.Female):
                 if (age < 20):
-                    infection_prob[i] *= self.fold_change_yw
+                    infection_prob[i] *= self.young_women_transmission_factor
                 else:
-                    infection_prob[i] *= self.fold_change_w
+                    infection_prob[i] *= self.women_transmission_factor
         return infection_prob
 
     def update_infected_stp_stats(self, population: Population):
@@ -174,7 +173,7 @@ class HIVStatusModule:
         Both dictionaries group the information by sex and age group.
         """
 
-        def num_stp_of_subpop(subpop):
+        def total_stp(subpop):
             n_partners = population.get_variable(col.NUM_PARTNERS, subpop)
             return sum(n_partners)
 
@@ -198,38 +197,38 @@ class HIVStatusModule:
                                                      COND(col.AGE, operator.lt, 65)))
 
         # sexually active men of various age groups
-        active_male_pop_1 = population.get_sub_pop_intersection(male_pop, age_group_1_pop)
-        active_male_pop_2 = population.get_sub_pop_intersection(male_pop, age_group_2_pop)
-        active_male_pop_3 = population.get_sub_pop_intersection(male_pop, age_group_3_pop)
-        active_male_pop_4 = population.get_sub_pop_intersection(male_pop, age_group_4_pop)
-        active_male_pop_5 = population.get_sub_pop_intersection(male_pop, age_group_5_pop)
-        active_male_pop_by_age = [active_male_pop_1, active_male_pop_2, active_male_pop_3,
-                                  active_male_pop_4, active_male_pop_5]
+        male_pop_1 = population.get_sub_pop_intersection(male_pop, age_group_1_pop)
+        male_pop_2 = population.get_sub_pop_intersection(male_pop, age_group_2_pop)
+        male_pop_3 = population.get_sub_pop_intersection(male_pop, age_group_3_pop)
+        male_pop_4 = population.get_sub_pop_intersection(male_pop, age_group_4_pop)
+        male_pop_5 = population.get_sub_pop_intersection(male_pop, age_group_5_pop)
+        male_pop_by_age = [male_pop_1, male_pop_2, male_pop_3,
+                           male_pop_4, male_pop_5]
 
         # sexually active men with HIV of various age groups
-        infected_male_pop_1 = population.get_sub_pop_intersection(active_male_pop_1, infected_pop)
-        infected_male_pop_2 = population.get_sub_pop_intersection(active_male_pop_2, infected_pop)
-        infected_male_pop_3 = population.get_sub_pop_intersection(active_male_pop_3, infected_pop)
-        infected_male_pop_4 = population.get_sub_pop_intersection(active_male_pop_4, infected_pop)
-        infected_male_pop_5 = population.get_sub_pop_intersection(active_male_pop_5, infected_pop)
+        infected_male_pop_1 = population.get_sub_pop_intersection(male_pop_1, infected_pop)
+        infected_male_pop_2 = population.get_sub_pop_intersection(male_pop_2, infected_pop)
+        infected_male_pop_3 = population.get_sub_pop_intersection(male_pop_3, infected_pop)
+        infected_male_pop_4 = population.get_sub_pop_intersection(male_pop_4, infected_pop)
+        infected_male_pop_5 = population.get_sub_pop_intersection(male_pop_5, infected_pop)
         infected_male_pop_by_age = [infected_male_pop_1, infected_male_pop_2, infected_male_pop_3,
                                     infected_male_pop_4, infected_male_pop_5]
 
         # sexually active women of various age groups
-        active_female_pop_1 = population.get_sub_pop_intersection(female_pop, age_group_1_pop)
-        active_female_pop_2 = population.get_sub_pop_intersection(female_pop, age_group_2_pop)
-        active_female_pop_3 = population.get_sub_pop_intersection(female_pop, age_group_3_pop)
-        active_female_pop_4 = population.get_sub_pop_intersection(female_pop, age_group_4_pop)
-        active_female_pop_5 = population.get_sub_pop_intersection(female_pop, age_group_5_pop)
-        active_female_pop_by_age = [active_female_pop_1, active_female_pop_2, active_female_pop_3,
-                                    active_female_pop_4, active_female_pop_5]
+        female_pop_1 = population.get_sub_pop_intersection(female_pop, age_group_1_pop)
+        female_pop_2 = population.get_sub_pop_intersection(female_pop, age_group_2_pop)
+        female_pop_3 = population.get_sub_pop_intersection(female_pop, age_group_3_pop)
+        female_pop_4 = population.get_sub_pop_intersection(female_pop, age_group_4_pop)
+        female_pop_5 = population.get_sub_pop_intersection(female_pop, age_group_5_pop)
+        female_pop_by_age = [female_pop_1, female_pop_2, female_pop_3,
+                             female_pop_4, female_pop_5]
 
         # sexually active women with HIV of various age groups
-        infected_female_pop_1 = population.get_sub_pop_intersection(active_female_pop_1, infected_pop)
-        infected_female_pop_2 = population.get_sub_pop_intersection(active_female_pop_2, infected_pop)
-        infected_female_pop_3 = population.get_sub_pop_intersection(active_female_pop_3, infected_pop)
-        infected_female_pop_4 = population.get_sub_pop_intersection(active_female_pop_4, infected_pop)
-        infected_female_pop_5 = population.get_sub_pop_intersection(active_female_pop_5, infected_pop)
+        infected_female_pop_1 = population.get_sub_pop_intersection(female_pop_1, infected_pop)
+        infected_female_pop_2 = population.get_sub_pop_intersection(female_pop_2, infected_pop)
+        infected_female_pop_3 = population.get_sub_pop_intersection(female_pop_3, infected_pop)
+        infected_female_pop_4 = population.get_sub_pop_intersection(female_pop_4, infected_pop)
+        infected_female_pop_5 = population.get_sub_pop_intersection(female_pop_5, infected_pop)
         infected_female_pop_by_age = [infected_female_pop_1, infected_female_pop_2, infected_female_pop_3,
                                       infected_female_pop_4, infected_female_pop_5]
 
@@ -237,11 +236,11 @@ class HIVStatusModule:
 
             # update proportion of infected stps
             self.ratio_infected_stp[SexType.Male][age_group] = \
-                num_stp_of_subpop(infected_male_pop_by_age[age_group])/num_stp_of_subpop(active_male_pop_by_age[age_group]) \
-                if num_stp_of_subpop(active_male_pop_by_age[age_group]) > 0 else 0
+                total_stp(infected_male_pop_by_age[age_group])/total_stp(male_pop_by_age[age_group]) \
+                if total_stp(male_pop_by_age[age_group]) > 0 else 0
             self.ratio_infected_stp[SexType.Female][age_group] = \
-                num_stp_of_subpop(infected_female_pop_by_age[age_group])/num_stp_of_subpop(active_female_pop_by_age[age_group]) \
-                if num_stp_of_subpop(active_female_pop_by_age[age_group]) > 0 else 0
+                total_stp(infected_female_pop_by_age[age_group])/total_stp(female_pop_by_age[age_group]) \
+                if total_stp(female_pop_by_age[age_group]) > 0 else 0
 
             for vl_group in range(6):
 
@@ -255,39 +254,51 @@ class HIVStatusModule:
 
                 # update proportion of stps with each viral load group
                 self.ratio_vl_stp[SexType.Male][age_group][vl_group] = \
-                    num_stp_of_subpop(male_vl_group_pop)/num_stp_of_subpop(infected_male_pop_by_age[age_group]) \
-                    if num_stp_of_subpop(infected_male_pop_by_age[age_group]) > 0 else 0
+                    total_stp(male_vl_group_pop)/total_stp(infected_male_pop_by_age[age_group]) \
+                    if total_stp(infected_male_pop_by_age[age_group]) > 0 else 0
                 self.ratio_vl_stp[SexType.Female][age_group][vl_group] = \
-                    num_stp_of_subpop(female_vl_group_pop)/num_stp_of_subpop(infected_female_pop_by_age[age_group]) \
-                    if num_stp_of_subpop(infected_female_pop_by_age[age_group]) > 0 else 0
+                    total_stp(female_vl_group_pop)/total_stp(infected_female_pop_by_age[age_group]) \
+                    if total_stp(infected_female_pop_by_age[age_group]) > 0 else 0
 
     def stp_HIV_transmission(self, person):
         # TODO: Add circumcision, STIs etc.
         """
         Returns True if HIV transmission occurs, and False otherwise.
         """
-
-        stp_viral_groups = np.array([
-            rng.choice(7, p=self.stp_viral_group_rate[opposite_sex(person[col.SEX])][age_group])
-            for age_group in person[col.STP_AGE_GROUPS]])
-        HIV_probabilities = np.array([self.stp_HIV_rate[opposite_sex(
+        stp_viral_groups = np.array([rng.choice(6, p=self.ratio_vl_stp[opposite_sex(person[col.SEX])][age_group])
+                                     for age_group in person[col.STP_AGE_GROUPS]])
+        HIV_probabilities = np.array([self.ratio_infected_stp[opposite_sex(
             person[col.SEX])][age_group] for age_group in person[col.STP_AGE_GROUPS]])
         viral_transmission_probabilities = np.array([max(0, rng.normal(
-            self.transmission_means[group], self.transmission_sigmas[group]))
+            self.stp_transmission_means[group], self.stp_transmission_sigmas[group]))
             for group in stp_viral_groups])
         if person[col.SEX] is SexType.Female:
             if person[col.AGE] < 20:
                 viral_transmission_probabilities = (viral_transmission_probabilities
-                                                    * self.fold_change_yw)
+                                                    * self.young_women_transmission_factor)
             else:
                 viral_transmission_probabilities = (viral_transmission_probabilities
-                                                    * self.fold_change_w)
+                                                    * self.women_transmission_factor)
         elif person[col.CIRCUMCISED]:
             viral_transmission_probabilities = (viral_transmission_probabilities
                                                 * self.circumcision_risk_reduction)
-        prob_uninfected = np.prod(1-(HIV_probabilities * viral_transmission_probabilities))
-        r = rng.random()
-        return r > prob_uninfected
+
+        if person[col.STI]:
+            viral_transmission_probabilities = viral_transmission_probabilities * self.sti_transmission_factor
+        # TODO: Replace this with a loop over partners
+        # First check if partner is HIV positive
+        # Then call a transmission function which will calculate the chance of transmission
+        # and mutations and so on.
+        infection = False
+        for partner in range(person[col.NUM_PARTNERS]):
+            if (rng.random() < HIV_probabilities[partner]) and \
+               (rng.random() < viral_transmission_probabilities[partner]):
+                # TODO: Superinfection, PREP, etc.
+                if person[col.HIV_STATUS] is False:
+                    # TODO: Outputs for stats
+                    infection = True
+                    break  # remove break point when superinfection added
+        return infection
 
     def update_HIV_status(self, population: Population):
         """
@@ -308,3 +319,6 @@ class HIVStatusModule:
         population.set_present_variable(col.HIV_STATUS,
                                         new_HIV_status,
                                         HIV_neg_active_pop)
+        newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
+                                                 (col.DATE_HIV_INFECTION, operator.is_, None)])
+        population.set_present_variable(col.DATE_HIV_INFECTION, population.date, newly_infected)
