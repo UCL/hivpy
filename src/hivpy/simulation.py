@@ -27,14 +27,15 @@ class SimulationOutput:
                           "HIV prevalence (female)", "HIV infections (tot)",
                           "Population (over 15)", "Deaths (tot)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
+            key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
+            output_columns.insert(4+int(age_bound/10)*2, key)
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(3+int(age_bound/10), key)
         # determine number of output rows
         self.num_steps = int((simulation_config.stop_date -
                              simulation_config.start_date) / simulation_config.time_step) + 1
         # store output information as a dataframe
-        self.output_stats = pd.DataFrame(index=range(self.num_steps),
-                                         columns=output_columns)
+        self.output_stats = pd.DataFrame(index=range(self.num_steps), columns=output_columns)
 
     def _update_date(self, date):
         self.latest_date = date
@@ -64,11 +65,13 @@ class SimulationOutput:
             self._ratio(pop.get_sub_pop_intersection(women_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(women_idx, over_15_idx)))
 
-        # Update HIV prevalence by age
+        # Update HIV prevalence and population by age
         for age_bound in range(self.age_min, self.age_max, self.age_step):
-            key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
                                        (col.AGE, operator.lt, age_bound+self.age_step)])
+            key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
+            self.output_stats.loc[self.step, key] = len(age_idx)
+            key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             self.output_stats.loc[self.step, key] = self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx,
                                                                                              age_idx), age_idx)
 
