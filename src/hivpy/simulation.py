@@ -25,7 +25,7 @@ class SimulationOutput:
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV infections (tot)",
-                          "Population (over 15)", "Deaths (tot)"]
+                          "Population (over 15)", "Births (tot)", "Deaths (tot)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(4+int(age_bound/10)*2, key)
@@ -75,13 +75,19 @@ class SimulationOutput:
             self.output_stats.loc[self.step, key] = self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx,
                                                                                              age_idx), age_idx)
 
+    def _update_births(self, pop: Population, time_step):
+        born_this_step = pop.get_sub_pop([(col.AGE, operator.ge, 0.25),
+                                          (col.AGE, operator.lt, 0.25 + time_step.days / 365)])
+        self.output_stats.loc[self.step, "Births (tot)"] = len(born_this_step)
+
     def _update_deaths(self, pop: Population):
         died_this_step = pop.get_sub_pop([(col.DATE_OF_DEATH, operator.eq, self.latest_date)])
         self.output_stats.loc[self.step, "Deaths (tot)"] = len(died_this_step)
 
-    def update_summary_stats(self, date, pop: Population):
+    def update_summary_stats(self, date, pop: Population, time_step):
         self._update_date(date)
         self._update_HIV_prevalence(pop)
+        self._update_births(pop, time_step)
         self._update_deaths(pop)
         self.step += 1
 
@@ -116,7 +122,7 @@ class SimulationHandler:
             logging.info("Timestep %s\n", date)
             # Advance the population
             self.population = self.population.evolve(time_step)
-            self.output.update_summary_stats(date, self.population)
+            self.output.update_summary_stats(date, self.population, time_step)
             date = date + time_step
         logging.info("finished")
         self.output.write_output(self.output_path)
