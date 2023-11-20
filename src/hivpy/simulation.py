@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 import operator
+import os
 from datetime import datetime
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 import hivpy.column_names as col
@@ -94,6 +96,19 @@ class SimulationOutput:
     def write_output(self, output_path):
         self.output_stats.to_csv(output_path, index_label="Time Step", mode='w')
 
+    def graph_output(self, output_dir, output_stats, graph_outputs):
+
+        for out in graph_outputs:
+            if out in output_stats.columns:
+
+                plt.subplots()
+                plt.plot(output_stats["Date"], output_stats[out])
+
+                plt.xlabel("Date")
+                plt.ylabel(out.title())
+                plt.title("{0} Over Time".format(out.title()))
+                plt.savefig(os.path.join(output_dir, "{0} Over Time".format(out.title())))
+
 
 class SimulationHandler:
     """
@@ -106,7 +121,9 @@ class SimulationHandler:
         self.simulation_config = simulation_config
         self._initialise_population()
         self.output = SimulationOutput(self.simulation_config)
-        self.output_path = simulation_config.output_dir / (
+        self.output_dir = simulation_config.output_dir / (
+            "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")))
+        self.output_path = self.output_dir / (
             "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
 
     def _initialise_population(self):
@@ -125,4 +142,8 @@ class SimulationHandler:
             self.output.update_summary_stats(date, self.population, time_step)
             date = date + time_step
         logging.info("finished")
+        # Store results
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
         self.output.write_output(self.output_path)
+        self.output.graph_output(self.output_dir, self.output.output_stats, self.simulation_config.graph_outputs)
