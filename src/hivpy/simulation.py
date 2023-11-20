@@ -7,6 +7,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from titlecase import titlecase
 
 import hivpy.column_names as col
 
@@ -103,11 +104,12 @@ class SimulationOutput:
 
                 plt.subplots()
                 plt.plot(output_stats["Date"], output_stats[out])
+                title_out = titlecase(out)
 
                 plt.xlabel("Date")
-                plt.ylabel(out.title())
-                plt.title("{0} Over Time".format(out.title()))
-                plt.savefig(os.path.join(output_dir, "{0} Over Time".format(out.title())))
+                plt.ylabel(title_out)
+                plt.title("{0} Over Time".format(title_out))
+                plt.savefig(os.path.join(output_dir, "{0} Over Time".format(title_out)))
 
 
 class SimulationHandler:
