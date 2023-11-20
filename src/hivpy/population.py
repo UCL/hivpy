@@ -95,8 +95,6 @@ class Population:
             self.circumcision.init_birth_circumcision_all(self.data, self.date)
         self.sexual_behaviour.assign_stp_ages(self)
 
-        # TEMP
-        self.hiv_status.init_resistance_mutations(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.hiv_status.introduce_HIV(self)

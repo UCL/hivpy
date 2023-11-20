@@ -27,7 +27,7 @@ class DiscreteChoice:
         index_range = np.arange(0, N, 1)
         self.probs = probs
         self.data = vals
-        self.dist = stat.rv_discrete(values=(index_range, probs))
+        self.dist = stat.rv_discrete(values=(index_range, probs), seed=50)
 
     def sample(self, size=None):
         """
@@ -84,7 +84,7 @@ class ResettableRandomState:
         """
         Create a new wrapper around a NumPy Generator.
         """
-        self.rng = np.random.default_rng()
+        self.rng = np.random.default_rng(50)
 
     def __getattr__(self, name):
         """

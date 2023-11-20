@@ -1,4 +1,5 @@
 import operator
+import operator as op
 from datetime import date, timedelta
 
 import numpy as np
@@ -6,7 +7,7 @@ import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng
+from hivpy.common import COND, SexType, rng
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
@@ -217,3 +218,163 @@ def test_viral_group_risk_vector():
     expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0.])
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expecation_female)
+
+
+def test_initial_vl():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.HIV_STATUS] = [True, False] * 500
+    # Reset viral load for testing (original values affected by intro of HIV)
+    pop.data[col.VIRAL_LOAD] = 0.0
+    hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+    hivneg_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False))
+    hiv_module = pop.hiv_status
+    assert (np.allclose(pop.get_variable(col.VIRAL_LOAD, hivneg_subpop), 0.0))
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Male)
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Female)
+
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Male, age_diff=10)
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Female, age_diff=10)
+
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Male, age_diff=-10)
+    check_initial_vl_by_sex(pop, hiv_module, hivpos_subpop, hivneg_subpop, SexType.Female, age_diff=-10)
+
+
+def check_initial_vl_by_sex(pop: Population, hiv_module, hivpos_subpop, hivneg_subpop, sex, age_diff=0):
+    pop.data[col.AGE] = 35 + age_diff
+    hiv_module.initialise_HIV_progression(pop, hivpos_subpop)
+    hiv_pos_by_sex = pop.get_sub_pop_intersection(hivpos_subpop,
+                                                  pop.get_sub_pop([(col.SEX, op.eq, sex)]))
+    assert np.allclose(pop.get_variable(col.VIRAL_LOAD, hivneg_subpop), 0)
+    new_vls = pop.get_variable(col.VIRAL_LOAD, hiv_pos_by_sex)
+    average_vl = np.average(new_vls)
+    vl_sigma = np.std(new_vls)
+    expected_average = 4.075 if sex == SexType.Male else 3.875
+    expected_average += age_diff*0.005
+    expected_sigma = 0.5
+    assert (np.isclose(average_vl, expected_average, atol=0.1))
+    assert (np.isclose(vl_sigma, expected_sigma, atol=0.1))
+    assert (np.all(new_vls <= 6.5))
+
+
+def test_naive_vl_progression():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    init_vl = 5
+    pop.data[col.AGE] = 35
+    pop.data[col.VIRAL_LOAD] = init_vl
+    pop.data[col.HIV_STATUS] = [True, False] * 500
+    # Reset viral load for testing (original values affected by intro of HIV)
+    pop.data[col.VIRAL_LOAD] = 0.0
+    pop.data[col.ART_NAIVE] = True
+    hiv_module = pop.hiv_status
+    hiv_module.vl_base_change = 1.5
+    hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+    hivneg_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False))
+    pop.set_present_variable(col.CD4, 1000.0, hivpos_subpop)
+    # Check general formula and age variance
+    check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, 0)
+
+    check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, 10)
+
+    check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, -10)
+
+    # Check that we can't exceed maximum viral load
+    pop.data[col.AGE] = 35
+    pop.data[col.VIRAL_LOAD] = 6.5
+    hiv_module.update_HIV_progression(pop, hivpos_subpop)
+    new_vls = pop.get_variable(col.VIRAL_LOAD, hivpos_subpop)
+    assert (all(new_vls <= 6.5))
+
+
+def check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, age_diff):
+    pop.data[col.AGE] = 35 + age_diff
+    pop.data[col.VIRAL_LOAD] = init_vl
+    hiv_module.update_HIV_progression(pop, hivpos_subpop)
+    assert (all(pop.get_variable(col.VIRAL_LOAD, hivneg_subpop) == 5))
+    new_vls = pop.get_variable(col.VIRAL_LOAD, hivpos_subpop)
+    average_new_vl = np.average(new_vls)
+    new_vl_sigma = np.std(new_vls)
+    expected_average = init_vl + 0.02275*1.5 + age_diff*0.00075
+    expected_sigma = 0.05
+    # Tolerances are basically arbitrary
+    assert (np.isclose(average_new_vl, expected_average, atol=0.01))
+    assert (np.isclose(new_vl_sigma, expected_sigma, atol=0.2))
+
+
+def test_initial_cd4():
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.HIV_STATUS] = [True, False] * 5000
+    pop.data[col.CD4] = 0.0
+    pop.data[col.VIRAL_LOAD] = 0.0
+    hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+    hivneg_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False))
+    hiv_module = pop.hiv_status
+
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Male, 0)
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Male, 10)
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Male, -10)
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Female, 0)
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Female, 10)
+    check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, SexType.Female, -10)
+
+
+def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex, age_diff):
+    pop.data[col.AGE] = 35 + age_diff
+    pop.data[col.CD4] = 0.0
+    pop.data[col.VIRAL_LOAD] = 0.0
+    hiv_module.initialise_HIV_progression(pop, hivpos_subpop)
+    neg_cd4_counts = pop.get_variable(col.CD4, hivneg_subpop)
+    assert np.allclose(neg_cd4_counts, 0.0)
+    hiv_pop_by_sex = pop.get_sub_pop_intersection(
+        pop.get_sub_pop([(col.SEX, operator.eq, sex)]),
+        hivpos_subpop
+    )
+    cd4_counts = pop.get_variable(col.CD4, hiv_pop_by_sex)
+    sqrt_cd4_counts = np.sqrt(cd4_counts)
+    average_sqrt_cd4 = np.average(sqrt_cd4_counts)
+    sigma_sqrt_cd4 = np.std(sqrt_cd4_counts)
+    expected_VL = 4.075 if sex == SexType.Male else 3.875
+    expected_VL += age_diff*0.005
+    expected_sigma_VL = 0.5
+    expected_sqrt_cd4 = 27.5 - 1.5*expected_VL - age_diff*0.05
+    expected_sigma_sqrt_cd4 = np.sqrt(4 + expected_sigma_VL**2)
+    assert np.isclose(average_sqrt_cd4, expected_sqrt_cd4, rtol=0.01)
+    assert np.isclose(sigma_sqrt_cd4, expected_sigma_sqrt_cd4, rtol=0.1)
+    assert np.all(cd4_counts >= 324)
+    assert np.all(cd4_counts <= 1500)
+
+
+def test_naive_cd4_progression():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.AGE] = 35
+    pop.data[col.HIV_STATUS] = [True, False] * 500
+    # Reset viral load for testing (original values affected by intro of HIV)
+    pop.data[col.ART_NAIVE] = True
+    hiv_module = pop.hiv_status
+    hiv_module.cd4_base_change = 1.5  # Fix to avoid sampling
+    hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+
+    pop.data[col.VIRAL_LOAD] = 5.25  # in the middle of a VL group
+    check_cd4_progression(pop, hiv_module, hivpos_subpop, 0.85)
+    pop.data[col.VIRAL_LOAD] = 5.75  # in the middle of a VL group
+    check_cd4_progression(pop, hiv_module, hivpos_subpop, 1.3)
+    pop.data[col.VIRAL_LOAD] = 4.75  # in the middle of a VL group
+    check_cd4_progression(pop, hiv_module, hivpos_subpop, 0.4)
+
+
+def check_cd4_progression(pop, hiv_module, hivpos_subpop, change_factor):
+    pop.data[col.CD4] = 1000.0
+    hiv_module.update_HIV_progression(pop, hivpos_subpop)
+    cd4_counts = pop.get_variable(col.CD4, hivpos_subpop)
+    assert np.all(cd4_counts <= 1500)
+    assert np.all(cd4_counts > 324)
+    sqrt_cd4 = np.sqrt(cd4_counts)
+    average_sqrt_cd4 = np.average(sqrt_cd4)
+    sigma_sqrt_cd4 = np.std(sqrt_cd4)
+    expected_sqrt_cd4 = np.sqrt(1000) - change_factor * rng.normal(1.5, 1.2)
+    expected_sigma = 1.2
+    assert np.isclose(average_sqrt_cd4, expected_sqrt_cd4, rtol=0.1)
+    assert np.isclose(sigma_sqrt_cd4, expected_sigma, rtol=0.1)
