@@ -4,6 +4,7 @@ EXPERIMENT:
   end_year: 2021
   time_interval_days: 90
   simulation_output_dir: output
+  graph_outputs: []
 
 LOGGING:
   log_directory: log
