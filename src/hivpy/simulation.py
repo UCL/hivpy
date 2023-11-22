@@ -28,10 +28,13 @@ class SimulationOutput:
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV infections (tot)",
+                          "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
                           "Population (over 15)", "Births (tot)", "Deaths (tot)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
+            # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(4+int(age_bound/10)*2, key)
+            output_columns.insert(7+int(age_bound/10)*2, key)
+            # inserted after 'HIV prevalence (female)' column
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(3+int(age_bound/10), key)
         # determine number of output rows
@@ -78,6 +81,17 @@ class SimulationOutput:
             self.output_stats.loc[self.step, key] = self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx,
                                                                                              age_idx), age_idx)
 
+    # FIXME: add this to summary stats once CD4 gets merged
+    def _update_CD4_count(self, pop: Population):
+        # Update number of people with given CD4 counts
+        cd4_under_200_idx = pop.get_sub_pop([(col.CD4, operator.lt, 200)])
+        cd4_200_to_500_idx = pop.get_sub_pop([(col.CD4, operator.ge, 200),
+                                              (col.CD4, operator.le, 500)])
+        cd4_over_500_idx = pop.get_sub_pop([(col.CD4, operator.gt, 500)])
+        self.output_stats.loc[self.step, "CD4 count (under 200)"] = len(cd4_under_200_idx)
+        self.output_stats.loc[self.step, "CD4 count (200-500)"] = len(cd4_200_to_500_idx)
+        self.output_stats.loc[self.step, "CD4 count (over 500)"] = len(cd4_over_500_idx)
+
     def _update_births(self, pop: Population, time_step):
         born_this_step = pop.get_sub_pop([(col.AGE, operator.ge, 0.25),
                                           (col.AGE, operator.lt, 0.25 + time_step.days / 365)])
@@ -90,6 +104,7 @@ class SimulationOutput:
     def update_summary_stats(self, date, pop: Population, time_step):
         self._update_date(date)
         self._update_HIV_prevalence(pop)
+        # self._update_CD4_count(pop)
         self._update_births(pop, time_step)
         self._update_deaths(pop)
         self.step += 1
