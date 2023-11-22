@@ -3,8 +3,7 @@ from __future__ import annotations
 import logging
 import operator
 import os
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -28,7 +27,7 @@ class SimulationOutput:
         self.age_step = 10
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
-                          "HIV prevalence (female)", "HIV infections (tot)",
+                          "HIV prevalence (female)", "Circumcision (15-49)", "HIV infections (tot)",
                           "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
                           "Population (over 15)", "Giving birth (ratio)", "Infected newborns (ratio)",
                           "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
@@ -36,7 +35,7 @@ class SimulationOutput:
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(7+int(age_bound/10)*2, key)
+            output_columns.insert(8+int(age_bound/10)*2, key)
             # inserted after 'HIV prevalence (female)' column
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(3+int(age_bound/10), key)
@@ -95,6 +94,13 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "CD4 count (200-500)"] = len(cd4_200_to_500_idx)
         self.output_stats.loc[self.step, "CD4 count (over 500)"] = len(cd4_over_500_idx)
 
+    def _update_circumcision(self, pop: Population):
+        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+        circumcised_idx = pop.get_sub_pop([(col.CIRCUMCISED, operator.eq, True),
+                                           (col.AGE, operator.ge, 15),
+                                           (col.AGE, operator.lt, 50)])
+        self.output_stats.loc[self.step, "Circumcision (15-49)"] = self._ratio(circumcised_idx, men_idx)
+
     def _update_births(self, pop: Population, time_step):
         # Update total births
         born_this_step = pop.get_sub_pop([(col.AGE, operator.ge, 0.25),
@@ -141,6 +147,7 @@ class SimulationOutput:
         self._update_date(date)
         self._update_HIV_prevalence(pop)
         # self._update_CD4_count(pop)
+        self._update_circumcision(pop)
         self._update_births(pop, time_step)
         self._update_deaths(pop)
         self.step += 1
