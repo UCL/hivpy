@@ -31,6 +31,7 @@ PREGNANT = "pregnant"                           # bool: True if a woman is curre
 ANC = "anc"                                     # bool: True if in antenatal care
 PMTCT = "pmtct"                                 # bool: True if undergoing prevention of mother to child transmission care
 LAST_PREGNANCY_DATE = "last_pregnancy_date"     # None | datetime.date: date of most recent pregnancy, o/w None if never pregnant
+INFECTED_BIRTH = "infected_birth"               # bool: True if a woman's last child was born with HIV
 NUM_CHILDREN = "num_children"                   # int: number of children a woman has
 NUM_HIV_CHILDREN = "num_HIV_children"           # int: number of children infected with HIV a woman has
 WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children

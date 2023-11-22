@@ -4,6 +4,7 @@ import logging
 import operator
 import os
 from datetime import datetime
+from datetime import timedelta
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -29,9 +30,9 @@ class SimulationOutput:
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV infections (tot)",
                           "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
-                          "Population (over 15)", "Births (tot)", "Deaths (tot)",
-                          "Deaths (over 15, male)", "Deaths (over 15, female)",
-                          "Deaths (20-59, male)", "Deaths (20-59, female)"]
+                          "Population (over 15)", "Giving birth (ratio)", "Infected newborns (ratio)",
+                          "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
+                          "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
@@ -95,9 +96,21 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "CD4 count (over 500)"] = len(cd4_over_500_idx)
 
     def _update_births(self, pop: Population, time_step):
+        # Update total births
         born_this_step = pop.get_sub_pop([(col.AGE, operator.ge, 0.25),
                                           (col.AGE, operator.lt, 0.25 + time_step.days / 365)])
         self.output_stats.loc[self.step, "Births (tot)"] = len(born_this_step)
+
+        # Update proportion of women giving birth and infected children
+        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+        giving_birth_this_step = pop.get_sub_pop([(col.PREGNANT, operator.eq, True),
+                                                  (col.LAST_PREGNANCY_DATE, operator.le,
+                                                   pop.date - timedelta(days=270))])
+        self.output_stats.loc[self.step, "Giving birth (ratio)"] = self._ratio(giving_birth_this_step,
+                                                                               women_idx)
+        infected_newborns = pop.get_sub_pop([(col.INFECTED_BIRTH, operator.eq, True)])
+        self.output_stats.loc[self.step, "Infected newborns (ratio)"] = self._ratio(infected_newborns,
+                                                                                    born_this_step)
 
     def _update_deaths(self, pop: Population):
         # Update total deaths
