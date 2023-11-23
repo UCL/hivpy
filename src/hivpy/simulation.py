@@ -83,7 +83,6 @@ class SimulationOutput:
             self.output_stats.loc[self.step, key] = self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx,
                                                                                              age_idx), age_idx)
 
-    # FIXME: add this to summary stats once CD4 gets merged
     def _update_CD4_count(self, pop: Population):
         # Update number of people with given CD4 counts
         cd4_under_200_idx = pop.get_sub_pop([(col.CD4, operator.lt, 200)])
@@ -146,7 +145,7 @@ class SimulationOutput:
     def update_summary_stats(self, date, pop: Population, time_step):
         self._update_date(date)
         self._update_HIV_prevalence(pop)
-        # self._update_CD4_count(pop)
+        self._update_CD4_count(pop)
         self._update_circumcision(pop)
         self._update_births(pop, time_step)
         self._update_deaths(pop)
