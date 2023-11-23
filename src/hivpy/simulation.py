@@ -29,9 +29,11 @@ class SimulationOutput:
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "Circumcision (15-49)", "HIV infections (tot)",
                           "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
-                          "Population (over 15)", "Giving birth (ratio)", "Infected newborns (ratio)",
-                          "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
-                          "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
+                          "Population (over 15)", "Long term partner (15-64)",
+                          "Short term partners (15-64)", "Over 5 short term partners (15-64)",
+                          "Giving birth (ratio)", "Infected newborns (ratio)", "Births (tot)",
+                          "Deaths (tot)", "Deaths (over 15, male)", "Deaths (over 15, female)",
+                          "Deaths (20-59, male)", "Deaths (20-59, female)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
@@ -94,11 +96,31 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "CD4 count (over 500)"] = len(cd4_over_500_idx)
 
     def _update_circumcision(self, pop: Population):
+        # Update proportion of circumcised men
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         circumcised_idx = pop.get_sub_pop([(col.CIRCUMCISED, operator.eq, True),
                                            (col.AGE, operator.ge, 15),
                                            (col.AGE, operator.lt, 50)])
         self.output_stats.loc[self.step, "Circumcision (15-49)"] = self._ratio(circumcised_idx, men_idx)
+
+    def _update_partners(self, pop: Population):
+        # Update proportion of people with long term partners
+        age_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                   (col.AGE, operator.lt, 65)])
+        ltp_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                   (col.AGE, operator.lt, 65),
+                                   (col.LONG_TERM_PARTNER, operator.eq, True)])
+        self.output_stats.loc[self.step, "Long term partner (15-64)"] = self._ratio(ltp_idx, age_idx)
+        # Update proportion of people with short term partners
+        stp_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                   (col.AGE, operator.lt, 65),
+                                   (col.NUM_PARTNERS, operator.ge, 1)])
+        self.output_stats.loc[self.step, "Short term partners (15-64)"] = self._ratio(stp_idx, age_idx)
+        # Update proportion of people with 5+ short term partners
+        stp_over_5_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                          (col.AGE, operator.lt, 65),
+                                          (col.NUM_PARTNERS, operator.ge, 5)])
+        self.output_stats.loc[self.step, "Over 5 short term partners (15-64)"] = self._ratio(stp_over_5_idx, age_idx)
 
     def _update_births(self, pop: Population, time_step):
         # Update total births
@@ -147,6 +169,7 @@ class SimulationOutput:
         self._update_HIV_prevalence(pop)
         self._update_CD4_count(pop)
         self._update_circumcision(pop)
+        self._update_partners(pop)
         self._update_births(pop, time_step)
         self._update_deaths(pop)
         self.step += 1
