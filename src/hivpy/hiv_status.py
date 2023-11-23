@@ -244,7 +244,7 @@ class HIVStatusModule:
             upper_sqrt_cd4 = np.sqrt(1500)
             lower_sqrt_cd4 = 18
             sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits
-            person[col.CD4] = sqrt_cd4**2
+            return sqrt_cd4**2
 
         population.set_present_variable(col.CD4,
                                         population.apply_function(set_initial_CD4, 1, sub_pop=newly_infected),
