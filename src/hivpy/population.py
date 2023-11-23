@@ -72,13 +72,12 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
         self.init_variable(col.DATE_OF_DEATH, None)
 
-        self.init_variable(col.HIV_STATUS, False)
-        self.init_variable(col.HIV_DIAGNOSED, False)
-        self.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        self.hiv_status.init_HIV_variables(self)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
         self.init_variable(col.NP_LAST_TEST, 0)
+        self.init_variable(col.STI, False)
 
         self.sexual_behaviour.init_sex_behaviour(self)
 
@@ -97,10 +96,10 @@ class Population:
         self.sexual_behaviour.assign_stp_ages(self)
 
         # TEMP
-        self.hiv_status.set_dummy_viral_load(self)
+        self.hiv_status.init_resistance_mutations(self)
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
+            self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
 
     def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
@@ -280,13 +279,16 @@ class Population:
         self.circumcision.update_vmmc(self, time_step)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
-        self.hiv_status.update_HIV_status(self)
-        self.hiv_testing.update_hiv_testing(self)
         self.pregnancy.update_pregnancy(self, time_step)
+
+        # If HIV has been introduced, then run HIV relevant code
+        if self.HIV_introduced:
+            self.hiv_status.update_HIV_status(self)
+            self.hiv_testing.update_hiv_testing(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
-            self.set_present_variable(col.HIV_STATUS, self.hiv_status.introduce_HIV(self))
+            self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
 
         # We should think about whether we want to return a copy or evolve
