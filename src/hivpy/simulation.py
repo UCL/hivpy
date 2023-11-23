@@ -27,21 +27,21 @@ class SimulationOutput:
         self.age_step = 10
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
-                          "HIV prevalence (female)", "HIV prevalence (15-49)",
-                          "Circumcision (15-49)", "HIV infections (tot)",
+                          "HIV prevalence (female)", "HIV prevalence (sex worker)",
+                          "HIV prevalence (15-49)", "Circumcision (15-49)", "HIV infections (tot)",
                           "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
                           "Population (over 15)", "Long term partner (15-64)",
                           "Short term partners (15-64)", "Over 5 short term partners (15-64)",
-                          "Giving birth (ratio)", "Infected newborns (ratio)", "Births (tot)",
-                          "Deaths (tot)", "Deaths (over 15, male)", "Deaths (over 15, female)",
-                          "Deaths (20-59, male)", "Deaths (20-59, female)"]
+                          "Sex worker (ratio)", "Giving birth (ratio)", "Infected newborns (ratio)",
+                          "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
+                          "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(9+int(age_bound/10)*2, key)
+            output_columns.insert(10+int(age_bound/10)*2, key)
             # inserted after 'HIV prevalence (15-49)' column
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(4+int(age_bound/10), key)
+            output_columns.insert(5+int(age_bound/10), key)
         # determine number of output rows
         self.num_steps = int((simulation_config.stop_date -
                              simulation_config.start_date) / simulation_config.time_step) + 1
@@ -75,6 +75,12 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "HIV prevalence (female)"] = (
             self._ratio(pop.get_sub_pop_intersection(women_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(women_idx, over_15_idx)))
+
+        # Update HIV prevalence in female sex workers
+        sex_workers_idx = pop.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
+        self.output_stats.loc[self.step, "Sex worker (ratio)"] = self._ratio(sex_workers_idx, women_idx)
+        self.output_stats.loc[self.step, "HIV prevalence (sex worker)"] = (
+            self._ratio(pop.get_sub_pop_intersection(sex_workers_idx, HIV_pos_idx), sex_workers_idx))
 
         # Update HIV prevalence and population by age
         age_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
