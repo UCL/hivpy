@@ -110,7 +110,7 @@ class PregnancyModule:
         """
         # TODO: this is needed for stp prob preg reduction but should
         # probably be moved elsewhere so it's only initialised once
-        self.fold_tr_newp = pop.hiv_status.fold_tr_newp
+        self.stp_transmission_factor = pop.hiv_status.stp_transmission_factor
 
         # get sexually active female population to check for new pregnancies
         can_get_pregnant = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female),
@@ -255,7 +255,7 @@ class PregnancyModule:
         # chance of not getting pregnant from all short-term partners
         if stp > 0:
             # apply short-term partner reduction
-            stp_prob_no_preg = pow(1 - base_prob_adjusted * self.fold_tr_newp, stp)
+            stp_prob_no_preg = pow(1 - base_prob_adjusted * self.stp_transmission_factor, stp)
         # total probability of no pregnancy
         prob_all_no_preg = ltp_prob_no_preg * stp_prob_no_preg
         # probability of at least one encounter resulting in pregnancy
