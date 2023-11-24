@@ -253,7 +253,7 @@ def test_want_no_children():
 def test_anc_and_pmtct():
 
     # build artificial population
-    N = 100
+    N = 1000
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 20

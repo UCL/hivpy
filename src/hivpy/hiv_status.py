@@ -13,7 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, opposite_sex, rng
+from .common import SexType, opposite_sex, rng, COND
 
 
 class HIVStatusModule:
@@ -98,10 +98,7 @@ class HIVStatusModule:
         """
         # Update viral load groups based on viral load / primary infection
         HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-        population.set_present_variable(col.VIRAL_LOAD_GROUP,
-                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
-                                                    np.array([2.7, 3.7, 4.7, 5.7])),
-                                        HIV_positive_pop)
+        # self.set_viral_load_groups(population, HIV_positive_pop)
         in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
                                                         operator.ge,
                                                         population.date - timedelta(days=90))])
@@ -131,6 +128,13 @@ class HIVStatusModule:
                                 HIV_positive_subpop,
                                 population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
                             )))/n_stp_of_infected for vg in range(6)]
+
+    def set_viral_load_groups(self, population: Population):
+        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
+        population.set_present_variable(col.VIRAL_LOAD_GROUP,
+                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
+                                                    np.array([2.7, 3.7, 4.7, 5.7])),
+                                        HIV_positive_pop)
 
     def set_dummy_viral_load(self, population: Population):
         """

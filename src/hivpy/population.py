@@ -272,6 +272,9 @@ class Population:
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
         self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
 
+        if self.HIV_introduced:
+            self.hiv_status.set_viral_load_groups(self)
+
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
         self.circumcision.update_vmmc(self, time_step)
