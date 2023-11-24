@@ -93,10 +93,6 @@ class HIVStatusModule:
         """
         Calculate the risk factor associated with each sex and age group.
         """
-        # Update primary infection status
-        past_primary_infection = population.get_sub_pop(
-            [(col.DATE_HIV_INFECTION, operator.le, population.date - timedelta(days=90))])
-        population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
         # Update viral load groups based on viral load / primary infection
         HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
         in_primary_infection = population.get_sub_pop([(col.IN_PRIMARY_INFECTION, operator.eq, True)])
@@ -127,7 +123,14 @@ class HIVStatusModule:
                                 population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
                             )))/n_stp_of_infected for vg in range(6)]
 
+    def set_primary_infection(self, population: Population):
+        # Update primary infection status
+        past_primary_infection = population.get_sub_pop(
+            [(col.DATE_HIV_INFECTION, operator.le, population.date - timedelta(days=90))])
+        population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
+
     def set_viral_load_groups(self, population: Population):
+        # Update viral load groups
         HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
         population.set_present_variable(col.VIRAL_LOAD_GROUP,
                                         np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
