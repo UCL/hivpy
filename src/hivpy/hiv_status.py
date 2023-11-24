@@ -228,7 +228,7 @@ class HIVStatusModule:
                                         new_HIV_status,
                                         HIV_neg_active_pop)
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                 (col.DATE_HIV_INFECTION, operator.is_, None)])
+                                                 (col.DATE_HIV_INFECTION, operator.eq, None)])
         self.initialise_HIV_progression(population, newly_infected)
 
         self.update_HIV_progression(population, initial_HIV_pos)

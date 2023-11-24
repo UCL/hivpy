@@ -112,13 +112,15 @@ def test_hiv_initial_ages(pop_with_initial_hiv: Population):
 def test_hiv_update(pop_with_initial_hiv: Population):
     pd.set_option('display.max_columns', None)
     prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
-
+    initial_infected = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
     for i in range(10):
+        pop_with_initial_hiv.date += timedelta(days=30)
         pop_with_initial_hiv.hiv_status.update_HIV_status(pop_with_initial_hiv)
 
     current_status = np.array(pop_with_initial_hiv.get_variable(col.HIV_STATUS))
 
     new_cases = current_status & (~ prev_status)
+    assert not any(pop_with_initial_hiv.get_variable(col.DATE_HIV_INFECTION, initial_infected) == pop_with_initial_hiv.date)
     print("Num new HIV+ = ", sum(new_cases))
     miracles = (~current_status) & (prev_status)
     under_15s_idx = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
