@@ -58,6 +58,7 @@ NSTP_LAST_TEST = "nstp_last_test"               # int: Number of short term cond
 NP_LAST_TEST = "np_last_test"                   # int: Total number of condomless sex partners since last test (DUMMY)
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: Date of HIV infection if HIV+, o/w None.
+IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if you have had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person

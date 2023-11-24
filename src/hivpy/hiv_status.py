@@ -54,6 +54,7 @@ class HIVStatusModule:
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
+        population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
@@ -92,11 +93,13 @@ class HIVStatusModule:
         """
         Calculate the risk factor associated with each sex and age group.
         """
+        # Update primary infection status
+        past_primary_infection = population.get_sub_pop(
+            [(col.DATE_HIV_INFECTION, operator.le, population.date - timedelta(days=90))])
+        population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
         # Update viral load groups based on viral load / primary infection
         HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-        in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
-                                                        operator.ge,
-                                                        population.date - timedelta(days=90))])
+        in_primary_infection = population.get_sub_pop([(col.IN_PRIMARY_INFECTION, operator.eq, True)])
         population.set_present_variable(col.VIRAL_LOAD_GROUP, 5, in_primary_infection)
 
         # Should we be using for loops here or can we do better?
@@ -206,23 +209,20 @@ class HIVStatusModule:
         so probability of infection is 1-((1-Pr)**n).
         """
         self.update_partner_risk_vectors(population)
-        # select uninfected people that have at least one short-term partner
+        # Select uninfected people that have at least one short-term partner
         HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
 
         # Get people who already have HIV prior to transmission (for updating their progression)
         initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
 
-        # determine HIV status after transmission
+        # Determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
-        # apply HIV status to sub-population
-        population.set_present_variable(col.HIV_STATUS,
-                                        new_HIV_status,
-                                        HIV_neg_active_pop)
+        # Apply HIV status to sub-population
+        population.set_present_variable(col.HIV_STATUS, new_HIV_status, HIV_neg_active_pop)
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
                                                  (col.DATE_HIV_INFECTION, operator.eq, None)])
         self.initialise_HIV_progression(population, newly_infected)
-
         self.update_HIV_progression(population, initial_HIV_pos)
 
     def initialise_HIV_progression(self, population: Population, newly_infected):
@@ -233,6 +233,7 @@ class HIVStatusModule:
         Sets the date of HIV infection.
         """
         population.set_present_variable(col.DATE_HIV_INFECTION, population.date, newly_infected)
+        population.set_present_variable(col.IN_PRIMARY_INFECTION, True, newly_infected)
 
         def set_initial_viral_load(person):
             initial_vl = rng.normal(4.075, 0.5) + (person[col.AGE] - 35)*0.005
@@ -269,11 +270,9 @@ class HIVStatusModule:
         ages = population.get_variable(col.AGE, art_naive_pop)
         delta_vl = self.vl_base_change*0.02275 + (0.05 * rng.normal(size=len(ages))) + (ages - 35)*0.00075
         prev_vl = population.get_variable(col.VIRAL_LOAD, art_naive_pop)
-        population.set_present_variable(col.VIRAL_LOAD,
-                                        prev_vl + delta_vl,
-                                        art_naive_pop)
-        high_vl = population.get_sub_pop_intersection(art_naive_pop,
-                                                      population.get_sub_pop([(col.VIRAL_LOAD, operator.gt, 6.5)]))
+        population.set_present_variable(col.VIRAL_LOAD, prev_vl + delta_vl, art_naive_pop)
+        high_vl = population.get_sub_pop_intersection(
+            art_naive_pop, population.get_sub_pop([(col.VIRAL_LOAD, operator.gt, 6.5)]))
         population.set_present_variable(col.VIRAL_LOAD, 6.5, high_vl)
 
         # CD4 count
