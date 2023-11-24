@@ -1,6 +1,9 @@
+from datetime import date
+
 import numpy as np
 
 from hivpy.common import rng
+from hivpy.population import Population
 
 
 def test_seed_reproduce():
@@ -55,3 +58,12 @@ def test_seed_context_switching():
     assert all(samples_base == np.concatenate((samples_partial1, samples_partial2)))
     # And also that the temporary seed produced different values
     assert not all(samples_temp == samples_partial2)
+
+
+def test_rng_in_functions():
+    rng.set_seed(50)
+    N = 1000
+    pop1 = Population(size=N, start_date=date(1989, 1, 1))
+    rng.set_seed(50)
+    pop2 = Population(size=N, start_date=date(1989, 1, 1))
+    assert (pop1.data.equals(pop2.data))
