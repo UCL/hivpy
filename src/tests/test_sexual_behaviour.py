@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng
+from hivpy.common import SexType, rng, seedManager
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
@@ -388,14 +388,17 @@ def test_risk_personal():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     # Count how many times we initialise with each threshold 0.3, 0.5, 0.7
     count03, count05, count07 = (0, 0, 0)
+    universal_seed = seedManager.UniversalSeed
     for i in range(100):
+        seedManager.UniversalSeed = rng.integers(0, 1000)
         SBM = SexualBehaviourModule()
         SBM.init_risk_factors(pop)
         risk_count = len(pop.get_sub_pop([(col.RISK_PERSONAL, operator.lt, 1)]))
         count03 += (0.2 < (risk_count/N) < 0.4)  # check consistency with threshold
         count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
         count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold
-        assert all([x == 1 or x == 1e-5 for x in pop.data["risk_personal"]])
+        seedManager.UniversalSeed = universal_seed  # put seed back in case assert fails
+        assert ([x == 1 or x == 1e-5 for x in pop.data["risk_personal"]])
     assert (1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations

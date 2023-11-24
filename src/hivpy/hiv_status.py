@@ -13,7 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, opposite_sex, rng
+from .common import COND, SexType, opposite_sex, rng
 
 
 class HIVStatusModule:
@@ -45,18 +45,23 @@ class HIVStatusModule:
         self.stp_transmission_sigmas = np.array(
             [0, 0.000025, 0.0025, 0.0075, 0.015, 0.025, 0.075])
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
+        self.vl_base_change = rng.choice([1.0, 1.5, 2.0])  # TODO: move to data file
+        self.cd4_base_change = rng.choice([0.7, 0.85, 1.0, 1/0.85, 1/0.7])  # TODO: move to data file
 
         self.initial_mean_sqrt_cd4 = 27.5
+        self.sigma_cd4 = 1.2
 
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
-        population.init_variable(col.CD4, None)
+        population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
         population.init_variable(col.VIRAL_LOAD, 0.0)
+        population.init_variable(col.X4_VIRUS, False)
+        self.init_resistance_mutations(population)
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """
@@ -89,14 +94,10 @@ class HIVStatusModule:
         """
         # Update viral load groups based on viral load / primary infection
         HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-        population.set_present_variable(col.VIRAL_LOAD_GROUP,
-                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
-                                                    np.array([2.7, 3.7, 4.7, 5.7])),
-                                        HIV_positive_pop)
         in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
                                                         operator.ge,
                                                         population.date - timedelta(days=90))])
-        population.set_present_variable(col.VIRAL_LOAD, 5, in_primary_infection)
+        population.set_present_variable(col.VIRAL_LOAD_GROUP, 5, in_primary_infection)
 
         # Should we be using for loops here or can we do better?
         for sex in SexType:
@@ -123,12 +124,12 @@ class HIVStatusModule:
                                 population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
                             )))/n_stp_of_infected for vg in range(6)]
 
-    def set_dummy_viral_load(self, population: Population):
-        """
-        Dummy function to set viral load until this
-        part of the code has been implemented properly.
-        """
-        population.set_present_variable(col.VIRAL_LOAD_GROUP, rng.choice(6, size=population.size))
+    def set_viral_load_groups(self, population: Population):
+        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
+        population.set_present_variable(col.VIRAL_LOAD_GROUP,
+                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
+                                                    np.array([2.7, 3.7, 4.7, 5.7])),
+                                        HIV_positive_pop)
 
     def init_resistance_mutations(self, population: Population):
         """
@@ -208,6 +209,10 @@ class HIVStatusModule:
         # select uninfected people that have at least one short-term partner
         HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
+
+        # Get people who already have HIV prior to transmission (for updating their progression)
+        initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+
         # determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
         # apply HIV status to sub-population
@@ -215,8 +220,10 @@ class HIVStatusModule:
                                         new_HIV_status,
                                         HIV_neg_active_pop)
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                 (col.DATE_HIV_INFECTION, operator.is_, None)])
+                                                 (col.DATE_HIV_INFECTION, operator.eq, None)])
         self.initialise_HIV_progression(population, newly_infected)
+
+        self.update_HIV_progression(population, initial_HIV_pos)
 
     def initialise_HIV_progression(self, population: Population, newly_infected):
         """
@@ -228,7 +235,7 @@ class HIVStatusModule:
         population.set_present_variable(col.DATE_HIV_INFECTION, population.date, newly_infected)
 
         def set_initial_viral_load(person):
-            initial_vl = 4.075 + (0.5 * rng.normal()) + (person[col.AGE] - 35)*0.005
+            initial_vl = rng.normal(4.075, 0.5) + (person[col.AGE] - 35)*0.005
             if person[col.SEX] == SexType.Female:
                 initial_vl = initial_vl - 0.2
             initial_vl = min(6.5, initial_vl)
@@ -239,13 +246,46 @@ class HIVStatusModule:
                                         sub_pop=newly_infected)
 
         def set_initial_CD4(person):
-            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + 2*rng.normal() \
+            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + rng.normal(0, 2) \
                        - (person[col.AGE] - 35)*0.05
             upper_sqrt_cd4 = np.sqrt(1500)
             lower_sqrt_cd4 = 18
             sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits
-            person[col.CD4] = sqrt_cd4**2
+            return sqrt_cd4**2
 
         population.set_present_variable(col.CD4,
                                         population.apply_function(set_initial_CD4, 1, sub_pop=newly_infected),
                                         sub_pop=newly_infected)
+
+    def update_HIV_progression(self, population: Population, HIV_subpop):
+        """
+        Updates HIV related variables viral load & CD4 count
+        """
+
+        # For people who are not on treatment
+        # Viral Load
+        art_naive_pop = population.get_sub_pop_intersection(
+            HIV_subpop, population.get_sub_pop([(col.ART_NAIVE, operator.eq, True)]))
+        ages = population.get_variable(col.AGE, art_naive_pop)
+        delta_vl = self.vl_base_change*0.02275 + (0.05 * rng.normal(size=len(ages))) + (ages - 35)*0.00075
+        prev_vl = population.get_variable(col.VIRAL_LOAD, art_naive_pop)
+        population.set_present_variable(col.VIRAL_LOAD,
+                                        prev_vl + delta_vl,
+                                        art_naive_pop)
+        high_vl = population.get_sub_pop_intersection(art_naive_pop,
+                                                      population.get_sub_pop([(col.VIRAL_LOAD, operator.gt, 6.5)]))
+        population.set_present_variable(col.VIRAL_LOAD, 6.5, high_vl)
+
+        # CD4 count
+        vl_lims = np.array([3, 3.5, 4., 4.5, 5., 5.5, 6])
+        vl_groups = np.digitize(prev_vl, vl_lims)
+        vl_group_factors = np.array([0.0, 0.022, 0.095, 0.4, 0.4, 0.85, 1.3, 1.75])
+        x4 = population.get_variable(col.X4_VIRUS, art_naive_pop)
+        delta_cd4_sqrt = vl_group_factors[vl_groups] * self.cd4_base_change \
+            + rng.normal(size=len(vl_groups))*self.sigma_cd4 + x4*0.25
+        prev_cd4 = population.get_variable(col.CD4, art_naive_pop)
+        sqrt_cd4 = np.maximum(np.sqrt(prev_cd4) - delta_cd4_sqrt, 0)
+        new_cd4 = sqrt_cd4**2
+        population.set_present_variable(col.CD4, new_cd4, art_naive_pop)
+
+        # TODO: people on treatment

@@ -64,6 +64,7 @@ VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ per
 CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter. Set to None for people w/o HIV
 MAX_CD4 = "max_cd4"                             # float: Maximum CD4 count to which a person can return when on ART
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
+X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, false otherwise.
 
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition
 
