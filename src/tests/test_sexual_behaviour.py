@@ -402,7 +402,7 @@ def test_risk_personal():
     assert (1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
     assert (1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
-    
+
 
 def test_risk_age():
     N = 11

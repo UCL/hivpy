@@ -18,11 +18,14 @@ from functools import reduce
 import numpy as np
 import scipy.stats as stat
 
+
 class SeedManager:
     FixSeed = True  # set this in a config
     UniversalSeed = 50  # set this in a config
 
+
 seedManager = SeedManager()
+
 
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
