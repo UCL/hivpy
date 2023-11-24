@@ -13,7 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, opposite_sex, rng, COND
+from .common import COND, SexType, opposite_sex, rng
 
 
 class HIVStatusModule:
@@ -98,7 +98,6 @@ class HIVStatusModule:
         """
         # Update viral load groups based on viral load / primary infection
         HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-        # self.set_viral_load_groups(population, HIV_positive_pop)
         in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
                                                         operator.ge,
                                                         population.date - timedelta(days=90))])
@@ -135,13 +134,6 @@ class HIVStatusModule:
                                         np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
                                                     np.array([2.7, 3.7, 4.7, 5.7])),
                                         HIV_positive_pop)
-
-    def set_dummy_viral_load(self, population: Population):
-        """
-        Dummy function to set viral load until this
-        part of the code has been implemented properly.
-        """
-        population.set_present_variable(col.VIRAL_LOAD_GROUP, rng.choice(6, size=population.size))
 
     def init_resistance_mutations(self, population: Population):
         """
