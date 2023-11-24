@@ -18,6 +18,11 @@ from functools import reduce
 import numpy as np
 import scipy.stats as stat
 
+class SeedManager:
+    FixSeed = True  # set this in a config
+    UniversalSeed = 50  # set this in a config
+
+seedManager = SeedManager()
 
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
@@ -27,7 +32,8 @@ class DiscreteChoice:
         index_range = np.arange(0, N, 1)
         self.probs = probs
         self.data = vals
-        self.dist = stat.rv_discrete(values=(index_range, probs), seed=50)
+        seed = seedManager.UniversalSeed if seedManager.FixSeed else None
+        self.dist = stat.rv_discrete(values=(index_range, probs), seed=seed)
 
     def sample(self, size=None):
         """

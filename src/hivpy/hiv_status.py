@@ -219,7 +219,7 @@ class HIVStatusModule:
                                                      (col.NUM_PARTNERS, operator.gt, 0)])
 
         # Get people who already have HIV prior to transmission (for updating their progression)
-        initial_HIV_pos = population.get_sub_pop([col.HIV_STATUS, operator.eq, True])
+        initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
 
         # determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
