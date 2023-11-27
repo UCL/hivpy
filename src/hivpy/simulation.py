@@ -11,7 +11,7 @@ from titlecase import titlecase
 
 import hivpy.column_names as col
 
-from .common import SexType
+from .common import AND, COND, OR, SexType
 from .config import SimulationConfig
 from .population import Population
 
@@ -38,8 +38,12 @@ class SimulationOutput:
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(10+int(age_bound/10)*2, key)
+            output_columns.insert(10+int(age_bound/10)*4, key)
             # inserted after 'HIV prevalence (15-49)' column
+            key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, female)"
+            output_columns.insert(3+int(age_bound/10)*3, key)
+            key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, male)"
+            output_columns.insert(4+int(age_bound/10)*2, key)
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(5+int(age_bound/10), key)
         # determine number of output rows
@@ -96,6 +100,28 @@ class SimulationOutput:
             key = f"HIV prevalence ({age_bound}-{age_bound+(self.age_step-1)})"
             self.output_stats.loc[self.step, key] = (
                 self._ratio(pop.get_sub_pop_intersection(HIV_pos_idx, age_idx), age_idx))
+
+    def _update_HIV_incidence(self, pop: Population):
+        # Update HIV incidence by sex and age group
+        primary_infection_idx = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, operator.eq, True)])
+        men_idx = pop.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Male),
+                                      OR(COND(col.NUM_PARTNERS, operator.ge, 1),
+                                         COND(col.LONG_TERM_PARTNER, operator.eq, True))))
+        women_idx = pop.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Female),
+                                        OR(COND(col.NUM_PARTNERS, operator.ge, 1),
+                                           COND(col.LONG_TERM_PARTNER, operator.eq, True))))
+
+        for age_bound in range(self.age_min, self.age_max, self.age_step):
+            age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
+                                       (col.AGE, operator.lt, age_bound+self.age_step)])
+            key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, male)"
+            total = pop.get_sub_pop_intersection(men_idx, age_idx)
+            self.output_stats.loc[self.step, key] = (
+                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total), total))
+            key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, female)"
+            total = pop.get_sub_pop_intersection(women_idx, age_idx)
+            self.output_stats.loc[self.step, key] = (
+                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total), total))
 
     def _update_CD4_count(self, pop: Population):
         # Update number of people with given CD4 counts
@@ -179,6 +205,7 @@ class SimulationOutput:
     def update_summary_stats(self, date, pop: Population, time_step):
         self._update_date(date)
         self._update_HIV_prevalence(pop)
+        self._update_HIV_incidence(pop)
         self._update_CD4_count(pop)
         self._update_circumcision(pop)
         self._update_partners(pop)
