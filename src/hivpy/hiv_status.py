@@ -21,7 +21,8 @@ class HIVStatusModule:
     initial_hiv_newp_threshold = 7  # lower limit for HIV infection at start of epidemic
     initial_hiv_prob = 0.8  # for those with enough partners at start of epidemic
 
-    def __init__(self):
+    def __init__(self, output):
+        self.output = output
         # FIXME: move these to data file
         # a more descriptive name would be nice
         self.tr_rate_primary = 0.16
@@ -167,7 +168,6 @@ class HIVStatusModule:
         population.init_variable(col.IN263_MUTATION, False)
 
     def stp_HIV_transmission(self, person):
-        # TODO: Add circumcision, STIs etc.
         """
         Returns True if HIV transmission occurs, and False otherwise.
         """
@@ -197,8 +197,12 @@ class HIVStatusModule:
 
                 if (rng.random() < viral_transmission_probability):
                     # TODO: Superinfection, PREP, etc.
-                    # TODO: Outputs for stats
                     infection = True
+                    self.output.infected_stp += 1
+                    # in primary infection
+                    if stp_viral_group == 5:
+                        self.output.infected_primary_infection += 1
+                    break
 
         return infection
 
@@ -219,6 +223,7 @@ class HIVStatusModule:
         # Get people who already have HIV prior to transmission (for updating their progression)
         initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
 
+        # TODO: Add ltp HIV transmission
         # Determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
         # Apply HIV status to sub-population

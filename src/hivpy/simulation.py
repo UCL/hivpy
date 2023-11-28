@@ -29,7 +29,9 @@ class SimulationOutput:
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV prevalence (sex worker)",
                           "HIV prevalence (15-49)", "Circumcision (15-49)", "HIV infections (tot)",
-                          "CD4 count (under 200)", "CD4 count (200-500)", "CD4 count (over 500)",
+                          "Infected by long term partner", "Infected by short term partner",
+                          "Infected by primary infection", "CD4 count (under 200)",
+                          "CD4 count (200-500)", "CD4 count (over 500)",
                           "Population (over 15)", "Long term partner (15-64)",
                           "Short term partners (15-64)", "Over 5 short term partners (15-64)",
                           "Sex worker (ratio)", "Giving birth (ratio)", "Infected newborns (ratio)",
@@ -38,7 +40,7 @@ class SimulationOutput:
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
-            output_columns.insert(10+int(age_bound/10)*4, key)
+            output_columns.insert(11+int(age_bound/10)*4, key)
             # inserted after 'HIV prevalence (15-49)' column
             key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             output_columns.insert(3+int(age_bound/10)*3, key)
@@ -52,12 +54,19 @@ class SimulationOutput:
         # store output information as a dataframe
         self.output_stats = pd.DataFrame(index=range(self.num_steps), columns=output_columns)
 
+        # for HIV status outputs
+        self.infected_ltp = 0
+        self.infected_stp = 0
+        self.infected_primary_infection = 0
+
     def _update_date(self, date):
         self.latest_date = date
         self.output_stats.loc[self.step, "Date"] = self.latest_date
 
     def _ratio(self, subpop, pop):
         if len(pop) != 0:
+            if type(subpop) == int:
+                return subpop/len(pop)
             return len(subpop)/len(pop)
         else:
             return 0
@@ -133,6 +142,21 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "CD4 count (200-500)"] = len(cd4_200_to_500_idx)
         self.output_stats.loc[self.step, "CD4 count (over 500)"] = len(cd4_over_500_idx)
 
+    def _update_infections(self, date, pop: Population):
+        # Update infection ratios of long vs short term partners
+        recently_infected_idx = pop.get_sub_pop([(col.DATE_HIV_INFECTION, operator.eq, date)])
+        self.output_stats.loc[self.step, "Infected by long term partner"] = (
+                self._ratio(self.infected_ltp, recently_infected_idx))
+        self.output_stats.loc[self.step, "Infected by short term partner"] = (
+                self._ratio(self.infected_stp, recently_infected_idx))
+        self.output_stats.loc[self.step, "Infected by primary infection"] = (
+                self._ratio(self.infected_primary_infection, recently_infected_idx))
+
+        # Reset infection counters
+        self.infected_ltp = 0
+        self.infected_stp = 0
+        self.infected_primary_infection = 0
+
     def _update_circumcision(self, pop: Population):
         # Update proportion of circumcised men
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
@@ -207,6 +231,7 @@ class SimulationOutput:
         self._update_HIV_prevalence(pop)
         self._update_HIV_incidence(pop)
         self._update_CD4_count(pop)
+        self._update_infections(date, pop)
         self._update_circumcision(pop)
         self._update_partners(pop)
         self._update_births(pop, time_step)
@@ -240,8 +265,8 @@ class SimulationHandler:
 
     def __init__(self, simulation_config):
         self.simulation_config = simulation_config
-        self._initialise_population()
         self.output = SimulationOutput(self.simulation_config)
+        self._initialise_population()
         self.output_dir = simulation_config.output_dir / (
             "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")))
         self.output_path = self.output_dir / (
@@ -249,7 +274,7 @@ class SimulationHandler:
 
     def _initialise_population(self):
         self.population = Population(self.simulation_config.population_size,
-                                     self.simulation_config.start_date)
+                                     self.simulation_config.start_date, self.output)
 
     def run(self):
         # Start the simulation
