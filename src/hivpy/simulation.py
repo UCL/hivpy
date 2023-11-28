@@ -65,7 +65,7 @@ class SimulationOutput:
 
     def _ratio(self, subpop, pop):
         if len(pop) != 0:
-            if type(subpop) == int:
+            if type(subpop) is int:
                 return subpop/len(pop)
             return len(subpop)/len(pop)
         else:
