@@ -13,6 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from . import output
 from .common import COND, SexType, opposite_sex, rng
 
 
@@ -21,8 +22,8 @@ class HIVStatusModule:
     initial_hiv_newp_threshold = 7  # lower limit for HIV infection at start of epidemic
     initial_hiv_prob = 0.8  # for those with enough partners at start of epidemic
 
-    def __init__(self, output):
-        self.output = output
+    def __init__(self):
+        self.output = output.simulation_output
         # FIXME: move these to data file
         # a more descriptive name would be nice
         self.tr_rate_primary = 0.16

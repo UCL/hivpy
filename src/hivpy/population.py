@@ -29,7 +29,7 @@ class Population:
     variable_history: dict  # how many steps we need to store for each variable
     step: int
 
-    def __init__(self, size, start_date, output):
+    def __init__(self, size, start_date):
         """
         Initialise a population of the given size.
         """
@@ -41,7 +41,7 @@ class Population:
         self.circumcision = CircumcisionModule()
         self.sexual_behaviour = SexualBehaviourModule()
         self.pregnancy = PregnancyModule()
-        self.hiv_status = HIVStatusModule(output)
+        self.hiv_status = HIVStatusModule()
         self.hiv_testing = HIVTestingModule()
         self.HIV_introduced = False
         self._sample_parameters()
