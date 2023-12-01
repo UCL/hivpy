@@ -10,6 +10,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
+from . import output
 from .common import SexType, rng
 from .pregnancy_data import PregnancyData
 
@@ -21,6 +22,7 @@ class PregnancyModule:
 
     def __init__(self, **kwargs):
 
+        self.output = output.simulation_output
         # init pregnancy data
         with importlib.resources.path("hivpy.data", "pregnancy.yaml") as data_path:
             self.p_data = PregnancyData(data_path)
@@ -59,7 +61,6 @@ class PregnancyModule:
         pop.init_variable(col.PMTCT, False)
         pop.init_variable(col.ART_NAIVE, True)
         self.init_num_children(pop)
-        pop.init_variable(col.INFECTED_BIRTH, False)
         pop.init_variable(col.NUM_HIV_CHILDREN, 0)
         pop.init_variable(col.WANT_NO_CHILDREN, False)
 
@@ -205,12 +206,12 @@ class PregnancyModule:
             infected_children = pop.transform_group([col.VIRAL_LOAD_GROUP],
                                                     self.calc_infected_birth_outcomes,
                                                     sub_pop=infected_birthing_pop)
-            # update infection status of current birth
-            pop.set_present_variable(col.INFECTED_BIRTH, infected_children, infected_birthing_pop)
             # add to infected children
             pop.set_present_variable(col.NUM_HIV_CHILDREN,
                                      pop.get_variable(col.NUM_HIV_CHILDREN)+1,
                                      pop.apply_bool_mask(infected_children, infected_birthing_pop))
+            # infected newborns
+            self.output.infected_newborns = len(infected_children)
 
             # FIXME: drug resistance in HIV mutations not modelled yet
 

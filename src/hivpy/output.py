@@ -30,6 +30,9 @@ class SimulationOutput:
         self.infected_stp = 0
         self.infected_primary_infection = 0
 
+        # for pregnancy outputs
+        self.infected_newborns = 0
+
     def _init_df(self, simulation_config: SimulationConfig):
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
@@ -200,9 +203,11 @@ class SimulationOutput:
                                                    pop.date - timedelta(days=270))])
         self.output_stats.loc[self.step, "Giving birth (ratio)"] = self._ratio(giving_birth_this_step,
                                                                                women_idx)
-        infected_newborns = pop.get_sub_pop([(col.INFECTED_BIRTH, operator.eq, True)])
-        self.output_stats.loc[self.step, "Infected newborns (ratio)"] = self._ratio(infected_newborns,
+        self.output_stats.loc[self.step, "Infected newborns (ratio)"] = self._ratio(self.infected_newborns,
                                                                                     born_this_step)
+
+        # Reset infection counter
+        self.infected_newborns = 0
 
     def _update_deaths(self, pop: Population):
         # Update total deaths
