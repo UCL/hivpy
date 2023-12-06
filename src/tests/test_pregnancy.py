@@ -108,7 +108,7 @@ def test_stp_preg():
         for stp in test_stp_partners:
 
             # build artificial population
-            N = 10000
+            N = 100000
             pop = Population(size=N, start_date=date(1990, 1, 1))
             pop.data[col.SEX] = SexType.Female
             pop.data[col.AGE] = age
