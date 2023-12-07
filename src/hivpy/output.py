@@ -224,10 +224,12 @@ class SimulationOutput:
         active_men = pop.get_sub_pop_intersection(active_idx, men_idx)
         active_women = pop.get_sub_pop_intersection(active_idx, women_idx)
         # Get flattened lists of partner age groups (values 0-4)
-        women_stp_age_list = np.concatenate(
-            pop.get_variable(col.STP_AGE_GROUPS, active_women).values).ravel().tolist()
-        men_stp_age_list = np.concatenate(
-            pop.get_variable(col.STP_AGE_GROUPS, active_men).values).ravel().tolist()
+        women_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_women).values
+        women_stp_age_list = (np.concatenate(women_stp_age_list).ravel() if len(women_stp_age_list) > 0
+                              else women_stp_age_list).tolist()
+        men_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_men).values
+        men_stp_age_list = (np.concatenate(men_stp_age_list).ravel() if len(men_stp_age_list) > 0
+                            else men_stp_age_list).tolist()
 
         self.output_stats.loc[self.step, "Partner sex balance (male)"] = self._log(
             self._ratio(pop.get_variable(col.NUM_PARTNERS, active_men).sum(),
