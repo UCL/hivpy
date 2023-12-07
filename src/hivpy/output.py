@@ -24,6 +24,7 @@ class SimulationOutput:
         self.step = 0
         # age boundaries
         self.age_min = 15
+        self.age_max_active = 65
         self.age_max = 100
         self.age_step = 10
 
@@ -51,7 +52,7 @@ class SimulationOutput:
                           "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
 
         for age_bound in range(self.age_min, self.age_max, self.age_step):
-            if age_bound < int(self.age_max/1.5)-5:
+            if age_bound < self.age_max_active:
                 # inserted after 'Partner sex balance (female)'
                 key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
                 output_columns.insert(14+int(age_bound/10)*6, key)
@@ -214,9 +215,14 @@ class SimulationOutput:
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
         active_idx = pop.get_sub_pop([(col.NUM_PARTNERS, operator.gt, 0)])
-
         active_men = pop.get_sub_pop_intersection(active_idx, men_idx)
         active_women = pop.get_sub_pop_intersection(active_idx, women_idx)
+        # Get flattened lists of partner age groups (values 0-4)
+        women_stp_age_list = np.concatenate(
+            pop.get_variable(col.STP_AGE_GROUPS, active_women).values).ravel().tolist()
+        men_stp_age_list = np.concatenate(
+            pop.get_variable(col.STP_AGE_GROUPS, active_men).values).ravel().tolist()
+
         self.output_stats.loc[self.step, "Partner sex balance (male)"] = self._log(
             self._ratio(pop.get_variable(col.NUM_PARTNERS, active_men).sum(),
                         pop.get_variable(col.NUM_PARTNERS, active_women).sum()))
@@ -225,7 +231,7 @@ class SimulationOutput:
                         pop.get_variable(col.NUM_PARTNERS, active_men).sum()))
 
         # Update short term partner sex balance statistics by age group
-        for age_bound in range(self.age_min, int(self.age_max/1.5)-5, self.age_step):
+        for age_bound in range(self.age_min, self.age_max_active, self.age_step):
             age_group = int(age_bound/10)-1
             age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
                                        (col.AGE, operator.lt, age_bound+self.age_step)])
@@ -233,14 +239,14 @@ class SimulationOutput:
             women_of_age = pop.get_sub_pop_intersection(age_idx, active_women)
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, male)"
-            women_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_women).values
-            women_stp_num = np.concatenate(women_stp_age_list).ravel().tolist().count(age_group)
+            # Count occurrences of current age group
+            women_stp_num = women_stp_age_list.count(age_group)
             self.output_stats.loc[self.step, key] = self._log(
                 self._ratio(pop.get_variable(col.NUM_PARTNERS, men_of_age).sum(), women_stp_num))
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
-            men_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_men).values
-            men_stp_num = np.concatenate(men_stp_age_list).ravel().tolist().count(age_group)
+            # Count occurrences of current age group
+            men_stp_num = men_stp_age_list.count(age_group)
             self.output_stats.loc[self.step, key] = self._log(
                 self._ratio(pop.get_variable(col.NUM_PARTNERS, women_of_age).sum(), men_stp_num))
 
