@@ -35,6 +35,10 @@ class SimulationOutput:
 
         # for pregnancy outputs
         self.infected_newborns = 0
+        # TODO
+        self.anc_tests = 0
+        self.labdel_tests = 0
+        self.postdel_tests = 0
 
     def _init_df(self, simulation_config: SimulationConfig):
         # determine output columns
@@ -47,7 +51,9 @@ class SimulationOutput:
                           "Population (over 15)", "Long term partner (15-64)",
                           "Short term partners (15-64)", "Over 5 short term partners (15-64)",
                           "Partner sex balance (male)", "Partner sex balance (female)",
-                          "Sex worker (ratio)", "Giving birth (ratio)", "Infected newborns (ratio)",
+                          "Sex worker (ratio)", "Births (ratio)", "Infected newborns (ratio)",
+                          "ANC tests (tot)", "Labour and delivery tests (tot)",
+                          "Post-delivery tests (tot)", "Births to infected women (tot)",
                           "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
                           "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
 
@@ -261,13 +267,21 @@ class SimulationOutput:
         giving_birth_this_step = pop.get_sub_pop([(col.PREGNANT, operator.eq, True),
                                                   (col.LAST_PREGNANCY_DATE, operator.le,
                                                    pop.date - timedelta(days=270))])
-        self.output_stats.loc[self.step, "Giving birth (ratio)"] = self._ratio(giving_birth_this_step,
-                                                                               women_idx)
-        self.output_stats.loc[self.step, "Infected newborns (ratio)"] = self._ratio(self.infected_newborns,
-                                                                                    born_this_step)
+        self.output_stats.loc[self.step, "Births (ratio)"] = self._ratio(giving_birth_this_step, women_idx)
+        self.output_stats.loc[self.step, "Births to infected women (tot)"] = len(
+            pop.get_sub_pop_intersection(pop.get_sub_pop([(col.HIV_STATUS, operator.eq, True)]),
+                                         giving_birth_this_step))
+        self.output_stats.loc[self.step, "Infected newborns (ratio)"] = self._ratio(
+            self.infected_newborns, born_this_step)
+        self.output_stats.loc[self.step, "ANC tests (tot)"] = self.anc_tests
+        self.output_stats.loc[self.step, "Labour and delivery tests (tot)"] = self.labdel_tests
+        self.output_stats.loc[self.step, "Post-delivery tests (tot)"] = self.postdel_tests
 
         # Reset infection counter
         self.infected_newborns = 0
+        self.anc_tests = 0
+        self.labdel_tests = 0
+        self.postdel_tests = 0
 
     def _update_deaths(self, pop: Population):
         # Update total deaths
