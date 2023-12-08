@@ -408,6 +408,7 @@ def test_risk_age():
     N = 11
     # rng.set_seed(42)
     pop = Population(size=2*N, start_date=date(1989, 1, 1))
+    pop.apply_death = False
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
     pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, 0)
     pop.set_present_variable(col.AGE, ages)

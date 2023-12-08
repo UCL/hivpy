@@ -46,6 +46,9 @@ class Population:
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
+        # Can be useful to switch off death during some tests
+        # so that random deaths don't interfere with results
+        self.apply_death = True
 
     def _sample_parameters(self):
         """
@@ -269,8 +272,11 @@ class Population:
         self.set_present_variable(col.AGE, ages)
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
+        n_deaths = sum(died_this_period)
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
-        self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
+        if(n_deaths and self.apply_death):
+            self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
+            self.data = self.data.drop(self.get_sub_pop([(col.DATE_OF_DEATH, operator.ne, None)]))
 
         if self.HIV_introduced:
             self.hiv_status.set_viral_load_groups(self)
