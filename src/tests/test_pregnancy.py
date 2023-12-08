@@ -1,5 +1,5 @@
 import operator as op
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 from math import ceil, isclose, sqrt
 
 import hivpy.column_names as col
@@ -61,43 +61,44 @@ def test_num_children():
 def test_ltp_preg():
 
     test_ages = [10, 20, 30, 40, 50, 60]
-    for age in test_ages:
+    with rng.set_temp_seed(42):
+        for age in test_ages:
 
-        # build artificial population
-        N = 100000
-        pop = Population(size=N, start_date=date(1990, 1, 1))
-        pop.data[col.SEX] = SexType.Female
-        pop.data[col.AGE] = age
-        pop.data[col.NUM_PARTNERS] = 0
-        pop.data[col.LONG_TERM_PARTNER] = True
-        pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None]*(N//2)
-        pop.data[col.NUM_CHILDREN] = 0
-        pop.pregnancy.prob_pregnancy_base = 0.1
-        pop.pregnancy.init_fertility(pop)
-        pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
+            # build artificial population
+            N = 100000
+            pop = Population(size=N, start_date=date(1990, 1, 1))
+            pop.data[col.SEX] = SexType.Female
+            pop.data[col.AGE] = age
+            pop.data[col.NUM_PARTNERS] = 0
+            pop.data[col.LONG_TERM_PARTNER] = True
+            pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None]*(N//2)
+            pop.data[col.NUM_CHILDREN] = 0
+            pop.pregnancy.prob_pregnancy_base = 0.1
+            pop.pregnancy.init_fertility(pop)
+            pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
 
-        # age restrictions on those who can get pregnant
-        if age < 15:
-            assert sum((pop.data[col.AGE] < 15) & pop.data[col.PREGNANT]) == 0
-        elif age >= 55:
-            assert sum((pop.data[col.AGE] >= 55) & pop.data[col.PREGNANT]) == 0
+            # age restrictions on those who can get pregnant
+            if age < 15:
+                assert sum((pop.data[col.AGE] < 15) & pop.data[col.PREGNANT]) == 0
+            elif age >= 55:
+                assert sum((pop.data[col.AGE] >= 55) & pop.data[col.PREGNANT]) == 0
 
-        else:
-            # get stats
-            no_active_female = sum((~pop.data[col.LOW_FERTILITY])
-                                   & ((pop.data[col.NUM_PARTNERS] > 0)
-                                      | pop.data[col.LONG_TERM_PARTNER]))
-            no_pregnant = sum(pop.data[col.PREGNANT])
-            prob_preg = pop.pregnancy.prob_pregnancy_base * pop.pregnancy.fertility_factor[test_ages.index(age)-1]
-            mean = no_active_female * prob_preg
-            stdev = sqrt(mean * (1 - prob_preg))
-            # check pregnancy value is within 3 standard deviations
-            max = mean + 3*stdev
-            min = mean - 3*stdev
-            assert min <= no_pregnant
-            assert no_pregnant <= max
-            # low fertility individuals don't become pregnant
-            assert sum(pop.data[col.LOW_FERTILITY] & pop.data[col.PREGNANT]) == 0
+            else:
+                # get stats
+                no_active_female = sum((~pop.data[col.LOW_FERTILITY])
+                                       & ((pop.data[col.NUM_PARTNERS] > 0)
+                                       | pop.data[col.LONG_TERM_PARTNER]))
+                no_pregnant = sum(pop.data[col.PREGNANT])
+                prob_preg = pop.pregnancy.prob_pregnancy_base * pop.pregnancy.fertility_factor[test_ages.index(age)-1]
+                mean = no_active_female * prob_preg
+                stdev = sqrt(mean * (1 - prob_preg))
+                # check pregnancy value is within 3 standard deviations
+                max = mean + 3*stdev
+                min = mean - 3*stdev
+                assert min <= no_pregnant
+                assert no_pregnant <= max
+                # low fertility individuals don't become pregnant
+                assert sum(pop.data[col.LOW_FERTILITY] & pop.data[col.PREGNANT]) == 0
 
 
 def test_stp_preg():

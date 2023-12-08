@@ -192,13 +192,17 @@ class DemographicsModule:
         self.params = params
 
         # TODO: move these params into the config file
-        self.non_hiv_tb_death_risk = 0.3 
+        self.non_hiv_tb_death_risk = 0.3
         self.non_hiv_tb_risk = 5e-4
-        self.cd4_boundaries = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
-        self.base_rate_disease = np.array([2.5,1.8,1.1,0.8,0.5,0.4,0.32,0.28,0.23,0.20,0.17,0.13,0.10,0.08,0.065,0.055,0.045,0.037,0.03,0.025,0.022,0.02,0.016,0.013,0.01,0.002])
+        self.cd4_boundaries = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175,
+                                        200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
+        self.base_rate_disease = np.array([2.5, 1.8, 1.1, 0.8, 0.5, 0.4, 0.32, 0.28,
+                                           0.23, 0.20, 0.17, 0.13, 0.10, 0.08, 0.065,
+                                           0.055, 0.045, 0.037, 0.03, 0.025, 0.022, 0.02,
+                                           0.016, 0.013, 0.01, 0.002])
         assert (len(self.cd4_boundaries)+1 == len(self.base_rate_disease))
         self.viral_load_boundaries = np.array([3, 4, 4.5, 5, 5.5])
-        self.vl_disease_factor = np.array([0.2,0.3,0.6,0.9,1.2,1.6])
+        self.vl_disease_factor = np.array([0.2, 0.3, 0.6, 0.9, 1.2, 1.6])
         self.who3_risk_factor = 5
         self.who3_proportion_tb = 0.2
 
@@ -244,8 +248,9 @@ class DemographicsModule:
         viral_load_risk_groups = np.digitize(pop.get_variable(col.VIRAL_LOAD, HIV_pos), self.viral_load_boundaries)
         ages = pop.get_variable(col.AGE, HIV_pos)
         age_factor = (ages/38)**1.2
-        base_rate = self.base_rate_disease[cd4_risk_groups] * self.vl_disease_factor[viral_load_risk_groups] \
-                    * age_factor
+        base_rate = self.base_rate_disease[cd4_risk_groups] \
+            * self.vl_disease_factor[viral_load_risk_groups] \
+            * age_factor
 
         # WHO stage 3 diseases
         who3_rate = base_rate * self.who3_risk_factor

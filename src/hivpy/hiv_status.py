@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from .population import Population
 
 import operator
-from datetime import timedelta
+from .common import timedelta
 
 import numpy as np
 import pandas as pd

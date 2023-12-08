@@ -1,5 +1,5 @@
 import operator as op
-from datetime import date
+from hivpy.common import date
 
 import numpy as np
 

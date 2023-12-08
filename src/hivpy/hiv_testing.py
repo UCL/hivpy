@@ -1,6 +1,6 @@
 import importlib.resources
 import operator as op
-from datetime import timedelta
+from .common import timedelta
 
 import hivpy.column_names as col
 

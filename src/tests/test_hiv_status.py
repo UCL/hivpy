@@ -1,6 +1,6 @@
 import operator
 import operator as op
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 
 import numpy as np
 import pandas as pd

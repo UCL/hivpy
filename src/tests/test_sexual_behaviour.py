@@ -1,6 +1,6 @@
 import importlib.resources
 import operator
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 
 import numpy as np
 import pytest
@@ -260,7 +260,7 @@ def test_risk_diagnosis():
     pop.data["HIV_status"] = False  # init everyone HIV negative
     SBM = SexualBehaviourModule()
     SBM.risk_diagnosis = 4
-    SBM.risk_diagnosis_period = timedelta(700)
+    SBM.risk_diagnosis_period = timedelta(days=700)
     SBM.update_risk_diagnosis(pop)
     assert np.all(pop.data["risk_diagnosis"] == 1)
     # give up some people HIV and advance the date

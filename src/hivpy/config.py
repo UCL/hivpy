@@ -1,6 +1,6 @@
 import logging
-from dataclasses import dataclass
-from datetime import date, timedelta
+from dataclasses import dataclass, field
+from .common import date, timedelta
 from os import path
 from pathlib import Path
 
@@ -53,7 +53,7 @@ class SimulationConfig:
     start_date: date
     stop_date: date
     output_dir: Path
-    time_step: timedelta = timedelta(days=90)
+    time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
 
     def _validate(self):
         """

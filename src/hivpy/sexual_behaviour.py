@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import importlib.resources
 import operator
 from enum import IntEnum
@@ -11,7 +10,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng
+from .common import AND, COND, SexType, diff_years, rng, date, timedelta
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:
@@ -53,10 +52,10 @@ SexBehaviours = {SexBehaviourClass.MALE: MaleSexBehaviour,
                  SexBehaviourClass.SEX_WORKER_O30: SexWorkerSexBehaviour}
 
 
-date1995 = datetime.date(1995, 1, 1)
-date2000 = datetime.date(2000, 1, 1)
-date2010 = datetime.date(2010, 1, 1)
-date2021 = datetime.date(2021, 1, 1)
+date1995 = date(1995, 1, 1)
+date2000 = date(2000, 1, 1)
+date2010 = date(2010, 1, 1)
+date2021 = date(2021, 1, 1)
 
 
 class SexualBehaviourModule:
@@ -105,7 +104,7 @@ class SexualBehaviourModule:
                                     SexBehaviourClass.SEX_WORKER_O30: self.sb_data.sexworker_stp_dists}
         self.ltp_risk_factor = self.sb_data.risk_long_term_partnered.sample()
         self.risk_diagnosis = self.sb_data.risk_diagnosis.sample()
-        self.risk_diagnosis_period = datetime.timedelta(days=365)*self.sb_data.risk_diagnosis_period
+        self.risk_diagnosis_period = timedelta(days=365)*self.sb_data.risk_diagnosis_period
         self.yearly_risk_change = {"1990s": self.sb_data.yearly_risk_change["1990s"].sample(),
                                    "2010s": self.sb_data.yearly_risk_change["2010s"].sample()}
 
@@ -135,7 +134,7 @@ class SexualBehaviourModule:
         self.prob_init_sex_work_age = self.sb_data.prob_init_sex_work_age
         self.sw_age_bins = [20, 25, 35]
         self.sex_worker_program = True if rng.random() < 0.2 else False
-        self.sw_program_start_date = datetime.date(2015, 1, 1)
+        self.sw_program_start_date = date(2015, 1, 1)
         self.prob_sw_program_effect = 1.0
         self.rate_engage_sw_program = 0.1
         self.rate_disengage_sw_program = 0.025

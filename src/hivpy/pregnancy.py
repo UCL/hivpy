@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.resources
 import operator as op
-from datetime import timedelta
+from .common import timedelta
 from math import pow
 from typing import TYPE_CHECKING
 

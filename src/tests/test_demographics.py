@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, timedelta
+from hivpy.common import date, timedelta
 from math import sqrt
 
 import numpy as np
@@ -100,7 +100,7 @@ def test_date_permanent(default_module):
     pop = Population(size=3, start_date=date(1989, 1, 1))
 
     pop.set_present_variable(
-        col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
+        col.DATE_OF_DEATH, [None, pop.date, pop.date - timedelta(days=30)])
     pop.set_present_variable(col.AGE, [30, 20, 50])
     pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
 
@@ -140,7 +140,7 @@ def test_death_rate():
         deaths = module.determine_deaths(pop)
         print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
-        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = datetime.today()
+        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = pop.date
     recorded_deaths = pop.data.groupby(
         [pop.get_correct_column(col.SEX), pop.get_correct_column(col.AGE_GROUP)]
         ).date_of_death.count().to_dict()

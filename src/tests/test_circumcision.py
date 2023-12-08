@@ -1,5 +1,5 @@
 import operator as op
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 from math import isclose, sqrt
 
 import hivpy.column_names as col
@@ -101,7 +101,7 @@ def test_birth_circumcision_stages():
     # evolve population
     while pop.date <= stop_date:
         # advance ages and birth circumcision
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_birth_circumcision(pop.data, time_step, pop.date)
         pop.date += time_step
 
@@ -185,14 +185,14 @@ def test_vmmc_case_0():
 
         # evolve population for a year
         for i in range(0, 5):
-            pop.data.age += time_step.days / 365
+            pop.data.age += time_step.month / 12
             pop.circumcision.update_vmmc(pop, time_step)
             pop.date += time_step
         # check no VMMC occurs until vmmc_start_year
         assert sum(pop.data[col.VMMC]) == 0
 
         # evolve population during vmmc_start_year
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_vmmc(pop, time_step)
 
         # get stats
@@ -210,7 +210,7 @@ def test_vmmc_case_0():
             circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                         & pop.data[col.CIRCUMCISED]]
             # advance ages and vmmc
-            pop.data.age += time_step.days / 365
+            pop.data.age += time_step.month / 12
             pop.circumcision.update_vmmc(pop, time_step)
             pop.date += time_step
             # check circumcisied people remain circumcised each step
@@ -245,7 +245,7 @@ def test_vmmc_case_1():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_vmmc(pop, time_step)
         # nobody under 15 has been circumcised
         if age < 15:
@@ -276,11 +276,11 @@ def test_vmmc_case_2():
     set_vmmc_default_dates(pop.circumcision)
 
     # evolve population
-    pop.data.age += time_step.days / 365
+    pop.data.age += time_step.month / 12
     pop.circumcision.update_vmmc(pop, time_step)
     circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
     pop.date += time_step
-    pop.data.age += time_step.days / 365
+    pop.data.age += time_step.month / 12
     pop.circumcision.update_vmmc(pop, time_step)
     new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                     & pop.data[col.CIRCUMCISED]]
@@ -311,7 +311,7 @@ def test_vmmc_case_3():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_vmmc(pop, time_step)
         # nobody under 15 has been circumcised
         assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
@@ -347,7 +347,7 @@ def test_vmmc_case_4():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_vmmc(pop, time_step)
         circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
         # nobody under 15 has been circumcised
@@ -361,7 +361,7 @@ def test_vmmc_case_4():
 
         # evolve population
         pop.date += time_step
-        pop.data.age += time_step.days / 365
+        pop.data.age += time_step.month / 12
         pop.circumcision.update_vmmc(pop, time_step)
         new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
                                         & pop.data[col.CIRCUMCISED]]

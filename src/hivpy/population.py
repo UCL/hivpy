@@ -1,4 +1,3 @@
-import datetime
 import operator
 from functools import reduce
 
@@ -7,14 +6,14 @@ import pandas as pd
 import hivpy.column_names as col
 
 from .circumcision import CircumcisionModule
-from .common import LogicExpr
+from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
 from .sexual_behaviour import SexualBehaviourModule
 
-HIV_APPEARANCE = datetime.date(1989, 1, 1)
+HIV_APPEARANCE = date(1989, 1, 1)
 
 
 class Population:
@@ -24,7 +23,7 @@ class Population:
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
-    date: datetime.date  # current date
+    date: date  # current date
     HIV_introduced: bool  # whether HIV has been introduced yet
     variable_history: dict  # how many steps we need to store for each variable
     step: int
@@ -261,20 +260,20 @@ class Population:
             df = self.data
         return df.groupby(param_list)["Dummy"].transform(general_func)
 
-    def evolve(self, time_step: datetime.timedelta):
+    def evolve(self, time_step: timedelta):
         """
         Advance the population by one time step.
         """
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
         ages = self.get_variable(col.AGE)
-        ages += time_step.days / 365  # Very naive!
+        ages += time_step.month / 12
         self.set_present_variable(col.AGE, ages)
         # Record who has reached their max age
         died_this_period = self.demographics.determine_deaths(self)
         n_deaths = sum(died_this_period)
         # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
-        if(n_deaths and self.apply_death):
+        if (n_deaths and self.apply_death):
             self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
             self.data = self.data.drop(self.get_sub_pop([(col.DATE_OF_DEATH, operator.ne, None)]))
 

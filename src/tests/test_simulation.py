@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 
 import pytest
 
@@ -29,8 +29,8 @@ def test_error_end_before_start(tmp_path):
     """
     Ensure that we throw an error if the end date is before the start.
     """
-    today = date.today()
-    yesterday = today - timedelta(days=1)
+    today = date(1989, 1)
+    yesterday = today - timedelta(days=30)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=today, stop_date=yesterday, output_dir=tmp_path,
                          population_size=100)
@@ -40,7 +40,7 @@ def test_error_end_before_first_step(tmp_path):
     """
     Ensure that we throw an error if the simulation would end before the first step.
     """
-    start = date.today()
+    start = date(1989, 1)
     end = start + timedelta(days=30)
     step = timedelta(days=90)
     with pytest.raises(SimulationException):
@@ -54,7 +54,7 @@ def test_death_occurs(tmp_path):
     """
     # FIXME This will not necessarily be true once we add in births
     size = 10000
-    start = date.today()
+    start = date(1989, 1)
     step = timedelta(days=90)
     end = start + 200 * step
     config = SimulationConfig(size, start, end, tmp_path, step)

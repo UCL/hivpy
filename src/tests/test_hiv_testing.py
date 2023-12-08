@@ -1,5 +1,5 @@
 import operator as op
-from datetime import date, timedelta
+from hivpy.common import date, timedelta
 from math import isclose, sqrt
 
 import hivpy.column_names as col
@@ -163,13 +163,13 @@ def test_max_frequency_testing():
     for index in max_freq_testing:
 
         # build population
-        N = 100000
+        N = 100
         pop = Population(size=N, start_date=start_date)
         pop.data[col.AGE] = 20
         pop.data[col.HIV_STATUS] = False
         pop.data[col.HARD_REACH] = False
         pop.data[col.EVER_TESTED] = True
-        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-1)
+        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-30)
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
@@ -189,7 +189,7 @@ def test_max_frequency_testing():
         assert (pop.get_variable(col.LAST_TEST_DATE) != pop.date).all()
 
         # move date forward and evolve again
-        pop.date += timedelta(days=1)
+        pop.date += timedelta(days=30)
         pop.hiv_testing.update_hiv_testing(pop)
 
         # check that everyone has just been tested
