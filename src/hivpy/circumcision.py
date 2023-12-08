@@ -1,13 +1,12 @@
 import importlib.resources
 import operator as op
-from .common import timedelta
 
 import numpy as np
 
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import SexType, rng
+from .common import SexType, rng, timedelta
 
 
 class CircumcisionModule:

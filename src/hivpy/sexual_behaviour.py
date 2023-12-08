@@ -10,7 +10,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng, date, timedelta
+from .common import AND, COND, SexType, date, diff_years, rng, timedelta
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:

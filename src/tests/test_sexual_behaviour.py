@@ -1,13 +1,12 @@
 import importlib.resources
 import operator
-from hivpy.common import date, timedelta
 
 import numpy as np
 import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, seedManager
+from hivpy.common import SexType, date, rng, seedManager, timedelta
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)

@@ -1,9 +1,8 @@
 import operator as op
-from hivpy.common import date, timedelta
 from math import ceil, isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng
+from hivpy.common import SexType, date, rng, timedelta
 from hivpy.population import Population
 
 

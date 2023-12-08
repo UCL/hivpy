@@ -7,6 +7,7 @@ if TYPE_CHECKING:
 
 import importlib.resources
 import logging
+import operator as op
 from math import exp
 
 import numpy as np
@@ -14,10 +15,9 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, COND
+from hivpy.common import COND, SexType, rng
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
-import operator as op
 
 SexDType = pd.CategoricalDtype(iter(SexType))
 

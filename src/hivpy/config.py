@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass, field
-from .common import date, timedelta
 from os import path
 from pathlib import Path
 
+from .common import date, timedelta
 from .exceptions import SimulationException
 
 LEVELS = {

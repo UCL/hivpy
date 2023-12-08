@@ -1,13 +1,12 @@
 import operator
 import operator as op
-from hivpy.common import date, timedelta
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import COND, SexType, rng
+from hivpy.common import COND, SexType, date, rng, timedelta
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 

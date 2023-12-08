@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib.resources
 import operator as op
-from .common import timedelta
 from math import pow
 from typing import TYPE_CHECKING
 
@@ -10,7 +9,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import SexType, rng
+from .common import SexType, rng, timedelta
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:

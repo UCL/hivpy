@@ -1,5 +1,4 @@
 import logging
-from hivpy.common import date, timedelta
 from math import sqrt
 
 import numpy as np
@@ -7,7 +6,7 @@ import pytest
 import scipy.integrate
 
 import hivpy.column_names as col
-from hivpy.common import SexType
+from hivpy.common import SexType, date, timedelta
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
