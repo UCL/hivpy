@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 import importlib.resources
 import logging
-import operator as op
 from math import exp
 
 import numpy as np
@@ -15,7 +14,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import COND, SexType, rng, timedelta
+from hivpy.common import SexType, rng
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
@@ -191,9 +190,11 @@ class DemographicsModule:
             params[param] = value
         self.params = params
 
+        # DEATH
         # TODO: move these params into the config file
         self.non_hiv_tb_death_risk = 0.3
         self.non_hiv_tb_risk = 5e-4
+        self.hiv_death_factor = 0.25
 
     def initialise_sex(self, count):
         sex_distribution = (

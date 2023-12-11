@@ -50,9 +50,9 @@ class HIVStatusModule:
         self.initial_mean_sqrt_cd4 = 27.5
         self.sigma_cd4 = 1.2
 
-        # DISEASE RISK
+        # HIV related risk of disease and death
         self.disease_cd4_boundaries = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175,
-                                        200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
+                                                200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
         self.base_rate_disease = np.array([2.5, 1.8, 1.1, 0.8, 0.5, 0.4, 0.32, 0.28,
                                            0.23, 0.20, 0.17, 0.13, 0.10, 0.08, 0.065,
                                            0.055, 0.045, 0.037, 0.03, 0.025, 0.022, 0.02,
@@ -73,6 +73,12 @@ class HIVStatusModule:
 
         self.prop_ADC_other = 1 - (self.prop_ADC_cryp_meningitis + self.prop_ADC_SBI)
         self.WHO4_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.hiv_mortality_factor = 0.25
+        self.tb_mortality_factor = rng.choice([1.5, 2, 3])
+        self.sbi_mortality_factor = rng.choice([1.5, 2, 3])
+        self.cm_mortality_factor = rng.choice([3, 5, 10])
+        self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
@@ -378,5 +384,20 @@ class HIVStatusModule:
                                                 col.WHO4_OTHER_DIAGNOSED,
                                                 base_rate * self.prop_ADC_other,
                                                 self.WHO4_base_diagnosis_prob)
+        adc = (cm | sbi | who4_other)
+        pop.set_present_variable(col.ADC, adc, HIV_pos)
 
-        pop.set_present_variable(col.ADC, (cm | sbi | who4_other), HIV_pos)
+        # DEATH
+        # base death rate for HIV+ people
+        HIV_death_rate = base_rate * self.hiv_mortality_factor  # hiv mortality factor
+        # death rate for people with TB but no ADC
+        tb_no_adc = (tb & (~adc))
+        HIV_death_rate[tb_no_adc] = HIV_death_rate[tb_no_adc]*self.tb_mortality_factor
+        # death rate for people with ADCs
+        HIV_death_rate[cm] = HIV_death_rate[cm]*self.cm_mortality_factor
+        HIV_death_rate[sbi] = HIV_death_rate[sbi]*self.sbi_mortality_factor
+        HIV_death_rate[who4_other] = HIV_death_rate[who4_other]*self.other_adc_mortality_factor
+        prob_death = 1 - np.exp(-HIV_death_rate * (time_step.month/12))
+        r_death = rng.uniform(size=len(HIV_pos))
+        HIV_deaths = r_death < prob_death
+        return HIV_deaths

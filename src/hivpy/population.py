@@ -291,7 +291,9 @@ class Population:
         if self.HIV_introduced:
             self.hiv_status.update_HIV_status(self)
             self.hiv_testing.update_hiv_testing(self)
-            self.hiv_status.HIV_related_disease_risk(self, time_step)
+            HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
+            n_deaths = n_deaths + sum(HIV_deaths)
+            self.data = self.data.drop(HIV_deaths.index)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
