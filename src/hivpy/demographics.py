@@ -15,7 +15,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import COND, SexType, rng
+from hivpy.common import COND, SexType, rng, timedelta
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
@@ -205,6 +205,7 @@ class DemographicsModule:
         self.vl_disease_factor = np.array([0.2, 0.3, 0.6, 0.9, 1.2, 1.6])
         self.who3_risk_factor = 5
         self.who3_proportion_tb = 0.2
+        self.tb_base_diagnosis_prob = rng.choice([0.25,0.5,0.75])
 
     def initialise_sex(self, count):
         sex_distribution = (
@@ -240,7 +241,7 @@ class DemographicsModule:
         prob_of_death = 1 - exp(-rate / 4)
         return prob_of_death
 
-    def HIV_related_disease_risk(self, pop: Population):
+    def HIV_related_disease_risk(self, pop: Population, time_step: timedelta):
         # TODO: does disease risk apply to everyone who is alive?
         # calculate disease base rate
         HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -253,18 +254,30 @@ class DemographicsModule:
             * age_factor
 
         # WHO stage 3 diseases
-        who3_rate = base_rate * self.who3_risk_factor
-        r = rng(size=len(HIV_pos))
-        who3_disease = r < who3_rate
+        non_tb_who3_rate = base_rate * self.who3_risk_factor * (1-self.who3_proportion_tb)
+        tb_rate = base_rate * self.who3_risk_factor * self.who3_proportion_tb
 
-        # active TB
+        non_tb_who3_per_timestep = 1 - np.exp(-non_tb_who3_rate * (time_step.month/12))
+        tb_per_timestep = 1 - np.exp(-tb_rate * (time_step.month/12))
+        r_non_tb = rng(size=len(HIV_pos))
+        r_tb = rng(size=len(HIV_pos))
+        who3_disease = r_non_tb < non_tb_who3_per_timestep
+        tb = r_tb < tb_per_timestep
+        pop.set_present_variable(col.NON_TB_WHO3, who3_disease, HIV_pos)
+        pop.set_present_variable(col.TB, tb, HIV_pos)
+        pop.set_present_variable(col.WHO3_EVENT, (who3_disease or tb), HIV_pos)
+
+        # TB Diagnosis
+        people_with_tb = pop.get_sub_pop(COND(col.TB, op.eq, True))
+        r_diagnosis = rng(size=len(people_with_tb))
+        diagnoses = r_diagnosis < self.tb_base_diagnosis_prob
+        pop.set_present_variable(col.TB_DIAGNOSED, diagnoses, people_with_tb)
 
         # cryptococcal meningitis
 
         # serious bacterial infection
 
         # WHO stage 4
-        pass
 
     def risk_of_death(self, pop: Population):
         # HIV-related Death

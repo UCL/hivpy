@@ -69,6 +69,10 @@ X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is pres
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition
 
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
+WHO3_EVENT = "who3_event"                       # Bool: True if who3 disease occurs this timestep in HIV positive person
+NON_TB_WHO3 = "non_tb_who3"                     # Bool: True if non-tb who3 disease occurs this timestep in HIV positive person
+TB = "tb"                                       # Bool: True if tb occurs this timestep in HIV positive person
+TB_DIAGNOSED = "tb_diagnosed"                   # Bool: True if TB is diagnosed this timestep
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
