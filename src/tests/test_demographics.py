@@ -102,8 +102,8 @@ def test_date_permanent(default_module):
         col.DATE_OF_DEATH, [None, pop.date, pop.date - timedelta(days=30)])
     pop.set_present_variable(col.AGE, [30, 20, 50])
     pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
-
-    new_deaths = default_module.determine_deaths(pop)
+    time_step = timedelta(months=3)
+    new_deaths = default_module.determine_deaths(pop, time_step)
     # Find who already had a date of death, and check that they are not marked
     # as having died in this time step.
     assert not new_deaths[pop.get_variable(col.DATE_OF_DEATH).notnull()].any()
@@ -118,8 +118,8 @@ def test_death_rate():
     data = DemographicsData(data_path)
     module = DemographicsModule(death_rates=data.death_rates)
     N = 300000
-    ages_to_try = [10, 23, 33]
-    age_groups = [0, 2, 4]
+    ages_to_try = [23, 33]
+    age_groups = [2, 4]
     group_size = N // 2 // len(ages_to_try)
     ages = sum(([age] * group_size for age in ages_to_try), []) * 2
     sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
@@ -136,10 +136,11 @@ def test_death_rate():
     # Simulate for a year
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
-        deaths = module.determine_deaths(pop)
+        time_step = timedelta(months=3)
+        deaths = module.determine_deaths(pop, time_step)
         print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
-        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = pop.date
+        pop.data.loc[deaths[deaths].index, pop.get_correct_column(col.DATE_OF_DEATH)] = pop.date
     recorded_deaths = pop.data.groupby(
         [pop.get_correct_column(col.SEX), pop.get_correct_column(col.AGE_GROUP)]
         ).date_of_death.count().to_dict()

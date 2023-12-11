@@ -269,13 +269,7 @@ class Population:
         ages = self.get_variable(col.AGE)
         ages += time_step.month / 12
         self.set_present_variable(col.AGE, ages)
-        # Record who has reached their max age
-        died_this_period = self.demographics.determine_deaths(self)
-        n_deaths = sum(died_this_period)
-        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
-        if (n_deaths and self.apply_death):
-            self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
-            self.data = self.data.drop(self.get_sub_pop([(col.DATE_OF_DEATH, operator.ne, None)]))
+        n_deaths = 0
 
         if self.HIV_introduced:
             self.hiv_status.set_viral_load_groups(self)
@@ -293,7 +287,15 @@ class Population:
             self.hiv_testing.update_hiv_testing(self)
             HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
             n_deaths = n_deaths + sum(HIV_deaths)
-            self.data = self.data.drop(HIV_deaths.index)
+            if (n_deaths and self.apply_death):
+                self.drop_from_population(HIV_deaths)
+
+        # Apply non-hiv deaths
+        non_HIV_deaths = self.demographics.determine_deaths(self, time_step)
+        n_deaths = n_deaths + sum(non_HIV_deaths)
+        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
+        if (sum(non_HIV_deaths) and self.apply_death):
+            self.drop_from_population(non_HIV_deaths)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
@@ -305,3 +307,7 @@ class Population:
         self.date += time_step
         self.step += 1
         return self
+
+    def drop_from_population(self, deaths: pd.Series):
+        indices = deaths[deaths].index  # indices where deaths==True
+        self.data.drop(indices, inplace=True)
