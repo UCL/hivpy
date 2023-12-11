@@ -204,8 +204,18 @@ class DemographicsModule:
         self.viral_load_boundaries = np.array([3, 4, 4.5, 5, 5.5])
         self.vl_disease_factor = np.array([0.2, 0.3, 0.6, 0.9, 1.2, 1.6])
         self.who3_risk_factor = 5
+
         self.who3_proportion_tb = 0.2
-        self.tb_base_diagnosis_prob = rng.choice([0.25,0.5,0.75])
+        self.tb_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_cryp_meningitis = 0.15
+        self.CM_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_SBI = 0.15
+        self.SBI_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_other = 1 - (self.prop_ADC_cryp_meningitis + self.prop_ADC_SBI)
+        self.WHO4_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
 
     def initialise_sex(self, count):
         sex_distribution = (
@@ -253,31 +263,48 @@ class DemographicsModule:
             * self.vl_disease_factor[viral_load_risk_groups] \
             * age_factor
 
+        def disease_and_diagnosis(disease_col, diagnosis_col, disease_rate, diagnosis_prob):
+            # Calculate occurence and diagnosis of given disease
+            disease_risk = 1 - np.exp(-disease_rate * (time_step.month/12))
+            r_disease = rng(size=len(HIV_pos))
+            disease = r_disease < disease_risk
+            diagnosis = r_disease < (disease_risk * diagnosis_prob)
+            pop.set_present_variable(disease_col, disease, HIV_pos)
+            pop.set_present_variable(diagnosis_col, diagnosis, HIV_pos)
+            return (disease, diagnosis)
+
         # WHO stage 3 diseases
         non_tb_who3_rate = base_rate * self.who3_risk_factor * (1-self.who3_proportion_tb)
         tb_rate = base_rate * self.who3_risk_factor * self.who3_proportion_tb
 
         non_tb_who3_per_timestep = 1 - np.exp(-non_tb_who3_rate * (time_step.month/12))
-        tb_per_timestep = 1 - np.exp(-tb_rate * (time_step.month/12))
         r_non_tb = rng(size=len(HIV_pos))
-        r_tb = rng(size=len(HIV_pos))
         who3_disease = r_non_tb < non_tb_who3_per_timestep
-        tb = r_tb < tb_per_timestep
         pop.set_present_variable(col.NON_TB_WHO3, who3_disease, HIV_pos)
-        pop.set_present_variable(col.TB, tb, HIV_pos)
+
+        # TB WHO3
+        (tb, _) = disease_and_diagnosis(col.TB, col.TB_DIAGNOSED, tb_rate, self.tb_base_diagnosis_prob)
         pop.set_present_variable(col.WHO3_EVENT, (who3_disease or tb), HIV_pos)
 
-        # TB Diagnosis
-        people_with_tb = pop.get_sub_pop(COND(col.TB, op.eq, True))
-        r_diagnosis = rng(size=len(people_with_tb))
-        diagnoses = r_diagnosis < self.tb_base_diagnosis_prob
-        pop.set_present_variable(col.TB_DIAGNOSED, diagnoses, people_with_tb)
-
         # cryptococcal meningitis
+        (cm, _) = disease_and_diagnosis(col.C_MENINGITIS,
+                                        col.C_MENINGITIS_DIAGNOSED,
+                                        self.base_rate_disease * self.prop_ADC_cryp_meningitis,
+                                        self.CM_base_diagnosis_prob)
 
         # serious bacterial infection
+        (sbi, _) = disease_and_diagnosis(col.SBI,
+                                         col.SBI_DIAGNOSED,
+                                         self.base_rate_disease * self.prop_ADC_SBI,
+                                         self.SBI_base_diagnosis_prob)
 
         # WHO stage 4
+        (who4_other, _) = disease_and_diagnosis(col.WHO4_OTHER,
+                                                col.WHO4_OTHER_DIAGNOSED,
+                                                self.base_rate_disease * self.prop_ADC_other,
+                                                self.WHO4_base_diagnosis_prob)
+        
+        pop.set_present_variable(col.ADC, (cm or sbi or who4_other), HIV_pos)
 
     def risk_of_death(self, pop: Population):
         # HIV-related Death
