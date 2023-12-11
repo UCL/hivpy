@@ -156,7 +156,6 @@ class SexualBehaviourModule:
         population.init_variable(col.SEX_MIX_AGE_GROUP, 0)
         population.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*population.size))
         population.init_variable(col.RISK_LTP, 1)
-        population.init_variable(col.ADC, False)
         population.init_variable(col.LIFE_SEX_RISK, 1)
         population.init_variable(col.SEX_WORKER, False)
         population.init_variable(col.SW_TEST_6MONTHLY, False)

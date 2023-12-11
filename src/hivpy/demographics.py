@@ -194,28 +194,6 @@ class DemographicsModule:
         # TODO: move these params into the config file
         self.non_hiv_tb_death_risk = 0.3
         self.non_hiv_tb_risk = 5e-4
-        self.cd4_boundaries = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175,
-                                        200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
-        self.base_rate_disease = np.array([2.5, 1.8, 1.1, 0.8, 0.5, 0.4, 0.32, 0.28,
-                                           0.23, 0.20, 0.17, 0.13, 0.10, 0.08, 0.065,
-                                           0.055, 0.045, 0.037, 0.03, 0.025, 0.022, 0.02,
-                                           0.016, 0.013, 0.01, 0.002])
-        assert (len(self.cd4_boundaries)+1 == len(self.base_rate_disease))
-        self.viral_load_boundaries = np.array([3, 4, 4.5, 5, 5.5])
-        self.vl_disease_factor = np.array([0.2, 0.3, 0.6, 0.9, 1.2, 1.6])
-        self.who3_risk_factor = 5
-
-        self.who3_proportion_tb = 0.2
-        self.tb_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
-
-        self.prop_ADC_cryp_meningitis = 0.15
-        self.CM_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
-
-        self.prop_ADC_SBI = 0.15
-        self.SBI_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
-
-        self.prop_ADC_other = 1 - (self.prop_ADC_cryp_meningitis + self.prop_ADC_SBI)
-        self.WHO4_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
 
     def initialise_sex(self, count):
         sex_distribution = (
@@ -250,61 +228,6 @@ class DemographicsModule:
         # Probability of dying, assuming time step of 3 months
         prob_of_death = 1 - exp(-rate / 4)
         return prob_of_death
-
-    def HIV_related_disease_risk(self, pop: Population, time_step: timedelta):
-        # TODO: does disease risk apply to everyone who is alive?
-        # calculate disease base rate
-        HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
-        cd4_risk_groups = np.digitize(pop.get_variable(col.CD4, HIV_pos), self.cd4_boundaries)
-        viral_load_risk_groups = np.digitize(pop.get_variable(col.VIRAL_LOAD, HIV_pos), self.viral_load_boundaries)
-        ages = pop.get_variable(col.AGE, HIV_pos)
-        age_factor = (ages/38)**1.2
-        base_rate = self.base_rate_disease[cd4_risk_groups] \
-            * self.vl_disease_factor[viral_load_risk_groups] \
-            * age_factor
-
-        def disease_and_diagnosis(disease_col, diagnosis_col, disease_rate, diagnosis_prob):
-            # Calculate occurence and diagnosis of given disease
-            disease_risk = 1 - np.exp(-disease_rate * (time_step.month/12))
-            r_disease = rng(size=len(HIV_pos))
-            disease = r_disease < disease_risk
-            diagnosis = r_disease < (disease_risk * diagnosis_prob)
-            pop.set_present_variable(disease_col, disease, HIV_pos)
-            pop.set_present_variable(diagnosis_col, diagnosis, HIV_pos)
-            return (disease, diagnosis)
-
-        # WHO stage 3 diseases
-        non_tb_who3_rate = base_rate * self.who3_risk_factor * (1-self.who3_proportion_tb)
-        tb_rate = base_rate * self.who3_risk_factor * self.who3_proportion_tb
-
-        non_tb_who3_per_timestep = 1 - np.exp(-non_tb_who3_rate * (time_step.month/12))
-        r_non_tb = rng(size=len(HIV_pos))
-        who3_disease = r_non_tb < non_tb_who3_per_timestep
-        pop.set_present_variable(col.NON_TB_WHO3, who3_disease, HIV_pos)
-
-        # TB WHO3
-        (tb, _) = disease_and_diagnosis(col.TB, col.TB_DIAGNOSED, tb_rate, self.tb_base_diagnosis_prob)
-        pop.set_present_variable(col.WHO3_EVENT, (who3_disease or tb), HIV_pos)
-
-        # cryptococcal meningitis
-        (cm, _) = disease_and_diagnosis(col.C_MENINGITIS,
-                                        col.C_MENINGITIS_DIAGNOSED,
-                                        self.base_rate_disease * self.prop_ADC_cryp_meningitis,
-                                        self.CM_base_diagnosis_prob)
-
-        # serious bacterial infection
-        (sbi, _) = disease_and_diagnosis(col.SBI,
-                                         col.SBI_DIAGNOSED,
-                                         self.base_rate_disease * self.prop_ADC_SBI,
-                                         self.SBI_base_diagnosis_prob)
-
-        # WHO stage 4
-        (who4_other, _) = disease_and_diagnosis(col.WHO4_OTHER,
-                                                col.WHO4_OTHER_DIAGNOSED,
-                                                self.base_rate_disease * self.prop_ADC_other,
-                                                self.WHO4_base_diagnosis_prob)
-        
-        pop.set_present_variable(col.ADC, (cm or sbi or who4_other), HIV_pos)
 
     def risk_of_death(self, pop: Population):
         # HIV-related Death

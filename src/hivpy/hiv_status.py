@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
-import operator
+import operator as op
 
 import numpy as np
 import pandas as pd
@@ -50,6 +50,30 @@ class HIVStatusModule:
         self.initial_mean_sqrt_cd4 = 27.5
         self.sigma_cd4 = 1.2
 
+        # DISEASE RISK
+        self.disease_cd4_boundaries = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 125, 150, 175,
+                                        200, 225, 250, 275, 300, 325, 350, 375, 400, 450, 500, 650])
+        self.base_rate_disease = np.array([2.5, 1.8, 1.1, 0.8, 0.5, 0.4, 0.32, 0.28,
+                                           0.23, 0.20, 0.17, 0.13, 0.10, 0.08, 0.065,
+                                           0.055, 0.045, 0.037, 0.03, 0.025, 0.022, 0.02,
+                                           0.016, 0.013, 0.01, 0.002])
+        assert (len(self.disease_cd4_boundaries)+1 == len(self.base_rate_disease))
+        self.disease_vl_boundaries = np.array([3, 4, 4.5, 5, 5.5])
+        self.vl_disease_factor = np.array([0.2, 0.3, 0.6, 0.9, 1.2, 1.6])
+        self.who3_risk_factor = 5
+
+        self.who3_proportion_tb = 0.2
+        self.tb_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_cryp_meningitis = 0.15
+        self.CM_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_SBI = 0.15
+        self.SBI_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
+        self.prop_ADC_other = 1 - (self.prop_ADC_cryp_meningitis + self.prop_ADC_SBI)
+        self.WHO4_base_diagnosis_prob = rng.choice([0.25, 0.5, 0.75])
+
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
@@ -60,6 +84,19 @@ class HIVStatusModule:
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
         population.init_variable(col.VIRAL_LOAD, 0.0)
         population.init_variable(col.X4_VIRUS, False)
+
+        population.init_variable(col.WHO3_EVENT, False)
+        population.init_variable(col.NON_TB_WHO3, False)
+        population.init_variable(col.TB, False)
+        population.init_variable(col.TB_DIAGNOSED, False)
+        population.init_variable(col.ADC, False)
+        population.init_variable(col.C_MENINGITIS, False)
+        population.init_variable(col.C_MENINGITIS_DIAGNOSED, False)
+        population.init_variable(col.SBI, False)
+        population.init_variable(col.SBI_DIAGNOSED, False)
+        population.init_variable(col.WHO4_OTHER, False)
+        population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
+
         self.init_resistance_mutations(population)
 
     def initial_HIV_status(self, population: pd.DataFrame):
@@ -77,14 +114,14 @@ class HIVStatusModule:
         # At the start of the epidemic, we consider only people with short-term partners over
         # the threshold as potentially infected.
         initial_candidates = population.get_sub_pop(
-            [(col.NUM_PARTNERS, operator.ge, self.initial_hiv_newp_threshold)])
+            [(col.NUM_PARTNERS, op.ge, self.initial_hiv_newp_threshold)])
         # initial_candidates = population[col.NUM_PARTNERS] >= self.initial_hiv_newp_threshold
         # Each of them has the same probability of being infected.
         num_init_candidates = len(initial_candidates)
         rands = rng.uniform(size=num_init_candidates)
         initial_infection = rands < self.initial_hiv_prob
         population.set_present_variable(col.HIV_STATUS, initial_infection, sub_pop=initial_candidates)
-        newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+        newly_infected = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
         self.initialise_HIV_progression(population, newly_infected)
 
     def update_partner_risk_vectors(self, population: Population):
@@ -92,17 +129,17 @@ class HIVStatusModule:
         Calculate the risk factor associated with each sex and age group.
         """
         # Update viral load groups based on viral load / primary infection
-        HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+        HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
         in_primary_infection = population.get_sub_pop([(col.DATE_HIV_INFECTION,
-                                                        operator.ge,
+                                                        op.ge,
                                                         population.date - timedelta(days=90))])
         population.set_present_variable(col.VIRAL_LOAD_GROUP, 5, in_primary_infection)
 
         # Should we be using for loops here or can we do better?
         for sex in SexType:
             for age_group in range(5):   # FIXME: need to get number of age groups from somewhere
-                sub_pop = population.get_sub_pop([(col.SEX, operator.eq, sex),
-                                                  (col.SEX_MIX_AGE_GROUP, operator.eq, age_group)])
+                sub_pop = population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                  (col.SEX_MIX_AGE_GROUP, op.eq, age_group)])
                 # total number of people partnered to people in this group
                 n_stp_total = sum(population.get_variable(col.NUM_PARTNERS, sub_pop))
                 # num people partnered to HIV+ people in this group
@@ -120,11 +157,11 @@ class HIVStatusModule:
                         sum(population.get_variable(col.NUM_PARTNERS,
                             population.get_sub_pop_intersection(
                                 HIV_positive_subpop,
-                                population.get_sub_pop([(col.VIRAL_LOAD_GROUP, operator.eq, vg)])
+                                population.get_sub_pop([(col.VIRAL_LOAD_GROUP, op.eq, vg)])
                             )))/n_stp_of_infected for vg in range(6)]
 
     def set_viral_load_groups(self, population: Population):
-        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, operator.eq, True))
+        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
         population.set_present_variable(col.VIRAL_LOAD_GROUP,
                                         np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
                                                     np.array([2.7, 3.7, 4.7, 5.7])),
@@ -206,11 +243,11 @@ class HIVStatusModule:
         """
         self.update_partner_risk_vectors(population)
         # select uninfected people that have at least one short-term partner
-        HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, False),
-                                                     (col.NUM_PARTNERS, operator.gt, 0)])
+        HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+                                                     (col.NUM_PARTNERS, op.gt, 0)])
 
         # Get people who already have HIV prior to transmission (for updating their progression)
-        initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+        initial_HIV_pos = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
 
         # determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
@@ -218,8 +255,8 @@ class HIVStatusModule:
         population.set_present_variable(col.HIV_STATUS,
                                         new_HIV_status,
                                         HIV_neg_active_pop)
-        newly_infected = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                 (col.DATE_HIV_INFECTION, operator.eq, None)])
+        newly_infected = population.get_sub_pop([(col.HIV_STATUS, op.eq, True),
+                                                 (col.DATE_HIV_INFECTION, op.eq, None)])
         self.initialise_HIV_progression(population, newly_infected)
 
         self.update_HIV_progression(population, initial_HIV_pos)
@@ -264,7 +301,7 @@ class HIVStatusModule:
         # For people who are not on treatment
         # Viral Load
         art_naive_pop = population.get_sub_pop_intersection(
-            HIV_subpop, population.get_sub_pop([(col.ART_NAIVE, operator.eq, True)]))
+            HIV_subpop, population.get_sub_pop([(col.ART_NAIVE, op.eq, True)]))
         ages = population.get_variable(col.AGE, art_naive_pop)
         delta_vl = self.vl_base_change*0.02275 + (0.05 * rng.normal(size=len(ages))) + (ages - 35)*0.00075
         prev_vl = population.get_variable(col.VIRAL_LOAD, art_naive_pop)
@@ -272,7 +309,7 @@ class HIVStatusModule:
                                         prev_vl + delta_vl,
                                         art_naive_pop)
         high_vl = population.get_sub_pop_intersection(art_naive_pop,
-                                                      population.get_sub_pop([(col.VIRAL_LOAD, operator.gt, 6.5)]))
+                                                      population.get_sub_pop([(col.VIRAL_LOAD, op.gt, 6.5)]))
         population.set_present_variable(col.VIRAL_LOAD, 6.5, high_vl)
 
         # CD4 count
@@ -288,3 +325,58 @@ class HIVStatusModule:
         population.set_present_variable(col.CD4, new_cd4, art_naive_pop)
 
         # TODO: people on treatment
+
+    def HIV_related_disease_risk(self, pop: Population, time_step: timedelta):
+        # TODO: does disease risk apply to everyone who is alive?
+        # calculate disease base rate
+        HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+        cd4_risk_groups = np.digitize(pop.get_variable(col.CD4, HIV_pos), self.disease_cd4_boundaries)
+        viral_load_risk_groups = np.digitize(pop.get_variable(col.VIRAL_LOAD, HIV_pos), self.disease_vl_boundaries)
+        ages = pop.get_variable(col.AGE, HIV_pos)
+        age_factor = (ages/38)**1.2
+        base_rate = self.base_rate_disease[cd4_risk_groups] \
+            * self.vl_disease_factor[viral_load_risk_groups] \
+            * age_factor
+
+        def disease_and_diagnosis(disease_col, diagnosis_col, disease_rate, diagnosis_prob):
+            # Calculate occurence and diagnosis of given disease
+            disease_risk = 1 - np.exp(-disease_rate * (time_step.month/12))
+            r_disease = rng.uniform(size=len(HIV_pos))
+            disease = r_disease < disease_risk
+            diagnosis = r_disease < (disease_risk * diagnosis_prob)
+            pop.set_present_variable(disease_col, disease, HIV_pos)
+            pop.set_present_variable(diagnosis_col, diagnosis, HIV_pos)
+            return (disease, diagnosis)
+
+        # WHO stage 3 diseases
+        non_tb_who3_rate = base_rate * self.who3_risk_factor * (1-self.who3_proportion_tb)
+        tb_rate = base_rate * self.who3_risk_factor * self.who3_proportion_tb
+
+        non_tb_who3_per_timestep = 1 - np.exp(-non_tb_who3_rate * (time_step.month/12))
+        r_non_tb = rng.uniform(size=len(HIV_pos))
+        who3_disease = r_non_tb < non_tb_who3_per_timestep
+        pop.set_present_variable(col.NON_TB_WHO3, who3_disease, HIV_pos)
+
+        # TB WHO3
+        (tb, _) = disease_and_diagnosis(col.TB, col.TB_DIAGNOSED, tb_rate, self.tb_base_diagnosis_prob)
+        pop.set_present_variable(col.WHO3_EVENT, (who3_disease | tb), HIV_pos)
+
+        # cryptococcal meningitis
+        (cm, _) = disease_and_diagnosis(col.C_MENINGITIS,
+                                        col.C_MENINGITIS_DIAGNOSED,
+                                        base_rate * self.prop_ADC_cryp_meningitis,
+                                        self.CM_base_diagnosis_prob)
+
+        # serious bacterial infection
+        (sbi, _) = disease_and_diagnosis(col.SBI,
+                                         col.SBI_DIAGNOSED,
+                                         base_rate * self.prop_ADC_SBI,
+                                         self.SBI_base_diagnosis_prob)
+
+        # WHO stage 4
+        (who4_other, _) = disease_and_diagnosis(col.WHO4_OTHER,
+                                                col.WHO4_OTHER_DIAGNOSED,
+                                                base_rate * self.prop_ADC_other,
+                                                self.WHO4_base_diagnosis_prob)
+
+        pop.set_present_variable(col.ADC, (cm | sbi | who4_other), HIV_pos)
