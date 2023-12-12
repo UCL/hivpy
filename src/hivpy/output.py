@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import operator
 import os
-from datetime import timedelta
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +11,7 @@ from titlecase import titlecase
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType
+from .common import AND, COND, OR, SexType, timedelta
 from .config import SimulationConfig
 from .population import Population
 
@@ -261,7 +260,7 @@ class SimulationOutput:
     def _update_births(self, pop: Population, time_step):
         # Update total births
         born_this_step = pop.get_sub_pop([(col.AGE, operator.ge, 0.25),
-                                          (col.AGE, operator.lt, 0.25 + time_step.days / 365)])
+                                          (col.AGE, operator.lt, 0.25 + time_step.month / 12)])
         self.output_stats.loc[self.step, "Births (tot)"] = len(born_this_step)
 
         # Update proportion of women giving birth and infected children
