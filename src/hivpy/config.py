@@ -58,7 +58,6 @@ class SimulationConfig:
 
     graph_outputs: list
 
-
     def _validate(self):
         """
         Make sure the values passed in make sense.

@@ -9,11 +9,8 @@ import numpy as np
 
 import hivpy.column_names as col
 
-
-from .common import SexType, rng, timedelta
-
 from . import output
-
+from .common import SexType, rng, timedelta
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:

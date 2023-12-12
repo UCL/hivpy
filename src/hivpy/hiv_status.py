@@ -12,9 +12,8 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import COND, SexType, opposite_sex, rng, timedelta
 from . import output
-
+from .common import COND, SexType, opposite_sex, rng, timedelta
 
 
 class HIVStatusModule:
@@ -140,8 +139,8 @@ class HIVStatusModule:
         """
         # Update viral load groups based on viral load / primary infection
 
-        HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
-        in_primary_infection = population.get_sub_pop([(col.IN_PRIMARY_INFECTION, operator.eq, True)])
+        HIV_positive_pop = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
+        in_primary_infection = population.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, True)])
 
         population.set_present_variable(col.VIRAL_LOAD_GROUP, 5, in_primary_infection)
 
@@ -173,7 +172,7 @@ class HIVStatusModule:
     def set_primary_infection(self, population: Population):
         # Update primary infection status
         past_primary_infection = population.get_sub_pop(
-            [(col.DATE_HIV_INFECTION, operator.le, population.date - timedelta(days=90))])
+            [(col.DATE_HIV_INFECTION, op.le, population.date - timedelta(days=90))])
         population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
 
     def set_viral_load_groups(self, population: Population):
