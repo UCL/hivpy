@@ -414,4 +414,5 @@ class HIVStatusModule:
         prob_death = 1 - np.exp(-HIV_death_rate * (time_step.month/12))
         r_death = rng.uniform(size=len(HIV_pos))
         HIV_deaths = r_death < prob_death
+        self.output.record_HIV_deaths(pop, HIV_deaths)
         return HIV_deaths

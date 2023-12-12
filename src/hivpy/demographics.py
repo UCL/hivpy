@@ -19,6 +19,8 @@ from hivpy.common import SexType, rng, timedelta
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
+from . import output
+
 SexDType = pd.CategoricalDtype(iter(SexType))
 
 
@@ -176,7 +178,7 @@ class DemographicsModule:
     def __init__(self, **kwargs):
         with importlib.resources.path("hivpy.data", "demographics.yaml") as data_path:
             self.data = DemographicsData(data_path)
-
+        self.output = output.simulation_output
         params = {
             "female_ratio": self.data.female_ratio,
             "use_stepwise_ages": USE_STEPWISE_AGES,
@@ -247,5 +249,6 @@ class DemographicsModule:
         death_probs = pop.transform_group([col.SEX, col.AGE_GROUP, col.HIV_STATUS],
                                           _probability_of_death, use_size=False, sub_pop=over_15)
         rands = rng.random(len(over_15))
-
-        return (rands < death_probs)
+        deaths = rands < death_probs
+        self.output.record_non_HIV_deaths(pop, deaths)
+        return deaths

@@ -11,14 +11,14 @@ from titlecase import titlecase
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, timedelta
-from .config import SimulationConfig
+from .common import AND, COND, OR, SexType, date, timedelta
+# from .config import SimulationConfig
 from .population import Population
 
 
 class SimulationOutput:
 
-    def __init__(self):
+    def __init__(self, start_date=date(1989, 1, 1), stop_date=date(2025, 1, 1), time_step=timedelta(months=3)):
         # current step
         self.step = 0
         # age boundaries
@@ -39,7 +39,9 @@ class SimulationOutput:
         self.labdel_tests = 0
         self.postdel_tests = 0
 
-    def _init_df(self, simulation_config: SimulationConfig):
+        self._init_df(start_date, stop_date, time_step)
+
+    def _init_df(self, start_date, stop_date, time_step):
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV prevalence (sex worker)",
@@ -54,7 +56,12 @@ class SimulationOutput:
                           "ANC tests (tot)", "Labour and delivery tests (tot)",
                           "Post-delivery tests (tot)", "Births to infected women (tot)",
                           "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
-                          "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)"]
+                          "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)",
+                          "HIV deaths (tot)", "HIV deaths (over 15, male)",
+                          "HIV deaths (over 15, female)", "HIV deaths (20-59, male)", "HIV deaths (20-59, female)",
+                          "Non-HIV deaths (tot)", "Non-HIV deaths (over 15, male)",
+                          "Non-HIV deaths (over 15, female)", "Non-HIV deaths (20-59, male)",
+                          "Non-HIV deaths (20-59, female)"]
 
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             if age_bound < self.age_max_active:
@@ -76,8 +83,7 @@ class SimulationOutput:
             output_columns.insert(5+int(age_bound/10), key)
 
         # determine number of output rows
-        self.num_steps = int((simulation_config.stop_date -
-                             simulation_config.start_date) / simulation_config.time_step) + 1
+        self.num_steps = int((stop_date - start_date) / time_step) + 1
         # store output information as a dataframe
         self.output_stats = pd.DataFrame(index=range(self.num_steps), columns=output_columns)
 
@@ -284,10 +290,10 @@ class SimulationOutput:
         self.labdel_tests = 0
         self.postdel_tests = 0
 
-    def _update_deaths(self, pop: Population):
+    def record_HIV_deaths(self, pop: Population, deaths: pd.Series):
         # Update total deaths
-        died_this_step = pop.get_sub_pop([(col.DATE_OF_DEATH, operator.eq, self.latest_date)])
-        self.output_stats.loc[self.step, "Deaths (tot)"] = len(died_this_step)
+        self.output_stats.loc[self.step, "HIV deaths (tot)"] = sum(deaths)
+        died_this_step = deaths[deaths].index   # indices of all the people for whom death is true
 
         # Update deaths by sex and age
         over_15_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15)])
@@ -296,18 +302,48 @@ class SimulationOutput:
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
 
-        self.output_stats.loc[self.step, "Deaths (over 15, male)"] = (
+        self.output_stats.loc[self.step, "HIV deaths (over 15, male)"] = (
             len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(men_idx, over_15_idx),
                                              died_this_step)))
-        self.output_stats.loc[self.step, "Deaths (over 15, female)"] = (
+        self.output_stats.loc[self.step, "HIV deaths (over 15, female)"] = (
             len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(women_idx, over_15_idx),
                                              died_this_step)))
-        self.output_stats.loc[self.step, "Deaths (20-59, male)"] = (
+        self.output_stats.loc[self.step, "HIV deaths (20-59, male)"] = (
             len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(men_idx, aged_20_to_59_idx),
                                              died_this_step)))
-        self.output_stats.loc[self.step, "Deaths (20-59, female)"] = (
+        self.output_stats.loc[self.step, "HIV deaths (20-59, female)"] = (
             len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(women_idx, aged_20_to_59_idx),
                                              died_this_step)))
+
+    def record_non_HIV_deaths(self, pop: Population, deaths: pd.Series):
+        # Update total deaths
+        self.output_stats.loc[self.step, "Non-HIV deaths (tot)"] = sum(deaths)
+        died_this_step = deaths[deaths].index   # indices of all the people for whom death is true
+
+        # Update deaths by sex and age
+        over_15_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15)])
+        aged_20_to_59_idx = pop.get_sub_pop([(col.AGE, operator.ge, 20),
+                                             (col.AGE, operator.lt, 60)])
+        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+
+        self.output_stats.loc[self.step, "Non-HIV deaths (over 15, male)"] = (
+            len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(men_idx, over_15_idx),
+                                             died_this_step)))
+        self.output_stats.loc[self.step, "Non-HIV deaths (over 15, female)"] = (
+            len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(women_idx, over_15_idx),
+                                             died_this_step)))
+        self.output_stats.loc[self.step, "Non-HIV deaths (20-59, male)"] = (
+            len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(men_idx, aged_20_to_59_idx),
+                                             died_this_step)))
+        self.output_stats.loc[self.step, "Non-HIV deaths (20-59, female)"] = (
+            len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(women_idx, aged_20_to_59_idx),
+                                             died_this_step)))
+
+        # Update death totals; could just do this at the end rather than every time step!
+        for s in ["(tot)", "(over 15, male)", "(over 15, female)", "(20-59, male)", "(20-59, female)"]:
+            self.output_stats.loc[self.step, ("Deaths " + s)] = self.output_stats.loc[self.step, ("HIV deaths " + s)] +\
+                                                                self.output_stats.loc[self.step, ("Non-HIV deaths "+s)]
 
     def update_summary_stats(self, date, pop: Population, time_step):
         self._update_date(date)
@@ -319,7 +355,6 @@ class SimulationOutput:
         self._update_partners(pop)
         self._update_partner_sex_balance(pop)
         self._update_births(pop, time_step)
-        self._update_deaths(pop)
         self.step += 1
 
     def write_output(self, output_path):
