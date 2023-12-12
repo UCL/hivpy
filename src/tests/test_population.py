@@ -1,10 +1,9 @@
 import operator as op
-from datetime import date
 
 import numpy as np
 
 from hivpy import column_names as col
-from hivpy.common import AND, COND, OR, SexType
+from hivpy.common import AND, COND, OR, SexType, date
 from hivpy.population import Population
 
 

@@ -1,10 +1,9 @@
 import importlib.resources
 import operator as op
-from datetime import timedelta
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, rng
+from .common import AND, COND, OR, SexType, rng, timedelta
 from .hiv_testing_data import HIVTestingData
 
 

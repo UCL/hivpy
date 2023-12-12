@@ -1,10 +1,11 @@
 import os
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from .common import date, timedelta
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import OutputException
 from .simulation import SimulationHandler

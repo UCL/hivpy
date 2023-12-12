@@ -1,13 +1,12 @@
 import importlib.resources
 import operator as op
-from datetime import timedelta
 
 import numpy as np
 
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import SexType, rng
+from .common import SexType, rng, timedelta
 
 
 class CircumcisionModule:
@@ -95,7 +94,7 @@ class CircumcisionModule:
             # assumes ages have already been incremented
             newborn_males = population.index[(population[col.SEX] == SexType.Male)
                                              & (population[col.AGE] >= 0.25)
-                                             & (population[col.AGE] - time_step.days / 365 < 0.25)]
+                                             & (population[col.AGE] - time_step.month / 12 < 0.25)]
             r = rng.uniform(size=len(newborn_males))
             circumcision = r < self.prob_birth_circ
             population.loc[newborn_males, col.CIRCUMCISED] = circumcision
