@@ -21,10 +21,10 @@ CIRCUMCISION_DATE = "circumcision_date"         # None | datetime.date: date of 
 VMMC = "vmmc"                                   # bool: True if voluntary medical male circumcision was applied
 
 NUM_PARTNERS = "num_partners"                   # float: number of short term condomless sex partners during the current time step
-SEX_MIX_AGE_GROUP = "sex_mix_age_group"         # int: Discrete age group for sexual mixing
-STP_AGE_GROUPS = "stp_age_groups"               # int array: ages groups of short term partners
+SEX_MIX_AGE_GROUP = "sex_mix_age_group"         # int: discrete age group for sexual mixing
+STP_AGE_GROUPS = "stp_age_groups"               # int array: age groups of short term partners
 SEX_BEHAVIOUR = "sex_behaviour"                 # int: sexual behaviour grouping
-SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourClass (enum): Men, Young Women, Older Women, or Sex Worker
+SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourClass(enum): Men, Young Women, Older Women, or Sex Workers
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
@@ -36,35 +36,36 @@ NUM_CHILDREN = "num_children"                   # int: number of children a woma
 NUM_HIV_CHILDREN = "num_HIV_children"           # int: number of children infected with HIV a woman has
 WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children
 
-SEX_WORKER = "sex_worker"                       # bool: True if person is a sex worker, false otherwise
+SEX_WORKER = "sex_worker"                       # bool: True if person is a sex worker, o/w False
 SW_AGE_GROUP = "sw_age_group"                   # int: categorises sex worker behaviour by age
 DATE_STOP_SW = "date_stop_sex_work"             # date: date at which a former sex worker (last) stopped sex work
-SW_PROGRAM_VISIT = "sw_program_visit"           # bool: is sex worker engaged with sex worker program?
-SW_TEST_6MONTHLY = "sw_test_6monthly"           # bool: sex worker tested for HIV bi-annually
+SW_PROGRAM_VISIT = "sw_program_visit"           # bool: True if sex worker is engaged with sex worker program
+SW_TEST_6MONTHLY = "sw_test_6monthly"           # bool: True if sex worker is tested for HIV bi-annually
 SW_HIGHER_INT = "sw_higher_int"                 # bool: TODO: something sex workers and ART disadvantage?
-SW_ART_DISENGAGE = "sw_art_disengage"           # bool: whether sex workers have lower levels of ART engagement
-SW_PROGRAM = "sw_program"                       # bool: Is a sex worker program in place?
-SW_PROGRAM_EFFECT = "sw_program_effect"         # enum: STRONG or WEAK program efficacy
-EVER_SEX_WORKER = "ever_sex_worker"             # bool: if person has ever been a sex worker
+SW_ART_DISENGAGE = "sw_art_disengage"           # bool: True if sex worker has a lower levels of ART engagement
+SW_PROGRAM = "sw_program"                       # bool: True if a sex worker program is in place
+SW_PROGRAM_EFFECT = "sw_program_effect"         # enum: STRONG or WEAK sex worker program efficacy
+EVER_SEX_WORKER = "ever_sex_worker"             # bool: True if person has ever been a sex worker
 AGE_STOP_SEX_WORK = "age_stop_sex_work"         # float: age at which former sex worker (last) stopped sex work
 LIFE_SEX_RISK = "life_sex_risk"                 # int: value in (1, 2, 3) indicating risk of adopting sex work
-STI = "sti"                                     # bool: true if has sexually transmitted infection (non HIV); false o/w. TODO: DUMMIED
+STI = "sti"                                     # bool: True if has sexually transmitted infection (non HIV), false o/w (TODO: DUMMIED)
 
 HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
 EVER_TESTED = "ever_tested"                     # bool: True if person has ever been tested for HIV
 LAST_TEST_DATE = "last_test_date"               # None | datetime.date: date of last HIV test
-NSTP_LAST_TEST = "nstp_last_test"               # int: Number of short term condomless sex partners since last test (DUMMY)
-NP_LAST_TEST = "np_last_test"                   # int: Total number of condomless sex partners since last test (DUMMY)
+NSTP_LAST_TEST = "nstp_last_test"               # int: number of short term condomless sex partners since last test (DUMMY)
+NP_LAST_TEST = "np_last_test"                   # int: total number of condomless sex partners since last test (DUMMY)
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
-DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: Date of HIV infection if HIV+, o/w None.
-HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if you have had a positive HIV test
+DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: date of HIV infection if HIV+, o/w None
+IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
+HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if individual had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
-VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 1-6 placing bounds on viral load for an HIV positive person
+VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 0-5 placing bounds on viral load for an HIV positive person
 VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ person
-CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter. Set to None for people w/o HIV
-MAX_CD4 = "max_cd4"                             # float: Maximum CD4 count to which a person can return when on ART
+CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter; set to None for people w/o HIV
+MAX_CD4 = "max_cd4"                             # float: maximum CD4 count to which a person can return when on ART
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
-X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, false otherwise.
+X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, False otherwise
 
 DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
 WHO3_EVENT = "who3_event"                       # Bool: True if who3 disease occurs this timestep in HIV positive person
@@ -81,7 +82,7 @@ ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS definin
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
-TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (#TODO: all 24 currently DUMMIED)
+TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
 M184_MUTATION = "m184m"
 K65_MUTATION = "k65m"
 Q151_MUTATION = "q151m"

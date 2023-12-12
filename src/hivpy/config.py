@@ -53,7 +53,11 @@ class SimulationConfig:
     start_date: date
     stop_date: date
     output_dir: Path
+
     time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
+
+    graph_outputs: list
+
 
     def _validate(self):
         """

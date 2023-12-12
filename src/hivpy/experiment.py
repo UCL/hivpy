@@ -59,11 +59,12 @@ def create_simulation(experiment_param):
         start_date = date(int(experiment_param['start_year']), 1, 1)
         end_date = date(int(experiment_param['end_year']), 12, 31)
         population_size = int(experiment_param['population'])
+        graph_outputs = list(experiment_param['graph_outputs'])
         interval = timedelta(days=int(experiment_param['time_interval_days']))
         output_dir = Path(experiment_param['simulation_output_dir'])
         if not output_dir.exists():
             output_dir.mkdir()
-        return SimulationConfig(population_size, start_date, end_date, output_dir, interval)
+        return SimulationConfig(population_size, start_date, end_date, output_dir, graph_outputs, interval)
     except ValueError as err:
         print('Error parsing the experiment parameters {}'.format(err))
     except KeyError as kerr:

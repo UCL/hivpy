@@ -32,7 +32,7 @@ def test_error_end_before_start(tmp_path):
     yesterday = today - timedelta(days=30)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=today, stop_date=yesterday, output_dir=tmp_path,
-                         population_size=100)
+                         graph_outputs=[], population_size=100)
 
 
 def test_error_end_before_first_step(tmp_path):
@@ -43,8 +43,8 @@ def test_error_end_before_first_step(tmp_path):
     end = start + timedelta(days=30)
     step = timedelta(days=90)
     with pytest.raises(SimulationException):
-        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path, time_step=step,
-                         population_size=100)
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path, graph_outputs=[],
+                         time_step=step, population_size=100)
 
 
 def test_death_occurs(tmp_path):
@@ -56,7 +56,7 @@ def test_death_occurs(tmp_path):
     start = date(1989, 1)
     step = timedelta(days=90)
     end = start + 200 * step
-    config = SimulationConfig(size, start, end, tmp_path, step)
+    config = SimulationConfig(size, start, end, tmp_path, [], step)
     simulation_handler = SimulationHandler(config)
     simulation_handler.run()
     pop = simulation_handler.population

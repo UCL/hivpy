@@ -272,6 +272,7 @@ class Population:
         n_deaths = 0
 
         if self.HIV_introduced:
+            self.hiv_status.set_primary_infection(self)
             self.hiv_status.set_viral_load_groups(self)
 
         if self.circumcision.vmmc_disrup_covid:
