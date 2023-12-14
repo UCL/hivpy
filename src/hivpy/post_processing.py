@@ -13,7 +13,7 @@ def graph_output(output_dir, output_stats, graph_outputs):
     for out in graph_outputs:
         if out in output_stats.columns:
 
-            plt.plot(output_stats["Date"], output_stats[out])
+            plt.plot(pd.to_datetime(output_stats["Date"]), output_stats[out])
             title_out = titlecase(out)
 
             plt.xlabel("Date")
@@ -34,12 +34,12 @@ def compare_output(output_dir, output_stats, graph_outputs, label1="HIVpy", labe
             if out in df.columns:
 
                 if i == 0:
-                    plt.plot(df["Date"], df[out], label=label1)
+                    plt.plot(pd.to_datetime(df["Date"]), df[out], label=label1)
                 elif i == 1:
-                    plt.plot(df["Date"], df[out], label=label2)
+                    plt.plot(pd.to_datetime(df["Date"]), df[out], label=label2)
                 else:
                     # plot additional files without label for now
-                    plt.plot(df["Date"], df[out])
+                    plt.plot(pd.to_datetime(df["Date"]), df[out])
 
         title_out = titlecase(out)
         plt.xlabel("Date")
@@ -72,7 +72,7 @@ def run_post():
         if len(input) == 1:
             print("graphing outputs")
             graph_output(args.output_dir, input[0], graph_outputs)
-        if len(input) > 1:
+        elif len(input) > 1:
             print("comparing outputs")
             compare_output(args.output_dir, input, graph_outputs)
 
