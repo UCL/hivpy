@@ -2,17 +2,13 @@ from __future__ import annotations
 
 import math
 import operator
-import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from titlecase import titlecase
 
 import hivpy.column_names as col
 
 from .common import AND, COND, OR, SexType, date, timedelta
-# from .config import SimulationConfig
 from .population import Population
 
 
@@ -359,21 +355,6 @@ class SimulationOutput:
 
     def write_output(self, output_path):
         self.output_stats.to_csv(output_path, index_label="Time Step", mode='w')
-
-    def graph_output(self, output_dir, output_stats, graph_outputs):
-
-        for out in graph_outputs:
-            if out in output_stats.columns:
-
-                plt.subplots()
-                plt.plot(output_stats["Date"], output_stats[out])
-                title_out = titlecase(out)
-
-                plt.xlabel("Date")
-                plt.ylabel(title_out)
-                plt.title("{0} Over Time".format(title_out))
-                plt.savefig(os.path.join(output_dir, "{0} Over Time".format(title_out)))
-                plt.close()
 
 
 # output dataframe initialised by simulation handler

@@ -8,6 +8,7 @@ from . import output
 from .config import SimulationConfig
 from .output import SimulationOutput
 from .population import Population
+from .post_processing import graph_output
 
 
 class SimulationHandler:
@@ -50,4 +51,4 @@ class SimulationHandler:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         self.output.write_output(self.output_path)
-        self.output.graph_output(self.output_dir, self.output.output_stats, self.simulation_config.graph_outputs)
+        graph_output(self.output_dir, self.output.output_stats, self.simulation_config.graph_outputs)
