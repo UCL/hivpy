@@ -20,8 +20,10 @@ class SimulationHandler:
 
     def __init__(self, simulation_config):
         self.simulation_config = simulation_config
+        output.simulation_output = SimulationOutput(simulation_config.start_date,
+                                                    simulation_config.stop_date,
+                                                    simulation_config.time_step)
         self.output = output.simulation_output
-        self.output._init_df(simulation_config)
         self._initialise_population()
         self.output_dir = simulation_config.output_dir / (
             "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")))

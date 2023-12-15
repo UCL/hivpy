@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import operator
 import os
-from datetime import timedelta
+from datetime import date, timedelta
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,13 +13,13 @@ from titlecase import titlecase
 import hivpy.column_names as col
 
 from .common import AND, COND, OR, SexType
-from .config import SimulationConfig
 from .population import Population
 
 
 class SimulationOutput:
 
-    def __init__(self):
+    def __init__(self, start_date=date(1989, 1, 1), stop_date=date(2025, 1, 1),
+                 time_step=timedelta(days=90)):
         # current step
         self.step = 0
         # age boundaries
@@ -40,7 +40,9 @@ class SimulationOutput:
         self.labdel_tests = 0
         self.postdel_tests = 0
 
-    def _init_df(self, simulation_config: SimulationConfig):
+        self._init_df(start_date, stop_date, time_step)
+
+    def _init_df(self, start_date, stop_date, time_step):
         # determine output columns
         output_columns = ["Date", "HIV prevalence (tot)", "HIV prevalence (male)",
                           "HIV prevalence (female)", "HIV prevalence (sex worker)",
@@ -77,8 +79,7 @@ class SimulationOutput:
             output_columns.insert(5+int(age_bound/10), key)
 
         # determine number of output rows
-        self.num_steps = int((simulation_config.stop_date -
-                             simulation_config.start_date) / simulation_config.time_step) + 1
+        self.num_steps = int((stop_date - start_date) / time_step) + 1
         # store output information as a dataframe
         self.output_stats = pd.DataFrame(index=range(self.num_steps), columns=output_columns)
 
