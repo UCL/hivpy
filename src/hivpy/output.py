@@ -146,12 +146,9 @@ class SimulationOutput:
     def _update_HIV_incidence(self, pop: Population):
         # Update HIV incidence by sex and age group
         primary_infection_idx = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, operator.eq, True)])
-        men_idx = pop.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Male),
-                                      OR(COND(col.NUM_PARTNERS, operator.ge, 1),
-                                         COND(col.LONG_TERM_PARTNER, operator.eq, True))))
-        women_idx = pop.get_sub_pop(AND(COND(col.SEX, operator.eq, SexType.Female),
-                                        OR(COND(col.NUM_PARTNERS, operator.ge, 1),
-                                           COND(col.LONG_TERM_PARTNER, operator.eq, True))))
+        HIV_neg_idx = pop.get_sub_pop([(col.HIV_STATUS, operator.eq, False)])
+        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
 
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
@@ -159,15 +156,18 @@ class SimulationOutput:
             key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, male)"
             total = pop.get_sub_pop_intersection(men_idx, age_idx)
             self.output_stats.loc[self.step, key] = (
-                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total), total))
+                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total),
+                            pop.get_sub_pop_intersection(HIV_neg_idx, total)))
             key = f"HIV incidence ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             total = pop.get_sub_pop_intersection(women_idx, age_idx)
             self.output_stats.loc[self.step, key] = (
-                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total), total))
+                self._ratio(pop.get_sub_pop_intersection(primary_infection_idx, total),
+                            pop.get_sub_pop_intersection(HIV_neg_idx, total)))
 
     def _update_CD4_count(self, pop: Population):
         # Update number of people with given CD4 counts
-        cd4_under_200_idx = pop.get_sub_pop([(col.CD4, operator.lt, 200)])
+        cd4_under_200_idx = pop.get_sub_pop([(col.CD4, operator.lt, 200),
+                                             (col.HIV_STATUS, operator.eq, True)])
         cd4_200_to_500_idx = pop.get_sub_pop([(col.CD4, operator.ge, 200),
                                               (col.CD4, operator.le, 500)])
         cd4_over_500_idx = pop.get_sub_pop([(col.CD4, operator.gt, 500)])
