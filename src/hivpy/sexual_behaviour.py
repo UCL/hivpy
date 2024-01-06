@@ -80,8 +80,10 @@ class SexualBehaviourModule:
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
-        self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
-        self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
+#       self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
+        self.balance_thresholds = [100, 50, 30, 20]
+#       self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
+        self.balance_factors = [0.1, 0.3, 0.7, 0.9]
         self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
 
         # long term partnerships
@@ -298,7 +300,8 @@ class SexualBehaviourModule:
         women = population[col.SEX] == SexType.Female
         mens_partners = sum(population.loc[men, col.NUM_PARTNERS])
         womens_partners = sum(population.loc[women, col.NUM_PARTNERS])
-        partner_discrepancy = abs(mens_partners - womens_partners) / len(population)
+#       partner_discrepancy = abs(mens_partners - womens_partners) / len(population)
+        partner_discrepancy = abs(mens_partners - womens_partners)
 
         rred_balance = 1
         for (t, b) in zip(self.balance_thresholds, self.balance_factors):
@@ -312,6 +315,8 @@ class SexualBehaviourModule:
         else:
             population.loc[men, col.RRED_BALANCE] = 1/rred_balance
             population.loc[women, col.RRED_BALANCE] = rred_balance
+
+        print(mens_partners, womens_partners, partner_discrepancy, rred_balance)
 
     def gen_stp_ages(self, sex, age_group, num_partners, size):
         # TODO: Check if this needs additional balancing factors for age
