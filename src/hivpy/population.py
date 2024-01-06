@@ -133,7 +133,7 @@ class Population:
 
 #       pd.set_option('display.max_rows', None)
 
-#       print(age_ge15[['sex', 'age', 'num_partners']])
+        print(age_2530[['sex', 'num_partners', 'rred_balance']])
 
 #       row_index_to_print = 10
 

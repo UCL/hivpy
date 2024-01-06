@@ -1,6 +1,7 @@
 import datetime
 import importlib.resources
 import operator
+import math
 from enum import IntEnum
 
 import numpy as np
@@ -80,10 +81,12 @@ class SexualBehaviourModule:
         self.rred_art_adherence = self.sb_data.rred_art_adherence
         self.adherence_threshold = self.sb_data.adherence_threshold
         self.new_partner_factor = self.sb_data.new_partner_dist.sample()
-#       self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
-        self.balance_thresholds = [100, 50, 30, 20]
-#       self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
-        self.balance_factors = [0.1, 0.3, 0.7, 0.9]
+#       self.balance_thresholds = [0.01, 0.005, 0.002 , 0.0005, 0.0001]
+#       self.balance_thresholds = [100, 50, 30, 20]
+#       self.balance_factors = [0.03, 0.1, 0.3, 0.6, 0.95]
+#       self.balance_factors = [0.1, 0.3, 0.7, 0.9]
+        self.balance_thresholds = [3, 2, 1.5, 1.1, 0.8, 0.3, 0.1]
+        self.balance_factors = [0.01, 0.03, 0.1, 0.35, 0.7, 0.8, 0.95]
         self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
 
         # long term partnerships
@@ -298,25 +301,26 @@ class SexualBehaviourModule:
         # We first need the difference of new partners between men and women
         men = population[col.SEX] == SexType.Male
         women = population[col.SEX] == SexType.Female
-        mens_partners = sum(population.loc[men, col.NUM_PARTNERS])
-        womens_partners = sum(population.loc[women, col.NUM_PARTNERS])
+        mens_partners = sum(population.loc[men, col.NUM_PARTNERS]) + 1
+        womens_partners = sum(population.loc[women, col.NUM_PARTNERS]) + 1
 #       partner_discrepancy = abs(mens_partners - womens_partners) / len(population)
-        partner_discrepancy = abs(mens_partners - womens_partners)
+#       partner_discrepancy = abs(mens_partners - womens_partners)
+        partner_discrepancy = abs(math.log(mens_partners / womens_partners))
 
-        rred_balance = 1
+        rred_balance_x = 1
         for (t, b) in zip(self.balance_thresholds, self.balance_factors):
             if partner_discrepancy >= t:
-                rred_balance = b
+                rred_balance_x = b
                 break
 
         if (mens_partners > womens_partners):
-            population.loc[men, col.RRED_BALANCE] = rred_balance
-            population.loc[women, col.RRED_BALANCE] = 1/rred_balance
+            population.loc[men, col.RRED_BALANCE] = rred_balance_x
+            population.loc[women, col.RRED_BALANCE] = 1/rred_balance_x
         else:
-            population.loc[men, col.RRED_BALANCE] = 1/rred_balance
-            population.loc[women, col.RRED_BALANCE] = rred_balance
+            population.loc[men, col.RRED_BALANCE] = 1/rred_balance_x
+            population.loc[women, col.RRED_BALANCE] = rred_balance_x
 
-        print(mens_partners, womens_partners, partner_discrepancy, rred_balance)
+        print(mens_partners, womens_partners, partner_discrepancy)
 
     def gen_stp_ages(self, sex, age_group, num_partners, size):
         # TODO: Check if this needs additional balancing factors for age
