@@ -23,12 +23,15 @@ class SimulationOutput:
         self.num_steps = int((simulation_config.stop_date -
                              simulation_config.start_date) / simulation_config.time_step) + 1
         self.output_stats = {"Date": np.array([simulation_config.start_date]*self.num_steps)}
-        self._init_output_fields([("HIV prevalence (tot)", 0.0),
-                                  ("HIV prevalence (male)", 0.0),
-                                  ("HIV prevalence (female)", 0.0),
-                                  ("HIV infections (tot)", 0),
-                                  ("Population (over 15)", 0),
-                                  ("Deaths (tot)", 0.0)])
+#       self._init_output_fields([("HIV prevalence (tot)", 0.0),
+#                                 ("HIV prevalence (male)", 0.0),
+#                                 ("HIV prevalence (female)", 0.0),
+#                                 ("HIV infections (tot)", 0),
+#                                 ("num_partners_ge_1", 0),
+#                                 ("Population (over 15)", 0),
+#                                 ("Deaths (tot)", 0.0)])
+        self._init_output_fields([("num_partners_ge_1_f", 0),
+                                  ("num_partners_ge_1_m", 0)])
         self.age_min = 15
         self.age_max = 100
         self.age_step = 10
@@ -44,21 +47,31 @@ class SimulationOutput:
         else:
             return 0
 
+
+    def _update_num_partners_ge_1(self, pop_data):
+
+        num_partners_ge_1_m_idx = selector(pop_data, num_partners=(operator.gt, 0), sex=(operator.eq, SexType.Male))
+        self.output_stats["num_partners_ge_1_m"][self.step] = sum(num_partners_ge_1_m_idx)
+        num_partners_ge_1_f_idx = selector(pop_data, num_partners=(operator.gt, 0), sex=(operator.eq, SexType.Female))
+        self.output_stats["num_partners_ge_1_f"][self.step] = sum(num_partners_ge_1_f_idx)
+
+
     def _update_HIV_prevalence(self, pop_data):
         # Update total HIV cases and population
         over_15_idx = selector(pop_data, age=(operator.gt, 15))
         HIV_pos_idx = selector(pop_data, HIV_status=(operator.eq, True))
-        self.output_stats["HIV prevalence (tot)"][self.step] = self._ratio(HIV_pos_idx, over_15_idx)
-        self.output_stats["HIV infections (tot)"][self.step] = sum(HIV_pos_idx)
-        self.output_stats["Population (over 15)"][self.step] = sum(over_15_idx)
+
+#       self.output_stats["HIV prevalence (tot)"][self.step] = self._ratio(HIV_pos_idx, over_15_idx)
+#       self.output_stats["HIV infections (tot)"][self.step] = sum(HIV_pos_idx)
+#       self.output_stats["Population (over 15)"][self.step] = sum(over_15_idx)
 
         # Update HIV prevalence by sex
         men_idx = selector(pop_data, sex=(operator.eq, SexType.Male))
-        self.output_stats["HIV prevalence (male)"][self.step] = (
-            self._ratio(HIV_pos_idx & men_idx, men_idx & over_15_idx))
+#       self.output_stats["HIV prevalence (male)"][self.step] = (
+#           self._ratio(HIV_pos_idx & men_idx, men_idx & over_15_idx))
         women_idx = selector(pop_data, sex=(operator.eq, SexType.Female))
-        self.output_stats["HIV prevalence (female)"][self.step] = self._ratio(
-            HIV_pos_idx & women_idx, women_idx & over_15_idx)
+#       self.output_stats["HIV prevalence (female)"][self.step] = self._ratio(
+#           HIV_pos_idx & women_idx, women_idx & over_15_idx)
 
         # Update HIV prevalence by age
         for age_bound in range(self.age_min, self.age_max, self.age_step):
@@ -67,16 +80,17 @@ class SimulationOutput:
                 pop_data["age"] < (age_bound + self.age_step))
             if (key not in self.output_stats.keys()):
                 self._init_output_field(key, 0.0)
-            self.output_stats[key][self.step] = self._ratio(HIV_pos_idx & age_idx, age_idx)
+#           self.output_stats[key][self.step] = self._ratio(HIV_pos_idx & age_idx, age_idx)
 
     def _update_deaths(self, pop_data):
         died_this_step = selector(pop_data, date_of_death=(operator.eq, self.latest_date))
-        self.output_stats["Deaths (tot)"][self.step] = sum(died_this_step)
+#       self.output_stats["Deaths (tot)"][self.step] = sum(died_this_step)
 
     def update_summary_stats(self, date, pop_data):
         self._update_date(date)
-        self._update_HIV_prevalence(pop_data)
-        self._update_deaths(pop_data)
+#       self._update_HIV_prevalence(pop_data)
+        self._update_num_partners_ge_1(pop_data)
+#       self._update_deaths(pop_data)
         self.step += 1
 
     def write_output(self, output_path):

@@ -114,6 +114,9 @@ class Population:
         """
         Advance the population by one time step.
         """
+
+        df = self.data
+
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
         self.data.age += time_step.days / 365  # Very naive!
@@ -125,6 +128,22 @@ class Population:
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
         self.hiv_status.update_HIV_status(self)
+
+        age_2530 = self.data[(self.data['age'] > 25) & (self.data['age'] < 30)]
+
+#       pd.set_option('display.max_rows', None)
+
+#       print(age_ge15[['sex', 'age', 'num_partners']])
+
+#       row_index_to_print = 10
+
+        # Using iloc accessor to select the specified row
+#       selected_row = df.iloc[row_index_to_print]
+
+        # Print the selected row
+
+#       print(self.date)
+#       print(age_2530[['sex', 'age', 'num_partners']])
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:

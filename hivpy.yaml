@@ -1,7 +1,7 @@
 EXPERIMENT: 
-  population: 1000
+  population: 100000
   start_year: 1989
-  end_year: 2021
+  end_year: 1999
   time_interval_days: 90
   simulation_output_dir: output
 
