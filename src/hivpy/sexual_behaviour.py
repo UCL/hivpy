@@ -86,7 +86,7 @@ class SexualBehaviourModule:
 #       self.balance_factors = [0.03, 0.1, 0.3, 0.6, 0.95]
 #       self.balance_factors = [0.1, 0.3, 0.7, 0.9]
         self.balance_thresholds = [3, 2, 1.5, 1.1, 0.8, 0.3, 0.1]
-        self.balance_factors = [0.01, 0.03, 0.1, 0.35, 0.7, 0.8, 0.95]
+        self.balance_factors = [0.03, 0.08, 0.15, 0.35, 0.6, 0.75, 0.95]
         self.p_rred_p = self.sb_data.p_rred_p_dist.sample()
 
         # long term partnerships
@@ -102,11 +102,20 @@ class SexualBehaviourModule:
                           self.risk_age_grouping, self.risk_categories)
 
     def update_sex_behaviour(self, population):
+#       self.num_short_term_partners(population)
+#       self.assign_stp_ages(population)
+#       self.update_sex_groups(population)
+#       self.update_rred(population)
+#       self.update_long_term_partners(population)
+
+# changed ordering below
+
+        self.update_rred(population)
+        self.update_sex_groups(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
-        self.update_sex_groups(population)
-        self.update_rred(population)
         self.update_long_term_partners(population)
+
 
     # Haven't been able to locate the probabilities for this yet
     # Doing them uniform for now
