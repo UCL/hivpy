@@ -12,7 +12,7 @@ from titlecase import titlecase
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType
+from .common import SexType
 from .population import Population
 
 
@@ -101,7 +101,8 @@ class SimulationOutput:
 
     def _log(self, val):
         if val > 0:
-            return math.log(val)
+            # using base 10 as default
+            return math.log(val, 10)
         return None
 
     def _update_HIV_prevalence(self, pop: Population):
@@ -232,12 +233,14 @@ class SimulationOutput:
         men_stp_age_list = (np.concatenate(men_stp_age_list).ravel() if len(men_stp_age_list) > 0
                             else men_stp_age_list).tolist()
 
+        # FIXME: should we log all ratios here or have this step happen in post?
+        # NOTE: sum type converted from numpy.int64
         self.output_stats.loc[self.step, "Partner sex balance (male)"] = self._log(
-            self._ratio(pop.get_variable(col.NUM_PARTNERS, active_men).sum(),
-                        pop.get_variable(col.NUM_PARTNERS, active_women).sum()))
+            self._ratio(int(pop.get_variable(col.NUM_PARTNERS, active_men).sum()),
+                        int(pop.get_variable(col.NUM_PARTNERS, active_women).sum())))
         self.output_stats.loc[self.step, "Partner sex balance (female)"] = self._log(
-            self._ratio(pop.get_variable(col.NUM_PARTNERS, active_women).sum(),
-                        pop.get_variable(col.NUM_PARTNERS, active_men).sum()))
+            self._ratio(int(pop.get_variable(col.NUM_PARTNERS, active_women).sum()),
+                        int(pop.get_variable(col.NUM_PARTNERS, active_men).sum())))
 
         # Update short term partner sex balance statistics by age group
         for age_bound in range(self.age_min, self.age_max_active, self.age_step):
@@ -251,13 +254,13 @@ class SimulationOutput:
             # Count occurrences of current age group
             women_stp_num = women_stp_age_list.count(age_group)
             self.output_stats.loc[self.step, key] = self._log(
-                self._ratio(pop.get_variable(col.NUM_PARTNERS, men_of_age).sum(), women_stp_num))
+                self._ratio(int(pop.get_variable(col.NUM_PARTNERS, men_of_age).sum()), women_stp_num))
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             # Count occurrences of current age group
             men_stp_num = men_stp_age_list.count(age_group)
             self.output_stats.loc[self.step, key] = self._log(
-                self._ratio(pop.get_variable(col.NUM_PARTNERS, women_of_age).sum(), men_stp_num))
+                self._ratio(int(pop.get_variable(col.NUM_PARTNERS, women_of_age).sum()), men_stp_num))
 
     def _update_births(self, pop: Population, time_step):
         # Update total births
