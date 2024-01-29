@@ -1,8 +1,4 @@
-import importlib.resources
 from pathlib import Path
-
-import numpy as np
-import scipy.linalg as sla
 
 from hivpy.sex_behaviour_data import SexualBehaviourData
 

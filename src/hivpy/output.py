@@ -8,7 +8,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, date, timedelta
+from .common import SexType, date, timedelta
 from .population import Population
 
 
