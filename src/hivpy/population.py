@@ -72,7 +72,6 @@ class Population:
         self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
-        self.init_variable(col.DATE_OF_DEATH, None)
 
         self.hiv_status.init_HIV_variables(self)
         self.init_variable(col.EVER_TESTED, False)
@@ -294,7 +293,6 @@ class Population:
         # Apply non-hiv deaths
         non_HIV_deaths = self.demographics.determine_deaths(self, time_step)
         n_deaths = n_deaths + sum(non_HIV_deaths)
-        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
         if (sum(non_HIV_deaths) and self.apply_death):
             self.drop_from_population(non_HIV_deaths)
 

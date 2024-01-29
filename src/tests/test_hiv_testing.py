@@ -46,11 +46,6 @@ def test_general_testing_conditions():
     diagnosed = r < 0.2
     pop.set_present_variable(col.HIV_STATUS, diagnosed)
 
-    # have roughly 20% of the population be dead
-    r = rng.uniform(size=len(pop.data))
-    dead = r < 0.2
-    pop.set_present_variable(col.DATE_OF_DEATH, pop.date, sub_pop=pop.apply_bool_mask(dead))
-
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop)
 
@@ -58,8 +53,6 @@ def test_general_testing_conditions():
     tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
     # check that no people just tested were already diagnosed with HIV
     assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
-    # check that no dead people were just tested
-    assert (pop.get_variable(col.DATE_OF_DEATH, sub_pop=tested_population).isna()).all()
 
 
 def test_first_time_testers():
