@@ -1,4 +1,3 @@
-import datetime
 import operator
 from functools import reduce
 
@@ -7,14 +6,14 @@ import pandas as pd
 import hivpy.column_names as col
 
 from .circumcision import CircumcisionModule
-from .common import LogicExpr
+from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
 from .sexual_behaviour import SexualBehaviourModule
 
-HIV_APPEARANCE = datetime.date(1989, 1, 1)
+HIV_APPEARANCE = date(1989, 1, 1)
 
 
 class Population:
@@ -24,7 +23,7 @@ class Population:
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
-    date: datetime.date  # current date
+    date: date  # current date
     HIV_introduced: bool  # whether HIV has been introduced yet
     variable_history: dict  # how many steps we need to store for each variable
     step: int
@@ -46,6 +45,9 @@ class Population:
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
+        # Can be useful to switch off death during some tests
+        # so that random deaths don't interfere with results
+        self.apply_death = True
 
     def _sample_parameters(self):
         """
@@ -70,7 +72,6 @@ class Population:
         self.init_variable(col.SEX, self.demographics.initialise_sex(self.size))
         self.init_variable(col.AGE, self.demographics.initialise_age(self.size))
         self.init_variable(col.AGE_GROUP, 0)
-        self.init_variable(col.DATE_OF_DEATH, None)
 
         self.hiv_status.init_HIV_variables(self)
         self.init_variable(col.EVER_TESTED, False)
@@ -258,19 +259,16 @@ class Population:
             df = self.data
         return df.groupby(param_list)["Dummy"].transform(general_func)
 
-    def evolve(self, time_step: datetime.timedelta):
+    def evolve(self, time_step: timedelta):
         """
         Advance the population by one time step.
         """
         # Does nothing just yet except advance the current date, track ages
         # and set death dates.
         ages = self.get_variable(col.AGE)
-        ages += time_step.days / 365  # Very naive!
+        ages += time_step.month / 12
         self.set_present_variable(col.AGE, ages)
-        # Record who has reached their max age
-        died_this_period = self.demographics.determine_deaths(self)
-        # self.data.loc[died_this_period, col.DATE_OF_DEATH] = self.date
-        self.set_present_variable(col.DATE_OF_DEATH, self.date, died_this_period)
+        n_deaths = 0
 
         if self.HIV_introduced:
             self.hiv_status.set_primary_infection(self)
@@ -287,6 +285,16 @@ class Population:
         if self.HIV_introduced:
             self.hiv_status.update_HIV_status(self)
             self.hiv_testing.update_hiv_testing(self)
+            HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
+            n_deaths = n_deaths + sum(HIV_deaths)
+            if (n_deaths and self.apply_death):
+                self.drop_from_population(HIV_deaths)
+
+        # Apply non-hiv deaths
+        non_HIV_deaths = self.demographics.determine_deaths(self, time_step)
+        n_deaths = n_deaths + sum(non_HIV_deaths)
+        if (sum(non_HIV_deaths) and self.apply_death):
+            self.drop_from_population(non_HIV_deaths)
 
         # If we are at the start of the epidemic, introduce HIV into the population.
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
@@ -298,3 +306,7 @@ class Population:
         self.date += time_step
         self.step += 1
         return self
+
+    def drop_from_population(self, deaths: pd.Series):
+        indices = deaths[deaths].index  # indices where deaths==True
+        self.data.drop(indices, inplace=True)

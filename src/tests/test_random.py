@@ -1,8 +1,6 @@
-from datetime import date
-
 import numpy as np
 
-from hivpy.common import rng
+from hivpy.common import date, rng
 from hivpy.population import Population
 
 

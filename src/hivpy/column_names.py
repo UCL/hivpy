@@ -67,9 +67,17 @@ MAX_CD4 = "max_cd4"                             # float: maximum CD4 count to wh
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
 X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, False otherwise
 
-ADC = "AIDS_defining_condition"                 # bool: True if AIDS defining condition is present
-
-DATE_OF_DEATH = "date_of_death"                 # None | datetime.date: date of death if dead, o/w None
+WHO3_EVENT = "who3_event"                       # Bool: True if who3 disease occurs this timestep in HIV positive person
+NON_TB_WHO3 = "non_tb_who3"                     # Bool: True if non-tb who3 disease occurs this timestep in HIV positive person
+TB = "tb"                                       # Bool: True if tb occurs this timestep in HIV positive person
+TB_DIAGNOSED = "tb_diagnosed"                   # Bool: True if TB is diagnosed this timestep
+C_MENINGITIS = "c_meningitis"                       # Bool: True if cryptococcal meningitis occurs this timestep
+C_MENINGITIS_DIAGNOSED = "c_meningitis_diagnosed"   # Bool: True if cryptococcal meningitis diagnosed this timestep
+SBI = "serious_bacterial_infection"             # Bool: True if serious bacterial infection this time step
+SBI_DIAGNOSED = "sbi_diagnosed"                 # Bool: True if SBI diagnosed this time step
+WHO4_OTHER = "who4_other"                       # Bool: True if other WHO4 disease occurs this timestep
+WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disease diagnosed this timestep
+ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
