@@ -1,9 +1,9 @@
 import logging
-from dataclasses import dataclass
-from datetime import date, timedelta
+from dataclasses import dataclass, field
 from os import path
 from pathlib import Path
 
+from .common import date, timedelta
 from .exceptions import SimulationException
 
 LEVELS = {
@@ -53,7 +53,8 @@ class SimulationConfig:
     start_date: date
     stop_date: date
     output_dir: Path
-    time_step: timedelta = timedelta(days=90)
+    graph_outputs: list
+    time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
 
     def _validate(self):
         """

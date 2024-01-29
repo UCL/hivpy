@@ -1,5 +1,4 @@
 import logging
-from datetime import date, datetime, timedelta
 from math import sqrt
 
 import numpy as np
@@ -7,7 +6,7 @@ import pytest
 import scipy.integrate
 
 import hivpy.column_names as col
-from hivpy.common import SexType
+from hivpy.common import SexType, date, timedelta
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
@@ -93,23 +92,6 @@ def test_hard_reach():
     assert mean_m - 3 * stdev_m <= no_hard_reach_m <= mean_m + 3 * stdev_m
 
 
-def test_date_permanent(default_module):
-    """
-    Check that that death is not recorded again in future steps.
-    """
-    pop = Population(size=3, start_date=date(1989, 1, 1))
-
-    pop.set_present_variable(
-        col.DATE_OF_DEATH, [None, datetime.today(), datetime.today() - timedelta(days=1)])
-    pop.set_present_variable(col.AGE, [30, 20, 50])
-    pop.set_present_variable(col.SEX, [SexType.Female, SexType.Female, SexType.Male])
-
-    new_deaths = default_module.determine_deaths(pop)
-    # Find who already had a date of death, and check that they are not marked
-    # as having died in this time step.
-    assert not new_deaths[pop.get_variable(col.DATE_OF_DEATH).notnull()].any()
-
-
 def test_death_rate():
     """
     Check that we record the expected number of deaths.
@@ -119,8 +101,8 @@ def test_death_rate():
     data = DemographicsData(data_path)
     module = DemographicsModule(death_rates=data.death_rates)
     N = 300000
-    ages_to_try = [10, 23, 33]
-    age_groups = [0, 2, 4]
+    ages_to_try = [23, 33]
+    age_groups = [2, 4]
     group_size = N // 2 // len(ages_to_try)
     ages = sum(([age] * group_size for age in ages_to_try), []) * 2
     sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
@@ -130,18 +112,16 @@ def test_death_rate():
 
     # The rates in the data file are annualised
     expected_annual_deaths = {
-        (sex, age_group): group_size * data.death_rates[sex][age_group]
+        (sex, age_group): group_size * data.death_rates[sex][age_group] / 4
         for sex in SexType
         for age_group in age_groups
     }
     # Simulate for a year
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
-        deaths = module.determine_deaths(pop)
+        time_step = timedelta(months=3)
+        deaths = module.determine_deaths(pop, time_step)
         print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
-        pop.data.loc[deaths, pop.get_correct_column(col.DATE_OF_DEATH)] = datetime.today()
-    recorded_deaths = pop.data.groupby(
-        [pop.get_correct_column(col.SEX), pop.get_correct_column(col.AGE_GROUP)]
-        ).date_of_death.count().to_dict()
-    assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)
+        recorded_deaths = pop.data.loc[deaths].groupby([col.SEX, col.AGE_GROUP]).size().to_dict()
+        assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)

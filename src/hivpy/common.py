@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
-import datetime
 import operator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -61,8 +60,114 @@ def opposite_sex(sex: SexType):
     return (1 - sex)
 
 
-def diff_years(date_begin, date_end):
-    return (date_end - date_begin) / datetime.timedelta(days=365.25)
+class date:
+    def __init__(self, year, month=1, day=1):
+        self.year = year
+        self.month = month
+        self.day = day
+
+    def __add__(self, delta):
+        year = self.year + delta.year + (self.month + delta.month)//12
+        month = (self.month + delta.month) % 12
+        return date(year, month, self.day)
+
+    def __sub__(self, delta):
+        return self.__add__(timedelta(years=-delta.year, months=-delta.month))
+
+    def __repr__(self):
+        return f"({self.year}, {self.month}, {self.day})"
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __eq__(self, d2):
+        return (self.year == d2.year) and (self.month == d2.month) and (self.day == d2.day)
+
+    def __gt__(self, d2):
+        if (self.year != d2.year):
+            return (self.year > d2.year)
+        elif (self.month != d2.month):
+            return (self.month > d2.month)
+        else:
+            return (self.day > d2.day)
+
+    def __lt__(self, d2):
+        if (self.year != d2.year):
+            return (self.year < d2.year)
+        elif (self.month != d2.month):
+            return (self.month < d2.month)
+        else:
+            return (self.day < d2.day)
+
+    def __ge__(self, d2):
+        return not self.__lt__(d2)
+
+    def __le__(self, d2):
+        return not self.__gt__(d2)
+
+    def __truediv__(self, dt):
+        months1 = self.year * 12 + self.month
+        months2 = dt.year * 12 + dt.month
+        return months1 / months2
+
+
+class timedelta:
+    def __init__(self, years=0, months=0, days=0):
+        self.year = years
+        self.month = months + (days // 30)
+
+    def __mul__(self, x):
+        years = self.year * x
+        year_remainder = years % 1
+        years = int(years)
+        months = (self.month * x) + (year_remainder * 12)
+        years = years + int(months//12)
+        months = int(months % 12)
+        return timedelta(years=years, months=months)
+
+    def __rmul__(self, x):
+        return self.__mul__(x)
+
+    def __add__(self, x):
+        year = self.year + x.year + (self.month + x.month) // 12
+        month = (self.month + x.month) % 12
+        return timedelta(years=year, months=month)
+
+    def __repr__(self) -> str:
+        return f"dt({self.year, self.month, 0})"
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def __eq__(self, dt2: timedelta):
+        return (self.year == dt2.year) and (self.month == dt2.month)
+
+    def __gt__(self, dt2: timedelta):
+        if (self.year != dt2.year):
+            return (self.year > dt2.year)
+        else:
+            return (self.month > dt2.month)
+
+    def __lt__(self, dt2):
+        if (self.year != dt2.year):
+            return (self.year < dt2.year)
+        else:
+            return (self.month < dt2.month)
+
+    def __ge__(self, dt2):
+        return not self.__lt__(dt2)
+
+    def __le__(self, dt2):
+        return not self.__gt__(dt2)
+
+    def __truediv__(self, x):
+        months1 = self.year * 12 + self.month
+        months2 = x.year * 12 + x.month
+        return months1 / months2
+
+
+def diff_years(date_begin: date, date_end: date):
+    return (date_end.year - date_begin.year) + (date_end.month - date_begin.month) / 12
 
 
 def between(values, limits):
