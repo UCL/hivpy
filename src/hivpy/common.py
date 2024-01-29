@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
-# import datetime
 import operator
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
