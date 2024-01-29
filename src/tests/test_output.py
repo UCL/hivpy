@@ -1,8 +1,7 @@
-from datetime import date, timedelta
 from math import isclose, log
 
 import hivpy.column_names as col
-from hivpy.common import SexType
+from hivpy.common import SexType, date, timedelta
 from hivpy.output import SimulationOutput
 from hivpy.population import Population
 
