@@ -11,7 +11,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng
+from .common import AND, COND, SexType, diff_years, rng, opposite_sex
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:
@@ -119,6 +119,10 @@ class SexualBehaviourModule:
         self.balance_thresholds = [0.1, 0.03, 0.005, 0.004, 0.003, 0.002, 0.001]
         self.balance_factors = [0.1, 0.7, 0.7, 0.75, 0.8, 0.9, 0.97]
         self.p_risk_p = self.sb_data.p_risk_p_dist.sample()
+        # Number of short term partners of people in a demographic group by age and sex
+        self.num_stp_of_age_sex_group = np.zeros([self.num_sex_mix_groups, 2])
+        # Number of short term partners who themselves are in a demographic group by age and sex
+        self.num_stp_in_age_sex_group = np.zeros([self.num_sex_mix_groups, 2])
 
         # long term partnerships parameters
         self.new_ltp_rate = 0.1 * np.exp(rng.normal() * 0.25)  # three month ep-rate
@@ -569,11 +573,18 @@ class SexualBehaviourModule:
         # TODO: Check if this needs additional balancing factors for age
         stp_age_probs = self.sex_mixing_matrix[sex][age_group]
         stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
+        self.num_stp_of_age_sex_group[age_group][sex] += (num_partners * size)
+        for i in stp_age_groups.flatten():
+            self.num_stp_in_age_sex_group[i][opposite_sex(sex)] += 1
         return list(stp_age_groups)  # dataframe won't accept a 2D numpy array
 
     def assign_stp_ages(self, population: Population):
         """Calculate the ages of a persons short term partners
         from the mixing matrices."""
+        # reset stp age/sex counts
+        self.num_stp_in_age_sex_group = np.zeros([self.num_sex_mix_groups, 2])
+        self.num_stp_of_age_sex_group = np.zeros([self.num_sex_mix_groups, 2])
+
         population.set_present_variable(col.SEX_MIX_AGE_GROUP,
                                         (np.digitize(population.get_variable(col.AGE),
                                                      self.sex_mix_age_groups) - 1))
