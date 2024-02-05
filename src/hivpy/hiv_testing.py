@@ -1,10 +1,9 @@
 import importlib.resources
 import operator as op
-from datetime import timedelta
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, rng
+from .common import AND, COND, OR, SexType, rng, timedelta
 from .hiv_testing_data import HIVTestingData
 
 
@@ -70,7 +69,6 @@ class HIVTestingModule:
             # get population ready for testing
             testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
                                                   (col.AGE, op.ge, 15),
-                                                  (col.DATE_OF_DEATH, op.eq, None),
                                                   (col.HIV_STATUS, op.eq, False),
                                                   [(col.LAST_TEST_DATE, op.le, pop.date -
                                                     timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),

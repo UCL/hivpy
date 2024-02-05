@@ -1,13 +1,12 @@
 import importlib.resources
 import operator
-from datetime import date, timedelta
 
 import numpy as np
 import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, seedManager
+from hivpy.common import SexType, date, rng, seedManager, timedelta
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
@@ -260,7 +259,7 @@ def test_risk_diagnosis():
     pop.data["HIV_status"] = False  # init everyone HIV negative
     SBM = SexualBehaviourModule()
     SBM.risk_diagnosis = 4
-    SBM.risk_diagnosis_period = timedelta(700)
+    SBM.risk_diagnosis_period = timedelta(days=700)
     SBM.update_risk_diagnosis(pop)
     assert np.all(pop.data["risk_diagnosis"] == 1)
     # give up some people HIV and advance the date
@@ -408,6 +407,7 @@ def test_risk_age():
     N = 11
     # rng.set_seed(42)
     pop = Population(size=2*N, start_date=date(1989, 1, 1))
+    pop.apply_death = False
     ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
     pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, 0)
     pop.set_present_variable(col.AGE, ages)

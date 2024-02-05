@@ -1,13 +1,12 @@
 import operator
 import operator as op
-from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import COND, SexType, rng
+from hivpy.common import COND, SexType, date, rng, timedelta
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
@@ -202,6 +201,7 @@ def test_viral_group_risk_vector():
             HIV_list += [True] * (N_group // HIV_ratio) + [False] * (N_group - N_group//HIV_ratio)
     pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.date += timedelta(days=180)  # no one in primary infection
+    hiv_module.set_primary_infection(pop)
     pop.data[col.HIV_STATUS] = HIV_list
     pop.data[col.SEX] = np.array(sex_list)
     pop.data[col.SEX_MIX_AGE_GROUP] = np.array(age_group_list)

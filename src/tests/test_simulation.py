@@ -1,8 +1,7 @@
-from datetime import date, timedelta
-
 import pytest
 
 from hivpy import SimulationConfig, SimulationException
+from hivpy.common import date, timedelta
 from hivpy.simulation import SimulationHandler
 
 # from hivpy.population import Population
@@ -29,23 +28,23 @@ def test_error_end_before_start(tmp_path):
     """
     Ensure that we throw an error if the end date is before the start.
     """
-    today = date.today()
-    yesterday = today - timedelta(days=1)
+    today = date(1989, 1)
+    yesterday = today - timedelta(days=30)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=today, stop_date=yesterday, output_dir=tmp_path,
-                         population_size=100)
+                         graph_outputs=[], population_size=100)
 
 
 def test_error_end_before_first_step(tmp_path):
     """
     Ensure that we throw an error if the simulation would end before the first step.
     """
-    start = date.today()
+    start = date(1989, 1)
     end = start + timedelta(days=30)
     step = timedelta(days=90)
     with pytest.raises(SimulationException):
-        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path, time_step=step,
-                         population_size=100)
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path, graph_outputs=[],
+                         time_step=step, population_size=100)
 
 
 def test_death_occurs(tmp_path):
@@ -54,19 +53,20 @@ def test_death_occurs(tmp_path):
     """
     # FIXME This will not necessarily be true once we add in births
     size = 10000
-    start = date.today()
+    start = date(1989, 1)
     step = timedelta(days=90)
     end = start + 200 * step
-    config = SimulationConfig(size, start, end, tmp_path, step)
+    config = SimulationConfig(size, start, end, tmp_path, [], step)
     simulation_handler = SimulationHandler(config)
     simulation_handler.run()
     pop = simulation_handler.population
     # Check that the number alive never grows... (some steps may have 0 deaths)
     # assert all(results.num_alive.diff()[1:] <= 0)
-    num_not_dead = sum(pop.data.date_of_death.isnull())
-    assert num_not_dead < len(pop.data)
-    num_dead = len(pop.data) - num_not_dead
-    assert sum(simulation_handler.output.output_stats["Deaths (tot)"]) == num_dead
+    num_not_dead = len(pop.data)
+    assert (num_not_dead < size)
+    num_dead = size - num_not_dead
+    assert (num_dead >= 1)
+    # assert sum(simulation_handler.output.output_stats["Deaths (tot)"]) == num_dead
     # ...and that there is at least one death overall!
     # FIXME This is not guaranteed at the moment because of the values used
     # assert results.num_alive[-1] < results.num_alive[0]

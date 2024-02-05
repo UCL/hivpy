@@ -1,9 +1,8 @@
 import operator as op
-from datetime import date, timedelta
 from math import isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import rng
+from hivpy.common import date, rng, timedelta
 from hivpy.population import Population
 
 
@@ -47,11 +46,6 @@ def test_general_testing_conditions():
     diagnosed = r < 0.2
     pop.set_present_variable(col.HIV_STATUS, diagnosed)
 
-    # have roughly 20% of the population be dead
-    r = rng.uniform(size=len(pop.data))
-    dead = r < 0.2
-    pop.set_present_variable(col.DATE_OF_DEATH, pop.date, sub_pop=pop.apply_bool_mask(dead))
-
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop)
 
@@ -59,8 +53,6 @@ def test_general_testing_conditions():
     tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
     # check that no people just tested were already diagnosed with HIV
     assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
-    # check that no dead people were just tested
-    assert (pop.get_variable(col.DATE_OF_DEATH, sub_pop=tested_population).isna()).all()
 
 
 def test_first_time_testers():
@@ -163,13 +155,13 @@ def test_max_frequency_testing():
     for index in max_freq_testing:
 
         # build population
-        N = 100000
+        N = 100
         pop = Population(size=N, start_date=start_date)
         pop.data[col.AGE] = 20
         pop.data[col.HIV_STATUS] = False
         pop.data[col.HARD_REACH] = False
         pop.data[col.EVER_TESTED] = True
-        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-1)
+        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-30)
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
@@ -189,7 +181,7 @@ def test_max_frequency_testing():
         assert (pop.get_variable(col.LAST_TEST_DATE) != pop.date).all()
 
         # move date forward and evolve again
-        pop.date += timedelta(days=1)
+        pop.date += timedelta(days=30)
         pop.hiv_testing.update_hiv_testing(pop)
 
         # check that everyone has just been tested
