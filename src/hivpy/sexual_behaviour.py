@@ -10,7 +10,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng, opposite_sex
+from .common import AND, COND, SexType, diff_years, rng, opposite_sex, date
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:
@@ -169,6 +169,7 @@ class SexualBehaviourModule:
         population.init_variable(col.DATE_STOP_SW, None)
         population.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
         population.init_variable(col.SEX_BEHAVIOUR, 0)
+        population.init_variable(col.RISK_AGE_SEX_BALANCE, 1.0)
         self.init_risk_factors(population)
         self.init_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
@@ -182,6 +183,7 @@ class SexualBehaviourModule:
         self.update_sex_groups(population)
         self.num_short_term_partners(population)
         self.assign_stp_ages(population)
+        self.update_sex_age_balance(population)
         self.update_long_term_partners(population)
 
     # Code for sex work ---------------------------------------------------------------------------
@@ -591,6 +593,12 @@ class SexualBehaviourModule:
                                          [col.SEX, col.SEX_MIX_AGE_GROUP, col.NUM_PARTNERS],
                                          self.gen_stp_ages,
                                          sub_pop=active_pop)
+
+    def update_sex_age_balance(self, population: Population):
+        population[col.AGE_GROUP] = np.digitize(col.AGE, self.sex_mix_age_groups)
+        population.set_variable_by_group(col.RISK_AGE_SEX_BALANCE,
+                                         [col.SEX, col.AGE_GROUP],
+                                         lambda s, a: self.num_stp_in_age_sex_group[s][a] / self.num_stp_of_age_sex_group[s][a])
 
     # Code for long term partnerships -------------------------------------------------------------
 
