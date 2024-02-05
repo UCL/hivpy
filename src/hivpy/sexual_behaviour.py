@@ -10,7 +10,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng, opposite_sex, date
+from .common import AND, COND, SexType, diff_years, rng, opposite_sex, date, timedelta
 from .sex_behaviour_data import SexualBehaviourData
 
 if TYPE_CHECKING:
@@ -596,10 +596,15 @@ class SexualBehaviourModule:
                                          sub_pop=active_pop)
 
     def update_sex_age_balance(self, population: Population):
-        population[col.AGE_GROUP] = np.digitize(col.AGE, self.sex_mix_age_groups)
+        def get_ratio(sex, age):
+            if(self.num_stp_of_age_sex_group[age][sex] > 0):
+                return self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
+            else:
+                return 1
         population.set_variable_by_group(col.RISK_AGE_SEX_BALANCE,
-                                         [col.SEX, col.AGE_GROUP],
-                                         lambda s, a: self.num_stp_in_age_sex_group[s][a] / self.num_stp_of_age_sex_group[s][a])
+                                         [col.SEX, col.SEX_MIX_AGE_GROUP],
+                                         get_ratio,
+                                         use_size=False)
 
     # Code for long term partnerships -------------------------------------------------------------
 
