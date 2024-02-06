@@ -125,7 +125,10 @@ class SimulationOutput:
 
         # Update HIV prevalence in female sex workers
         sex_workers_idx = pop.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
-        self.output_stats.loc[self.step, "Sex worker (ratio)"] = self._ratio(sex_workers_idx, women_idx)
+        potential_sw = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                        (col.AGE, operator.ge, 15),
+                                        (col.AGE, operator.lt, 50)])
+        self.output_stats.loc[self.step, "Sex worker (ratio)"] = self._ratio(sex_workers_idx, potential_sw)
         self.output_stats.loc[self.step, "HIV prevalence (sex worker)"] = (
             self._ratio(pop.get_sub_pop_intersection(sex_workers_idx, HIV_pos_idx), sex_workers_idx))
 
