@@ -14,6 +14,10 @@ Welcome to the HIVpy package. Below is an overview of the repository contents:
 - [Pregnancy Tutorial](pregnancy.md)
 - [Sexual Behaviour Tutorial](sexual_behaviour.md)
 
+### Other Tutorials
+
+- [Setup and Package Installation](setup.md)
+
 ### Common Procedures
 
 #### Adding a New Module to Documentation
