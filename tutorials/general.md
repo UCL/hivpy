@@ -17,6 +17,7 @@ Welcome to the HIVpy package. Below is an overview of the repository contents:
 ### Other Tutorials
 
 - [Setup and Package Installation](setup.md)
+- [Output Post-processing](post_processing.md)
 
 ### Common Procedures
 

@@ -10,7 +10,9 @@ from titlecase import titlecase
 
 
 def graph_output(output_dir, output_stats, graph_outputs):
-
+    """
+    Plot all graph output columns in the output statistics dataframe.
+    """
     for out in graph_outputs:
         if out in output_stats.columns:
 
@@ -25,7 +27,11 @@ def graph_output(output_dir, output_stats, graph_outputs):
 
 
 def compare_output(output_dir, output_stats, graph_outputs, label1="HIVpy", label2="SAS"):
-
+    """
+    Plot all graph output columns of all runs in output statistics on one graph for comparison.
+    The first dataframe is expected to contain HIVpy data by default, and the second is expected
+    to contain SAS data by default.
+    """
     for out in graph_outputs:
 
         _, ax = plt.subplots()
@@ -52,7 +58,11 @@ def compare_output(output_dir, output_stats, graph_outputs, label1="HIVpy", labe
 
 
 def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
-
+    """
+    Plot the averaged data for each graph output (along with standard deviation and 25th-75th percentiles).
+    Plot all graph output columns of all runs in output statistics on one graph for comparison to the averages.
+    """
+    # first df is assumed to contain the average statistics
     avg_df = output_stats[0]
     for out in graph_outputs:
 
@@ -94,7 +104,11 @@ def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
 
 
 def aggregate_data(in_path, out_path):
-
+    """
+    Find all csv output files in the input path directory and create a new output file
+    in the output path directory containing the average values of the provided files.
+    """
+    # FIXME: this file could probably use a better name
     avg_path = os.path.join(out_path, "aggregate_data.csv")
     # delete aggregate data if it already exists
     if os.path.exists(avg_path):
