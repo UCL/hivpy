@@ -19,8 +19,6 @@ from .sex_behaviour_data import SexualBehaviourData
 # import warnings
 
 
-
-
 if TYPE_CHECKING:
     from .population import Population
 
@@ -166,7 +164,7 @@ class SexualBehaviourModule:
         population.init_variable(col.LTP_AGE_GROUP, 0)
         population.init_variable(col.LTP_LONGEVITY, 0)
         population.init_variable(col.SEX_MIX_AGE_GROUP, 0)
-        population.init_variable(col.STP_AGE_GROUPS, np.array([[0]]*population.size))
+        population.init_variable(col.STP_AGE_GROUPS, [np.array([])]*population.size)
         population.init_variable(col.RISK_LTP, 1)
         population.init_variable(col.LIFE_SEX_RISK, 1)
         population.init_variable(col.SEX_WORKER, False)
@@ -580,7 +578,6 @@ class SexualBehaviourModule:
             population.set_present_variable(col.RISK_BALANCE, 1/risk_balance, men)
 
     def gen_stp_ages(self, sex, age_group, num_partners, size):
-        # TODO: Check if this needs additional balancing factors for age
         stp_age_probs = self.sex_mixing_matrix[sex][age_group]
         stp_age_groups = rng.choice(self.num_sex_mix_groups, [size, num_partners], p=stp_age_probs)
         self.num_stp_of_age_sex_group[age_group][sex] += (num_partners * size)
