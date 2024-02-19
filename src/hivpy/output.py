@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import operator
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -58,6 +59,10 @@ class SimulationOutput:
                           "Non-HIV deaths (tot)", "Non-HIV deaths (over 15, male)",
                           "Non-HIV deaths (over 15, female)", "Non-HIV deaths (20-59, male)",
                           "Non-HIV deaths (20-59, female)"]
+
+        for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
+            key = f"Short term partners ({age}-{age+9}, {sex})"
+            output_columns.insert(17, key)
 
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             if age_bound < self.age_max_active:
@@ -215,6 +220,11 @@ class SimulationOutput:
                                    (col.AGE, operator.lt, 65),
                                    (col.NUM_PARTNERS, operator.ge, 1)])
         self.output_stats.loc[self.step, "Short term partners (15-64)"] = self._ratio(stp_idx, age_idx)
+        for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
+            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = \
+                    sum(pop.get_variable(col.NUM_PARTNERS, pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                                                            (col.AGE, operator.lt, age+10),
+                                                                            (col.SEX, operator.eq, sex)])))
         # Update proportion of people with 5+ short term partners
         stp_over_5_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
                                           (col.AGE, operator.lt, 65),

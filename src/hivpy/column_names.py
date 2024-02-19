@@ -9,7 +9,6 @@ LTP_AGE_GROUP = "ltp_age_group"                 # int: discrete age group for st
 
 RISK = "risk"                                   # float: overall risk value from combined factors
 RISK_AGE = "risk_age"                           # float: risk factor based on age
-RISK_AGE_SEX_BALANCE = "risk_age_sex_balance"   # float: risk correction factor based on balance of partners by age and sex
 RISK_ADC = "risk_adc"                           # float: risk for AIDS defining condition
 RISK_BALANCE = "risk_balance"                   # float: risk factor to re-balance male & female partner numbers
 RISK_DIAGNOSIS = "risk_diagnosis"               # float: risk associated with recent HIV diagnosis

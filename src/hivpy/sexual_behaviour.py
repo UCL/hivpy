@@ -1,17 +1,25 @@
 from __future__ import annotations
 
 import importlib.resources
+import logging
 import operator
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+# import pdb
 import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, SexType, diff_years, rng, opposite_sex, date, timedelta
+from .common import (AND, COND, SexType, date, diff_years, opposite_sex, rng,
+                     timedelta)
 from .sex_behaviour_data import SexualBehaviourData
+
+# import warnings
+
+
+
 
 if TYPE_CHECKING:
     from .population import Population
@@ -169,7 +177,6 @@ class SexualBehaviourModule:
         population.init_variable(col.DATE_STOP_SW, None)
         population.init_variable(col.SEX_BEHAVIOUR_CLASS, 0)
         population.init_variable(col.SEX_BEHAVIOUR, 0)
-        population.init_variable(col.RISK_AGE_SEX_BALANCE, 1.0)
         self.init_risk_factors(population)
         self.init_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
@@ -313,12 +320,15 @@ class SexualBehaviourModule:
         transition_matrix = self.sex_behaviour_trans[sex_class]
 
         denominator = transition_matrix[i][0] + risk*sum(transition_matrix[i][1:])
-
+        # warnings.filterwarnings("error")
+        # try:
         if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
             Probability = risk*transition_matrix[i][j] / denominator
-
+        # except RuntimeWarning:
+        #     breakpoint()
+        # warnings.resetwarnings()
         return Probability
 
     def get_partners_for_group(self, sex_class, group, size):
@@ -436,9 +446,9 @@ class SexualBehaviourModule:
         if (self.use_risk_art_adherence):
             self.update_risk_art_adherence(population)
 
-        def combined_risk(age, adc, balance, diagnosis, personal, ltp, art, age_sex_balance):
+        def combined_risk(age, adc, balance, diagnosis, personal, ltp, art):
             return (self.new_partner_factor * age * adc * balance *
-                    diagnosis * personal * self.risk_population * ltp * art * age_sex_balance)
+                    diagnosis * personal * self.risk_population * ltp * art)
         population.set_present_variable(col.RISK,
                                         population.apply_vector_func([col.RISK_AGE,
                                                                       col.RISK_ADC,
@@ -446,8 +456,7 @@ class SexualBehaviourModule:
                                                                       col.RISK_DIAGNOSIS,
                                                                       col.RISK_PERSONAL,
                                                                       col.RISK_LTP,
-                                                                      col.RISK_ART_ADHERENCE,
-                                                                      col.RISK_AGE_SEX_BALANCE],
+                                                                      col.RISK_ART_ADHERENCE],
                                                                      combined_risk))
 
     def init_risk_art_adherence(self, pop: Population):
@@ -597,14 +606,15 @@ class SexualBehaviourModule:
 
     def update_sex_age_balance(self, population: Population):
         def get_ratio(sex, age):
-            if(self.num_stp_of_age_sex_group[age][sex] > 0):
-                return self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
+            if (self.num_stp_of_age_sex_group[age][sex] > 0):
+                ratio = self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
+                logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
+                return ratio
             else:
                 return 1
-        population.set_variable_by_group(col.RISK_AGE_SEX_BALANCE,
-                                         [col.SEX, col.SEX_MIX_AGE_GROUP],
-                                         get_ratio,
-                                         use_size=False)
+        for age_group in range(self.risk_categories):
+            for sex in [0, 1]:
+                self.age_based_risk[age_group, sex] = self.age_based_risk[age_group, sex] * get_ratio(sex, age_group//2)
 
     # Code for long term partnerships -------------------------------------------------------------
 
