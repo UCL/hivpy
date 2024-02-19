@@ -1,8 +1,7 @@
 from __future__ import annotations
-
+from itertools import product
 import math
 import operator
-from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -221,10 +220,16 @@ class SimulationOutput:
                                    (col.NUM_PARTNERS, operator.ge, 1)])
         self.output_stats.loc[self.step, "Short term partners (15-64)"] = self._ratio(stp_idx, age_idx)
         for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
-            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = \
-                    sum(pop.get_variable(col.NUM_PARTNERS, pop.get_sub_pop([(col.AGE, operator.ge, age),
-                                                                            (col.AGE, operator.lt, age+10),
-                                                                            (col.SEX, operator.eq, sex)])))
+            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = self._ratio(pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                                                                                                           (col.AGE, operator.lt, age+10),
+                                                                                                                           (col.SEX, operator.eq, sex),
+                                                                                                                           (col.NUM_PARTNERS, operator.ge, 1)]),
+                                                                                                          pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                                                                                                           (col.AGE, operator.lt, age+10),
+                                                                                                                           (col.SEX, operator.eq, sex)]))
+            # self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = sum(pop.get_variable(col.NUM_PARTNERS, pop.get_sub_pop([(col.AGE, operator.ge, age),
+            #                                                                                                                                           (col.AGE, operator.lt, age+10),
+            #                                                                                                                                           (col.SEX, operator.eq, sex)])))
         # Update proportion of people with 5+ short term partners
         stp_over_5_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
                                           (col.AGE, operator.lt, 65),
