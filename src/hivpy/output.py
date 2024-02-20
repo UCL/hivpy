@@ -1,7 +1,8 @@
 from __future__ import annotations
-from itertools import product
+
 import math
 import operator
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -240,7 +241,9 @@ class SimulationOutput:
         # Update short term partner sex balance statistics
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
-        active_idx = pop.get_sub_pop([(col.NUM_PARTNERS, operator.gt, 0)])
+        active_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                      (col.AGE, operator.lt, 65),
+                                      (col.NUM_PARTNERS, operator.gt, 0)])
         active_men = pop.get_sub_pop_intersection(active_idx, men_idx)
         active_women = pop.get_sub_pop_intersection(active_idx, women_idx)
         # Get flattened lists of partner age groups (values 0-4)
