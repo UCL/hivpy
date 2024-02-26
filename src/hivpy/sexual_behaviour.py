@@ -609,7 +609,7 @@ class SexualBehaviourModule:
                 return ratio
             else:
                 return 1
-        for age_group in range(self.risk_categories):
+        for age_group in range(self.risk_categories+1):
             for sex in [0, 1]:
                 self.age_based_risk[age_group, sex] = self.age_based_risk[age_group, sex] * get_ratio(sex, age_group//2)
 
