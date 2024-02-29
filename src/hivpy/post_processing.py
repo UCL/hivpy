@@ -6,17 +6,22 @@ import traceback
 import matplotlib.pyplot as plt
 import pandas as pd
 import yaml
+from sas7bdat import SAS7BDAT as s7b
 from titlecase import titlecase
 
 
-def graph_output(output_dir, output_stats, graph_outputs):
+def graph_output(output_dir, output_stats, graph_outputs, sas_cols=False):
     """
     Plot all graph output columns in the output statistics dataframe.
     """
     for out in graph_outputs:
         if out in output_stats.columns:
 
-            plt.plot(pd.to_datetime(output_stats["Date"], format="(%Y, %m, %d)"), output_stats[out])
+            # FIXME: can we assume pre-formatted date columns?
+            if sas_cols:
+                plt.plot(format_sas_date(output_stats, "cald"), output_stats[out])
+            else:
+                plt.plot(pd.to_datetime(output_stats["Date"], format="(%Y, %m, %d)"), output_stats[out])
             title_out = titlecase(out)
 
             plt.xlabel("Date")
@@ -40,13 +45,14 @@ def compare_output(output_dir, output_stats, graph_outputs, label1="HIVpy", labe
             df = output_stats[i]
             if out in df.columns:
 
+                # assumes the date columns have already been pre-formatted
                 if i == 0:
-                    plt.plot(pd.to_datetime(df["Date"], format="(%Y, %m, %d)"), df[out], label=label1)
+                    plt.plot(df["Date"], df[out], label=label1)
                 elif i == 1:
-                    plt.plot(pd.to_datetime(df["Date"], format="(%Y, %m, %d)"), df[out], label=label2)
+                    plt.plot(df["Date"], df[out], label=label2)
                 else:
                     # plot additional files without label for now
-                    plt.plot(pd.to_datetime(df["Date"], format="(%Y, %m, %d)"), df[out])
+                    plt.plot(df["Date"], df[out])
 
         title_out = titlecase(out)
         plt.xlabel("Date")
@@ -69,6 +75,7 @@ def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
         # FIXME: get relevant information out of grouped_avg once grouping by dates
         # save a clean copy of the average values
         _, ax = plt.subplots()
+        # FIXME: may want to assume pre-formatted date columns
         plt.plot(pd.to_datetime(avg_df["Date"], format="(%Y, %m, %d)"), avg_df[out],
                  color="teal", label="mean")
         # standard deviation
@@ -103,6 +110,28 @@ def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
         plt.close()
 
 
+def read_s7b(path: str):
+    """
+    Return a dataframe from the path to a sas7bdat file.
+    """
+    try:
+        with s7b(path) as reader:
+            sas_df = reader.to_data_frame()
+    except Exception as err:
+        print(type(err), err)
+        print(traceback.format_exc())
+    return sas_df
+
+
+def format_sas_date(df, date_col):
+    """
+    Return a formatted datetime column from the SAS cald float without modifying the original.
+    """
+    sas_date = df[date_col].copy().map("{:.2f}".format)
+    sas_date = sas_date.map(lambda x: "{0}.{1}".format(x.split(".")[0], int(int(x.split(".")[1])*0.12)+1))
+    return pd.to_datetime(sas_date, format="%Y.%m")
+
+
 def aggregate_data(in_path, out_path):
     """
     Find all csv output files in the input path directory and create a new output file
@@ -113,6 +142,8 @@ def aggregate_data(in_path, out_path):
     # delete aggregate data if it already exists
     if os.path.exists(avg_path):
         os.remove(avg_path)
+    if os.path.exists(os.path.join(out_path, "aggregate_sas_data.csv")):
+        os.remove(os.path.join(out_path, "aggregate_sas_data.csv"))
 
     out_files = []
     idx_group = None
@@ -143,6 +174,55 @@ def aggregate_data(in_path, out_path):
         # re-insert date column
         # NOTE: this assumes dates of all rows are the same
         df_means.insert(0, "Date", pd.read_csv(out_files[0], index_col=[0])["Date"])
+
+        # save aggregate data to file
+        df_means.to_csv(avg_path, index=True, sep=",")
+        out_files.insert(0, avg_path)
+
+    return out_files, idx_group
+
+
+# FIXME: merge this function with the one above and make them more generic
+def aggregate_sas_data(in_path, out_path):
+    """
+    Find all sas7bdat output files in the input path directory and create a new output file
+    in the output path directory containing the average values of the provided files.
+    """
+    avg_path = os.path.join(out_path, "aggregate_sas_data.csv")
+    if os.path.exists(avg_path):
+        os.remove(avg_path)
+
+    out_files = []
+    idx_group = None
+    if os.path.isdir(in_path):
+
+        # look for output files in folder
+        for file in [os.path.join(root, file) for root, _, files
+                     in os.walk(in_path) for file in files]:
+            # append files with sas7bdat extension
+            if os.path.splitext(file)[1] == ".sas7bdat":
+                out_files.append(file)
+        # no eligible output files in folder
+        if len(out_files) == 0:
+            raise RuntimeError(
+                "No sas7bdat output files found in given directory.")
+        print("Found {0} sas7bdat output files.".format(len(out_files)))
+
+        # concatenate all output file dataframes
+        avg = read_s7b(out_files[0])
+        # drop first row to remove unneeded nans
+        avg.drop(index=0, inplace=True)
+        for out in out_files[1:]:
+            df = read_s7b(out)
+            # drop first row to remove unneeded nans
+            df.drop(index=0, inplace=True)
+            if int(df["inc_cat"][1]) == 1:
+                avg = pd.concat((avg, df))
+
+        # FIXME: try to groupby date instead
+        idx_group = avg.groupby(avg.index)
+        # FIXME: consider use of mean vs median
+        df_means = idx_group.mean(numeric_only=True)
 
         # save aggregate data to file
         df_means.to_csv(avg_path, index=True, sep=",")
