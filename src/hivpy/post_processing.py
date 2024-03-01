@@ -11,18 +11,14 @@ from sas7bdat import SAS7BDAT as s7b
 from titlecase import titlecase
 
 
-def graph_output(output_dir, output_stats, graph_outputs, sas_cols=False):
+def graph_output(output_dir, output_stats, graph_outputs):
     """
     Plot all graph output columns in the output statistics dataframe.
     """
     for out in graph_outputs:
         if out in output_stats.columns:
 
-            # FIXME: can we assume pre-formatted date columns?
-            if sas_cols:
-                plt.plot(format_sas_date(output_stats, "cald"), output_stats[out])
-            else:
-                plt.plot(pd.to_datetime(output_stats["Date"], format="(%Y, %m, %d)"), output_stats[out])
+            plt.plot(output_stats["Date"], output_stats[out])
             title_out = titlecase(out)
 
             plt.xlabel("Date")
@@ -76,17 +72,14 @@ def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
         # FIXME: get relevant information out of grouped_avg once grouping by dates
         # save a clean copy of the average values
         _, ax = plt.subplots()
-        # FIXME: may want to assume pre-formatted date columns
-        plt.plot(pd.to_datetime(avg_df["Date"], format="(%Y, %m, %d)"), avg_df[out],
-                 color="teal", label="mean")
-        # standard deviation
-        ax.fill_between(pd.to_datetime(avg_df["Date"], format="(%Y, %m, %d)"),
-                        avg_df[out]+grouped_avg[out].std(), avg_df[out]-grouped_avg[out].std(),
-                        color="teal", alpha=0.15)
-        # quantiles
-        ax.fill_between(pd.to_datetime(avg_df["Date"], format="(%Y, %m, %d)"),
-                        grouped_avg[out].quantile(0.25), grouped_avg[out].quantile(0.75),
-                        color="darkslategrey", alpha=0.15)
+        if out in avg_df.columns:
+            plt.plot(avg_df["Date"], avg_df[out], color="teal", label="mean")
+            # standard deviation
+            ax.fill_between(avg_df["Date"], avg_df[out]+grouped_avg[out].std(),
+                            avg_df[out]-grouped_avg[out].std(), color="teal", alpha=0.15)
+            # quantiles
+            ax.fill_between(avg_df["Date"], grouped_avg[out].quantile(0.25), grouped_avg[out].quantile(0.75),
+                            color="darkslategrey", alpha=0.15)
 
         title_out = titlecase(out)
         plt.xlabel("Date")
@@ -99,8 +92,7 @@ def compare_avg_output(output_dir, output_stats, graph_outputs, grouped_avg):
         # now save a 'dirty' copy including all the other runs
         for df in output_stats[1:]:
             if out in df.columns:
-                plt.plot(pd.to_datetime(df["Date"], format="(%Y, %m, %d)"), df[out],
-                         linestyle="dashed", alpha=0.35)
+                plt.plot(df["Date"], df[out], linestyle="dashed", alpha=0.35)
 
         title_out = titlecase(out)
         plt.xlabel("Date")
@@ -340,10 +332,14 @@ def run_post():
                         type=pathlib.Path, help="input directory with csv files to plot")
     parser.add_argument("-si", "--sas_input",
                         type=pathlib.Path, help="input directory with sas7bdat files to plot")
+    parser.add_argument("-eec", "--early_epidemic_comparison", default=False, action="store_true",
+                        help="early epidemic comparison flag")
 
     args = parser.parse_args()
     if not (args.hivpy_input or args.sas_input):
-        parser.error("No input provided, please add hivpy_input and sas_input.")
+        parser.error("No input provided, please add at least one of hivpy_input or sas_input.")
+    if args.early_epidemic_comparison and not (args.hivpy_input and args.sas_input):
+        parser.error("Early epidemic comparison requires both hivpy_input and sas_input.")
 
     try:
         # open config file and find graph output column names
@@ -354,21 +350,87 @@ def run_post():
         # create output directory if it doesn't exist, otherwise overwrite existing
         if not os.path.exists(os.path.join(args.output_dir, "graph_outputs", "model_comparison")):
             os.makedirs(os.path.join(args.output_dir, "graph_outputs", "model_comparison"))
-        # find output csv files in input directory and get grouped data from output files
-        out_files, grouped_avg = aggregate_data(args.hivpy_input, args.output_dir)
 
-        # read output files into dataframes
-        input_dfs = []
-        for f in out_files:
-            input_dfs.append(pd.read_csv(f, index_col=[0]))
-        # graph aggregate data vs individual runs
-        compare_avg_output(os.path.join(args.output_dir, "graph_outputs"), input_dfs, graph_out_columns, grouped_avg)
+        if args.hivpy_input and args.sas_input:
+            # get hivpy df
+            if os.path.isdir(args.hivpy_input):
+                out_files, _ = aggregate_data(args.hivpy_input, args.output_dir)
+                hivpy_df = pd.read_csv(out_files[0], index_col=[0])
+            elif os.path.isfile(args.hivpy_input):
+                hivpy_df = pd.read_csv(args.hivpy_input, index_col=[0])
+            # get sas df
+            if os.path.isdir(args.sas_input):
+                out_files, _ = aggregate_sas_data(args.sas_input, args.output_dir)
+                sas_df = pd.read_csv(out_files[0])
+            elif os.path.isfile(args.sas_input):
+                sas_df = read_s7b(str(args.sas_input))
+                # drop first row to remove unneeded nans
+                sas_df.drop(index=0, inplace=True)
 
-        # get grouped sas data
-        aggregate_sas_data(args.sas_input, args.output_dir)
-        sas_avg = pd.read_csv(os.path.join(args.output_dir, "aggregate_sas_data.csv"))
-        # early epidemic comparison
-        compare_early_epidemic_periods(input_dfs[0], sas_avg, args.output_dir)
+            # early epidemic comparison
+            if args.early_epidemic_comparison:
+                compare_early_epidemic_periods(hivpy_df, sas_df, args.output_dir)
+            # generic comparison
+            else:
+                hivpy_df["Date"] = pd.to_datetime(hivpy_df["Date"], format="(%Y, %m, %d)")
+                # FIXME: could use a full column name translation function here
+                sas_df.rename(columns={"cald": "Date"}, inplace=True)
+                sas_df["Date"] = format_sas_date(sas_df, "Date")
+                compare_output(os.path.join(args.output_dir, "graph_outputs", "model_comparison"),
+                               [hivpy_df, sas_df], graph_out_columns)
+
+        elif args.hivpy_input:
+            # graph with averages
+            if os.path.isdir(args.hivpy_input):
+                # find output csv files in input directory and get grouped data from output files
+                out_files, grouped_avg = aggregate_data(args.hivpy_input, args.output_dir)
+                # read output files into dataframes
+                # FIXME: just get this from aggregate data
+                input_dfs = []
+                for f in out_files:
+                    df = pd.read_csv(f, index_col=[0])
+                    df["Date"] = pd.to_datetime(df["Date"], format="(%Y, %m, %d)")
+                    input_dfs.append(df)
+                # graph aggregate data vs individual runs
+                compare_avg_output(os.path.join(args.output_dir, "graph_outputs"), input_dfs,
+                                   graph_out_columns, grouped_avg)
+            # single-run graph
+            elif os.path.isfile(args.hivpy_input):
+                hivpy_df = pd.read_csv(args.hivpy_input, index_col=[0])
+                hivpy_df["Date"] = pd.to_datetime(hivpy_df["Date"], format="(%Y, %m, %d)")
+                graph_output(os.path.join(args.output_dir, "graph_outputs"), hivpy_df, graph_out_columns)
+
+        elif args.sas_input:
+            # graph with averages
+            if os.path.isdir(args.sas_input):
+                # get grouped sas data
+                out_files, grouped_avg = aggregate_sas_data(args.sas_input, args.output_dir)
+                # read output files into dataframes
+                # FIXME: just get this from aggregate data
+                input_dfs = []
+                for f in out_files:
+                    if f == os.path.join(args.output_dir, "aggregate_sas_data.csv"):
+                        df = pd.read_csv(f)
+                    else:
+                        df = read_s7b(f)
+                        # drop first row to remove unneeded nans
+                        df.drop(index=0, inplace=True)
+                    # FIXME: could use a full column name translation function here
+                    df.rename(columns={"cald": "Date"}, inplace=True)
+                    df["Date"] = format_sas_date(df, "Date")
+                    input_dfs.append(df)
+                # graph aggregate data vs individual runs
+                compare_avg_output(os.path.join(args.output_dir, "graph_outputs"), input_dfs,
+                                   graph_out_columns, grouped_avg)
+            # single-run graph
+            elif os.path.isfile(args.sas_input):
+                sas_df = read_s7b(str(args.sas_input))
+                # drop first row to remove unneeded nans
+                sas_df.drop(index=0, inplace=True)
+                # FIXME: could use a full column name translation function here
+                sas_df.rename(columns={"cald": "Date"}, inplace=True)
+                sas_df["Date"] = format_sas_date(sas_df, "Date")
+                graph_output(os.path.join(args.output_dir, "graph_outputs"), sas_df, graph_out_columns)
 
     except yaml.YAMLError as err:
         print("Error parsing yaml file {}".format(err))

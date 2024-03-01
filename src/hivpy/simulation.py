@@ -4,6 +4,8 @@ import logging
 import os
 from datetime import datetime
 
+import pandas as pd
+
 from . import output
 from .config import SimulationConfig
 from .output import SimulationOutput
@@ -51,5 +53,7 @@ class SimulationHandler:
         if not os.path.exists(self.output_dir):
             os.makedirs(os.path.join(self.output_dir, "graph_outputs"))
         self.output.write_output(self.output_path)
+        self.output.output_stats["Date"] = pd.to_datetime(
+            self.output.output_stats["Date"], format="(%Y, %m, %d)")
         graph_output(os.path.join(self.output_dir, "graph_outputs"), self.output.output_stats,
                      self.simulation_config.graph_outputs)
