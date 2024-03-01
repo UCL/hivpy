@@ -1,4 +1,5 @@
 import argparse
+import math
 import os
 import pathlib
 import traceback
@@ -231,6 +232,102 @@ def aggregate_sas_data(in_path, out_path):
     return out_files, idx_group
 
 
+def compare_early_epidemic_periods(hivpy_avg, sas_avg, output_dir):
+    """
+    Plot comparison graphs of early epidemic periods between average HIVpy and SAS model runs.
+    """
+    # rename the SAS columns used for graphing
+    sas_avg.rename(columns={"cald": "Date",
+                            "s_alive1549": "Population (15-49)",
+                            "s_alive1549_m": "Population (15-49, male)",
+                            "s_alive1549_w": "Population (15-49, female)",
+                            "s_dead_all": "Deaths (tot)",
+                            "m15r": "Partner sex balance (15-24, male)",
+                            "w15r": "Partner sex balance (15-24, female)",
+                            "m25r": "Partner sex balance (25-34, male)",
+                            "w25r": "Partner sex balance (25-34, female)",
+                            "m35r": "Partner sex balance (35-44, male)",
+                            "w35r": "Partner sex balance (35-44, female)"}, inplace=True)
+
+    # format date
+    hivpy_avg["Date"] = pd.to_datetime(hivpy_avg["Date"], format="(%Y, %m, %d)")
+    sas_avg["Date"] = format_sas_date(sas_avg, "Date")
+
+    start_date = 1989
+    end_date = 1996
+    # drop all rows not in the early epidemic date range of 1989-1995
+    hivpy_avg.drop(hivpy_avg[hivpy_avg["Date"] < pd.to_datetime(start_date, format="%Y")].index, inplace=True)
+    hivpy_avg.drop(hivpy_avg[(hivpy_avg["Date"] >= pd.to_datetime(end_date, format="%Y"))].index, inplace=True)
+    sas_avg.drop(sas_avg[sas_avg["Date"] < pd.to_datetime(start_date, format="%Y")].index, inplace=True)
+    sas_avg.drop(sas_avg[(sas_avg["Date"] >= pd.to_datetime(end_date, format="%Y"))].index, inplace=True)
+
+    # calculate additional SAS outputs
+    # total deaths by sex and age bracket
+    sas_avg["Deaths (15-24, male)"] = sas_avg["s_dead1519m_all"].values + sas_avg["s_dead2024m_all"].values
+    sas_avg["Deaths (15-24, female)"] = sas_avg["s_dead1519w_all"].values + sas_avg["s_dead2024w_all"].values
+    sas_avg["Deaths (25-34, male)"] = sas_avg["s_dead2529m_all"].values + sas_avg["s_dead3034m_all"].values
+    sas_avg["Deaths (25-34, female)"] = sas_avg["s_dead2529w_all"].values + sas_avg["s_dead3034w_all"].values
+    sas_avg["Deaths (35-44, male)"] = sas_avg["s_dead3539m_all"].values + sas_avg["s_dead4044m_all"].values
+    sas_avg["Deaths (35-44, female)"] = sas_avg["s_dead3539w_all"].values + sas_avg["s_dead4044w_all"].values
+    sas_avg["Deaths (45-54, male)"] = sas_avg["s_dead4549m_all"].values + sas_avg["s_dead5054m_all"].values
+    sas_avg["Deaths (45-54, female)"] = sas_avg["s_dead4549w_all"].values + sas_avg["s_dead5054w_all"].values
+
+    # non-HIV deaths by age bracket
+    sas_avg["Non-HIV deaths (15-24)"] = (sas_avg["Deaths (15-24, male)"].values +
+                                         sas_avg["Deaths (15-24, female)"].values -
+                                         sas_avg["s_death_hiv_age_1524"].values)
+    sas_avg["Non-HIV deaths (25-34)"] = (sas_avg["Deaths (25-34, male)"].values +
+                                         sas_avg["Deaths (25-34, female)"].values -
+                                         sas_avg["s_death_hiv_age_2534"].values)
+    sas_avg["Non-HIV deaths (35-44)"] = (sas_avg["Deaths (35-44, male)"].values +
+                                         sas_avg["Deaths (35-44, female)"].values -
+                                         sas_avg["s_death_hiv_age_3544"].values)
+    sas_avg["Non-HIV deaths (45-54)"] = (sas_avg["Deaths (45-54, male)"].values +
+                                         sas_avg["Deaths (45-54, female)"].values -
+                                         sas_avg["s_death_hiv_age_4554"].values)
+
+    # total non-HIV deaths and death rate
+    sas_avg["Non-HIV deaths (tot)"] = sas_avg["Deaths (tot)"].values - sas_avg["s_death_hiv"].values
+    sas_avg["Non-HIV deaths (ratio)"] = (sas_avg["Non-HIV deaths (tot)"].values /
+                                         (sas_avg["s_alive_m"].values + sas_avg["s_alive_w"].values))
+
+    # stp ratios
+    sas_avg["At least 1 short term partner (ratio)"] = (sas_avg["s_newp_ge1"].values /
+                                                        (sas_avg["s_alive_m"].values +
+                                                         sas_avg["s_alive_w"].values))
+    sas_avg["Short term partners (15-49, male)"] = ((sas_avg["s_m_1524_newp"].values +
+                                                     sas_avg["s_m_2534_newp"].values +
+                                                     sas_avg["s_m_3544_newp"].values) /
+                                                    sas_avg["Population (15-49, male)"].values)
+    sas_avg["Short term partners (15-49, female)"] = ((sas_avg["s_w_1524_newp"].values +
+                                                       sas_avg["s_w_2534_newp"].values +
+                                                       sas_avg["s_w_3544_newp"].values) /
+                                                      sas_avg["Population (15-49, female)"].values)
+
+    # log sex balance
+    for balance_col in ["Partner sex balance (15-24, male)", "Partner sex balance (15-24, female)",
+                        "Partner sex balance (25-34, male)", "Partner sex balance (25-34, female)",
+                        "Partner sex balance (35-44, male)", "Partner sex balance (35-44, female)"]:
+        sas_avg[balance_col] = sas_avg[balance_col].map(lambda x: math.log(x, 10) if x > 0 else None)
+
+    # plot population comparison
+    compare_output(os.path.join(output_dir, "graph_outputs", "model_comparison"),
+                   [hivpy_avg, sas_avg], ["Population (15-49)", "Population (15-49, male)",
+                                          "Population (15-49, female)", "Deaths (tot)",
+                                          "Non-HIV deaths (15-24)", "Non-HIV deaths (25-34)",
+                                          "Non-HIV deaths (35-44)", "Non-HIV deaths (45-54)",
+                                          "Non-HIV deaths (tot)", "Non-HIV deaths (ratio)",
+                                          "At least 1 short term partner (ratio)",
+                                          "Short term partners (15-49, male)",
+                                          "Short term partners (15-49, female)",
+                                          "Partner sex balance (15-24, male)",
+                                          "Partner sex balance (15-24, female)",
+                                          "Partner sex balance (25-34, male)",
+                                          "Partner sex balance (25-34, female)",
+                                          "Partner sex balance (35-44, male)",
+                                          "Partner sex balance (35-44, female)"])
+
+
 def run_post():
     """
     Run post-processing on a HIV model simulation output.
@@ -238,9 +335,15 @@ def run_post():
     # argument management
     parser = argparse.ArgumentParser(description="run post-processing")
     parser.add_argument("config", type=pathlib.Path, help="config containing graph outputs")
-    parser.add_argument("input_dir", type=pathlib.Path, help="input directory with csv files to plot")
     parser.add_argument("output_dir", type=pathlib.Path, help="output directory to save graphs")
+    parser.add_argument("-hi", "--hivpy_input",
+                        type=pathlib.Path, help="input directory with csv files to plot")
+    parser.add_argument("-si", "--sas_input",
+                        type=pathlib.Path, help="input directory with sas7bdat files to plot")
+
     args = parser.parse_args()
+    if not (args.hivpy_input or args.sas_input):
+        parser.error("No input provided, please add hivpy_input and sas_input.")
 
     try:
         # open config file and find graph output column names
@@ -249,10 +352,10 @@ def run_post():
         graph_out_columns = config["EXPERIMENT"]["graph_outputs"]
 
         # create output directory if it doesn't exist, otherwise overwrite existing
-        if not os.path.exists(args.output_dir):
-            os.makedirs(os.path.join(args.output_dir, "graph_outputs"))
+        if not os.path.exists(os.path.join(args.output_dir, "graph_outputs", "model_comparison")):
+            os.makedirs(os.path.join(args.output_dir, "graph_outputs", "model_comparison"))
         # find output csv files in input directory and get grouped data from output files
-        out_files, grouped_avg = aggregate_data(args.input_dir, args.output_dir)
+        out_files, grouped_avg = aggregate_data(args.hivpy_input, args.output_dir)
 
         # read output files into dataframes
         input_dfs = []
@@ -260,6 +363,12 @@ def run_post():
             input_dfs.append(pd.read_csv(f, index_col=[0]))
         # graph aggregate data vs individual runs
         compare_avg_output(os.path.join(args.output_dir, "graph_outputs"), input_dfs, graph_out_columns, grouped_avg)
+
+        # get grouped sas data
+        aggregate_sas_data(args.sas_input, args.output_dir)
+        sas_avg = pd.read_csv(os.path.join(args.output_dir, "aggregate_sas_data.csv"))
+        # early epidemic comparison
+        compare_early_epidemic_periods(input_dfs[0], sas_avg, args.output_dir)
 
     except yaml.YAMLError as err:
         print("Error parsing yaml file {}".format(err))
