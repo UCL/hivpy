@@ -45,7 +45,10 @@ class SimulationOutput:
                           "Infected by long term partner", "Infected by short term partner",
                           "Infected by primary infection", "CD4 count (under 200)",
                           "CD4 count (200-500)", "CD4 count (over 500)",
-                          "Population (over 15)", "Long term partner (15-64)",
+                          "Population (over 15)", "Population (15-49)", "Population (15-49, male)",
+                          "Population (15-49, female)",  "Long term partner (15-64)",
+                          "At least 1 short term partner (ratio)",
+                          "Short term partners (15-49, male)", "Short term partners (15-49, female)",
                           "Short term partners (15-64)", "Over 5 short term partners (15-64)",
                           "Partner sex balance (male)", "Partner sex balance (female)",
                           "Sex worker (ratio)", "Births (ratio)", "Infected newborns (ratio)",
@@ -54,8 +57,9 @@ class SimulationOutput:
                           "Births (tot)", "Deaths (tot)", "Deaths (over 15, male)",
                           "Deaths (over 15, female)", "Deaths (20-59, male)", "Deaths (20-59, female)",
                           "HIV deaths (tot)", "HIV deaths (over 15, male)",
-                          "HIV deaths (over 15, female)", "HIV deaths (20-59, male)", "HIV deaths (20-59, female)",
-                          "Non-HIV deaths (tot)", "Non-HIV deaths (over 15, male)",
+                          "HIV deaths (over 15, female)", "HIV deaths (20-59, male)",
+                          "HIV deaths (20-59, female)", "Non-HIV deaths (tot)",
+                          "Non-HIV deaths (ratio)", "Non-HIV deaths (over 15, male)",
                           "Non-HIV deaths (over 15, female)", "Non-HIV deaths (20-59, male)",
                           "Non-HIV deaths (20-59, female)"]
 
@@ -63,10 +67,12 @@ class SimulationOutput:
             if age_bound < self.age_max_active:
                 # inserted after 'Partner sex balance (female)'
                 key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
-                output_columns.insert(14+int(age_bound/10)*6, key)
+                output_columns.insert(20+int(age_bound/10)*6, key)
                 # inserted after 'Partner sex balance (male)'
                 key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, male)"
-                output_columns.insert(14+int(age_bound/10)*5, key)
+                output_columns.insert(20+int(age_bound/10)*5, key)
+                key = f"Non-HIV deaths ({age_bound}-{age_bound+(self.age_step-1)})"
+                output_columns.append(key)
             # inserted after 'Population (over 15)' column
             key = f"Population ({age_bound}-{age_bound+(self.age_step-1)})"
             output_columns.insert(11+int(age_bound/10)*4, key)
@@ -112,13 +118,21 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "HIV prevalence (tot)"] = self._ratio(HIV_pos_idx, over_15_idx)
         self.output_stats.loc[self.step, "HIV infections (tot)"] = len(HIV_pos_idx)
         self.output_stats.loc[self.step, "Population (over 15)"] = len(over_15_idx)
+        idx_15_to_49 = pop.get_sub_pop_intersection(over_15_idx, pop.get_sub_pop([(col.AGE, operator.lt, 50)]))
+        self.output_stats.loc[self.step, "Population (15-49)"] = len(idx_15_to_49)
+
+        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+        # Update population by sex
+        self.output_stats.loc[self.step, "Population (15-49, male)"] = len(
+            pop.get_sub_pop_intersection(men_idx, idx_15_to_49))
+        self.output_stats.loc[self.step, "Population (15-49, female)"] = len(
+            pop.get_sub_pop_intersection(women_idx, idx_15_to_49))
 
         # Update HIV prevalence by sex
-        men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         self.output_stats.loc[self.step, "HIV prevalence (male)"] = (
             self._ratio(pop.get_sub_pop_intersection(men_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(men_idx, over_15_idx)))
-        women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
         self.output_stats.loc[self.step, "HIV prevalence (female)"] = (
             self._ratio(pop.get_sub_pop_intersection(women_idx, HIV_pos_idx),
                         pop.get_sub_pop_intersection(women_idx, over_15_idx)))
@@ -208,6 +222,27 @@ class SimulationOutput:
                                    (col.LONG_TERM_PARTNER, operator.eq, True)])
         self.output_stats.loc[self.step, "Long term partner (15-64)"] = self._ratio(ltp_idx, age_idx)
         # Update proportion of people with short term partners
+        self.output_stats.loc[self.step, "At least 1 short term partner (ratio)"] = self._ratio(
+            pop.get_sub_pop([(col.NUM_PARTNERS, operator.ge, 1)]),
+            pop.get_sub_pop([(col.AGE, operator.ge, 15)]))
+        self.output_stats.loc[self.step, "Short term partners (15-49, male)"] = self._ratio(
+            sum(pop.get_variable(col.NUM_PARTNERS,
+                                 pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                                  (col.AGE, operator.lt, 50),
+                                                  (col.NUM_PARTNERS, operator.ge, 1),
+                                                  (col.SEX, operator.eq, SexType.Male)]))),
+            pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                             (col.AGE, operator.lt, 50),
+                             (col.SEX, operator.eq, SexType.Male)]))
+        self.output_stats.loc[self.step, "Short term partners (15-49, female)"] = self._ratio(
+            sum(pop.get_variable(col.NUM_PARTNERS,
+                                 pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                                  (col.AGE, operator.lt, 50),
+                                                  (col.NUM_PARTNERS, operator.ge, 1),
+                                                  (col.SEX, operator.eq, SexType.Female)]))),
+            pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                             (col.AGE, operator.lt, 50),
+                             (col.SEX, operator.eq, SexType.Female)]))
         stp_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
                                    (col.AGE, operator.lt, 65),
                                    (col.NUM_PARTNERS, operator.ge, 1)])
@@ -317,6 +352,8 @@ class SimulationOutput:
     def record_non_HIV_deaths(self, pop: Population, deaths: pd.Series):
         # Update total deaths
         self.output_stats.loc[self.step, "Non-HIV deaths (tot)"] = sum(deaths)
+        self.output_stats.loc[self.step, "Non-HIV deaths (ratio)"] = self._ratio(
+            sum(deaths), pop.get_sub_pop([(col.AGE, operator.ge, 0.25)]))
         died_this_step = deaths[deaths].index   # indices of all the people for whom death is true
 
         # Update deaths by sex and age
@@ -338,6 +375,14 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "Non-HIV deaths (20-59, female)"] = (
             len(pop.get_sub_pop_intersection(pop.get_sub_pop_intersection(women_idx, aged_20_to_59_idx),
                                              died_this_step)))
+
+        for age_bound in range(self.age_min, self.age_max, self.age_step):
+            if age_bound < self.age_max_active:
+                age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
+                                           (col.AGE, operator.lt, age_bound+self.age_step)])
+                key = f"Non-HIV deaths ({age_bound}-{age_bound+(self.age_step-1)})"
+                self.output_stats.loc[self.step, key] = (
+                    len(pop.get_sub_pop_intersection(age_idx, died_this_step)))
 
         # Update death totals; could just do this at the end rather than every time step!
         for s in ["(tot)", "(over 15, male)", "(over 15, female)", "(20-59, male)", "(20-59, female)"]:
