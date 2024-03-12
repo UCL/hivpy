@@ -1,4 +1,5 @@
 import importlib.resources
+import itertools
 import operator
 
 import numpy as np
@@ -424,13 +425,45 @@ def test_risk_age():
     expected_risk_male, expected_risk_female = pop.sexual_behaviour.age_based_risk.T
     assert np.allclose(risk_factors[1:11], expected_risk_male)
     assert np.allclose(risk_factors[12:22], expected_risk_female)
-    dt = timedelta(days=90)
-    for i in range(20):
-        pop.evolve(dt)
-    risk_factors = np.array(pop.data[col.RISK_AGE])
-    expected_risk_male = np.append(expected_risk_male, expected_risk_male[-1])
-    expected_risk_female = np.append(expected_risk_female, expected_risk_female[-1])
-    assert np.allclose(risk_factors, np.append(expected_risk_male, expected_risk_female))
+
+
+def test_age_sex_balance():
+    N = 200
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    prior_age_factors = pop.sexual_behaviour.age_based_risk.copy()
+    pop.sexual_behaviour.update_sex_age_balance(pop)
+    for sex in [SexType.Male, SexType.Female]:
+        partners_of_men = pop.get_variable(col.STP_AGE_GROUPS,
+                                           pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)]))
+        partners_of_women = pop.get_variable(col.STP_AGE_GROUPS,
+                                             pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)]))
+
+        def get_partners_in_groups(partners_of_group):
+            a, f = np.unique(list(itertools.chain.from_iterable(partners_of_group)), return_counts=True)
+            return dict(zip(a, f))
+
+        female_partners_in_groups = get_partners_in_groups(partners_of_men)
+        male_partners_in_groups = get_partners_in_groups(partners_of_women)
+        partners_in_groups = {SexType.Male: male_partners_in_groups,
+                              SexType.Female: female_partners_in_groups}
+        for i in range(5):
+            age_min = 15 + 10 * i
+            age_max = age_min + 10
+            group_subpop = pop.get_sub_pop([(col.SEX, operator.eq, sex),
+                                            (col.AGE, operator.ge, age_min),
+                                            (col.AGE, operator.lt, age_max)])
+            num_partners_of_group = sum(pop.get_variable(col.NUM_PARTNERS, group_subpop))
+            num_partners_in_group = partners_in_groups[sex].get(i)
+            if (num_partners_in_group is None):
+                num_partners_in_group = 0
+            if (num_partners_of_group == 0):
+                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex])
+                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex])
+            else:
+                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex] *
+                        num_partners_in_group / num_partners_of_group)
+                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex] *
+                        num_partners_in_group / num_partners_of_group)
 
 
 # Test long term partnerships

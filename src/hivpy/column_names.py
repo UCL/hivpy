@@ -8,10 +8,10 @@ AGE_GROUP = "age_group"                         # int: discrete age grouping bas
 LTP_AGE_GROUP = "ltp_age_group"                 # int: discrete age group for starting / longevity of ltp
 
 RISK = "risk"                                   # float: overall risk value from combined factors
-RISK_AGE = "risk_age"                           # float: risk reduction factor based on age
-RISK_ADC = "risk_adc"                           # float: risk reduction for AIDS defining condition
-RISK_BALANCE = "risk_balance"                   # float: risk reduction factor to re-balance male & female partner numbers
-RISK_DIAGNOSIS = "risk_diagnosis"               # float: risk reduction associated with recent HIV diagnosis
+RISK_AGE = "risk_age"                           # float: risk factor based on age
+RISK_ADC = "risk_adc"                           # float: risk for AIDS defining condition
+RISK_BALANCE = "risk_balance"                   # float: risk factor to re-balance male & female partner numbers
+RISK_DIAGNOSIS = "risk_diagnosis"               # float: risk associated with recent HIV diagnosis
 RISK_PERSONAL = "risk_personal"                 # float: individual risk reduction applied with a certain probability
 RISK_LTP = "risk_long_term_partnered"           # float: risk reduction for people in long term partnerships
 RISK_ART_ADHERENCE = "risk_art_adherence"       # float: risk reduction associated with low ART adherence
