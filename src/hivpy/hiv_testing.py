@@ -102,6 +102,41 @@ class HIVTestingModule:
                                              sub_pop=prev_tested_population)
                 self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
 
+    def calc_symptomatic_testing_outcomes(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1, size):
+        """
+        Uses the symptomatic test probability for a given group
+        of symptoms to select individuals marked to be tested.
+        """
+        prob_test = self.calc_symptomatic_prob_test(adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1)
+        # outcomes
+        r = rng.uniform(size=size)
+        marked = r < prob_test
+
+        return marked
+
+    def calc_symptomatic_prob_test(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1):
+        """
+        Calculates the probability of being tested for a group
+        with specific symptoms and returns it. Presence of
+        an AIDS defining condition (ADC; any WHO4) in the previous time step,
+        tuberculosis (TB) in the previous two time steps,
+        and a non-TB WHO3 disease in the previous time step
+        all affect groupings and test probability.
+        """
+        # assume asymptomatic by default
+        prob_test = 0
+        # presence of ADC last time step
+        if adc_tm1:
+            prob_test = self.prob_test_who4
+        # presence of TB last time step but not the time step before, no ADC last time step
+        elif tb_tm1 and not tb_tm2:
+            prob_test = self.prob_test_tb
+        # presence of a non-TB WHO3 disease last time step, no ADC or TB last time step
+        elif non_tb_who3_tm1 and not tb_tm1:
+            prob_test = self.prob_test_non_tb_who3
+
+        return prob_test
+
     def apply_test_outcomes_to_sub_pop(self, pop, tested, sub_pop):
         """
         Uses HIV testing outcomes for a given sub-population to
