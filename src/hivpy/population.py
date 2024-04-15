@@ -74,6 +74,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
+        self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)

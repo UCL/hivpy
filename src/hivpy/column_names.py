@@ -51,6 +51,7 @@ LIFE_SEX_RISK = "life_sex_risk"                 # int: value in (1, 2, 3) indica
 STI = "sti"                                     # bool: True if has sexually transmitted infection (non HIV), false o/w (TODO: DUMMIED)
 
 HARD_REACH = "hard_reach"                       # bool: True if person is reluctant to test for HIV (also affects PrEP and VMMC), but will still test if symptomatic or in antenatal care
+TEST_MARK = "test_mark"                         # bool: True if a person has been marked for testing this time step
 EVER_TESTED = "ever_tested"                     # bool: True if person has ever been tested for HIV
 LAST_TEST_DATE = "last_test_date"               # None | datetime.date: date of last HIV test
 NSTP_LAST_TEST = "nstp_last_test"               # int: number of short term condomless sex partners since last test (DUMMY)
