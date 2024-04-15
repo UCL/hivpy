@@ -102,6 +102,31 @@ class HIVTestingModule:
                                              sub_pop=prev_tested_population)
                 self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
 
+    def test_mark_symptomatic(self, pop):
+        """
+        Mark symptomatic individuals to undergo testing at a later stage.
+        """
+        # testing occurs after a certain year
+        if (pop.date.year >= self.date_start_testing):
+
+            # update symptomatic test probabilities
+            if pop.date.year <= 2015:
+                self.prob_test_who4 = min(0.9, self.prob_test_who4 * self.incr_test_rate_sympt)
+                self.prob_test_tb = min(0.8, self.prob_test_tb * self.incr_test_rate_sympt)
+                self.prob_test_non_tb_who3 = min(0.7, self.prob_test_non_tb_who3 * self.incr_test_rate_sympt)
+
+            # undiagnosed and untested population
+            not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
+                                                   (col.EVER_TESTED, op.eq, False)])
+            # mark symptomatic people for testing
+            marked = pop.transform_group([pop.get_variable(col.ADC, dt=1),
+                                          pop.get_variable(col.TB, dt=1), pop.get_variable(col.TB, dt=2),
+                                          pop.get_variable(col.NON_TB_WHO3, dt=1)],
+                                         self.calc_symptomatic_testing_outcomes,
+                                         sub_pop=not_diag_tested_pop)
+            # set outcomes
+            pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
+
     def calc_symptomatic_testing_outcomes(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1, size):
         """
         Uses the symptomatic test probability for a given group
