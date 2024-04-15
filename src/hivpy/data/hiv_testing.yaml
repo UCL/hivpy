@@ -24,6 +24,11 @@ prob_anc_test_trim3: 0.1
 # probability of being tested after delivery
 prob_test_postdel: 0.95
 
+# probability of being tested based on symptoms
+prob_test_who4: 0.1
+prob_test_tb: 0.1
+prob_test_non_tb_who3: 0.05
+
 # affects testing probability based on number of partners
 test_targeting:
   Value: [1, 1.25, 1.5]
@@ -38,3 +43,7 @@ date_test_rate_plateau:
 an_lin_incr_test:
   Value: [0.0001, 0.0005, 0.003, 0.01, 0.02, 0.03]
   Probability: [0.2, 0.25, 0.35, 0.1, 0.05, 0.05]
+
+# multiplier for symptomatic testing probability
+self.incr_test_rate_sympt:
+  Value: [1.05, 1.10, 1.15, 1.20, 1.25]

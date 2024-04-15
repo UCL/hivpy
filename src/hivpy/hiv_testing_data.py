@@ -24,9 +24,13 @@ class HIVTestingData(DataReader):
             self.prob_anc_test_trim3 = self.data["prob_anc_test_trim3"]
             self.prob_test_postdel = self.data["prob_test_postdel"]
 
+            self.prob_test_who4 = self.data["prob_test_who4"]
+            self.prob_test_tb = self.data["prob_test_tb"]
+            self.prob_test_non_tb_who3 = self.data["prob_test_non_tb_who3"]
             self.test_targeting = self._get_discrete_dist("test_targeting")
             self.date_test_rate_plateau = self._get_discrete_dist("date_test_rate_plateau")
             self.an_lin_incr_test = self._get_discrete_dist("an_lin_incr_test")
+            self.incr_test_rate_sympt = self._get_discrete_dist("incr_test_rate_sympt")
 
         except KeyError as ke:
             print(ke.args)

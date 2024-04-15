@@ -27,9 +27,13 @@ class HIVTestingModule:
         self.prob_anc_test_trim3 = self.ht_data.prob_anc_test_trim3
         self.prob_test_postdel = self.ht_data.prob_test_postdel
 
+        self.prob_test_who4 = self.ht_data.prob_test_who4
+        self.prob_test_tb = self.ht_data.prob_test_tb
+        self.prob_test_non_tb_who3 = self.ht_data.prob_test_non_tb_who3
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
+        self.incr_test_rate_sympt = self.ht_data.incr_test_rate_sympt.sample()
 
         # eff_max_freq_testing is used as an index to pick the correct
         # minimum number of days to wait between tests from this list
