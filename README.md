@@ -79,7 +79,7 @@ use the following command to install the package instead:
 pip install -e .[dev]
 ```
 This will install some additional libraries and tools for development, and also create an "editable" installation; this means that any changes you make will be applied automatically, without needing to reinstall the package.
-
+N.B. Depending on your shell interpreter you might need to use `.[dev]` inside quotes for the installation: ```pip install -e '.[dev]```
 ### Testing
 The package comes with unit tests. To run them, simply run
 `pytest` from the top level (this directory). The `pytest` package and command
