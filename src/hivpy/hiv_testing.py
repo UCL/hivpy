@@ -102,6 +102,36 @@ class HIVTestingModule:
                                              sub_pop=prev_tested_population)
                 self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
 
+    def test_mark_general_pop(self, pop):
+        """
+        Mark general population to undergo testing this time step.
+        """
+        # testing occurs after a certain year if there is no covid disruption
+        if ((pop.date.year >= self.date_start_testing)
+           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
+
+            # update testing probabilities
+            self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
+                                                                - self.date_start_testing) \
+                                                                * self.an_lin_incr_test
+            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
+                                  - self.date_start_testing) * self.an_lin_incr_test
+
+            # general population ready for testing
+            testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
+                                                  (col.AGE, op.ge, 15),
+                                                  (col.HIV_STATUS, op.eq, False),
+                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
+                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
+                                                   (col.LAST_TEST_DATE, op.eq, None)]])
+
+            if len(testing_population) > 0:
+                # mark people for testing
+                marked = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
+                                             self.calc_testing_outcomes, sub_pop=testing_population)
+                # set outcomes
+                pop.set_present_variable(col.TEST_MARK, marked, testing_population)
+
     def test_mark_non_hiv_symptomatic(self, pop):
         """
         Mark non-HIV symptomatic individuals to undergo testing this time step.
@@ -113,11 +143,13 @@ class HIVTestingModule:
             # undiagnosed (last time step) and untested population
             not_diag_tested_pop = pop.get_sub_pop([(pop.get_variable(col.HIV_DIAGNOSED, dt=1), op.eq, False),
                                                    (col.EVER_TESTED, op.eq, False)])
-            # mark people for testing
-            r = rng.uniform(size=len(not_diag_tested_pop))
-            marked = r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2
-            # set outcomes
-            pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
+
+            if len(not_diag_tested_pop) > 0:
+                # mark people for testing
+                r = rng.uniform(size=len(not_diag_tested_pop))
+                marked = r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2
+                # set outcomes
+                pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
     def test_mark_hiv_symptomatic(self, pop):
         """
@@ -135,14 +167,16 @@ class HIVTestingModule:
             # undiagnosed and untested population
             not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.EVER_TESTED, op.eq, False)])
-            # mark people for testing
-            marked = pop.transform_group([pop.get_variable(col.ADC, dt=1),
-                                          pop.get_variable(col.TB, dt=1), pop.get_variable(col.TB, dt=2),
-                                          pop.get_variable(col.NON_TB_WHO3, dt=1)],
-                                         self.calc_symptomatic_testing_outcomes,
-                                         sub_pop=not_diag_tested_pop)
-            # set outcomes
-            pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
+
+            if len(not_diag_tested_pop) > 0:
+                # mark people for testing
+                marked = pop.transform_group([pop.get_variable(col.ADC, dt=1),
+                                              pop.get_variable(col.TB, dt=1), pop.get_variable(col.TB, dt=2),
+                                              pop.get_variable(col.NON_TB_WHO3, dt=1)],
+                                             self.calc_symptomatic_testing_outcomes,
+                                             sub_pop=not_diag_tested_pop)
+                # set outcomes
+                pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
     def calc_symptomatic_testing_outcomes(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1, size):
         """
