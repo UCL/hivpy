@@ -102,9 +102,26 @@ class HIVTestingModule:
                                              sub_pop=prev_tested_population)
                 self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
 
-    def test_mark_symptomatic(self, pop):
+    def test_mark_non_hiv_symptomatic(self, pop):
         """
-        Mark symptomatic individuals to undergo testing at a later stage.
+        Mark non-HIV symptomatic individuals to undergo testing this time step.
+        """
+        # testing occurs after a certain year if there is no covid disruption
+        if ((pop.date.year >= self.date_start_testing)
+           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
+
+            # undiagnosed (last time step) and untested population
+            not_diag_tested_pop = pop.get_sub_pop([(pop.get_variable(col.HIV_DIAGNOSED, dt=1), op.eq, False),
+                                                   (col.EVER_TESTED, op.eq, False)])
+            # mark people for testing
+            r = rng.uniform(size=len(not_diag_tested_pop))
+            marked = r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2
+            # set outcomes
+            pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
+
+    def test_mark_hiv_symptomatic(self, pop):
+        """
+        Mark HIV symptomatic individuals to undergo testing this time step.
         """
         # testing occurs after a certain year
         if (pop.date.year >= self.date_start_testing):
@@ -118,7 +135,7 @@ class HIVTestingModule:
             # undiagnosed and untested population
             not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.EVER_TESTED, op.eq, False)])
-            # mark symptomatic people for testing
+            # mark people for testing
             marked = pop.transform_group([pop.get_variable(col.ADC, dt=1),
                                           pop.get_variable(col.TB, dt=1), pop.get_variable(col.TB, dt=2),
                                           pop.get_variable(col.NON_TB_WHO3, dt=1)],
