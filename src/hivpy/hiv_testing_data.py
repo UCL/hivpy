@@ -24,6 +24,7 @@ class HIVTestingData(DataReader):
             self.prob_anc_test_trim3 = self.data["prob_anc_test_trim3"]
             self.prob_test_postdel = self.data["prob_test_postdel"]
 
+            self.prob_test_non_hiv_symptoms = self.data["prob_test_non_hiv_symptoms"]
             self.prob_test_who4 = self.data["prob_test_who4"]
             self.prob_test_tb = self.data["prob_test_tb"]
             self.prob_test_non_tb_who3 = self.data["prob_test_non_tb_who3"]

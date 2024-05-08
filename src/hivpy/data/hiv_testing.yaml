@@ -25,6 +25,7 @@ prob_anc_test_trim3: 0.1
 prob_test_postdel: 0.95
 
 # probability of being tested based on symptoms
+prob_test_non_hiv_symptoms: 0.01
 prob_test_who4: 0.1
 prob_test_tb: 0.1
 prob_test_non_tb_who3: 0.05

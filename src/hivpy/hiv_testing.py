@@ -27,6 +27,7 @@ class HIVTestingModule:
         self.prob_anc_test_trim3 = self.ht_data.prob_anc_test_trim3
         self.prob_test_postdel = self.ht_data.prob_test_postdel
 
+        self.prob_test_non_hiv_symptoms = self.ht_data.prob_test_non_hiv_symptoms
         self.prob_test_who4 = self.ht_data.prob_test_who4
         self.prob_test_tb = self.ht_data.prob_test_tb
         self.prob_test_non_tb_who3 = self.ht_data.prob_test_non_tb_who3
@@ -113,7 +114,9 @@ class HIVTestingModule:
             if len(not_diag_tested_pop) > 0:
                 # mark people for testing
                 r = rng.uniform(size=len(not_diag_tested_pop))
-                marked = r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2
+                s = rng.uniform(size=len(not_diag_tested_pop))
+                marked = ((r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2) &
+                          (s < self.prob_test_non_hiv_symptoms))
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
