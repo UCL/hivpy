@@ -59,48 +59,14 @@ class HIVTestingModule:
         Update which individuals in the population have been tested.
         COVID disruption is factored in.
         """
-        # testing occurs after a certain year if there is no covid disruption
-        if ((pop.date.year >= self.date_start_testing)
-           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
+        # mark people for testing
+        self.test_mark_general_pop(pop)
+        self.test_mark_non_hiv_symptomatic(pop)
+        self.test_mark_hiv_symptomatic(pop)
 
-            # update testing probabilities
-            self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
-                                                                - self.date_start_testing) \
-                                                                * self.an_lin_incr_test
-            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
-                                  - self.date_start_testing) * self.an_lin_incr_test
-
-            # get population ready for testing
-            testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
-                                                  (col.AGE, op.ge, 15),
-                                                  (col.HIV_STATUS, op.eq, False),
-                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
-                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
-                                                   (col.LAST_TEST_DATE, op.eq, None)]
-                                                  ])
-
-            # first time testers
-            untested_population = pop.apply_bool_mask(~pop.get_variable(col.EVER_TESTED, testing_population),
-                                                      testing_population)
-            # repeat testers
-            prev_tested_population = pop.apply_bool_mask(pop.get_variable(col.EVER_TESTED, testing_population),
-                                                         testing_population)
-
-            if len(untested_population) > 0:
-                # test first time testers
-                tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
-                                             self.calc_testing_outcomes,
-                                             sub_pop=untested_population)
-                # set outcomes
-                pop.set_present_variable(col.EVER_TESTED, tested, untested_population)
-                self.apply_test_outcomes_to_sub_pop(pop, tested, untested_population)
-
-            if len(prev_tested_population) > 0:
-                # test repeat testers
-                tested = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
-                                             self.calc_testing_outcomes,
-                                             sub_pop=prev_tested_population)
-                self.apply_test_outcomes_to_sub_pop(pop, tested, prev_tested_population)
+        # apply testing to marked population
+        marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+        self.apply_test_outcomes_to_sub_pop(pop, True, marked_population)
 
     def test_mark_general_pop(self, pop):
         """
@@ -170,9 +136,8 @@ class HIVTestingModule:
 
             if len(not_diag_tested_pop) > 0:
                 # mark people for testing
-                marked = pop.transform_group([pop.get_variable(col.ADC, dt=1),
-                                              pop.get_variable(col.TB, dt=1), pop.get_variable(col.TB, dt=2),
-                                              pop.get_variable(col.NON_TB_WHO3, dt=1)],
+                marked = pop.transform_group([pop.get_variable(col.ADC, dt=1), pop.get_variable(col.TB, dt=1),
+                                              pop.get_variable(col.TB, dt=2), pop.get_variable(col.NON_TB_WHO3, dt=1)],
                                              self.calc_symptomatic_testing_outcomes,
                                              sub_pop=not_diag_tested_pop)
                 # set outcomes
@@ -218,6 +183,9 @@ class HIVTestingModule:
         Uses HIV testing outcomes for a given sub-population to
         set last test date and reset number of partners since last test.
         """
+        # set ever tested
+        pop.set_present_variable(col.EVER_TESTED, True,
+                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
         # set last test date
         pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
                                  sub_pop=pop.apply_bool_mask(tested, sub_pop))
@@ -225,6 +193,9 @@ class HIVTestingModule:
         pop.set_present_variable(col.NSTP_LAST_TEST, 0,
                                  sub_pop=pop.apply_bool_mask(tested, sub_pop))
         pop.set_present_variable(col.NP_LAST_TEST, 0,
+                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        # exhaust test marks
+        pop.set_present_variable(col.TEST_MARK, False,
                                  sub_pop=pop.apply_bool_mask(tested, sub_pop))
 
     def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
