@@ -67,7 +67,7 @@ class HIVTestingModule:
 
         # apply testing to marked population
         marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
-        self.apply_test_outcomes_to_sub_pop(pop, True, marked_population)
+        self.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
     def test_mark_general_pop(self, pop):
         """
@@ -90,7 +90,8 @@ class HIVTestingModule:
                                                   (col.HIV_STATUS, op.eq, False),
                                                   [(col.LAST_TEST_DATE, op.le, pop.date -
                                                     timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
-                                                   (col.LAST_TEST_DATE, op.eq, None)]])
+                                                   (col.LAST_TEST_DATE, op.eq, None)],
+                                                  (col.TEST_MARK, op.eq, False)])
 
             if len(testing_population) > 0:
                 # mark people for testing
@@ -108,8 +109,9 @@ class HIVTestingModule:
            & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
             # undiagnosed (last time step) and untested population
-            not_diag_tested_pop = pop.get_sub_pop([(pop.get_variable(col.HIV_DIAGNOSED, dt=1), op.eq, False),
-                                                   (col.EVER_TESTED, op.eq, False)])
+            not_diag_tested_pop = pop.get_sub_pop([(pop.get_correct_column(col.HIV_DIAGNOSED, dt=1), op.eq, False),
+                                                   (col.EVER_TESTED, op.eq, False),
+                                                   (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
                 # mark people for testing
@@ -135,12 +137,17 @@ class HIVTestingModule:
 
             # undiagnosed and untested population
             not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
-                                                   (col.EVER_TESTED, op.eq, False)])
+                                                   (col.EVER_TESTED, op.eq, False),
+                                                   (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
+                # FIXME: can we bypass the param_list = list(map(lambda x: self.get_correct_column(x), param_list))
+                # line in transform_group? this doesn't work with dt values other than 0
                 # mark people for testing
-                marked = pop.transform_group([pop.get_variable(col.ADC, dt=1), pop.get_variable(col.TB, dt=1),
-                                              pop.get_variable(col.TB, dt=2), pop.get_variable(col.NON_TB_WHO3, dt=1)],
+                marked = pop.transform_group([pop.get_correct_column(col.ADC, dt=1),
+                                              pop.get_correct_column(col.TB, dt=1),
+                                              pop.get_correct_column(col.TB, dt=2),
+                                              pop.get_correct_column(col.NON_TB_WHO3, dt=1)],
                                              self.calc_symptomatic_testing_outcomes,
                                              sub_pop=not_diag_tested_pop)
                 # set outcomes
@@ -181,25 +188,20 @@ class HIVTestingModule:
 
         return prob_test
 
-    def apply_test_outcomes_to_sub_pop(self, pop, tested, sub_pop):
+    def apply_test_outcomes_to_sub_pop(self, pop, sub_pop):
         """
-        Uses HIV testing outcomes for a given sub-population to
-        set last test date and reset number of partners since last test.
+        Sets HIV testing outcomes for a given sub-population
+        and resets number of partners since last test.
         """
         # set ever tested
-        pop.set_present_variable(col.EVER_TESTED, True,
-                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        pop.set_present_variable(col.EVER_TESTED, True, sub_pop)
         # set last test date
-        pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        pop.set_present_variable(col.LAST_TEST_DATE, pop.date, sub_pop)
         # "reset" dummy partner columns
-        pop.set_present_variable(col.NSTP_LAST_TEST, 0,
-                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
-        pop.set_present_variable(col.NP_LAST_TEST, 0,
-                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        pop.set_present_variable(col.NSTP_LAST_TEST, 0, sub_pop)
+        pop.set_present_variable(col.NP_LAST_TEST, 0, sub_pop)
         # exhaust test marks
-        pop.set_present_variable(col.TEST_MARK, False,
-                                 sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        pop.set_present_variable(col.TEST_MARK, False, sub_pop)
 
     def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
         """
