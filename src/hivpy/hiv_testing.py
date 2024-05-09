@@ -61,67 +61,15 @@ class HIVTestingModule:
         COVID disruption is factored in.
         """
         # mark people for testing
-        self.test_mark_general_pop(pop)
-        self.test_mark_non_hiv_symptomatic(pop)
+        # hiv symptomatic > non hiv symptomatic > vmmc > anc > self testing > general > prep
         self.test_mark_hiv_symptomatic(pop)
-        # FIXME: add anc + vmmc test marking here too
+        self.test_mark_non_hiv_symptomatic(pop)
+        # vmmc + anc
+        self.test_mark_general_pop(pop)
 
         # apply testing to marked population
         marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
         self.apply_test_outcomes_to_sub_pop(pop, marked_population)
-
-    def test_mark_general_pop(self, pop):
-        """
-        Mark general population to undergo testing this time step.
-        """
-        # testing occurs after a certain year if there is no covid disruption
-        if ((pop.date.year >= self.date_start_testing)
-           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
-
-            # update testing probabilities
-            self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
-                                                                - self.date_start_testing) \
-                                                                * self.an_lin_incr_test
-            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
-                                  - self.date_start_testing) * self.an_lin_incr_test
-
-            # general population ready for testing
-            testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
-                                                  (col.AGE, op.ge, 15),
-                                                  (col.HIV_STATUS, op.eq, False),
-                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
-                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
-                                                   (col.LAST_TEST_DATE, op.eq, None)],
-                                                  (col.TEST_MARK, op.eq, False)])
-
-            if len(testing_population) > 0:
-                # mark people for testing
-                marked = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
-                                             self.calc_testing_outcomes, sub_pop=testing_population)
-                # set outcomes
-                pop.set_present_variable(col.TEST_MARK, marked, testing_population)
-
-    def test_mark_non_hiv_symptomatic(self, pop):
-        """
-        Mark non-HIV symptomatic individuals to undergo testing this time step.
-        """
-        # testing occurs after a certain year if there is no covid disruption
-        if ((pop.date.year >= self.date_start_testing)
-           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
-
-            # undiagnosed (last time step) and untested population
-            not_diag_tested_pop = pop.get_sub_pop([(pop.get_correct_column(col.HIV_DIAGNOSED, dt=1), op.eq, False),
-                                                   (col.EVER_TESTED, op.eq, False),
-                                                   (col.TEST_MARK, op.eq, False)])
-
-            if len(not_diag_tested_pop) > 0:
-                # mark people for testing
-                r = rng.uniform(size=len(not_diag_tested_pop))
-                s = rng.uniform(size=len(not_diag_tested_pop))
-                marked = ((r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2) &
-                          (s < self.prob_test_non_hiv_symptoms))
-                # set outcomes
-                pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
     def test_mark_hiv_symptomatic(self, pop):
         """
@@ -187,30 +135,65 @@ class HIVTestingModule:
 
         return prob_test
 
-    def apply_test_outcomes_to_sub_pop(self, pop, sub_pop):
+    def test_mark_non_hiv_symptomatic(self, pop):
         """
-        Sets HIV testing outcomes for a given sub-population
-        and resets number of partners since last test.
+        Mark non-HIV symptomatic individuals to undergo testing this time step.
         """
-        # set ever tested
-        pop.set_present_variable(col.EVER_TESTED, True, sub_pop)
-        # set last test date
-        pop.set_present_variable(col.LAST_TEST_DATE, pop.date, sub_pop)
-        # "reset" dummy partner columns
-        pop.set_present_variable(col.NSTP_LAST_TEST, 0, sub_pop)
-        pop.set_present_variable(col.NP_LAST_TEST, 0, sub_pop)
-        # exhaust test marks
-        pop.set_present_variable(col.TEST_MARK, False, sub_pop)
+        # testing occurs after a certain year if there is no covid disruption
+        if ((pop.date.year >= self.date_start_testing)
+           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
-    def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
+            # undiagnosed (last time step) and untested population
+            not_diag_tested_pop = pop.get_sub_pop([(pop.get_correct_column(col.HIV_DIAGNOSED, dt=1), op.eq, False),
+                                                   (col.EVER_TESTED, op.eq, False),
+                                                   (col.TEST_MARK, op.eq, False)])
+
+            if len(not_diag_tested_pop) > 0:
+                # mark people for testing
+                r = rng.uniform(size=len(not_diag_tested_pop))
+                s = rng.uniform(size=len(not_diag_tested_pop))
+                marked = ((r < (self.prob_test_non_tb_who3 + self.prob_test_who4)/2) &
+                          (s < self.prob_test_non_hiv_symptoms))
+                # set outcomes
+                pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
+
+    # FIXME: perhaps this should be in the circumcision module
+    def update_vmmc_after_test(self, pop, time_step):
         """
-        Update the last test date of a sub-population based on a given probability.
+        Update VMMC in individuals that tested HIV negative last time step.
         """
-        if len(sub_pop) > 0:
-            r = rng.uniform(size=len(sub_pop))
-            tested = r < prob_test
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                     sub_pop=pop.apply_bool_mask(tested, sub_pop))
+        if pop.circumcision.circ_after_test:
+            # select uncircumcised men tested last timestep
+            tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                      (col.CIRCUMCISED, op.eq, False),
+                                                      (col.HIV_DIAGNOSED, op.eq, False),
+                                                      (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
+                                                      (col.HARD_REACH, op.eq, False),
+                                                      (col.AGE, op.le, pop.circumcision.max_vmmc_age)])
+            # continue if eligible men are present this timestep
+            if len(tested_uncirc_male_pop) > 0:
+                # calculate post-test vmmc outcomes
+                r = rng.uniform(size=len(tested_uncirc_male_pop))
+                circumcision = r < pop.circumcision.prob_circ_after_test
+                # assign outcomes
+                pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
+                pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
+
+    def update_post_vmmc_testing(self, pop):
+        """
+        Update HIV testing status after VMMC.
+        """
+        # those that just got circumcised and weren't tested last time step get tested now
+        just_tested = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                          OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
+                                             COND(col.LAST_TEST_DATE, op.eq, None))))
+        # correctly set up related columns
+        if len(just_tested) > 0:
+            pop.set_present_variable(col.EVER_TESTED, True, just_tested)
+            pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
+            # "reset" dummy partner columns
+            pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
+            pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
 
     def update_anc_hiv_testing(self, pop, time_step):
         """
@@ -260,42 +243,59 @@ class HIVTestingModule:
                 pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
                 pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
 
-    def update_vmmc_after_test(self, pop, time_step):
+    # FIXME: this function should likely be retired
+    def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
         """
-        Update VMMC in individuals that tested HIV negative last time step.
+        Update the last test date of a sub-population based on a given probability.
         """
-        if pop.circumcision.circ_after_test:
-            # select uncircumcised men tested last timestep
-            tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                                                      (col.CIRCUMCISED, op.eq, False),
-                                                      (col.HIV_DIAGNOSED, op.eq, False),
-                                                      (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
-                                                      (col.HARD_REACH, op.eq, False),
-                                                      (col.AGE, op.le, pop.circumcision.max_vmmc_age)])
-            # continue if eligible men are present this timestep
-            if len(tested_uncirc_male_pop) > 0:
-                # calculate post-test vmmc outcomes
-                r = rng.uniform(size=len(tested_uncirc_male_pop))
-                circumcision = r < pop.circumcision.prob_circ_after_test
-                # assign outcomes
-                pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
-                pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
+        if len(sub_pop) > 0:
+            r = rng.uniform(size=len(sub_pop))
+            tested = r < prob_test
+            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(tested, sub_pop))
 
-    def update_post_vmmc_testing(self, pop):
+    def test_mark_general_pop(self, pop):
         """
-        Update HIV testing status after VMMC.
+        Mark general population to undergo testing this time step.
         """
-        # those that just got circumcised and weren't tested last time step get tested now
-        just_tested = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                          OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
-                                             COND(col.LAST_TEST_DATE, op.eq, None))))
-        # correctly set up related columns
-        if len(just_tested) > 0:
-            pop.set_present_variable(col.EVER_TESTED, True, just_tested)
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
-            # "reset" dummy partner columns
-            pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
-            pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
+        # testing occurs after a certain year if there is no covid disruption
+        if ((pop.date.year >= self.date_start_testing)
+           & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
+
+            # update testing probabilities
+            self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
+                                                                - self.date_start_testing) \
+                                                                * self.an_lin_incr_test
+            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
+                                  - self.date_start_testing) * self.an_lin_incr_test
+
+            # general population ready for testing
+            testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
+                                                  (col.AGE, op.ge, 15),
+                                                  (col.HIV_STATUS, op.eq, False),
+                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
+                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
+                                                   (col.LAST_TEST_DATE, op.eq, None)],
+                                                  (col.TEST_MARK, op.eq, False)])
+
+            if len(testing_population) > 0:
+                # mark people for testing
+                marked = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
+                                             self.calc_testing_outcomes, sub_pop=testing_population)
+                # set outcomes
+                pop.set_present_variable(col.TEST_MARK, marked, testing_population)
+
+    def calc_testing_outcomes(self, repeat_tester, np_last_test, nstp_last_test, size):
+        """
+        Uses the HIV test probability for either
+        first-time or repeat testers to return testing outcomes.
+        """
+        prob_test = self.calc_prob_test(repeat_tester, np_last_test, nstp_last_test)
+        # outcomes
+        r = rng.uniform(size=size)
+        tested = r < prob_test
+
+        return tested
 
     def calc_prob_test(self, repeat_tester, np_last_test, nstp_last_test):
         """
@@ -322,14 +322,17 @@ class HIVTestingModule:
 
         return min(prob_test, 1)
 
-    def calc_testing_outcomes(self, repeat_tester, np_last_test, nstp_last_test, size):
+    def apply_test_outcomes_to_sub_pop(self, pop, sub_pop):
         """
-        Uses the HIV test probability for either
-        first-time or repeat testers to return testing outcomes.
+        Sets HIV testing outcomes for a given sub-population
+        and resets number of partners since last test.
         """
-        prob_test = self.calc_prob_test(repeat_tester, np_last_test, nstp_last_test)
-        # outcomes
-        r = rng.uniform(size=size)
-        tested = r < prob_test
-
-        return tested
+        # set ever tested
+        pop.set_present_variable(col.EVER_TESTED, True, sub_pop)
+        # set last test date
+        pop.set_present_variable(col.LAST_TEST_DATE, pop.date, sub_pop)
+        # "reset" dummy partner columns
+        pop.set_present_variable(col.NSTP_LAST_TEST, 0, sub_pop)
+        pop.set_present_variable(col.NP_LAST_TEST, 0, sub_pop)
+        # exhaust test marks
+        pop.set_present_variable(col.TEST_MARK, False, sub_pop)
