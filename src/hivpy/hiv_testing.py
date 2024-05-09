@@ -64,6 +64,7 @@ class HIVTestingModule:
         self.test_mark_general_pop(pop)
         self.test_mark_non_hiv_symptomatic(pop)
         self.test_mark_hiv_symptomatic(pop)
+        # FIXME: add anc + vmmc test marking here too
 
         # apply testing to marked population
         marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
@@ -141,8 +142,6 @@ class HIVTestingModule:
                                                    (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
-                # FIXME: can we bypass the param_list = list(map(lambda x: self.get_correct_column(x), param_list))
-                # line in transform_group? this doesn't work with dt values other than 0
                 # mark people for testing
                 marked = pop.transform_group([pop.get_correct_column(col.ADC, dt=1),
                                               pop.get_correct_column(col.TB, dt=1),

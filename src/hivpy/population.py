@@ -241,9 +241,6 @@ class Population:
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
         by `data.loc[sub_pop]`.
         """
-        # Use Dummy column to in order to enable transform method and avoid any risks to data
-        param_list = list(map(lambda x: self.get_correct_column(x), param_list))
-
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
@@ -258,6 +255,7 @@ class Population:
             df = self.data.loc[sub_pop]
         else:
             df = self.data
+        # Use Dummy column to in order to enable transform method and avoid any risks to data
         return df.groupby(param_list)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: timedelta):
