@@ -317,15 +317,12 @@ class SexualBehaviourModule:
         transition_matrix = self.sex_behaviour_trans[sex_class]
 
         denominator = transition_matrix[i][0] + risk*sum(transition_matrix[i][1:])
-        # warnings.filterwarnings("error")
-        # try:
+
         if (j == 0):
             Probability = transition_matrix[i][0] / denominator
         else:
             Probability = risk*transition_matrix[i][j] / denominator
-        # except RuntimeWarning:
-        #     breakpoint()
-        # warnings.resetwarnings()
+
         return Probability
 
     def get_partners_for_group(self, sex_class, group, size):
