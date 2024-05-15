@@ -256,17 +256,18 @@ class SimulationOutput:
                                    (col.AGE, operator.lt, 65),
                                    (col.NUM_PARTNERS, operator.ge, 1)])
         self.output_stats.loc[self.step, "Short term partners (15-64)"] = self._ratio(stp_idx, age_idx)
+
+        # Proportion of people with at least one short term partner
         for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
-            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = self._ratio(pop.get_sub_pop([(col.AGE, operator.ge, age),
-                                                                                                                           (col.AGE, operator.lt, age+10),
-                                                                                                                           (col.SEX, operator.eq, sex),
-                                                                                                                           (col.NUM_PARTNERS, operator.ge, 1)]),
-                                                                                                          pop.get_sub_pop([(col.AGE, operator.ge, age),
-                                                                                                                           (col.AGE, operator.lt, age+10),
-                                                                                                                           (col.SEX, operator.eq, sex)]))
-            # self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = sum(pop.get_variable(col.NUM_PARTNERS, pop.get_sub_pop([(col.AGE, operator.ge, age),
-            #                                                                                                                                           (col.AGE, operator.lt, age+10),
-            #                                                                                                                                           (col.SEX, operator.eq, sex)])))
+            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = \
+                self._ratio(pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                             (col.AGE, operator.lt, age+10),
+                                             (col.SEX, operator.eq, sex),
+                                             (col.NUM_PARTNERS, operator.ge, 1)]),
+                            pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                             (col.AGE, operator.lt, age+10),
+                                             (col.SEX, operator.eq, sex)]))
+
         # Update proportion of people with 5+ short term partners
         stp_over_5_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
                                           (col.AGE, operator.lt, 65),
@@ -316,7 +317,6 @@ class SimulationOutput:
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             # Count occurrences of current age group
-            #men_stp_num = men_stp_age_list.count(age_group)
             n_female_stp = female_stp_in_age_groups.get(age_group)
             if n_female_stp is None:
                 n_female_stp = 0

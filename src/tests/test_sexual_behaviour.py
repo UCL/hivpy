@@ -672,7 +672,7 @@ def test_sex_balancing_effect():
                     ratio = (sb_module.num_stp_in_age_sex_group[a][s] /
                              sb_module.num_stp_of_age_sex_group[a][s])
                 balance[a][s][i] = np.log(ratio)
-                
+
     for a in range(5):
         for s in range(2):
             assert np.abs(np.mean(balance[a][s])) < 0.2
