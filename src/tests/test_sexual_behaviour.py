@@ -630,11 +630,11 @@ def test_sex_balancing_calculation():
     # Check that the numbers of partners in / of a group are calculated correctly
     sb_module.assign_stp_ages(pop)
 
-    assert(sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N/4))
-    assert(sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N/4)))
+    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N/4))
+    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N/4)))
 
-    assert(sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N/4)))
-    assert(sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N/4))
+    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N/4)))
+    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N/4))
 
     # Check that the risk factor updates correctly in response
     # Fix the risk factor to a known value first and then run the update
@@ -644,6 +644,7 @@ def test_sex_balancing_calculation():
 
     assert np.isclose(sb_module.age_based_risk[3][0], 1/3, atol=1e-4)
     assert np.isclose(sb_module.age_based_risk[3][1], 3, atol=1e-4)
+
 
 def test_sex_balancing_effect():
     # Run repeated timesteps of sexual behaviour
@@ -656,13 +657,14 @@ def test_sex_balancing_effect():
     balance = np.zeros((5, 2, 100))
 
     # balance is 5 age groups 15-24, 25-34, 35-44, 45-64, 55-64
-    # we'll run for 100 time steps 
+    # we'll run for 100 time steps
     for i in range(100):
         sb_module.update_sex_behaviour(pop)
         for a in range(5):
             for s in range(2):
-                balance[a][s][i] = np.log(sb_module.num_stp_in_age_sex_group[a][s] / sb_module.num_stp_of_age_sex_group[a][s])
-    
+                balance[a][s][i] = np.log(sb_module.num_stp_in_age_sex_group[a][s] /
+                                          sb_module.num_stp_of_age_sex_group[a][s])
+
     for a in range(5):
         for s in range(2):
-            assert np.abs(np.mean(balance[a][s])) < 0.1 
+            assert np.abs(np.mean(balance[a][s])) < 0.1

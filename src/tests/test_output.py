@@ -1,4 +1,4 @@
-from math import isclose, log
+from math import isclose
 
 import hivpy.column_names as col
 from hivpy.common import SexType, date, timedelta
