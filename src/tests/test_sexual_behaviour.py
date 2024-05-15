@@ -339,10 +339,11 @@ def test_risk_art_adherence_usage():
     # check that art adherence risk factor is considered in correct fraction
     # of simulations
     count = 0
-    for i in range(100):
+    N = 1000
+    for i in range(N):
         SBM_temp = SexualBehaviourModule()
         count += SBM_temp.use_risk_art_adherence
-    assert 0.1 < count/100 < 0.3
+    assert 0.1 < count/N < 0.3
 
 
 def test_risk_population():
