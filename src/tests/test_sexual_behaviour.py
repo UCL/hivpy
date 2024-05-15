@@ -605,3 +605,48 @@ def test_stopping_sex_work():
     E = P_stop_under40 * N
     sigma = np.sqrt(E * (1 - P_stop_under40))
     assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))
+
+
+def test_sex_balancing_calculation():
+    # We need to check that the values calculated for the number partners in / of a group are correct
+    # The problem here is that they are contained within a randomised function
+    # This is tested with a deterministic mixing matrix here
+
+    # Test with the identity matrix as mixing matrix
+    sex_mix_matrix = np.identity(5)
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_module = pop.sexual_behaviour
+
+    sb_module.sex_mixing_matrix[SexType.Male] = sex_mix_matrix
+    sb_module.sex_mixing_matrix[SexType.Female] = sex_mix_matrix
+
+    # Determine the ages and sexes of everyone involved (3/4 male, 1/4 female for imbalance)
+    pop.data.loc[:int(N/4)-1, col.SEX] = SexType.Female
+    pop.data.loc[int(N/4):, col.SEX] = SexType.Male
+    pop.data[col.AGE] = 30
+    pop.data[col.NUM_PARTNERS] = 1
+
+    # Check that the numbers of partners in / of a group are calculated correctly
+    sb_module.assign_stp_ages(pop)
+
+    assert(sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N/4))
+    assert(sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N/4)))
+
+    assert(sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N/4)))
+    assert(sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N/4))
+
+    # Check that the risk factor updates correctly in response
+    # Fix the risk factor to a known value first and then run the update
+    sb_module.age_based_risk[3][1] = 1  # male (30-34)
+    sb_module.age_based_risk[3][0] = 1  # female (30-34)
+    sb_module.update_sex_age_balance(pop)
+
+    assert np.isclose(sb_module.age_based_risk[3][0], 1/3, atol=1e-4)
+    assert np.isclose(sb_module.age_based_risk[3][1], 3, atol=1e-4)
+
+def test_sex_balancing_effect():
+    # TODO: Run repeated timesteps of sexual behaviour
+    #       Check that mean of sex balancing is reasonable
+    #       The purpose of this test is to check the effect of the sex balancing in practice, regardless of the method used.
+    pass
