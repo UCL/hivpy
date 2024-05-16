@@ -128,12 +128,13 @@ def test_general_testing_conditions():
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.AGE] = 20
+    pop.data[col.HARD_REACH] = False
     pop.data[col.EVER_TESTED] = True
     pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
+    pop.data[col.NP_LAST_TEST] = 1
     # fixing some values
     pop.hiv_testing.date_start_testing = 2009
     pop.hiv_testing.eff_max_freq_testing = 1
-    pop.hiv_testing.init_rate_first_test = 0.1
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
@@ -146,12 +147,22 @@ def test_general_testing_conditions():
     pop.set_present_variable(col.HIV_STATUS, diagnosed)
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop)
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
     # get people that were just tested
     tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
     # check that no people just tested were already diagnosed with HIV
     assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
+
+    # get stats
+    testing_population = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False)])
+    prob_test = pop.hiv_testing.calc_prob_test(True, 1, 0)
+    mean = len(testing_population) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= len(tested_population) <= mean + 3 * stdev
 
 
 def test_first_time_testers():
