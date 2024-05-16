@@ -23,6 +23,75 @@ def test_hiv_testing_covid():
     assert sum(pop.get_variable(col.EVER_TESTED)) == 0
 
 
+def test_hiv_symptomatic_testing():
+
+    # build population
+    N = 100000
+    pop = Population(size=N, start_date=date(2016, 1, 1))
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.data[pop.get_correct_column(col.ADC, dt=1)] = True
+    # fixing some values
+    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.prob_test_who4 = 0.6
+    pop.hiv_testing.prob_test_tb = 0.5
+    pop.hiv_testing.prob_test_non_tb_who3 = 0.4
+    pop.hiv_testing.covid_disrup_affected = False
+    pop.hiv_testing.testing_disrup_covid = False
+
+    # evolve population
+    pop.hiv_testing.test_mark_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # get stats
+    tested_population = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
+    prob_test = pop.hiv_testing.prob_test_who4
+    mean = len(pop.data) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
+
+    # reset some columns
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.data[pop.get_correct_column(col.ADC, dt=1)] = False
+    pop.data[pop.get_correct_column(col.TB, dt=1)] = True
+
+    # re-evolve population
+    pop.hiv_testing.test_mark_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # get stats
+    tested_population = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
+    prob_test = pop.hiv_testing.prob_test_tb
+    mean = len(pop.data) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
+
+    # reset some columns
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.data[pop.get_correct_column(col.TB, dt=1)] = False
+    pop.data[pop.get_correct_column(col.NON_TB_WHO3, dt=1)] = True
+
+    # re-evolve population
+    pop.hiv_testing.test_mark_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # get stats
+    tested_population = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
+    prob_test = pop.hiv_testing.prob_test_non_tb_who3
+    mean = len(pop.data) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
+
+
 def test_general_testing_conditions():
 
     # build population
