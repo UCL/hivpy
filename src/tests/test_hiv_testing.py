@@ -92,6 +92,36 @@ def test_hiv_symptomatic_testing():
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
 
+def test_non_hiv_symptomatic_testing():
+
+    # build population
+    N = 100000
+    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.data[pop.get_correct_column(col.HIV_DIAGNOSED, dt=1)] = False
+    # fixing some values
+    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.prob_test_non_hiv_symptoms = 1
+    pop.hiv_testing.prob_test_who4 = 0.6
+    pop.hiv_testing.prob_test_non_tb_who3 = 0.4
+    pop.hiv_testing.covid_disrup_affected = False
+    pop.hiv_testing.testing_disrup_covid = False
+
+    # evolve population
+    pop.hiv_testing.test_mark_non_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # get stats
+    tested_population = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
+    prob_test = (pop.hiv_testing.prob_test_non_tb_who3 + pop.hiv_testing.prob_test_who4)/2
+    mean = len(pop.data) * prob_test
+    stdev = sqrt(mean * (1 - prob_test))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
+
+
 def test_general_testing_conditions():
 
     # build population
