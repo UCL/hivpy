@@ -159,7 +159,7 @@ class CircumcisionModule:
                 pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
 
                 # chance to get vmmc after a negative HIV test
-                pop.hiv_testing.update_vmmc_after_test(pop, time_step)
+                self.update_vmmc_after_test(pop, time_step)
 
                 # newly circumcised males get the current date set as their circumcision date
                 new_circ_males = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
@@ -168,6 +168,18 @@ class CircumcisionModule:
 
                 # standard HIV testing after circumcision
                 pop.hiv_testing.update_post_vmmc_testing(pop)
+
+    def calc_circ_outcomes(self, age_group, size):
+        """
+        Uses the circumcision probability for a given
+        age group to return VMMC outcomes.
+        """
+        prob_circ = self.calc_prob_circ(age_group)
+        # outcomes
+        r = rng.uniform(size=size)
+        circumcision = r < prob_circ
+
+        return circumcision
 
     def calc_prob_circ(self, age_group):
         """
@@ -207,14 +219,23 @@ class CircumcisionModule:
 
         return min(prob_circ, 1)
 
-    def calc_circ_outcomes(self, age_group, size):
+    def update_vmmc_after_test(self, pop, time_step):
         """
-        Uses the circumcision probability for a given
-        age group to return VMMC outcomes.
+        Update VMMC in individuals that tested HIV negative last time step.
         """
-        prob_circ = self.calc_prob_circ(age_group)
-        # outcomes
-        r = rng.uniform(size=size)
-        circumcision = r < prob_circ
-
-        return circumcision
+        if self.circ_after_test:
+            # select uncircumcised men tested last timestep
+            tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
+                                                      (col.CIRCUMCISED, op.eq, False),
+                                                      (col.HIV_DIAGNOSED, op.eq, False),
+                                                      (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
+                                                      (col.HARD_REACH, op.eq, False),
+                                                      (col.AGE, op.le, self.max_vmmc_age)])
+            # continue if eligible men are present this timestep
+            if len(tested_uncirc_male_pop) > 0:
+                # calculate post-test vmmc outcomes
+                r = rng.uniform(size=len(tested_uncirc_male_pop))
+                circumcision = r < self.prob_circ_after_test
+                # assign outcomes
+                pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
+                pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)

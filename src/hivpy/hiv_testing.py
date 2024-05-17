@@ -3,7 +3,7 @@ import operator as op
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, rng, timedelta
+from .common import AND, COND, OR, rng, timedelta
 from .hiv_testing_data import HIVTestingData
 
 
@@ -156,28 +156,6 @@ class HIVTestingModule:
                           (s < self.prob_test_non_hiv_symptoms))
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
-
-    # FIXME: perhaps this should be in the circumcision module
-    def update_vmmc_after_test(self, pop, time_step):
-        """
-        Update VMMC in individuals that tested HIV negative last time step.
-        """
-        if pop.circumcision.circ_after_test:
-            # select uncircumcised men tested last timestep
-            tested_uncirc_male_pop = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                                                      (col.CIRCUMCISED, op.eq, False),
-                                                      (col.HIV_DIAGNOSED, op.eq, False),
-                                                      (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
-                                                      (col.HARD_REACH, op.eq, False),
-                                                      (col.AGE, op.le, pop.circumcision.max_vmmc_age)])
-            # continue if eligible men are present this timestep
-            if len(tested_uncirc_male_pop) > 0:
-                # calculate post-test vmmc outcomes
-                r = rng.uniform(size=len(tested_uncirc_male_pop))
-                circumcision = r < pop.circumcision.prob_circ_after_test
-                # assign outcomes
-                pop.set_present_variable(col.CIRCUMCISED, circumcision, tested_uncirc_male_pop)
-                pop.set_present_variable(col.VMMC, circumcision, tested_uncirc_male_pop)
 
     def update_post_vmmc_testing(self, pop):
         """
