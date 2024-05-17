@@ -12,6 +12,8 @@ def test_hiv_testing_covid():
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.AGE] = 20
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
     # covid disruption is in place
     pop.hiv_testing.covid_disrup_affected = True
     pop.hiv_testing.testing_disrup_covid = True
@@ -171,6 +173,10 @@ def test_first_time_testers():
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.AGE] = 20
+    pop.data[col.EVER_TESTED] = False
+    pop.data[col.LAST_TEST_DATE] = None
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
     pop.hiv_testing.date_start_testing = 2009
     pop.hiv_testing.init_rate_first_test = 0.1
@@ -202,6 +208,8 @@ def test_repeat_testers():
     pop.data[col.AGE] = 20
     pop.data[col.EVER_TESTED] = True
     pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
+    pop.data[col.CIRCUMCISED] = False
+    pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
     pop.hiv_testing.date_start_testing = 2009
     pop.hiv_testing.eff_max_freq_testing = 1
@@ -274,6 +282,8 @@ def test_max_frequency_testing():
         pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-30)
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
+        pop.data[col.CIRCUMCISED] = False
+        pop.data[col.CIRCUMCISION_DATE] = None
         # fixing some values
         pop.hiv_testing.date_start_testing = 2009
         pop.hiv_testing.eff_max_freq_testing = index
