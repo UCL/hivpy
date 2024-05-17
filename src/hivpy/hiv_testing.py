@@ -64,7 +64,8 @@ class HIVTestingModule:
         # hiv symptomatic > non hiv symptomatic > vmmc > anc > self testing > general > prep
         self.test_mark_hiv_symptomatic(pop)
         self.test_mark_non_hiv_symptomatic(pop)
-        # vmmc + anc
+        self.test_mark_vmmc(pop)
+        # self.test_mark_anc(pop)
         self.test_mark_general_pop(pop)
 
         # apply testing to marked population
@@ -157,21 +158,18 @@ class HIVTestingModule:
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
-    def update_post_vmmc_testing(self, pop):
+    def test_mark_vmmc(self, pop):
         """
-        Update HIV testing status after VMMC.
+        Mark recently circumcised individuals to undergo testing this time step.
         """
         # those that just got circumcised and weren't tested last time step get tested now
-        just_tested = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                          OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
-                                             COND(col.LAST_TEST_DATE, op.eq, None))))
-        # correctly set up related columns
-        if len(just_tested) > 0:
-            pop.set_present_variable(col.EVER_TESTED, True, just_tested)
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date, just_tested)
-            # "reset" dummy partner columns
-            pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
-            pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
+        # FIXME: should the actual time step be used here instead of a flat 90 days?
+        testing_population = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                                 OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
+                                                    COND(col.LAST_TEST_DATE, op.eq, None))))
+        # mark people for testing
+        if len(testing_population) > 0:
+            pop.set_present_variable(col.TEST_MARK, True, testing_population)
 
     def update_anc_hiv_testing(self, pop, time_step):
         """
