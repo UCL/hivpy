@@ -104,7 +104,7 @@ class PregnancyModule:
         outcomes = self.init_num_children_distributions[index].sample(size)
         return outcomes
 
-    def update_pregnancy(self, pop: Population, time_step: timedelta):
+    def update_pregnancy(self, pop: Population):
         """
         Monitor pregnancies and model childbirth.
         """
@@ -121,9 +121,7 @@ class PregnancyModule:
                                             (col.NUM_CHILDREN, op.lt, self.max_children),
                                             [(col.NUM_PARTNERS, op.gt, 0), (col.LONG_TERM_PARTNER, op.eq, True)],
                                             [(col.LAST_PREGNANCY_DATE, op.eq, None),
-                                             (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=450))
-                                             ]
-                                            ])
+                                             (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=450))]])
 
         # continue if there are women who can become pregnant in this time step
         if len(can_get_pregnant) > 0:
@@ -144,11 +142,11 @@ class PregnancyModule:
                                      pop.date,
                                      pop.apply_bool_mask(pregnancy, can_get_pregnant))
 
-        self.update_antenatal_care(pop, time_step)
+        self.update_antenatal_care(pop)
         self.update_births(pop)
         self.update_want_no_children(pop)
 
-    def update_antenatal_care(self, pop: Population, time_step: timedelta):
+    def update_antenatal_care(self, pop: Population):
         """
         Determine who is in antenatal care and receiving
         prevention of mother to child transmission care.
@@ -163,9 +161,6 @@ class PregnancyModule:
         r = rng.uniform(size=len(pregnant_population))
         anc = r < self.prob_anc
         pop.set_present_variable(col.ANC, anc, pregnant_population)
-
-        # anc testing
-        pop.hiv_testing.update_anc_hiv_testing(pop, time_step)
 
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission

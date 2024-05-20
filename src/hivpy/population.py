@@ -278,12 +278,12 @@ class Population:
         self.circumcision.update_vmmc(self, time_step)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
-        self.pregnancy.update_pregnancy(self, time_step)
+        self.pregnancy.update_pregnancy(self)
 
         # If HIV has been introduced, then run HIV relevant code
         if self.HIV_introduced:
             self.hiv_status.update_HIV_status(self)
-            self.hiv_testing.update_hiv_testing(self)
+            self.hiv_testing.update_hiv_testing(self, time_step)
             HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
             n_deaths = n_deaths + sum(HIV_deaths)
             if (n_deaths and self.apply_death):

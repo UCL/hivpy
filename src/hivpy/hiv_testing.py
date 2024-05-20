@@ -55,7 +55,7 @@ class HIVTestingModule:
         self.covid_disrup_affected = False
         self.testing_disrup_covid = False
 
-    def update_hiv_testing(self, pop):
+    def update_hiv_testing(self, pop, time_step: timedelta):
         """
         Update which individuals in the population have been tested.
         COVID disruption is factored in.
@@ -65,7 +65,7 @@ class HIVTestingModule:
         self.test_mark_hiv_symptomatic(pop)
         self.test_mark_non_hiv_symptomatic(pop)
         self.test_mark_vmmc(pop)
-        # self.test_mark_anc(pop)
+        self.test_mark_anc(pop, time_step)
         self.test_mark_general_pop(pop)
 
         # apply testing to marked population
@@ -171,7 +171,7 @@ class HIVTestingModule:
         if len(testing_population) > 0:
             pop.set_present_variable(col.TEST_MARK, True, testing_population)
 
-    def update_anc_hiv_testing(self, pop, time_step):
+    def test_mark_anc(self, pop, time_step):
         """
         Update which pregnant women are tested while in antenatal care.
         COVID disruption is factored in.
@@ -212,12 +212,9 @@ class HIVTestingModule:
 
             # get population tested this time step
             just_tested = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
-            # correctly set up related columns
+            # mark people for testing
             if len(just_tested) > 0:
-                pop.set_present_variable(col.EVER_TESTED, True, just_tested)
-                # "reset" dummy partner columns
-                pop.set_present_variable(col.NSTP_LAST_TEST, 0, just_tested)
-                pop.set_present_variable(col.NP_LAST_TEST, 0, just_tested)
+                pop.set_present_variable(col.TEST_MARK, True, just_tested)
 
     # FIXME: this function should likely be retired
     def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
