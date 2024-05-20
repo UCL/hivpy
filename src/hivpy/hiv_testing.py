@@ -202,6 +202,8 @@ class HIVTestingModule:
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                     - timedelta(days=270))])
             self.update_sub_pop_test_date(pop, third_trimester_pop, self.prob_anc_test_trim3)
+            # remove from antenatal care
+            pop.set_present_variable(col.ANC, False, third_trimester_pop)
 
             # get post-delivery population tested during the previous time step
             post_delivery_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),

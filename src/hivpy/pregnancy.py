@@ -189,8 +189,6 @@ class PregnancyModule:
         if len(birthing_population) > 0:
             # remove pregnancy status
             pop.set_present_variable(col.PREGNANT, False, birthing_population)
-            # remove from antenatal care
-            pop.set_present_variable(col.ANC, False, birthing_population)
             # add to children
             pop.set_present_variable(col.NUM_CHILDREN, pop.get_variable(col.NUM_CHILDREN)+1, birthing_population)
             # birth with infected child
