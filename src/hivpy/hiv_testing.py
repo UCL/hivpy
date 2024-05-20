@@ -173,7 +173,7 @@ class HIVTestingModule:
 
     def test_mark_anc(self, pop, time_step):
         """
-        Update which pregnant women are tested while in antenatal care.
+        Mark which pregnant women are tested while in antenatal care.
         COVID disruption is factored in.
         """
         # conduct up to three tests in anc during pregnancy if there is no covid disruption
@@ -185,7 +185,7 @@ class HIVTestingModule:
                                                     - timedelta(days=90)),
                                                    (col.LAST_PREGNANCY_DATE, op.gt, pop.date
                                                     - (timedelta(days=90) + time_step))])
-            self.update_sub_pop_test_date(pop, first_trimester_pop, self.prob_anc_test_trim1)
+            self.update_sub_pop_test_mark(pop, first_trimester_pop, self.prob_anc_test_trim1)
 
             # get population at the end of the second trimester
             second_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
@@ -194,14 +194,14 @@ class HIVTestingModule:
                                                      - timedelta(days=180)),
                                                     (col.LAST_PREGNANCY_DATE, op.gt, pop.date
                                                      - (timedelta(days=180) + time_step))])
-            self.update_sub_pop_test_date(pop, second_trimester_pop, self.prob_anc_test_trim2)
+            self.update_sub_pop_test_mark(pop, second_trimester_pop, self.prob_anc_test_trim2)
 
             # get population at the end of the third trimester
             third_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
                                                    (col.ANC, op.eq, True),
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                     - timedelta(days=270))])
-            self.update_sub_pop_test_date(pop, third_trimester_pop, self.prob_anc_test_trim3)
+            self.update_sub_pop_test_mark(pop, third_trimester_pop, self.prob_anc_test_trim3)
             # remove from antenatal care
             pop.set_present_variable(col.ANC, False, third_trimester_pop)
 
@@ -210,24 +210,18 @@ class HIVTestingModule:
                                                  (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
                                                  (col.LAST_PREGNANCY_DATE, op.eq, pop.date
                                                   - (timedelta(days=270) + time_step))])
-            self.update_sub_pop_test_date(pop, post_delivery_pop, self.prob_test_postdel)
+            self.update_sub_pop_test_mark(pop, post_delivery_pop, self.prob_test_postdel)
 
-            # get population tested this time step
-            just_tested = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
-            # mark people for testing
-            if len(just_tested) > 0:
-                pop.set_present_variable(col.TEST_MARK, True, just_tested)
-
-    # FIXME: this function should likely be retired
-    def update_sub_pop_test_date(self, pop, sub_pop, prob_test):
+    def update_sub_pop_test_mark(self, pop, sub_pop, prob_test):
         """
-        Update the last test date of a sub-population based on a given probability.
+        Update the test mark of a sub-population based on a given probability.
         """
         if len(sub_pop) > 0:
+            # mark people for testing
             r = rng.uniform(size=len(sub_pop))
-            tested = r < prob_test
-            pop.set_present_variable(col.LAST_TEST_DATE, pop.date,
-                                     sub_pop=pop.apply_bool_mask(tested, sub_pop))
+            marked = r < prob_test
+            # set outcomes
+            pop.set_present_variable(col.TEST_MARK, True, sub_pop=pop.apply_bool_mask(marked, sub_pop))
 
     def test_mark_general_pop(self, pop):
         """
