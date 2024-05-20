@@ -74,7 +74,7 @@ def test_ltp_preg():
             pop.data[col.NUM_CHILDREN] = 0
             pop.pregnancy.prob_pregnancy_base = 0.1
             pop.pregnancy.init_fertility(pop)
-            pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
+            pop.pregnancy.update_pregnancy(pop)
 
             # age restrictions on those who can get pregnant
             if age < 15:
@@ -119,7 +119,7 @@ def test_stp_preg():
             pop.data[col.WANT_NO_CHILDREN] = False
             pop.pregnancy.prob_pregnancy_base = 0.1
             pop.pregnancy.init_fertility(pop)
-            pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
+            pop.pregnancy.update_pregnancy(pop)
 
             # get stats
             no_active_female = sum((~pop.data[col.LOW_FERTILITY])
@@ -153,11 +153,11 @@ def test_childbirth():
     # evolve population
     for _ in range(0, ceil(timedelta(days=270)/time_step)):
         # advance pregnancy
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
 
     # final advancement into childbirth
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that nobody is pregnant anymore
     assert (~pop.data[col.PREGNANT]).all()
@@ -165,12 +165,12 @@ def test_childbirth():
     assert (pop.data[col.NUM_CHILDREN] == 1).all()
 
     # test the pregnancy pause period
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that there are still no pregnancies
     assert (~pop.data[col.PREGNANT]).all()
 
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that everyone is pregnant again
     assert pop.data[col.PREGNANT].all()
@@ -199,11 +199,11 @@ def test_child_cap():
     # get through pregnancy, childbirth, and pregnancy pause period
     for _ in range(0, ceil(timedelta(days=450)/time_step)):
         # advance pregnancy
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
 
     # past pregnancy pause period
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
     # check that there are no pregnancies due to reaching child cap
     assert (~pop.data[col.PREGNANT]).all()
@@ -229,7 +229,7 @@ def test_want_no_children():
     pop.data[col.WANT_NO_CHILDREN] = want_no_children_outcomes
 
     # advance pregnancy
-    pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
+    pop.pregnancy.update_pregnancy(pop)
 
     # get stats
     want_no_children = sum(pop.data[col.WANT_NO_CHILDREN])
@@ -270,7 +270,7 @@ def test_anc_and_pmtct():
     pop.pregnancy.pmtct_inc_rate = 1
 
     # advance pregnancy
-    pop.pregnancy.update_pregnancy(pop, timedelta(days=90))
+    pop.pregnancy.update_pregnancy(pop)
 
     # get stats
     no_anc = sum(pop.data[col.ANC])
@@ -314,11 +314,18 @@ def test_anc_testing():
     pop.pregnancy.prob_anc = 1
     pop.pregnancy.rate_test_anc_inc = 1
 
+    # get test outcomes
+    def update_anc_testing_outcomes(pop, time_step):
+        pop.hiv_testing.test_mark_anc(pop, time_step)
+        marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+        pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
     # advance pregnancy to start of second trimester
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
+    update_anc_testing_outcomes(pop, time_step)
 
     # store people not in anc
     not_inc_anc = pop.get_sub_pop([(col.ANC, op.eq, False)])
@@ -336,7 +343,8 @@ def test_anc_testing():
     # advance pregnancy to start of third trimester
     for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
+    update_anc_testing_outcomes(pop, time_step)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
@@ -349,7 +357,8 @@ def test_anc_testing():
     # final advancement into childbirth
     for _ in range(0, ceil(timedelta(days=90)/time_step)):
         pop.date += time_step
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
+    update_anc_testing_outcomes(pop, time_step)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
@@ -361,7 +370,8 @@ def test_anc_testing():
 
     # advance to post-delivery
     pop.date += time_step
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
+    update_anc_testing_outcomes(pop, time_step)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))
@@ -372,8 +382,8 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # check that nobody not in ANC has been tested
-    assert len(pop.get_sub_pop_intersection(not_inc_anc,
-                                            pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)]))) == 0
+    assert len(pop.get_sub_pop_intersection(
+        not_inc_anc, pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)]))) == 0
 
 
 def test_infected_births():
@@ -399,11 +409,11 @@ def test_infected_births():
     # evolve population
     for _ in range(0, ceil(timedelta(days=270)/time_step)):
         # advance pregnancy
-        pop.pregnancy.update_pregnancy(pop, time_step)
+        pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
 
     # final advancement into childbirth
-    pop.pregnancy.update_pregnancy(pop, time_step)
+    pop.pregnancy.update_pregnancy(pop)
     pop.date += time_step
 
     # get stats

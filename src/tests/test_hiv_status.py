@@ -356,10 +356,10 @@ def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex
 
 
 def test_naive_cd4_progression():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.AGE] = 35
-    pop.data[col.HIV_STATUS] = [True, False] * 500
+    pop.data[col.HIV_STATUS] = [True, False] * 5000
     # Reset viral load for testing (original values affected by intro of HIV)
     pop.data[col.ART_NAIVE] = True
     hiv_module = pop.hiv_status

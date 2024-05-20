@@ -19,7 +19,7 @@ def test_hiv_testing_covid():
     pop.hiv_testing.testing_disrup_covid = True
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop)
+    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
     # check that nobody was tested
     assert sum(pop.get_variable(col.EVER_TESTED)) == 0
@@ -187,7 +187,7 @@ def test_first_time_testers():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop)
+    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
     # get stats
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
@@ -220,7 +220,7 @@ def test_repeat_testers():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop)
+    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
     # get stats
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
@@ -257,7 +257,7 @@ def test_partner_reset_after_test():
         pop.hiv_testing.testing_disrup_covid = False
 
         # evolve population
-        pop.hiv_testing.update_hiv_testing(pop)
+        pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
         # get people that were just tested
         tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
@@ -295,14 +295,14 @@ def test_max_frequency_testing():
         pop.hiv_testing.testing_disrup_covid = False
 
         # evolve population
-        pop.hiv_testing.update_hiv_testing(pop)
+        pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
         # check that nobody has just been tested
         assert (pop.get_variable(col.LAST_TEST_DATE) != pop.date).all()
 
         # move date forward and evolve again
         pop.date += timedelta(days=30)
-        pop.hiv_testing.update_hiv_testing(pop)
+        pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
 
         # check that everyone has just been tested
         assert (pop.get_variable(col.LAST_TEST_DATE) == pop.date).all()
