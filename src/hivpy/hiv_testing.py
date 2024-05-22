@@ -64,7 +64,7 @@ class HIVTestingModule:
         # hiv symptomatic > non hiv symptomatic > vmmc > anc > self testing > general > prep
         self.test_mark_hiv_symptomatic(pop)
         self.test_mark_non_hiv_symptomatic(pop)
-        self.test_mark_vmmc(pop)
+        self.test_mark_vmmc(pop, time_step)
         self.test_mark_anc(pop, time_step)
         self.test_mark_general_pop(pop)
 
@@ -158,14 +158,14 @@ class HIVTestingModule:
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
-    def test_mark_vmmc(self, pop):
+    def test_mark_vmmc(self, pop, time_step):
         """
         Mark recently circumcised individuals to undergo testing this time step.
         """
         # those that just got circumcised and weren't tested last time step get tested now
-        # FIXME: should the actual time step be used here instead of a flat 90 days?
-        testing_population = pop.get_sub_pop(AND(COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
-                                                 OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - timedelta(days=90)),
+        testing_population = pop.get_sub_pop(AND(COND(col.VMMC, op.eq, True),
+                                                 COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
+                                                 OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - time_step),
                                                     COND(col.LAST_TEST_DATE, op.eq, None))))
         # mark people for testing
         if len(testing_population) > 0:

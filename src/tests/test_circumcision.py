@@ -451,7 +451,7 @@ def test_vmmc_testing():
 
     # evolve population
     pop.circumcision.update_vmmc(pop, time_step)
-    pop.hiv_testing.test_mark_vmmc(pop)
+    pop.hiv_testing.test_mark_vmmc(pop, time_step)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
     pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
