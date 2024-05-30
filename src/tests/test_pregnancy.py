@@ -302,7 +302,7 @@ def test_anc_testing():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
-    pop.data[col.HIV_STATUS] = False
+    pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.hiv_testing.covid_disrup_affected = False

@@ -91,9 +91,8 @@ class HIVTestingModule:
                 self.prob_test_tb = min(0.8, self.prob_test_tb * self.incr_test_rate_sympt)
                 self.prob_test_non_tb_who3 = min(0.7, self.prob_test_non_tb_who3 * self.incr_test_rate_sympt)
 
-            # undiagnosed and untested population
+            # undiagnosed population not scheduled for testing
             not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
-                                                   (col.EVER_TESTED, op.eq, False),
                                                    (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
@@ -150,9 +149,8 @@ class HIVTestingModule:
         if ((pop.date.year >= self.date_start_testing)
            & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
-            # undiagnosed (last time step) and untested population
+            # undiagnosed (last time step) population not scheduled for testing
             not_diag_tested_pop = pop.get_sub_pop([(pop.get_correct_column(col.HIV_DIAGNOSED, dt=1), op.eq, False),
-                                                   (col.EVER_TESTED, op.eq, False),
                                                    (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
@@ -185,7 +183,7 @@ class HIVTestingModule:
         # conduct up to three tests in anc during pregnancy if there is no covid disruption
         if not (self.covid_disrup_affected | self.testing_disrup_covid):
             # get population at the end of the first trimester
-            first_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+            first_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.ANC, op.eq, True),
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                     - timedelta(days=90)),
@@ -194,7 +192,7 @@ class HIVTestingModule:
             self.update_sub_pop_test_mark(pop, first_trimester_pop, self.prob_anc_test_trim1)
 
             # get population at the end of the second trimester
-            second_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+            second_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                     (col.ANC, op.eq, True),
                                                     (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                      - timedelta(days=180)),
@@ -203,7 +201,7 @@ class HIVTestingModule:
             self.update_sub_pop_test_mark(pop, second_trimester_pop, self.prob_anc_test_trim2)
 
             # get population at the end of the third trimester
-            third_trimester_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+            third_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.ANC, op.eq, True),
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                     - timedelta(days=270))])
@@ -212,7 +210,7 @@ class HIVTestingModule:
             pop.set_present_variable(col.ANC, False, third_trimester_pop)
 
             # get post-delivery population tested during the previous time step
-            post_delivery_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False),
+            post_delivery_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                  (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
                                                  (col.LAST_PREGNANCY_DATE, op.eq, pop.date
                                                   - (timedelta(days=270) + time_step))])
@@ -245,13 +243,16 @@ class HIVTestingModule:
                                   - self.date_start_testing) * self.an_lin_incr_test
 
             # general population ready for testing
-            testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
-                                                  (col.AGE, op.ge, 15),
-                                                  (col.HIV_STATUS, op.eq, False),
-                                                  [(col.LAST_TEST_DATE, op.le, pop.date -
-                                                    timedelta(days=self.days_to_wait[self.eff_max_freq_testing])),
-                                                   (col.LAST_TEST_DATE, op.eq, None)],
-                                                  (col.TEST_MARK, op.eq, False)])
+            testing_population = pop.get_sub_pop(AND(COND(col.HARD_REACH, op.eq, False),
+                                                     COND(col.AGE, op.ge, 15),
+                                                     COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                     OR(COND(col.LAST_TEST_DATE, op.le, pop.date -
+                                                             timedelta(days=self.days_to_wait[
+                                                                 self.eff_max_freq_testing])),
+                                                        COND(col.LAST_TEST_DATE, op.eq, None)),
+                                                     COND(col.TEST_MARK, op.eq, False)))
+
+            # FIXME: add sex workers to general population testing
 
             if len(testing_population) > 0:
                 # mark people for testing

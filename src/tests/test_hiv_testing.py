@@ -146,7 +146,7 @@ def test_general_testing_conditions():
     # diagnose roughly 20% of the population with HIV
     r = rng.uniform(size=len(pop.data))
     diagnosed = r < 0.2
-    pop.set_present_variable(col.HIV_STATUS, diagnosed)
+    pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed)
 
     # evolve population
     pop.hiv_testing.test_mark_general_pop(pop)
@@ -156,10 +156,10 @@ def test_general_testing_conditions():
     # get people that were just tested
     tested_population = pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)])
     # check that no people just tested were already diagnosed with HIV
-    assert (~pop.get_variable(col.HIV_STATUS, sub_pop=tested_population)).all()
+    assert (~pop.get_variable(col.HIV_DIAGNOSED, sub_pop=tested_population)).all()
 
     # get stats
-    testing_population = pop.get_sub_pop([(col.HIV_STATUS, op.eq, False)])
+    testing_population = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False)])
     prob_test = pop.hiv_testing.calc_prob_test(True, 1, 0)
     mean = len(testing_population) * prob_test
     stdev = sqrt(mean * (1 - prob_test))
@@ -276,14 +276,12 @@ def test_max_frequency_testing():
         N = 100
         pop = Population(size=N, start_date=start_date)
         pop.data[col.AGE] = 20
-        pop.data[col.HIV_STATUS] = False
+        pop.data[col.HIV_DIAGNOSED] = False
         pop.data[col.HARD_REACH] = False
         pop.data[col.EVER_TESTED] = True
         pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-30)
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
-        pop.data[col.CIRCUMCISED] = False
-        pop.data[col.CIRCUMCISION_DATE] = None
         # fixing some values
         pop.hiv_testing.date_start_testing = 2009
         pop.hiv_testing.eff_max_freq_testing = index
@@ -295,14 +293,18 @@ def test_max_frequency_testing():
         pop.hiv_testing.testing_disrup_covid = False
 
         # evolve population
-        pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
+        pop.hiv_testing.test_mark_general_pop(pop)
+        marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+        pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
         # check that nobody has just been tested
         assert (pop.get_variable(col.LAST_TEST_DATE) != pop.date).all()
 
         # move date forward and evolve again
         pop.date += timedelta(days=30)
-        pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
+        pop.hiv_testing.test_mark_general_pop(pop)
+        marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+        pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
         # check that everyone has just been tested
         assert (pop.get_variable(col.LAST_TEST_DATE) == pop.date).all()
