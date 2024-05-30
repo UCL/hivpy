@@ -15,7 +15,7 @@ class HIVTestingModule:
         with importlib.resources.path("hivpy.data", "hiv_testing.yaml") as data_path:
             self.ht_data = HIVTestingData(data_path)
 
-        self.date_start_anc_testing = self.ht_data.date_start_anc_testing
+        self.date_start_anc_testing = self.ht_data.date_start_anc_testing  # FIXME: currently unused, do we need this for anything?
         self.date_start_testing = self.ht_data.date_start_testing
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
@@ -75,11 +75,16 @@ class HIVTestingModule:
     def test_mark_hiv_symptomatic(self, pop):
         """
         Mark HIV symptomatic individuals to undergo testing this time step.
+
+        Note: If the simulation is started after 2015 (or if date_start_testing
+        is set to be after 2015) the HIV symptomatic testing probabilities
+        will not be updated and this function may not work as expected.
         """
         # testing occurs after a certain year
         if (pop.date.year >= self.date_start_testing):
 
             # update symptomatic test probabilities
+            # FIXME: where does this year come from? move to yaml later
             if pop.date.year <= 2015:
                 self.prob_test_who4 = min(0.9, self.prob_test_who4 * self.incr_test_rate_sympt)
                 self.prob_test_tb = min(0.8, self.prob_test_tb * self.incr_test_rate_sympt)
