@@ -15,7 +15,8 @@ class HIVTestingModule:
         with importlib.resources.path("hivpy.data", "hiv_testing.yaml") as data_path:
             self.ht_data = HIVTestingData(data_path)
 
-        self.date_start_anc_testing = self.ht_data.date_start_anc_testing  # FIXME: currently unused, do we need this for anything?
+        # FIXME: date_start_anc_testing currently unused, do we need this for anything?
+        self.date_start_anc_testing = self.ht_data.date_start_anc_testing
         self.date_start_testing = self.ht_data.date_start_testing
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
