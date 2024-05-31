@@ -11,9 +11,6 @@ def test_hiv_testing_covid():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
-    pop.data[col.AGE] = 20
-    pop.data[col.CIRCUMCISED] = False
-    pop.data[col.CIRCUMCISION_DATE] = None
     # covid disruption is in place
     pop.hiv_testing.covid_disrup_affected = True
     pop.hiv_testing.testing_disrup_covid = True
@@ -124,6 +121,41 @@ def test_non_hiv_symptomatic_testing():
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
 
+def test_general_sex_worker_testing():
+
+    # build population
+    N = 100
+    start_date = date(2010, 1, 1)
+    pop = Population(size=N, start_date=start_date)
+    pop.data[col.AGE] = 20
+    pop.data[col.SEX_WORKER] = True
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=150)
+    # fixing some values
+    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.eff_max_freq_testing = 0
+    pop.hiv_testing.sw_test_regularly = True
+    pop.hiv_testing.covid_disrup_affected = False
+    pop.hiv_testing.testing_disrup_covid = False
+
+    # evolve population
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # check that nobody has just been tested
+    assert (pop.get_variable(col.LAST_TEST_DATE) != pop.date).all()
+
+    # move date forward and evolve again
+    pop.date += timedelta(days=30)
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+
+    # check that everyone has just been tested
+    assert (pop.get_variable(col.LAST_TEST_DATE) == pop.date).all()
+
+
 def test_general_testing_conditions():
 
     # build population
@@ -140,6 +172,7 @@ def test_general_testing_conditions():
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
+    pop.hiv_testing.sw_test_regularly = False
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
@@ -183,6 +216,7 @@ def test_first_time_testers():
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
+    pop.hiv_testing.sw_test_regularly = False
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
@@ -216,6 +250,7 @@ def test_repeat_testers():
     pop.hiv_testing.date_test_rate_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
+    pop.hiv_testing.sw_test_regularly = False
     pop.hiv_testing.covid_disrup_affected = False
     pop.hiv_testing.testing_disrup_covid = False
 
@@ -253,6 +288,7 @@ def test_partner_reset_after_test():
         pop.hiv_testing.date_test_rate_plateau = 2015.5
         pop.hiv_testing.an_lin_incr_test = 0.8
         pop.hiv_testing.no_test_if_np0 = False
+        pop.hiv_testing.sw_test_regularly = False
         pop.hiv_testing.covid_disrup_affected = False
         pop.hiv_testing.testing_disrup_covid = False
 
@@ -289,6 +325,7 @@ def test_max_frequency_testing():
         # guaranteed testing
         pop.hiv_testing.an_lin_incr_test = 1
         pop.hiv_testing.no_test_if_np0 = False
+        pop.hiv_testing.sw_test_regularly = False
         pop.hiv_testing.covid_disrup_affected = False
         pop.hiv_testing.testing_disrup_covid = False
 
