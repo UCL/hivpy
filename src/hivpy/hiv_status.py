@@ -82,6 +82,10 @@ class HIVStatusModule:
         self.cm_mortality_factor = rng.choice([3, 5, 10])
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
+        # 0 = Ab (default), 1 = PCR (RNA VL), 2 = Ag/Ab
+        self.hiv_test_type = 0
+        self.test_sens_primary_default = rng.choice([0.5, 0.75])
+
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
@@ -105,6 +109,7 @@ class HIVStatusModule:
         population.init_variable(col.SBI_DIAGNOSED, False)
         population.init_variable(col.WHO4_OTHER, False)
         population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
+        population.init_variable(col.PREP_INJ, False, n_prev_steps=1)
 
         self.init_resistance_mutations(population)
 
@@ -416,3 +421,54 @@ class HIVStatusModule:
         HIV_deaths = r_death < prob_death
         self.output.record_HIV_deaths(pop, HIV_deaths)
         return HIV_deaths
+
+    def update_HIV_diagnosis(self, pop: Population):
+        """
+        Diagnose people that have been tested this time step. The default test type used
+        is Ab, but certain policy options make use of PCR (RNA VL) or Ag/Ab tests.
+        Accuracy depends on test sensitivity, PrEP usage, as well as CD4 count.
+        """
+        # tested population in primary infection
+        primary_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, True),
+                                       (col.LAST_TEST_DATE, op.eq, pop.date)])
+
+        if len(primary_pop) > 0:
+            # primary infection diagnosis outcomes
+            diagnosed = pop.transform_group([pop.get_correct_column(col.PREP_INJ, dt=0),
+                                             pop.get_correct_column(col.PREP_INJ, dt=1)],
+                                            self.calc_diag_outcomes, sub_pop=primary_pop)
+            # set outcomes
+            pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, primary_pop)
+            pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
+
+        # FIXME: add ordinary (non-primary infection) testing
+
+    def calc_prob_diag(self, prep_inj, prep_inj_tm1):
+        """
+        Calculates the probability of an individual getting diagnosed
+        with HIV based on test sensitivity and injectable PrEP usage.
+        """
+        # default Ab test type
+        eff_sens_primary = self.test_sens_primary_default
+        # PCR test type
+        if self.hiv_test_type == 1:
+            eff_sens_primary = 0.86
+        # Ag/Ab test type
+        elif self.hiv_test_type == 2:
+            eff_sens_primary = 0.75
+
+        # FIXME: add injectable PrEP effects
+
+        return eff_sens_primary
+
+    def calc_diag_outcomes(self, prep_inj, prep_inj_tm1, size):
+        """
+        Uses HIV test sensitivity to return diagnosis outcomes.
+        """
+        prob_diag = self.calc_prob_diag(prep_inj, prep_inj_tm1)
+        # outcomes
+        r = rng.uniform(size=size)
+        diagnosed = r < prob_diag
+
+        return diagnosed
