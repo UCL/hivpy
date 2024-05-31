@@ -55,6 +55,8 @@ class HIVTestingModule:
         # FIXME: move this to a yaml later
         self.covid_disrup_affected = False
         self.testing_disrup_covid = False
+        # sex workers regularly test every 6 months
+        self.sw_test_regularly = False
 
     def update_hiv_testing(self, pop, time_step: timedelta):
         """
@@ -170,7 +172,8 @@ class HIVTestingModule:
         testing_population = pop.get_sub_pop(AND(COND(col.VMMC, op.eq, True),
                                                  COND(col.CIRCUMCISION_DATE, op.eq, pop.date),
                                                  OR(COND(col.LAST_TEST_DATE, op.lt, pop.date - time_step),
-                                                    COND(col.LAST_TEST_DATE, op.eq, None))))
+                                                    COND(col.LAST_TEST_DATE, op.eq, None)),
+                                                 COND(col.TEST_MARK, op.eq, False)))
         # mark people for testing
         if len(testing_population) > 0:
             pop.set_present_variable(col.TEST_MARK, True, testing_population)
@@ -235,10 +238,12 @@ class HIVTestingModule:
         if ((pop.date.year >= self.date_start_testing)
            & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
+            # mark sex workers for testing first
+            self.test_mark_sex_workers(pop)
+
             # update testing probabilities
             self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
-                                                                - self.date_start_testing) \
-                                                                * self.an_lin_incr_test
+                                                                - self.date_start_testing) * self.an_lin_incr_test
             self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
                                   - self.date_start_testing) * self.an_lin_incr_test
 
@@ -252,14 +257,29 @@ class HIVTestingModule:
                                                         COND(col.LAST_TEST_DATE, op.eq, None)),
                                                      COND(col.TEST_MARK, op.eq, False)))
 
-            # FIXME: add sex workers to general population testing
-
             if len(testing_population) > 0:
                 # mark people for testing
                 marked = pop.transform_group([col.EVER_TESTED, col.NP_LAST_TEST, col.NSTP_LAST_TEST],
                                              self.calc_testing_outcomes, sub_pop=testing_population)
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, testing_population)
+
+    def test_mark_sex_workers(self, pop):
+        """
+        Mark sex workers to undergo testing this time step.
+        """
+        # testing occurs if sex workers regularly test every 6 months
+        if self.sw_test_regularly:
+            # sex workers ready for testing
+            testing_population = pop.get_sub_pop(AND(COND(col.SEX_WORKER, op.eq, True),
+                                                     COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                     OR(COND(col.LAST_TEST_DATE, op.le, pop.date -
+                                                             timedelta(days=180)),
+                                                        COND(col.LAST_TEST_DATE, op.eq, None)),
+                                                     COND(col.TEST_MARK, op.eq, False)))
+            # mark people for testing
+            if len(testing_population) > 0:
+                pop.set_present_variable(col.TEST_MARK, True, testing_population)
 
     def calc_testing_outcomes(self, repeat_tester, np_last_test, nstp_last_test, size):
         """

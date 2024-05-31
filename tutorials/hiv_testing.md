@@ -15,7 +15,7 @@ When HIV testing is updated, people are marked for testing each time step, start
 
 Next, men undergoing VMMC this time step are tested and women in ANC this time step have a chance to be tested depending on which trimester they are in or whether they have given birth.
 
-Finally, the general population has a chance to be tested (assuming no COVID disruption). General testing probabilities change based on whether someone is a first time or repeat tester and these probabilities increase each time step.
+Finally, the general population has a chance to be tested (assuming no COVID disruption). As part of this, sex workers are also scheduled for testing if sex workers regularly test every 6 months. General testing probabilities change based on whether someone is a first time or repeat tester and these probabilities increase each time step.
 
 At the end, everyone scheduled to be tested has their testing information updated, and their test mark is removed.
 
