@@ -109,7 +109,7 @@ class HIVStatusModule:
         population.init_variable(col.SBI_DIAGNOSED, False)
         population.init_variable(col.WHO4_OTHER, False)
         population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
-        population.init_variable(col.PREP_INJ, False, n_prev_steps=1)
+        population.init_variable(col.PREP_TYPE, None, n_prev_steps=1)
 
         self.init_resistance_mutations(population)
 
@@ -434,8 +434,8 @@ class HIVStatusModule:
 
         if len(primary_pop) > 0:
             # primary infection diagnosis outcomes
-            diagnosed = pop.transform_group([pop.get_correct_column(col.PREP_INJ, dt=0),
-                                             pop.get_correct_column(col.PREP_INJ, dt=1)],
+            diagnosed = pop.transform_group([pop.get_correct_column(col.PREP_TYPE, dt=0),
+                                             pop.get_correct_column(col.PREP_TYPE, dt=1)],
                                             self.calc_diag_outcomes, sub_pop=primary_pop)
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, primary_pop)
@@ -444,29 +444,29 @@ class HIVStatusModule:
 
         # FIXME: add ordinary (non-primary infection) testing
 
-    def calc_prob_diag(self, prep_inj, prep_inj_tm1):
+    def calc_prob_diag(self, prep_type, prep_type_tm1):
         """
         Calculates the probability of an individual getting diagnosed
         with HIV based on test sensitivity and injectable PrEP usage.
         """
         # default Ab test type
-        eff_sens_primary = self.test_sens_primary_default
+        eff_test_sens_primary = self.test_sens_primary_default
         # PCR test type
         if self.hiv_test_type == 1:
-            eff_sens_primary = 0.86
+            eff_test_sens_primary = 0.86
         # Ag/Ab test type
         elif self.hiv_test_type == 2:
-            eff_sens_primary = 0.75
+            eff_test_sens_primary = 0.75
 
         # FIXME: add injectable PrEP effects
 
-        return eff_sens_primary
+        return eff_test_sens_primary
 
-    def calc_diag_outcomes(self, prep_inj, prep_inj_tm1, size):
+    def calc_diag_outcomes(self, prep_type, prep_type_tm1, size):
         """
         Uses HIV test sensitivity to return diagnosis outcomes.
         """
-        prob_diag = self.calc_prob_diag(prep_inj, prep_inj_tm1)
+        prob_diag = self.calc_prob_diag(prep_type, prep_type_tm1)
         # outcomes
         r = rng.uniform(size=size)
         diagnosed = r < prob_diag
