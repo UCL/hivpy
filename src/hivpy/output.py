@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import itertools
 import math
 import operator
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -62,6 +64,10 @@ class SimulationOutput:
                           "Non-HIV deaths (ratio)", "Non-HIV deaths (over 15, male)",
                           "Non-HIV deaths (over 15, female)", "Non-HIV deaths (20-59, male)",
                           "Non-HIV deaths (20-59, female)"]
+
+        for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
+            key = f"Short term partners ({age}-{age+9}, {sex})"
+            output_columns.insert(17, key)
 
         for age_bound in range(self.age_min, self.age_max, self.age_step):
             if age_bound < self.age_max_active:
@@ -139,7 +145,10 @@ class SimulationOutput:
 
         # Update HIV prevalence in female sex workers
         sex_workers_idx = pop.get_sub_pop([(col.SEX_WORKER, operator.eq, True)])
-        self.output_stats.loc[self.step, "Sex worker (ratio)"] = self._ratio(sex_workers_idx, women_idx)
+        potential_sw = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female),
+                                        (col.AGE, operator.ge, 15),
+                                        (col.AGE, operator.lt, 50)])
+        self.output_stats.loc[self.step, "Sex worker (ratio)"] = self._ratio(sex_workers_idx, potential_sw)
         self.output_stats.loc[self.step, "HIV prevalence (sex worker)"] = (
             self._ratio(pop.get_sub_pop_intersection(sex_workers_idx, HIV_pos_idx), sex_workers_idx))
 
@@ -247,6 +256,18 @@ class SimulationOutput:
                                    (col.AGE, operator.lt, 65),
                                    (col.NUM_PARTNERS, operator.ge, 1)])
         self.output_stats.loc[self.step, "Short term partners (15-64)"] = self._ratio(stp_idx, age_idx)
+
+        # Proportion of people with at least one short term partner
+        for (age, sex) in product([15, 25, 35, 45, 55], (SexType.Male, SexType.Female)):
+            self.output_stats.loc[self.step, f"Short term partners ({age}-{age+9}, {sex})"] = \
+                self._ratio(pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                             (col.AGE, operator.lt, age+10),
+                                             (col.SEX, operator.eq, sex),
+                                             (col.NUM_PARTNERS, operator.ge, 1)]),
+                            pop.get_sub_pop([(col.AGE, operator.ge, age),
+                                             (col.AGE, operator.lt, age+10),
+                                             (col.SEX, operator.eq, sex)]))
+
         # Update proportion of people with 5+ short term partners
         stp_over_5_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
                                           (col.AGE, operator.lt, 65),
@@ -257,16 +278,20 @@ class SimulationOutput:
         # Update short term partner sex balance statistics
         men_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
-        active_idx = pop.get_sub_pop([(col.NUM_PARTNERS, operator.gt, 0)])
+        active_idx = pop.get_sub_pop([(col.AGE, operator.ge, 15),
+                                      (col.AGE, operator.lt, 65),
+                                      (col.NUM_PARTNERS, operator.gt, 0)])
         active_men = pop.get_sub_pop_intersection(active_idx, men_idx)
         active_women = pop.get_sub_pop_intersection(active_idx, women_idx)
         # Get flattened lists of partner age groups (values 0-4)
         women_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_women).values
-        women_stp_age_list = (np.concatenate(women_stp_age_list).ravel() if len(women_stp_age_list) > 0
-                              else women_stp_age_list).tolist()
         men_stp_age_list = pop.get_variable(col.STP_AGE_GROUPS, active_men).values
-        men_stp_age_list = (np.concatenate(men_stp_age_list).ravel() if len(men_stp_age_list) > 0
-                            else men_stp_age_list).tolist()
+
+        def get_partners_in_groups(stp_of_sex):
+            a, f = np.unique(list(itertools.chain.from_iterable(stp_of_sex)), return_counts=True)
+            return dict(zip(a, f))
+        male_stp_in_age_groups = get_partners_in_groups(women_stp_age_list)
+        female_stp_in_age_groups = get_partners_in_groups(men_stp_age_list)
 
         # FIXME: should we log all ratios here or have this step happen in post?
         # NOTE: sum type converted from numpy.int64
@@ -280,22 +305,24 @@ class SimulationOutput:
         # Update short term partner sex balance statistics by age group
         for age_bound in range(self.age_min, self.age_max_active, self.age_step):
             age_group = int(age_bound/10)-1
-            age_idx = pop.get_sub_pop([(col.AGE, operator.ge, age_bound),
-                                       (col.AGE, operator.lt, age_bound+self.age_step)])
-            men_of_age = pop.get_sub_pop_intersection(age_idx, active_men)
-            women_of_age = pop.get_sub_pop_intersection(age_idx, active_women)
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, male)"
             # Count occurrences of current age group
-            women_stp_num = women_stp_age_list.count(age_group)
+            n_male_stp = male_stp_in_age_groups.get(age_group)
+            if n_male_stp is None:
+                n_male_stp = 0
             self.output_stats.loc[self.step, key] = self._log(
-                self._ratio(int(pop.get_variable(col.NUM_PARTNERS, men_of_age).sum()), women_stp_num))
+                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Male] /
+                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Male])
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             # Count occurrences of current age group
-            men_stp_num = men_stp_age_list.count(age_group)
+            n_female_stp = female_stp_in_age_groups.get(age_group)
+            if n_female_stp is None:
+                n_female_stp = 0
             self.output_stats.loc[self.step, key] = self._log(
-                self._ratio(int(pop.get_variable(col.NUM_PARTNERS, women_of_age).sum()), men_stp_num))
+                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Female] /
+                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Female])
 
     def _update_births(self, pop: Population, time_step):
         # Update total births
