@@ -1,9 +1,10 @@
 import argparse
 import pathlib
 
+
 import yaml
 
-from .experiment import create_experiment, run_experiment
+from hivpy.experiment import create_experiment, run_experiment
 
 
 def run_model():

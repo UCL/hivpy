@@ -27,6 +27,8 @@ SEX_BEHAVIOUR = "sex_behaviour"                 # int: sexual behaviour grouping
 SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourClass(enum): Men, Young Women, Older Women, or Sex Workers
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
+LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has not short term partners o/w false
+RISK_LTP = "risk_ltp"                           # float: Float risk of long-term partner becoming infected
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
 ANC = "anc"                                     # bool: True if in antenatal care
@@ -56,6 +58,7 @@ LAST_TEST_DATE = "last_test_date"               # None | datetime.date: date of 
 NSTP_LAST_TEST = "nstp_last_test"               # int: number of short term condomless sex partners since last test (DUMMY)
 NP_LAST_TEST = "np_last_test"                   # int: total number of condomless sex partners since last test (DUMMY)
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
+LTP_STATUS = "LTP_status"                       # bool: True if long term partner is HIV positive, o/w False
 DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: date of HIV infection if HIV+, o/w None
 IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if individual had a positive HIV test
