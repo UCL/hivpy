@@ -2,9 +2,9 @@ from enum import IntEnum
 
 
 class PrEPType(IntEnum):
-    Oral = 1
-    Injectable = 2
-    VaginalRing = 3
+    Oral = 0
+    Injectable = 1
+    VaginalRing = 2
 
 
 class PrEPModule:
