@@ -78,7 +78,7 @@ SBI_DIAGNOSED = "sbi_diagnosed"                 # Bool: True if SBI diagnosed th
 WHO4_OTHER = "who4_other"                       # Bool: True if other WHO4 disease occurs this timestep
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disease diagnosed this timestep
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
-PREP_INJ = "prep_inj"                           # DUMMY
+PREP_TYPE = "prep_type"                         # prep.PrEPType(enum): PrEPType.Oral, PrEPType.Injectable, or PrEPType.VaginalRing (DUMMY)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
