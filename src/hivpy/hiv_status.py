@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from .population import Population
 
 import operator as op
+from enum import IntEnum
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,14 @@ import hivpy.column_names as col
 
 from . import output
 from .common import COND, SexType, opposite_sex, rng, timedelta
+from .prep import PrEPType
+
+
+# Ab (default), PCR (RNA VL), Ag/Ab
+class HIVTestType(IntEnum):
+    Ab = 0
+    PCR = 1
+    AgAb = 2
 
 
 class HIVStatusModule:
@@ -82,9 +91,11 @@ class HIVStatusModule:
         self.cm_mortality_factor = rng.choice([3, 5, 10])
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
-        # 0 = Ab (default), 1 = PCR (RNA VL), 2 = Ag/Ab
-        self.hiv_test_type = 0
-        self.test_sens_primary_default = rng.choice([0.5, 0.75])
+        self.hiv_test_type = HIVTestType.Ab
+        self.test_sens_primary_ab = rng.choice([0.5, 0.75])
+        self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
+        # based on sens_tests_prep_inj in the SAS code
+        self.test_sens_prep_inj_primary_pcr = rng.choice([0.7, 0.5, 0.3, 0.2])
 
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
@@ -449,16 +460,28 @@ class HIVStatusModule:
         Calculates the probability of an individual getting diagnosed
         with HIV based on test sensitivity and injectable PrEP usage.
         """
+        eff_test_sens_primary = 0
         # default Ab test type
-        eff_test_sens_primary = self.test_sens_primary_default
+        if self.hiv_test_type == HIVTestType.Ab:
+            # injectable PrEP taken this and last time step
+            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+                eff_test_sens_primary = self.test_sens_prep_inj_primary_ab
+            else:
+                eff_test_sens_primary = self.test_sens_primary_ab
         # PCR test type
-        if self.hiv_test_type == 1:
-            eff_test_sens_primary = 0.86
+        elif self.hiv_test_type == HIVTestType.PCR:
+            # injectable PrEP taken this and last time step
+            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+                eff_test_sens_primary = self.test_sens_prep_inj_primary_pcr
+            else:
+                eff_test_sens_primary = 0.86
         # Ag/Ab test type
-        elif self.hiv_test_type == 2:
-            eff_test_sens_primary = 0.75
-
-        # FIXME: add injectable PrEP effects
+        elif self.hiv_test_type == HIVTestType.AgAb:
+            # injectable PrEP taken this and last time step
+            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+                eff_test_sens_primary = 0
+            else:
+                eff_test_sens_primary = 0.75
 
         return eff_test_sens_primary
 
