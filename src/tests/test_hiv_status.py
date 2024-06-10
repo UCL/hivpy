@@ -395,7 +395,7 @@ def test_no_infection_in_nonmonogamous_ltp():
     """
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
-        
+
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_MONOGAMOUS, False)
     pop.set_present_variable(col.HIV_STATUS, False)
@@ -407,8 +407,9 @@ def test_no_infection_in_nonmonogamous_ltp():
 
 
 def test_ltp_deterministic_variables():
-    #incidence factor, proportion, deterministic variables as class variables
-
+    """
+    Check that for a specific group in the population the estimation is as expected 
+    """
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
 
@@ -417,56 +418,44 @@ def test_ltp_deterministic_variables():
     pop.set_present_variable(col.AGE, 18, list(range(400)))
     pop.set_present_variable(col.AGE_GROUP, 0, list(range(400)))
 
-    # set first 100 people as female HIV- 
+    # set first 100 people as female HIV-
     women_neg = list(range(100))
-    pop.set_present_variable(col.SEX, SexType.Female, women_neg )
+    pop.set_present_variable(col.SEX, SexType.Female, women_neg)
     pop.set_present_variable(col.HIV_STATUS, False, women_neg)
     pop.set_present_variable(col.LTP_STATUS, True, women_neg)
-    pop.set_present_variable(col.NUM_PARTNERS, 0, women_neg) 
+    pop.set_present_variable(col.NUM_PARTNERS, 0, women_neg)
 
-    # set next 100 people as female HIV+ 
-    hiv_pos_women = list(range(100,200))
+    # set next 100 people as female HIV+
+    hiv_pos_women = list(range(100, 200))
     pop.set_present_variable(col.SEX, SexType.Female, hiv_pos_women)
     pop.set_present_variable(col.HIV_STATUS, True, hiv_pos_women)
     pop.set_present_variable(col.LTP_STATUS, True, hiv_pos_women)
-    pop.set_present_variable(col.NUM_PARTNERS,1, hiv_pos_women)
-    pop.set_present_variable(col.LTP_MONOGAMOUS, False, hiv_pos_women) #it is not working as in 323 LTP_MONOGAMOUS is randomised
-    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True, list(range(100,110)))  # 10% in primary
+    pop.set_present_variable(col.NUM_PARTNERS, 1, hiv_pos_women)
+    pop.set_present_variable(col.LTP_MONOGAMOUS, False, hiv_pos_women)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True, list(range(100, 110)))  # 10% in primary
 
-    # set 200 people as male 
-    men = list(range(200,400))
+    # set 200 people as male
+    men = list(range(200, 400))
     pop.set_present_variable(col.SEX, SexType.Male, men)
     pop.set_present_variable(col.HIV_STATUS, True, men)
     pop.set_present_variable(col.LTP_STATUS, False, men)
-    
 
     HIVM = HIVStatusModule()
     HIVM.ltp_transmission(pop)
 
-
     assert np.isclose(HIVM.incidence_factor[SexType.Female], 3.5)
     assert np.isclose(HIVM.prop_monogamous[SexType.Female][0], 0.5)
     assert np.isclose(HIVM.incidence[SexType.Male], 0.1)
+
     # Expect: ~ 50% of men's LTPs to be non monogamous (in age group 0)
-    # Expect: ~ 35% of non monogamous LTPs of men to be HIV+  (in age group 0)
     males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                     (col.AGE_GROUP, op.eq, 0)])
+                             (col.AGE_GROUP, op.eq, 0)])
     men_ltp_monogamous = pop.get_variable(col.LTP_MONOGAMOUS, males)
-#     assert(70 < sum(men_ltp_monogamous) < 130)
-#     men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
-#     assert(20 < sum(men_ltp_status) < 50)
-    # return pop
+    assert 70 < sum(men_ltp_monogamous) < 130
 
-
-
-# def test_expected_infection_in_nonmonogamous_ltp():
-#     #test random allocation given fixed numbers of variables above. eg 0 proportion
-
-#     """
-#     Check that the expected number of infections occurs in non-monogamous ltps.
-#     """
-#     pop = test_ltp_deterministic_variables()
-  
+    # Expect: ~ 35% of non monogamous LTPs of men to be HIV+  (in age group 0)
+    # men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
+    # assert 20 < sum(men_ltp_status) < 50
 
 
 def test_infection_in_monogamous_ltp():
@@ -475,35 +464,31 @@ def test_infection_in_monogamous_ltp():
     """
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
-    
+
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_MONOGAMOUS, True)
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.AGE_GROUP, 0)
-    #pop.set_present_variable(col.VIRAL_LOAD, rng.uniform(0, 8, N))
+    # pop.set_present_variable(col.VIRAL_LOAD, rng.uniform(0, 8, N))
 
     male_sample = list(range(100))
     pop.set_present_variable(col.STI, False, male_sample)
     pop.set_present_variable(col.SEX, SexType.Male, male_sample)
     pop.set_present_variable(col.VIRAL_LOAD, 6, male_sample)
-    #asert risk_ltp: 0-1.42
-    
+    # asert risk_ltp: 0-1.42
 
-
-    female_sample = list(range(100,200))
+    female_sample = list(range(100, 200))
     pop.set_present_variable(col.STI, True, female_sample)
     pop.set_present_variable(col.SEX, SexType.Female, female_sample)
     pop.set_present_variable(col.VIRAL_LOAD, 5, female_sample)
-    #assert risk_ltp: 0-16.2
+    # assert risk_ltp: 0-16.2
 
     HIVM = HIVStatusModule()
     HIVM.ltp_transmission(pop)
 
-    male_risk_ltp = pop.get_variable(col.RISK_LTP, sub_pop = male_sample)
-    female_risk_ltp = pop.get_variable(col.RISK_LTP, sub_pop = female_sample)
+    male_risk_ltp = pop.get_variable(col.RISK_LTP, sub_pop=male_sample)
+    female_risk_ltp = pop.get_variable(col.RISK_LTP, sub_pop=female_sample)
 
-    assert  (0 <= np.max(male_risk_ltp) <= 1.42)
-    assert  (0 <= np.max(female_risk_ltp) <= 16.2)
-
-
+    assert (0 <= np.max(male_risk_ltp) <= 1.42)
+    assert (0 <= np.max(female_risk_ltp) <= 16.2)
