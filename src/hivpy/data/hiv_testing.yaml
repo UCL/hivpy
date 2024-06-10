@@ -1,6 +1,7 @@
-# years during which HIV testing begins
-date_start_anc_testing: 2003.5
-date_start_testing: 2009
+# year during which HIV testing begins
+date_start_testing: 2003.5
+# year after which rate of testing starts increasing
+date_rate_testing_incr: 2009
 
 # starting probability for first tests
 init_rate_first_test: 0
@@ -35,10 +36,11 @@ test_targeting:
   Value: [1, 1.25, 1.5]
   Probability: [0.2, 0.6, 0.2]
 
-# year during which testing probability plateaus
-date_test_rate_plateau:
+# years during which testing probability plateaus
+date_general_testing_plateau:
   Value: [2011.5, 2013.5, 2015.5, 2017.5, 2019.5]
   Probability: [0.1, 0.1, 0.2, 0.3, 0.3]
+date_specific_testing_plateau: 2015
 
 # multiplier for testing probability
 an_lin_incr_test:

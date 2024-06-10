@@ -15,9 +15,8 @@ class HIVTestingModule:
         with importlib.resources.path("hivpy.data", "hiv_testing.yaml") as data_path:
             self.ht_data = HIVTestingData(data_path)
 
-        # FIXME: date_start_anc_testing currently unused, do we need this for anything?
-        self.date_start_anc_testing = self.ht_data.date_start_anc_testing
         self.date_start_testing = self.ht_data.date_start_testing
+        self.date_rate_testing_incr = self.ht_data.date_rate_testing_incr
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
         self.test_scenario = self.ht_data.test_scenario
@@ -33,7 +32,8 @@ class HIVTestingModule:
         self.prob_test_tb = self.ht_data.prob_test_tb
         self.prob_test_non_tb_who3 = self.ht_data.prob_test_non_tb_who3
         self.test_targeting = self.ht_data.test_targeting.sample()
-        self.date_test_rate_plateau = self.ht_data.date_test_rate_plateau.sample()
+        self.date_general_testing_plateau = self.ht_data.date_general_testing_plateau.sample()
+        self.date_specific_testing_plateau = self.ht_data.date_specific_testing_plateau
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
         self.incr_test_rate_sympt = self.ht_data.incr_test_rate_sympt.sample()
 
@@ -79,16 +79,16 @@ class HIVTestingModule:
         """
         Mark HIV symptomatic individuals to undergo testing this time step.
 
-        Note: If the simulation is started after 2015 (or if date_start_testing
-        is set to be after 2015) the HIV symptomatic testing probabilities
-        will not be updated and this function may not work as expected.
+        Note: If the simulation is started after date_specific_testing_plateau
+        (or if date_start_testing is set to be after date_specific_testing_plateau)
+        the HIV symptomatic testing probabilities will not be updated
+        and this function may not work as expected.
         """
         # testing occurs after a certain year
-        if (pop.date.year >= self.date_start_testing):
+        if (pop.date.year > self.date_start_testing):
 
             # update symptomatic test probabilities
-            # FIXME: where does this year come from? move to yaml later
-            if pop.date.year <= 2015:
+            if pop.date.year <= self.date_specific_testing_plateau:
                 self.prob_test_who4 = min(0.9, self.prob_test_who4 * self.incr_test_rate_sympt)
                 self.prob_test_tb = min(0.8, self.prob_test_tb * self.incr_test_rate_sympt)
                 self.prob_test_non_tb_who3 = min(0.7, self.prob_test_non_tb_who3 * self.incr_test_rate_sympt)
@@ -240,10 +240,9 @@ class HIVTestingModule:
             self.test_mark_sex_workers(pop)
 
             # update testing probabilities
-            self.rate_first_test = self.init_rate_first_test + (min(pop.date.year, self.date_test_rate_plateau)
-                                                                - self.date_start_testing) * self.an_lin_incr_test
-            self.rate_rep_test = (min(pop.date.year, self.date_test_rate_plateau)
-                                  - self.date_start_testing) * self.an_lin_incr_test
+            self.rate_rep_test = (min(pop.date.year, self.date_general_testing_plateau)
+                                  - self.date_rate_testing_incr) * self.an_lin_incr_test
+            self.rate_first_test = self.init_rate_first_test + self.rate_rep_test
 
             # general population ready for testing
             testing_population = pop.get_sub_pop(AND(COND(col.HARD_REACH, op.eq, False),

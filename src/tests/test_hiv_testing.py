@@ -32,7 +32,8 @@ def test_hiv_symptomatic_testing():
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[pop.get_correct_column(col.ADC, dt=1)] = True
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.prob_test_who4 = 0.6
     pop.hiv_testing.prob_test_tb = 0.5
     pop.hiv_testing.prob_test_non_tb_who3 = 0.4
@@ -100,7 +101,8 @@ def test_non_hiv_symptomatic_testing():
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[pop.get_correct_column(col.HIV_DIAGNOSED, dt=1)] = False
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.prob_test_non_hiv_symptoms = 1
     pop.hiv_testing.prob_test_who4 = 0.6
     pop.hiv_testing.prob_test_non_tb_who3 = 0.4
@@ -132,7 +134,8 @@ def test_general_sex_worker_testing():
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=150)
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.eff_max_freq_testing = 0
     pop.hiv_testing.sw_test_regularly = True
     pop.hiv_testing.covid_disrup_affected = False
@@ -167,9 +170,10 @@ def test_general_testing_conditions():
     pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
     pop.data[col.NP_LAST_TEST] = 1
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.eff_max_freq_testing = 1
-    pop.hiv_testing.date_test_rate_plateau = 2015.5
+    pop.hiv_testing.date_general_testing_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -211,9 +215,10 @@ def test_first_time_testers():
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.init_rate_first_test = 0.1
-    pop.hiv_testing.date_test_rate_plateau = 2015.5
+    pop.hiv_testing.date_general_testing_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -245,9 +250,10 @@ def test_repeat_testers():
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
-    pop.hiv_testing.date_start_testing = 2009
+    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_rate_testing_incr = 2009
     pop.hiv_testing.eff_max_freq_testing = 1
-    pop.hiv_testing.date_test_rate_plateau = 2015.5
+    pop.hiv_testing.date_general_testing_plateau = 2015.5
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -282,10 +288,11 @@ def test_partner_reset_after_test():
         pop.data[col.NP_LAST_TEST] = 2
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = 2009
+        pop.hiv_testing.date_start_testing = 2003.5
+        pop.hiv_testing.date_rate_testing_incr = 2009
         pop.hiv_testing.eff_max_freq_testing = 1
         pop.hiv_testing.init_rate_first_test = 0.1
-        pop.hiv_testing.date_test_rate_plateau = 2015.5
+        pop.hiv_testing.date_general_testing_plateau = 2015.5
         pop.hiv_testing.an_lin_incr_test = 0.8
         pop.hiv_testing.no_test_if_np0 = False
         pop.hiv_testing.sw_test_regularly = False
@@ -319,9 +326,10 @@ def test_max_frequency_testing():
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = 2009
+        pop.hiv_testing.date_start_testing = 2003.5
+        pop.hiv_testing.date_rate_testing_incr = 2009
         pop.hiv_testing.eff_max_freq_testing = index
-        pop.hiv_testing.date_test_rate_plateau = 2015.5
+        pop.hiv_testing.date_general_testing_plateau = 2015.5
         # guaranteed testing
         pop.hiv_testing.an_lin_incr_test = 1
         pop.hiv_testing.no_test_if_np0 = False
