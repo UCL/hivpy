@@ -289,6 +289,9 @@ class Population:
             if (n_deaths and self.apply_death):
                 self.drop_from_population(HIV_deaths)
 
+        # Some population cleanup
+        self.pregnancy.reset_anc_at_birth(self)
+
         # Apply non-hiv deaths
         non_HIV_deaths = self.demographics.determine_deaths(self, time_step)
         n_deaths = n_deaths + sum(non_HIV_deaths)

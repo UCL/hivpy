@@ -64,11 +64,11 @@ class HIVTestingModule:
         COVID disruption is factored in.
         """
         # mark people for testing
-        # hiv symptomatic > non hiv symptomatic > vmmc > anc > self testing > general > prep
+        # anc > hiv symptomatic > non hiv symptomatic > vmmc > self testing > general > prep
+        self.test_mark_anc(pop, time_step)
         self.test_mark_hiv_symptomatic(pop)
         self.test_mark_non_hiv_symptomatic(pop)
         self.test_mark_vmmc(pop, time_step)
-        self.test_mark_anc(pop, time_step)
         self.test_mark_general_pop(pop)
 
         # apply testing to marked population
@@ -152,7 +152,7 @@ class HIVTestingModule:
            & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
             # undiagnosed (last time step) population not scheduled for testing
-            not_diag_tested_pop = pop.get_sub_pop([(pop.get_correct_column(col.HIV_DIAGNOSED, dt=1), op.eq, False),
+            not_diag_tested_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.TEST_MARK, op.eq, False)])
 
             if len(not_diag_tested_pop) > 0:
@@ -209,8 +209,6 @@ class HIVTestingModule:
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
                                                     - timedelta(days=270))])
             self.update_sub_pop_test_mark(pop, third_trimester_pop, self.prob_anc_test_trim3)
-            # remove from antenatal care
-            pop.set_present_variable(col.ANC, False, third_trimester_pop)
 
             # get post-delivery population tested during the previous time step
             post_delivery_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),

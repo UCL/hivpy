@@ -359,6 +359,7 @@ def test_anc_testing():
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
+    pop.pregnancy.reset_anc_at_birth(pop)
 
     # get stats
     no_tested = len(pop.get_sub_pop([(col.LAST_TEST_DATE, op.eq, pop.date)]))

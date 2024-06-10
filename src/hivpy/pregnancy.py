@@ -227,6 +227,19 @@ class PregnancyModule:
             # assign outcomes
             pop.set_present_variable(col.WANT_NO_CHILDREN, want_no_children, want_children_population)
 
+    def reset_anc_at_birth(self, pop: Population):
+        """
+        Reset the ANC status of everyone giving birth this time step
+        if they are currently in ANC.
+        """
+        # get population at the end of the third trimester
+        third_trimester_pop = pop.get_sub_pop([(col.ANC, op.eq, True),
+                                               (col.LAST_PREGNANCY_DATE, op.le, pop.date
+                                                - timedelta(days=270))])
+        if len(third_trimester_pop) > 0:
+            # remove from antenatal care
+            pop.set_present_variable(col.ANC, False, third_trimester_pop)
+
     def calc_prob_preg(self, age_group, ltp, stp, want_no_children):
         """
         Calculates the probability of getting pregnant for a group
