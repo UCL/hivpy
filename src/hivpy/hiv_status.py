@@ -262,7 +262,7 @@ class HIVStatusModule:
 
     def ltp_transmission(self, population: Population):
         """
-        Sets population set for which HIV transmission occurs from a long term partner. 
+        Sets population set for which HIV transmission occurs from a long term partner.
         Considers monogamous and non-monogamous relationships.
         """
         num_neg_women_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, SexType.Female),
@@ -443,7 +443,6 @@ class HIVStatusModule:
         # TODO: Add ltp HIV transmission
         # Determine HIV status after transmission
         new_HIV_status = population.apply_function(self.stp_HIV_transmission, 1, HIV_neg_active_pop)
-    
         # Apply HIV status to sub-population
         population.set_present_variable(col.HIV_STATUS,
                                         new_HIV_status,

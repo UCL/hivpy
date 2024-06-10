@@ -408,7 +408,7 @@ def test_no_infection_in_nonmonogamous_ltp():
 
 def test_ltp_deterministic_variables():
     """
-    Check that for a specific group in the population the estimation is as expected 
+    Check that for a specific group in the population the estimation is as expected
     """
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
