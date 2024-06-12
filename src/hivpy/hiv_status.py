@@ -92,6 +92,7 @@ class HIVStatusModule:
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
         self.hiv_test_type = HIVTestType.Ab
+        self.test_sens_general = 0.98
         self.test_sens_primary_ab = rng.choice([0.5, 0.75])
         self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
         # based on sens_tests_prep_inj in the SAS code
@@ -447,18 +448,29 @@ class HIVStatusModule:
             # primary infection diagnosis outcomes
             diagnosed = pop.transform_group([pop.get_correct_column(col.PREP_TYPE, dt=0),
                                              pop.get_correct_column(col.PREP_TYPE, dt=1)],
-                                            self.calc_diag_outcomes, sub_pop=primary_pop)
+                                            self.calc_primary_diag_outcomes, sub_pop=primary_pop)
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, primary_pop)
             pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
                                      sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
 
-        # FIXME: add ordinary (non-primary infection) testing
+        # remaining tested general population
+        general_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, False),
+                                       (col.LAST_TEST_DATE, op.eq, pop.date)])
 
-    def calc_prob_diag(self, prep_type, prep_type_tm1):
+        if len(general_pop) > 0:
+            # general diagnosis outcomes
+            r = rng.uniform(size=len(general_pop))
+            diagnosed = r < self.test_sens_general
+            # set outcomes
+            pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, general_pop)
+            pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
+                                     sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
+
+    def calc_prob_primary_diag(self, prep_type, prep_type_tm1):
         """
-        Calculates the probability of an individual getting diagnosed
-        with HIV based on test sensitivity and injectable PrEP usage.
+        Calculates the probability of an individual in primary infection getting
+        diagnosed with HIV based on test sensitivity and injectable PrEP usage.
         """
         eff_test_sens_primary = 0
         # default Ab test type
@@ -485,11 +497,12 @@ class HIVStatusModule:
 
         return eff_test_sens_primary
 
-    def calc_diag_outcomes(self, prep_type, prep_type_tm1, size):
+    def calc_primary_diag_outcomes(self, prep_type, prep_type_tm1, size):
         """
-        Uses HIV test sensitivity to return diagnosis outcomes.
+        Uses HIV test sensitivity and injectable PrEP usage to return
+        primary infection diagnosis outcomes.
         """
-        prob_diag = self.calc_prob_diag(prep_type, prep_type_tm1)
+        prob_diag = self.calc_prob_primary_diag(prep_type, prep_type_tm1)
         # outcomes
         r = rng.uniform(size=size)
         diagnosed = r < prob_diag
