@@ -60,6 +60,7 @@ DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: date of HIV infec
 IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if individual had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
+UNDER_CARE = "under_care"                       # bool: True if under care after a positive HIV diagnosis
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 0-5 placing bounds on viral load for an HIV positive person
 VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ person
 CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter; set to None for people w/o HIV

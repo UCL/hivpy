@@ -97,6 +97,10 @@ class HIVStatusModule:
         self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
         # based on sens_tests_prep_inj in the SAS code
         self.test_sens_prep_inj_primary_pcr = rng.choice([0.7, 0.5, 0.3, 0.2])
+        # FIXME: double-check if 0.05 being present twice is intentional
+        self.prob_loss_at_diag = rng.choice([0.01, 0.02, 0.04, 0.05, 0.05, 0.15, 0.30, 0.35, 0.50, 0.60])
+        # FIXME: may be 2 or 3 if sw_art_disadv=1
+        self.sw_incr_prob_loss_at_diag = 1
 
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
@@ -106,6 +110,7 @@ class HIVStatusModule:
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        population.init_variable(col.UNDER_CARE, False)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
         population.init_variable(col.VIRAL_LOAD, 0.0)
         population.init_variable(col.X4_VIRUS, False)
@@ -454,6 +459,11 @@ class HIVStatusModule:
             pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
                                      sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
 
+            # some people lost at diagnosis
+            lost = pop.transform_group([col.SEX_WORKER], self.calc_primary_loss_at_diag, sub_pop=primary_pop)
+            pop.set_present_variable(col.UNDER_CARE, True,
+                                     sub_pop=pop.apply_bool_mask(diagnosed and not lost, primary_pop))
+
         # remaining tested general population
         general_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, False),
                                        (col.LAST_TEST_DATE, op.eq, pop.date)])
@@ -508,3 +518,28 @@ class HIVStatusModule:
         diagnosed = r < prob_diag
 
         return diagnosed
+
+    def calc_prob_primary_loss_at_diag(self, sex_worker):
+        """
+        Calculates the probability of an individual in primary infection diagnosed
+        with HIV exiting care after diagnosis based on sex worker status.
+        """
+        # FIXME: may need to be affected by lower future ART coverage and/or decr_prob_loss_at_diag_year_i
+        eff_prob_loss_at_diag = self.prob_loss_at_diag
+        if sex_worker:
+            # FIXME: use eff_sw_incr_prob_loss_at_diag after introducing ART and SW programs
+            eff_prob_loss_at_diag = min(1, eff_prob_loss_at_diag * self.sw_incr_prob_loss_at_diag)
+
+        return eff_prob_loss_at_diag
+
+    def calc_primary_loss_at_diag(self, sex_worker, size):
+        """
+        Uses sex worker status in individuals in primary infection after a
+        positive HIV diagnosis to return loss of care outcomes.
+        """
+        prob_loss = self.calc_prob_primary_loss_at_diag(sex_worker)
+        # outcomes
+        r = rng.uniform(size=size)
+        lost = r < prob_loss
+
+        return lost
