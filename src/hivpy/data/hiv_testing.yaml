@@ -40,7 +40,7 @@ test_targeting:
 date_general_testing_plateau:
   Value: [2011.5, 2013.5, 2015.5, 2017.5, 2019.5]
   Probability: [0.1, 0.1, 0.2, 0.3, 0.3]
-date_specific_testing_plateau: 2015
+date_targeted_testing_plateau: 2015
 
 # multiplier for testing probability
 an_lin_incr_test:

@@ -33,7 +33,7 @@ class HIVTestingModule:
         self.prob_test_non_tb_who3 = self.ht_data.prob_test_non_tb_who3
         self.test_targeting = self.ht_data.test_targeting.sample()
         self.date_general_testing_plateau = self.ht_data.date_general_testing_plateau.sample()
-        self.date_specific_testing_plateau = self.ht_data.date_specific_testing_plateau
+        self.date_targeted_testing_plateau = self.ht_data.date_targeted_testing_plateau
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
         self.incr_test_rate_sympt = self.ht_data.incr_test_rate_sympt.sample()
 
@@ -79,8 +79,8 @@ class HIVTestingModule:
         """
         Mark HIV symptomatic individuals to undergo testing this time step.
 
-        Note: If the simulation is started after date_specific_testing_plateau
-        (or if date_start_testing is set to be after date_specific_testing_plateau)
+        Note: If the simulation is started after date_targeted_testing_plateau
+        (or if date_start_testing is set to be after date_targeted_testing_plateau)
         the HIV symptomatic testing probabilities will not be updated
         and this function may not work as expected.
         """
@@ -88,7 +88,7 @@ class HIVTestingModule:
         if (pop.date.year > self.date_start_testing):
 
             # update symptomatic test probabilities
-            if pop.date.year <= self.date_specific_testing_plateau:
+            if pop.date.year <= self.date_targeted_testing_plateau:
                 self.prob_test_who4 = min(0.9, self.prob_test_who4 * self.incr_test_rate_sympt)
                 self.prob_test_tb = min(0.8, self.prob_test_tb * self.incr_test_rate_sympt)
                 self.prob_test_non_tb_who3 = min(0.7, self.prob_test_non_tb_who3 * self.incr_test_rate_sympt)

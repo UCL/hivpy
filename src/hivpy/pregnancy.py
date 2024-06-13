@@ -154,7 +154,7 @@ class PregnancyModule:
         # get population that became pregnant this time step
         pregnant_population = pop.get_sub_pop([(col.PREGNANT, op.eq, True),
                                                (col.LAST_PREGNANCY_DATE, op.eq, pop.date)])
-        # FIXME: should be affected by date_start_testing and date_specific_testing_plateau
+        # FIXME: should be affected by date_start_testing and date_targeted_testing_plateau
         # update probability of antenatal care attendance
         self.prob_anc = min(max(self.prob_anc, 0.1) + self.rate_test_anc_inc, 0.975)
 

@@ -30,7 +30,7 @@ class HIVTestingData(DataReader):
             self.prob_test_non_tb_who3 = self.data["prob_test_non_tb_who3"]
             self.test_targeting = self._get_discrete_dist("test_targeting")
             self.date_general_testing_plateau = self._get_discrete_dist("date_general_testing_plateau")
-            self.date_specific_testing_plateau = self.data["date_specific_testing_plateau"]
+            self.date_targeted_testing_plateau = self.data["date_targeted_testing_plateau"]
             self.an_lin_incr_test = self._get_discrete_dist("an_lin_incr_test")
             self.incr_test_rate_sympt = self._get_discrete_dist("incr_test_rate_sympt")
 
