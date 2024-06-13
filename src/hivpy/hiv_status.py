@@ -460,7 +460,8 @@ class HIVStatusModule:
                                      sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
 
             # some people lost at diagnosis
-            lost = pop.transform_group([col.SEX_WORKER], self.calc_primary_loss_at_diag, sub_pop=primary_pop)
+            lost = pop.transform_group([col.SEX_WORKER], self.calc_primary_loss_at_diag,
+                                       sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
             pop.set_present_variable(col.UNDER_CARE, True,
                                      sub_pop=pop.apply_bool_mask(diagnosed and not lost, primary_pop))
 
