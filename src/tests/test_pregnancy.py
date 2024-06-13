@@ -223,10 +223,8 @@ def test_want_no_children():
     pop.data[col.NUM_CHILDREN] = 0
     pop.pregnancy.prob_pregnancy_base = 0.1
 
-    # make roughly half the population not want children
-    r = rng.uniform(size=len(pop.data))
-    want_no_children_outcomes = r < 0.5
-    pop.data[col.WANT_NO_CHILDREN] = want_no_children_outcomes
+    # make half the population not want children
+    pop.data[col.WANT_NO_CHILDREN] = [True, False] * (N//2)
 
     # advance pregnancy
     pop.pregnancy.update_pregnancy(pop)
@@ -235,7 +233,7 @@ def test_want_no_children():
     want_no_children = sum(pop.data[col.WANT_NO_CHILDREN])
     no_pregnant = sum(pop.data[col.WANT_NO_CHILDREN] & pop.data[col.PREGNANT])
     prob_preg = pop.pregnancy.prob_pregnancy_base * 2 * 0.2
-    mean = want_no_children * prob_preg
+    mean = (N - want_no_children) * prob_preg
     stdev = sqrt(mean * (1 - prob_preg))
     # check pregnancy value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
