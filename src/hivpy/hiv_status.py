@@ -101,6 +101,9 @@ class HIVStatusModule:
         self.prob_loss_at_diag = rng.choice([0.01, 0.02, 0.04, 0.05, 0.05, 0.15, 0.30, 0.35, 0.50, 0.60])
         # FIXME: may be 2 or 3 if sw_art_disadv=1
         self.sw_incr_prob_loss_at_diag = 1
+        self.higher_newp_less_engagement = rng.choice([0, 0.2, 0.8, 1])
+        self.prob_loss_at_diag_adc_tb = rng.beta(5, 95)
+        self.prob_loss_at_diag_non_tb_who3 = rng.beta(15, 85)
 
     def init_HIV_variables(self, population: Population):
         population.init_variable(col.HIV_STATUS, False)
@@ -472,11 +475,23 @@ class HIVStatusModule:
         if len(general_pop) > 0:
             # general diagnosis outcomes
             r = rng.uniform(size=len(general_pop))
+            # FIXME: should be affected by test type and injectable prep usage
             diagnosed = r < self.test_sens_general
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, general_pop)
             pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
                                      sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
+
+            # FIXME: should also include onart_tm1 and may need to be affected by date_most_recent_tb
+            # some people lost at diagnosis
+            lost = pop.transform_group([col.SEX_WORKER, pop.get_correct_column(col.NUM_PARTNERS, dt=1),
+                                        pop.get_correct_column(col.ADC, dt=1),
+                                        pop.get_correct_column(col.TB, dt=1),
+                                        pop.get_correct_column(col.NON_TB_WHO3, dt=1)],
+                                       self.calc_general_loss_at_diag,
+                                       sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
+            pop.set_present_variable(col.UNDER_CARE, True,
+                                     sub_pop=pop.apply_bool_mask(diagnosed and not lost, general_pop))
 
     def calc_prob_primary_diag(self, prep_type, prep_type_tm1):
         """
@@ -520,10 +535,10 @@ class HIVStatusModule:
 
         return diagnosed
 
-    def calc_prob_primary_loss_at_diag(self, sex_worker):
+    def calc_prob_loss_at_diag(self, sex_worker):
         """
-        Calculates the probability of an individual in primary infection diagnosed
-        with HIV exiting care after diagnosis based on sex worker status.
+        Calculates the generic probability of an individual diagnosed with HIV
+        exiting care after diagnosis based on sex worker status.
         """
         # FIXME: may need to be affected by lower future ART coverage and/or decr_prob_loss_at_diag_year_i
         eff_prob_loss_at_diag = self.prob_loss_at_diag
@@ -538,9 +553,33 @@ class HIVStatusModule:
         Uses sex worker status in individuals in primary infection after a
         positive HIV diagnosis to return loss of care outcomes.
         """
-        prob_loss = self.calc_prob_primary_loss_at_diag(sex_worker)
+        prob_loss = self.calc_prob_loss_at_diag(sex_worker)
         # outcomes
         r = rng.uniform(size=size)
         lost = r < prob_loss
+
+        return lost
+
+    def calc_general_loss_at_diag(self, sex_worker, num_stp_tm1, adc_tm1, tb_tm1, non_tb_who3_tm1, size):
+        """
+        Uses sex worker, ADC, TB, and non-TB WHO3 status and number of short term partners in
+        individuals not in primary infection after a positive HIV diagnosis
+        to return loss of care outcomes.
+        """
+        # outcomes
+        r = rng.uniform(size=size)
+        # ADC and non-TB WHO3 not present last time step
+        if not adc_tm1 and not non_tb_who3_tm1:
+            generic_prob_loss = self.calc_prob_loss_at_diag(sex_worker)
+            # people with more partners less likely to be engaged with care
+            if self.higher_newp_less_engagement == 1 and num_stp_tm1 > 1:
+                generic_prob_loss *= 1.5
+            lost = r < generic_prob_loss
+        # ADC or TB present last time step
+        elif adc_tm1 or tb_tm1:
+            lost = r < self.prob_loss_at_diag_adc_tb
+        # non-TB WHO3 present last time step
+        elif non_tb_who3_tm1:
+            lost = r < self.prob_loss_at_diag_non_tb_who3
 
         return lost
