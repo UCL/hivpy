@@ -28,7 +28,6 @@ SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourC
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has not short term partners o/w false
-RISK_LTP = "risk_ltp"                           # float: Float risk of long-term partner becoming infected
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
 ANC = "anc"                                     # bool: True if in antenatal care

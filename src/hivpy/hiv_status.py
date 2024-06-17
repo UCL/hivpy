@@ -44,6 +44,7 @@ class HIVStatusModule:
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
                           SexType.Female: 0}
+        
         self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
         self.sti_transmission_factor = rng.choice([2., 3.])
@@ -93,7 +94,6 @@ class HIVStatusModule:
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.LTP_STATUS, False)
         population.init_variable(col.LTP_MONOGAMOUS, False)
-        population.init_variable(col.RISK_LTP, 0.0)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.CD4, 0.0)
@@ -391,27 +391,18 @@ class HIVStatusModule:
                             fold_change_w if r < 0.33 else
                             fold_change_w * 5 if r > 0.67 else
                             fold_change_w * 3
-                                        )
+                        )
                     risk_ltp[i] = risk_ltp[i] * fold_change_w
-
-            population.set_present_variable(col.RISK_LTP, risk_ltp)
 
             # higher transmission risk in people with STI
             if len(monogamous_people_with_sti) > 0:
-                risk_ltp_sti = population.get_variable(col.RISK_LTP, sub_pop=monogamous_people_with_sti)
                 fold_change_sti = np.array(
-                    [2 if r < 0.333 else 5 if r > 0.67 else 3 for r in rng.uniform(0, 1, len(risk_ltp_sti))])
-                risk_ltp_sti = risk_ltp_sti * fold_change_sti
-                population.set_present_variable(col.RISK_LTP, risk_ltp_sti, monogamous_people_with_sti)
-
-            ltp_infected = rng.uniform(0, 1, size) < population.get_variable(
-                    col.RISK_LTP,
-                    sub_pop=population.get_sub_pop([
-                        (col.SEX, op.eq, sex),
-                        (col.AGE_GROUP, op.eq, age_group),
-                        (col.LONG_TERM_PARTNER, op.eq, True),
-                        (col.LTP_MONOGAMOUS, op.eq, True)
-                    ]))
+                    [2 if r < 0.333 else 5 if r > 0.67 else 3
+                        for r in rng.uniform(0, 1, len(monogamous_people_with_sti))]
+                    )
+                risk_ltp[monogamous_people_with_sti] = risk_ltp[monogamous_people_with_sti] * fold_change_sti
+ 
+            ltp_infected = rng.uniform(0, 1, size) < risk_ltp[monogamous_people_hiv_pos]
 
             return ltp_infected
 
@@ -476,7 +467,7 @@ class HIVStatusModule:
 
         def set_initial_CD4(person):
             sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + rng.normal(0, 2) \
-                       - (person[col.AGE] - 35)*0.05
+                - (person[col.AGE] - 35)*0.05
             upper_sqrt_cd4 = np.sqrt(1500)
             lower_sqrt_cd4 = 18
             sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits
