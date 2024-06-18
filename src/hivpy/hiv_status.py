@@ -44,7 +44,6 @@ class HIVStatusModule:
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
                           SexType.Female: 0}
-        
         self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
         self.sti_transmission_factor = rng.choice([2., 3.])
@@ -288,7 +287,7 @@ class HIVStatusModule:
 
         def calculate_incidence_factor(delta_hiv_ltp):
             incidence_factor = 1
-            boundaries = np.array([-5000, -2000, -500, -200, -75, -20])   # / 100000 * population.size
+            boundaries = np.array([-5000, -2000, -500, -200, -75, -20])   # TODO / 100000 * population.size
             multiplier = [abs(delta_hiv_ltp)/3, abs(delta_hiv_ltp)/50,
                           abs(delta_hiv_ltp)/100, abs(delta_hiv_ltp)/100,  3.5, 2.5]
             for i in range(6):
@@ -355,9 +354,9 @@ class HIVStatusModule:
                                                                 (col.LTP_MONOGAMOUS, op.eq, True),
                                                                 (col.HIV_STATUS, op.eq, True)])
             people_in_primary = population.get_sub_pop(
-                [(col.IN_PRIMARY_INFECTION, op.eq, True)])  # for timestep 1? 3711
+                [(col.IN_PRIMARY_INFECTION, op.eq, True)])  # FIXME previous timestep?
             monogamous_primary = population.get_sub_pop_intersection(monogamous_people_hiv_pos, people_in_primary)
-            viral_load = population.get_variable(col.VIRAL_LOAD, monogamous_people_hiv_pos)  # for timestep 1?
+            viral_load = population.get_variable(col.VIRAL_LOAD, monogamous_people_hiv_pos)  # FIXME previous timestep?
             people_with_sti = population.get_sub_pop([(col.STI, op.eq, True)])
             monogamous_people_with_sti = population.get_sub_pop_intersection(monogamous_people_hiv_pos, people_with_sti)
 
@@ -367,41 +366,45 @@ class HIVStatusModule:
 
             risk_ltp = np.zeros(population.size)
 
-            for i in monogamous_people_hiv_pos:
-                r = rng.uniform(0, 1)
-                fold_tr = 0.67 if r < 0.33 else 1.5 if r > 0.67 else 1
-                risk_ltp[i] = np.maximum(0, (0.10 * fold_tr + 0.25 * rng.normal(0, 1)))
-                for vl in range(4):
-                    if viral_load[i] < viral_load_boundaries[vl]:
-                        risk_ltp[i] = np.maximum(0, [ub1[vl] * fold_tr + ub2[vl] * rng.normal(0, 1)])
-                        break
+            r = rng.uniform(0, 1, len(monogamous_people_hiv_pos))
+            fold_tr = np.full(len(monogamous_people_hiv_pos), 1)
+            fold_tr[r < 0.33] = 0.67
+            fold_tr[r > 0.67] = 1.5
+            rng_values = rng.normal(0, 1, len(monogamous_people_hiv_pos))
+            risk_ltp[monogamous_people_hiv_pos] = np.maximum(0, (0.10 * fold_tr + 0.25 * rng_values))
+            for vl in range(len(viral_load_boundaries)):
+                vl_mask = viral_load[monogamous_people_hiv_pos] < viral_load_boundaries[vl]
+                risk_ltp[monogamous_people_hiv_pos] = np.where(
+                                                                vl_mask.any(),
+                                                                np.maximum(0, ub1[vl] * fold_tr + ub2[vl] * rng_values),
+                                                                risk_ltp[monogamous_people_hiv_pos])
+                if vl_mask.any():
+                    break
 
             if len(monogamous_primary) > 0:
-                for i in monogamous_primary:
-                    risk_ltp[i] = np.maximum(0, [0.16 + 0.075 * rng.normal(0, 1)])
+                risk_ltp[monogamous_primary] = np.maximum(0, [0.16 + 0.075 * rng.normal(0, 1, len(monogamous_primary))])
 
             # higher transmission risk in women
             if sex == SexType.Male:
-                for i in monogamous_people_hiv_pos:
-                    r = rng.uniform(0, 1)
-                    fold_change_w = 1 if r < 0.05 else 1.5 if r < 0.30 else 2 if r == 0.30 else 1.5
-                # line 550  if 0.30 <= r then fold_change_w = 2; should be r == 0.30?
-                    if age_group == 0:
-                        fold_change_w = (
-                            fold_change_w if r < 0.33 else
-                            fold_change_w * 5 if r > 0.67 else
-                            fold_change_w * 3
-                        )
-                    risk_ltp[i] = risk_ltp[i] * fold_change_w
+                r = rng.uniform(0, 1, len(monogamous_people_hiv_pos))
+                fold_change_w = np.full(len(monogamous_people_hiv_pos), 1.5)
+                fold_change_w[r < 0.05] = 1
+                fold_change_w[r >= 0.30] = 2
+                if age_group == 0:
+                    fold_change_w[(0.33 <= r) & (r <= 0.67)] *= 3
+                    fold_change_w[r > 0.67] *= 5
+
+                risk_ltp[monogamous_people_hiv_pos] *= fold_change_w
 
             # higher transmission risk in people with STI
             if len(monogamous_people_with_sti) > 0:
-                fold_change_sti = np.array(
-                    [2 if r < 0.333 else 5 if r > 0.67 else 3
-                        for r in rng.uniform(0, 1, len(monogamous_people_with_sti))]
-                    )
-                risk_ltp[monogamous_people_with_sti] = risk_ltp[monogamous_people_with_sti] * fold_change_sti
- 
+                r = rng.uniform(0, 1, len(monogamous_people_with_sti))
+                fold_change_sti = np.full(len(monogamous_people_with_sti), 3)
+                fold_change_sti[r < 0.333] = 2
+                fold_change_sti[r > 0.67] = 5
+
+                risk_ltp[monogamous_people_with_sti] *= fold_change_sti
+
             ltp_infected = rng.uniform(0, 1, size) < risk_ltp[monogamous_people_hiv_pos]
 
             return ltp_infected

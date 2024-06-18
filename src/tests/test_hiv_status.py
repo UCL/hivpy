@@ -487,9 +487,7 @@ def test_infection_in_monogamous_ltp():
     HIVM = HIVStatusModule()
     HIVM.ltp_transmission(pop)
 
-    #male_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(male_sample)
-    #female_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(female_sample)
-    
-
-    #assert (0 <= np.max(male_risk_ltp) <= 1.42)
-    #assert (0 <= np.max(female_risk_ltp) <= 16.2)
+    # male_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(male_sample)
+    # female_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(female_sample)
+    # assert (0 <= np.max(male_risk_ltp) <= 1.42)
+    # assert (0 <= np.max(female_risk_ltp) <= 16.2)
