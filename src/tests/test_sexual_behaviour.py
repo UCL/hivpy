@@ -1,4 +1,5 @@
 import importlib.resources
+import itertools
 import operator
 
 import numpy as np
@@ -338,10 +339,11 @@ def test_risk_art_adherence_usage():
     # check that art adherence risk factor is considered in correct fraction
     # of simulations
     count = 0
-    for i in range(100):
+    N = 1000
+    for i in range(N):
         SBM_temp = SexualBehaviourModule()
         count += SBM_temp.use_risk_art_adherence
-    assert 0.1 < count/100 < 0.3
+    assert 0.1 < count/N < 0.3
 
 
 def test_risk_population():
@@ -424,13 +426,45 @@ def test_risk_age():
     expected_risk_male, expected_risk_female = pop.sexual_behaviour.age_based_risk.T
     assert np.allclose(risk_factors[1:11], expected_risk_male)
     assert np.allclose(risk_factors[12:22], expected_risk_female)
-    dt = timedelta(days=90)
-    for i in range(20):
-        pop.evolve(dt)
-    risk_factors = np.array(pop.data[col.RISK_AGE])
-    expected_risk_male = np.append(expected_risk_male, expected_risk_male[-1])
-    expected_risk_female = np.append(expected_risk_female, expected_risk_female[-1])
-    assert np.allclose(risk_factors, np.append(expected_risk_male, expected_risk_female))
+
+
+def test_age_sex_balance():
+    N = 200
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    prior_age_factors = pop.sexual_behaviour.age_based_risk.copy()
+    pop.sexual_behaviour.update_sex_age_balance(pop)
+    for sex in [SexType.Male, SexType.Female]:
+        partners_of_men = pop.get_variable(col.STP_AGE_GROUPS,
+                                           pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)]))
+        partners_of_women = pop.get_variable(col.STP_AGE_GROUPS,
+                                             pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)]))
+
+        def get_partners_in_groups(partners_of_group):
+            a, f = np.unique(list(itertools.chain.from_iterable(partners_of_group)), return_counts=True)
+            return dict(zip(a, f))
+
+        female_partners_in_groups = get_partners_in_groups(partners_of_men)
+        male_partners_in_groups = get_partners_in_groups(partners_of_women)
+        partners_in_groups = {SexType.Male: male_partners_in_groups,
+                              SexType.Female: female_partners_in_groups}
+        for i in range(5):
+            age_min = 15 + 10 * i
+            age_max = age_min + 10
+            group_subpop = pop.get_sub_pop([(col.SEX, operator.eq, sex),
+                                            (col.AGE, operator.ge, age_min),
+                                            (col.AGE, operator.lt, age_max)])
+            num_partners_of_group = sum(pop.get_variable(col.NUM_PARTNERS, group_subpop))
+            num_partners_in_group = partners_in_groups[sex].get(i)
+            if (num_partners_in_group is None):
+                num_partners_in_group = 0
+            if (num_partners_of_group == 0):
+                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex])
+                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex])
+            else:
+                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex] *
+                        num_partners_in_group / num_partners_of_group)
+                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex] *
+                        num_partners_in_group / num_partners_of_group)
 
 
 # Test long term partnerships
@@ -571,3 +605,74 @@ def test_stopping_sex_work():
     E = P_stop_under40 * N
     sigma = np.sqrt(E * (1 - P_stop_under40))
     assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))
+
+
+def test_sex_balancing_calculation():
+    # We need to check that the values calculated for the number partners in / of a group are correct
+    # The problem here is that they are contained within a randomised function
+    # This is tested with a deterministic mixing matrix here
+
+    # Test with the identity matrix as mixing matrix
+    sex_mix_matrix = np.identity(5)
+    N = 10000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_module = pop.sexual_behaviour
+
+    sb_module.sex_mixing_matrix[SexType.Male] = sex_mix_matrix
+    sb_module.sex_mixing_matrix[SexType.Female] = sex_mix_matrix
+
+    # Determine the ages and sexes of everyone involved (3/4 male, 1/4 female for imbalance)
+    pop.data.loc[:int(N/4)-1, col.SEX] = SexType.Female
+    pop.data.loc[int(N/4):, col.SEX] = SexType.Male
+    pop.data[col.AGE] = 30
+    pop.data[col.NUM_PARTNERS] = 1
+
+    # Check that the numbers of partners in / of a group are calculated correctly
+    sb_module.assign_stp_ages(pop)
+
+    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N/4))
+    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N/4)))
+
+    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N/4)))
+    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N/4))
+
+    # Check that the risk factor updates correctly in response
+    # Fix the risk factor to a known value first and then run the update
+    sb_module.age_based_risk[3][1] = 1  # male (30-34)
+    sb_module.age_based_risk[3][0] = 1  # female (30-34)
+    sb_module.update_sex_age_balance(pop)
+
+    assert np.isclose(sb_module.age_based_risk[3][0], 1/3, atol=1e-4)
+    assert np.isclose(sb_module.age_based_risk[3][1], 3, atol=1e-4)
+
+
+def test_sex_balancing_effect():
+    # Run repeated timesteps of sexual behaviour
+    # Check that mean of sex balancing is reasonable
+    # The purpose of this test is to check the effect of the sex balancing in practice, regardless of the method used.
+    N = 100000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    sb_module = pop.sexual_behaviour
+
+    balance = np.zeros((5, 2, 100))
+
+    # burn in
+    for i in range(10):
+        sb_module.update_sex_behaviour(pop)
+
+    # balance is 5 age groups 15-24, 25-34, 35-44, 45-64, 55-64
+    # we'll run for 100 time steps
+    for i in range(100):
+        sb_module.update_sex_behaviour(pop)
+        for a in range(5):
+            for s in range(2):
+                if (sb_module.num_stp_of_age_sex_group[a][s] == 0):
+                    ratio = 1
+                else:
+                    ratio = (sb_module.num_stp_in_age_sex_group[a][s] /
+                             sb_module.num_stp_of_age_sex_group[a][s])
+                balance[a][s][i] = np.log(ratio)
+
+    for a in range(5):
+        for s in range(2):
+            assert np.abs(np.mean(balance[a][s])) < 0.2

@@ -269,6 +269,8 @@ class Population:
         self.set_present_variable(col.AGE, ages)
         n_deaths = 0
 
+        self.hiv_status.reset_diagnoses(self)
+
         if self.HIV_introduced:
             self.hiv_status.set_primary_infection(self)
             self.hiv_status.set_viral_load_groups(self)
