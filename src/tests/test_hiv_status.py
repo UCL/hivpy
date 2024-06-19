@@ -389,14 +389,14 @@ def check_cd4_progression(pop, hiv_module, hivpos_subpop, change_factor):
     assert np.isclose(sigma_sqrt_cd4, expected_sigma, rtol=0.1)
 
 
-# def test_who3_tb():
-#     N = 1000
-#     pop = Population(size=N, start_date=date(1989, 1, 1))
-#     pop.data[col.AGE] = 35
-#     pop.data[col.HIV_STATUS] = True
-# 
-#     pop.hiv_status.HIV_related_disease_risk(pop, timedelta(0, 3, 0))
-#     tb_infected = pop.get_sub_pop(COND(col.TB, op.eq, True))
-#     assert len(tb_infected) > 0  # FIXME: figure out correct TB probability
-#     tb_infected_dates = pop.get_variable(col.TB_INFECTION_DATE, tb_infected)
-#     assert all(tb_infected_dates == date(1989, 1, 1))
+def test_who3_tb():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.AGE] = 35
+    pop.data[col.HIV_STATUS] = True
+
+    pop.hiv_status.HIV_related_disease_risk(pop, timedelta(0, 3, 0))
+    tb_infected = pop.get_sub_pop(COND(col.TB, op.eq, True))
+    assert len(tb_infected) > 0  # FIXME: figure out correct TB probability
+    tb_infected_dates = pop.get_variable(col.TB_INFECTION_DATE, tb_infected)
+    assert all(tb_infected_dates == date(1989, 1, 1))
