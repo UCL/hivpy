@@ -87,6 +87,9 @@ class HIVTestingModule:
         # testing occurs after a certain year
         if (pop.date.year > self.date_start_testing):
 
+            # date needed for a function passed to transform_group
+            self.date = pop.date
+
             # update symptomatic test probabilities
             if pop.date.year <= self.date_targeted_testing_plateau:
                 self.prob_test_who4 = min(0.9, self.prob_test_who4 * self.incr_test_rate_sympt)
@@ -99,46 +102,41 @@ class HIVTestingModule:
 
             if len(not_diag_tested_pop) > 0:
                 # mark people for testing
-                marked = pop.transform_group([pop.get_correct_column(col.ADC, dt=1),
-                                              pop.get_correct_column(col.TB, dt=1),
-                                              pop.get_correct_column(col.TB, dt=2),
-                                              pop.get_correct_column(col.NON_TB_WHO3, dt=1)],
+                marked = pop.transform_group([col.ADC, col.TB_INFECTION_DATE, col.NON_TB_WHO3],
                                              self.calc_symptomatic_testing_outcomes,
                                              sub_pop=not_diag_tested_pop)
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
-    def calc_symptomatic_testing_outcomes(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1, size):
+    def calc_symptomatic_testing_outcomes(self, adc, tb_infection_date, non_tb_who3, size):
         """
         Uses the symptomatic test probability for a given group
         of symptoms to select individuals marked to be tested.
         """
-        prob_test = self.calc_symptomatic_prob_test(adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1)
+        prob_test = self.calc_symptomatic_prob_test(adc, tb_infection_date, non_tb_who3)
         # outcomes
         r = rng.uniform(size=size)
         marked = r < prob_test
 
         return marked
 
-    def calc_symptomatic_prob_test(self, adc_tm1, tb_tm1, tb_tm2, non_tb_who3_tm1):
+    def calc_symptomatic_prob_test(self, adc, tb_infection_date, non_tb_who3):
         """
         Calculates the probability of being tested for a group
-        with specific symptoms and returns it. Presence of
-        an AIDS defining condition (ADC; any WHO4) in the previous time step,
-        tuberculosis (TB) in the previous two time steps,
-        and a non-TB WHO3 disease in the previous time step
-        all affect groupings and test probability.
+        with specific symptoms and returns it. Presence of an AIDS
+        defining condition (ADC; any WHO4), tuberculosis (TB), and a
+        non-TB WHO3 disease all affect groupings and test probability.
         """
         # assume asymptomatic by default
         prob_test = 0
-        # presence of ADC last time step
-        if adc_tm1:
+        # presence of ADC
+        if adc:
             prob_test = self.prob_test_who4
-        # presence of TB last time step but not the time step before, no ADC last time step
-        elif tb_tm1 and not tb_tm2:
+        # presence of TB, no ADC
+        elif tb_infection_date == self.date:
             prob_test = self.prob_test_tb
-        # presence of a non-TB WHO3 disease last time step, no ADC or TB last time step
-        elif non_tb_who3_tm1 and not tb_tm1:
+        # presence of a non-TB WHO3 disease, no ADC or TB
+        elif non_tb_who3 and tb_infection_date is None:
             prob_test = self.prob_test_non_tb_who3
 
         return prob_test

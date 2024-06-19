@@ -95,8 +95,8 @@ class HIVStatusModule:
         population.init_variable(col.X4_VIRUS, False)
 
         population.init_variable(col.WHO3_EVENT, False)
-        population.init_variable(col.NON_TB_WHO3, False, n_prev_steps=1)
-        population.init_variable(col.TB, False, n_prev_steps=2)
+        population.init_variable(col.NON_TB_WHO3, False)
+        population.init_variable(col.TB, False)
         population.init_variable(col.TB_DIAGNOSED, False)
         population.init_variable(col.TB_INFECTION_DATE, None)
         population.init_variable(col.ADC, False)
