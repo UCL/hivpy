@@ -30,7 +30,9 @@ def test_hiv_symptomatic_testing():
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
-    pop.data[pop.get_correct_column(col.ADC, dt=1)] = True
+    pop.data[col.ADC] = True
+    pop.data[col.TB_INFECTION_DATE] = None
+    pop.data[col.NON_TB_WHO3] = False
     # fixing some values
     pop.hiv_testing.date_start_testing = 2003.5
     pop.hiv_testing.date_rate_testing_incr = 2009
@@ -56,8 +58,8 @@ def test_hiv_symptomatic_testing():
     # reset some columns
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
-    pop.data[pop.get_correct_column(col.ADC, dt=1)] = False
-    pop.data[pop.get_correct_column(col.TB, dt=1)] = True
+    pop.data[col.ADC] = False
+    pop.data[col.TB_INFECTION_DATE] = pop.date
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -72,11 +74,11 @@ def test_hiv_symptomatic_testing():
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
+    pop.date += timedelta(days=30)
     # reset some columns
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
-    pop.data[pop.get_correct_column(col.TB, dt=1)] = False
-    pop.data[pop.get_correct_column(col.NON_TB_WHO3, dt=1)] = True
+    pop.data[col.NON_TB_WHO3] = True
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -99,7 +101,7 @@ def test_non_hiv_symptomatic_testing():
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
-    pop.data[pop.get_correct_column(col.HIV_DIAGNOSED, dt=1)] = False
+    pop.data[col.HIV_DIAGNOSED] = False
     # fixing some values
     pop.hiv_testing.date_start_testing = 2003.5
     pop.hiv_testing.date_rate_testing_incr = 2009
@@ -226,7 +228,9 @@ def test_first_time_testers():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
     # get stats
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
@@ -261,7 +265,9 @@ def test_repeat_testers():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
-    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
 
     # get stats
     testing_population = pop.get_sub_pop([(col.HARD_REACH, op.eq, False)])
