@@ -130,7 +130,8 @@ class HIVStatusModule:
         population.init_variable(col.SBI_DIAGNOSED, False)
         population.init_variable(col.WHO4_OTHER, False)
         population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
-        population.init_variable(col.PREP_TYPE, None, n_prev_steps=1)
+        population.init_variable(col.PREP_TYPE, None)
+        population.init_variable(col.PREP_JUST_STARTED, False)
 
         self.init_resistance_mutations(population)
 
@@ -464,8 +465,7 @@ class HIVStatusModule:
 
         if len(primary_pop) > 0:
             # primary infection diagnosis outcomes
-            diagnosed = pop.transform_group([pop.get_correct_column(col.PREP_TYPE, dt=0),
-                                             pop.get_correct_column(col.PREP_TYPE, dt=1)],
+            diagnosed = pop.transform_group([col.PREP_TYPE, col.PREP_JUST_STARTED],
                                             self.calc_primary_diag_outcomes, sub_pop=primary_pop)
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, primary_pop)
@@ -501,7 +501,7 @@ class HIVStatusModule:
             pop.set_present_variable(col.UNDER_CARE, True,
                                      sub_pop=pop.apply_bool_mask(diagnosed and not lost, general_pop))
 
-    def calc_prob_primary_diag(self, prep_type, prep_type_tm1):
+    def calc_prob_primary_diag(self, prep_type, prep_just_started):
         """
         Calculates the probability of an individual in primary infection getting
         diagnosed with HIV based on test sensitivity and injectable PrEP usage.
@@ -510,33 +510,33 @@ class HIVStatusModule:
         # default Ab test type
         if self.hiv_test_type == HIVTestType.Ab:
             # injectable PrEP taken this and last time step
-            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+            if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_ab
             else:
                 eff_test_sens_primary = self.test_sens_primary_ab
         # PCR test type
         elif self.hiv_test_type == HIVTestType.PCR:
             # injectable PrEP taken this and last time step
-            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+            if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_pcr
             else:
                 eff_test_sens_primary = 0.86
         # Ag/Ab test type
         elif self.hiv_test_type == HIVTestType.AgAb:
             # injectable PrEP taken this and last time step
-            if prep_type == PrEPType.Injectable and prep_type_tm1 == PrEPType.Injectable:
+            if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = 0
             else:
                 eff_test_sens_primary = 0.75
 
         return eff_test_sens_primary
 
-    def calc_primary_diag_outcomes(self, prep_type, prep_type_tm1, size):
+    def calc_primary_diag_outcomes(self, prep_type, prep_just_started, size):
         """
         Uses HIV test sensitivity and injectable PrEP usage to return
         primary infection diagnosis outcomes.
         """
-        prob_diag = self.calc_prob_primary_diag(prep_type, prep_type_tm1)
+        prob_diag = self.calc_prob_primary_diag(prep_type, prep_just_started)
         # outcomes
         r = rng.uniform(size=size)
         diagnosed = r < prob_diag
@@ -576,8 +576,8 @@ class HIVStatusModule:
         """
         # outcomes
         r = rng.uniform(size=size)
-        # ADC and non-TB WHO3 not present
-        if not adc and not non_tb_who3:
+        # ADC, non-TB WHO3, and TB not present
+        if not adc and not non_tb_who3 and not tb:
             generic_prob_loss = self.calc_prob_loss_at_diag(sex_worker)
             # people with more partners less likely to be engaged with care
             if self.higher_newp_less_engagement and num_stp > 1:
