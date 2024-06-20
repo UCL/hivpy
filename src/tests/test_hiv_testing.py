@@ -31,7 +31,7 @@ def test_hiv_symptomatic_testing():
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.ADC] = True
-    pop.data[col.TB_INFECTION_DATE] = None
+    pop.data[col.TB_PRIMARY_INFECTION] = False
     pop.data[col.NON_TB_WHO3] = False
     # fixing some values
     pop.hiv_testing.date_start_testing = 2003.5
@@ -59,7 +59,7 @@ def test_hiv_symptomatic_testing():
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.ADC] = False
-    pop.data[col.TB_INFECTION_DATE] = pop.date
+    pop.data[col.TB_PRIMARY_INFECTION] = True
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -74,10 +74,10 @@ def test_hiv_symptomatic_testing():
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
-    pop.date += timedelta(days=30)
     # reset some columns
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
+    pop.data[col.TB_PRIMARY_INFECTION] = False
     pop.data[col.NON_TB_WHO3] = True
 
     # re-evolve population

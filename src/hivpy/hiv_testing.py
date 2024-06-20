@@ -102,25 +102,25 @@ class HIVTestingModule:
 
             if len(not_diag_tested_pop) > 0:
                 # mark people for testing
-                marked = pop.transform_group([col.ADC, col.TB_INFECTION_DATE, col.NON_TB_WHO3],
+                marked = pop.transform_group([col.ADC, col.TB_PRIMARY_INFECTION, col.NON_TB_WHO3],
                                              self.calc_symptomatic_testing_outcomes,
                                              sub_pop=not_diag_tested_pop)
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
-    def calc_symptomatic_testing_outcomes(self, adc, tb_infection_date, non_tb_who3, size):
+    def calc_symptomatic_testing_outcomes(self, adc, tb_primary_infection, non_tb_who3, size):
         """
         Uses the symptomatic test probability for a given group
         of symptoms to select individuals marked to be tested.
         """
-        prob_test = self.calc_symptomatic_prob_test(adc, tb_infection_date, non_tb_who3)
+        prob_test = self.calc_symptomatic_prob_test(adc, tb_primary_infection, non_tb_who3)
         # outcomes
         r = rng.uniform(size=size)
         marked = r < prob_test
 
         return marked
 
-    def calc_symptomatic_prob_test(self, adc, tb_infection_date, non_tb_who3):
+    def calc_symptomatic_prob_test(self, adc, tb_primary_infection, non_tb_who3):
         """
         Calculates the probability of being tested for a group
         with specific symptoms and returns it. Presence of an AIDS
@@ -133,10 +133,10 @@ class HIVTestingModule:
         if adc:
             prob_test = self.prob_test_who4
         # presence of TB, no ADC
-        elif tb_infection_date == self.date:
+        elif tb_primary_infection:
             prob_test = self.prob_test_tb
         # presence of a non-TB WHO3 disease, no ADC or TB
-        elif non_tb_who3 and tb_infection_date is None:
+        elif non_tb_who3 and not tb_primary_infection:
             prob_test = self.prob_test_non_tb_who3
 
         return prob_test
