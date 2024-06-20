@@ -97,11 +97,11 @@ class HIVStatusModule:
         self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
         # based on sens_tests_prep_inj in the SAS code
         self.test_sens_prep_inj_primary_pcr = rng.choice([0.7, 0.5, 0.3, 0.2])
-        # FIXME: double-check if 0.05 being present twice is intentional
-        self.prob_loss_at_diag = rng.choice([0.01, 0.02, 0.04, 0.05, 0.05, 0.15, 0.30, 0.35, 0.50, 0.60])
+        self.prob_loss_at_diag = rng.choice([0.02, 0.05, 0.15, 0.35, 0.50],
+                                            p=[0.60, 0.30, 0.05, 0.04, 0.01])
         # FIXME: may be 2 or 3 if sw_art_disadv=1
         self.sw_incr_prob_loss_at_diag = 1
-        self.higher_newp_less_engagement = rng.choice([0, 0.2, 0.8, 1])
+        self.higher_newp_less_engagement = rng.choice([True, False], p=[0.2, 0.8])
         self.prob_loss_at_diag_adc_tb = rng.beta(5, 95)
         self.prob_loss_at_diag_non_tb_who3 = rng.beta(15, 85)
 
@@ -494,10 +494,8 @@ class HIVStatusModule:
 
             # FIXME: should also include onart_tm1 and may need to be affected by date_most_recent_tb
             # some people lost at diagnosis
-            lost = pop.transform_group([col.SEX_WORKER, pop.get_correct_column(col.NUM_PARTNERS, dt=1),
-                                        pop.get_correct_column(col.ADC, dt=1),
-                                        pop.get_correct_column(col.TB, dt=1),
-                                        pop.get_correct_column(col.NON_TB_WHO3, dt=1)],
+            lost = pop.transform_group([col.SEX_WORKER, col.NUM_PARTNERS,
+                                        col.ADC, col.TB, col.NON_TB_WHO3],
                                        self.calc_general_loss_at_diag,
                                        sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
             pop.set_present_variable(col.UNDER_CARE, True,
@@ -570,7 +568,7 @@ class HIVStatusModule:
 
         return lost
 
-    def calc_general_loss_at_diag(self, sex_worker, num_stp_tm1, adc_tm1, tb_tm1, non_tb_who3_tm1, size):
+    def calc_general_loss_at_diag(self, sex_worker, num_stp, adc, tb, non_tb_who3, size):
         """
         Uses sex worker, ADC, TB, and non-TB WHO3 status and number of short term partners in
         individuals not in primary infection after a positive HIV diagnosis
@@ -578,18 +576,18 @@ class HIVStatusModule:
         """
         # outcomes
         r = rng.uniform(size=size)
-        # ADC and non-TB WHO3 not present last time step
-        if not adc_tm1 and not non_tb_who3_tm1:
+        # ADC and non-TB WHO3 not present
+        if not adc and not non_tb_who3:
             generic_prob_loss = self.calc_prob_loss_at_diag(sex_worker)
             # people with more partners less likely to be engaged with care
-            if self.higher_newp_less_engagement == 1 and num_stp_tm1 > 1:
+            if self.higher_newp_less_engagement and num_stp > 1:
                 generic_prob_loss *= 1.5
             lost = r < generic_prob_loss
-        # ADC or TB present last time step
-        elif adc_tm1 or tb_tm1:
+        # ADC or TB present
+        elif adc or tb:
             lost = r < self.prob_loss_at_diag_adc_tb
-        # non-TB WHO3 present last time step
-        elif non_tb_who3_tm1:
+        # non-TB WHO3 present
+        elif non_tb_who3:
             lost = r < self.prob_loss_at_diag_non_tb_who3
 
         return lost
