@@ -71,6 +71,7 @@ WHO3_EVENT = "who3_event"                       # Bool: True if who3 disease occ
 NON_TB_WHO3 = "non_tb_who3"                     # Bool: True if non-tb who3 disease occurs this timestep in HIV positive person
 TB = "tb"                                       # Bool: True if tb occurs this timestep in HIV positive person
 TB_DIAGNOSED = "tb_diagnosed"                   # Bool: True if TB is diagnosed this timestep
+TB_INFECTION_DATE = "tb_infection_date"         # date: Date of start of most recent TB infection
 C_MENINGITIS = "c_meningitis"                       # Bool: True if cryptococcal meningitis occurs this timestep
 C_MENINGITIS_DIAGNOSED = "c_meningitis_diagnosed"   # Bool: True if cryptococcal meningitis diagnosed this timestep
 SBI = "serious_bacterial_infection"             # Bool: True if serious bacterial infection this time step
