@@ -58,6 +58,7 @@ NP_LAST_TEST = "np_last_test"                   # int: total number of condomles
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: date of HIV infection if HIV+, o/w None
 IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
+HIV_INFECTION_GE6M = "HIV_infection_ge6m"       # bool: True is a person has been infected with HIV for 6 months or more (DUMMY)
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if individual had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
 UNDER_CARE = "under_care"                       # bool: True if under care after a positive HIV diagnosis

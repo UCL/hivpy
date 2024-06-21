@@ -116,6 +116,7 @@ class HIVStatusModule:
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
+        population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
@@ -493,9 +494,8 @@ class HIVStatusModule:
 
         if len(general_pop) > 0:
             # general diagnosis outcomes
-            r = rng.uniform(size=len(general_pop))
-            # FIXME: should be affected by test type and injectable prep usage
-            diagnosed = r < self.test_sens_general
+            diagnosed = pop.transform_group([col.PREP_TYPE, col.HIV_INFECTION_GE6M],
+                                            self.calc_general_diag_outcomes, sub_pop=general_pop)
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, general_pop)
             pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
@@ -546,6 +546,42 @@ class HIVStatusModule:
         primary infection diagnosis outcomes.
         """
         prob_diag = self.calc_prob_primary_diag(prep_type, prep_just_started)
+        # outcomes
+        r = rng.uniform(size=size)
+        diagnosed = r < prob_diag
+
+        return diagnosed
+
+    def calc_prob_general_diag(self, prep_type, hiv_infection_ge6m):
+        """
+        Calculates the probability of an individual not in primary infection getting diagnosed
+        with HIV based on test sensitivity, injectable PrEP usage, and infection duration.
+        """
+        eff_test_sens_general = self.test_sens_general
+        # FIXME: does injectable use timing matter for general diagnosis?
+        # injectable PrEP in current use
+        if prep_type == PrEPType.Injectable:
+            if self.prep_inj_pcr:
+                # infected for 6 months or more
+                if hiv_infection_ge6m:
+                    eff_test_sens_general = self.test_sens_prep_inj_ge6m_pcr
+                else:
+                    eff_test_sens_general = self.test_sens_prep_inj_3m_pcr
+            else:
+                # infected for 6 months or more
+                if hiv_infection_ge6m:
+                    eff_test_sens_general = self.test_sens_prep_inj_ge6m_ab
+                else:
+                    eff_test_sens_general = self.test_sens_prep_inj_3m_ab
+
+        return eff_test_sens_general
+
+    def calc_general_diag_outcomes(self, prep_type, hiv_infection_ge6m, size):
+        """
+        Uses HIV test sensitivity, injectable PrEP usage, and infection duration
+        to return general diagnosis outcomes.
+        """
+        prob_diag = self.calc_prob_general_diag(prep_type, hiv_infection_ge6m)
         # outcomes
         r = rng.uniform(size=size)
         diagnosed = r < prob_diag
