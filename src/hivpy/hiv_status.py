@@ -91,12 +91,19 @@ class HIVStatusModule:
         self.cm_mortality_factor = rng.choice([3, 5, 10])
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
+        # HIV diagnosis
         self.hiv_test_type = HIVTestType.Ab
+        self.init_prep_inj_pcr = rng.choice([True, False], p=[0.5, 0.5])
+        self.prep_inj_pcr = rng.choice([True, False], p=[0.5, 0.5]) if self.init_prep_inj_pcr else 0
         self.test_sens_general = 0.98
         self.test_sens_primary_ab = rng.choice([0.5, 0.75])
         self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
-        # based on sens_tests_prep_inj in the SAS code
-        self.test_sens_prep_inj_primary_pcr = rng.choice([0.7, 0.5, 0.3, 0.2])
+        self.test_sens_prep_inj_3m_ab = rng.choice([0, 0.2])
+        self.test_sens_prep_inj_ge6m_ab = rng.choice([0.10, 0.25, 0.50])
+        self.tests_sens_prep_inj = rng.choice([0, 1, 2, 3])
+        self.test_sens_prep_inj_primary_pcr = [0.7, 0.5, 0.3, 0.2][self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_3m_pcr = [0.85, 0.7, 0.5, 0.3][self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_ge6m_pcr = [0.95, 0.8, 0.7, 0.5][self.tests_sens_prep_inj]
         self.prob_loss_at_diag = rng.choice([0.02, 0.05, 0.15, 0.35, 0.50],
                                             p=[0.60, 0.30, 0.05, 0.04, 0.01])
         # FIXME: may be 2 or 3 if sw_art_disadv=1
@@ -461,7 +468,8 @@ class HIVStatusModule:
         """
         # tested population in primary infection
         primary_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, True),
-                                       (col.LAST_TEST_DATE, op.eq, pop.date)])
+                                       (col.LAST_TEST_DATE, op.eq, pop.date),
+                                       (col.HIV_DIAGNOSED, op.eq, False)])
 
         if len(primary_pop) > 0:
             # primary infection diagnosis outcomes
@@ -480,7 +488,8 @@ class HIVStatusModule:
 
         # remaining tested general population
         general_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, False),
-                                       (col.LAST_TEST_DATE, op.eq, pop.date)])
+                                       (col.LAST_TEST_DATE, op.eq, pop.date),
+                                       (col.HIV_DIAGNOSED, op.eq, False)])
 
         if len(general_pop) > 0:
             # general diagnosis outcomes
@@ -509,21 +518,21 @@ class HIVStatusModule:
         eff_test_sens_primary = 0
         # default Ab test type
         if self.hiv_test_type == HIVTestType.Ab:
-            # injectable PrEP taken this and last time step
+            # injectable PrEP started before this time step
             if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_ab
             else:
                 eff_test_sens_primary = self.test_sens_primary_ab
         # PCR test type
         elif self.hiv_test_type == HIVTestType.PCR:
-            # injectable PrEP taken this and last time step
+            # injectable PrEP started before this time step
             if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_pcr
             else:
                 eff_test_sens_primary = 0.86
         # Ag/Ab test type
         elif self.hiv_test_type == HIVTestType.AgAb:
-            # injectable PrEP taken this and last time step
+            # injectable PrEP started before this time step
             if prep_type == PrEPType.Injectable and not prep_just_started:
                 eff_test_sens_primary = 0
             else:
