@@ -1,0 +1,3 @@
+lower_future_art_coverage:
+  Value: [False, True]
+  Probability: [0.97, 0.03]
