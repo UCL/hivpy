@@ -391,7 +391,8 @@ class HIVStatusModule:
         pop.set_present_variable(col.WHO3_EVENT, (who3_disease | tb), HIV_pos)
         new_tb = pop.get_sub_pop_from_array(tb, HIV_pos)
         pop.set_present_variable(col.TB_INFECTION_DATE, pop.date, new_tb)
-        pop.set_present_variable(col.TB_PRIMARY_INFECTION, False)  # FIXME: move this reset elsewhere?
+        # FIXME: may need to update this reset for non-HIV related TB
+        pop.set_present_variable(col.TB_PRIMARY_INFECTION, False)
         pop.set_present_variable(col.TB_PRIMARY_INFECTION, True, new_tb)
 
         # cryptococcal meningitis
