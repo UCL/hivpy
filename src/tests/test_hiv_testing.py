@@ -31,7 +31,7 @@ def test_hiv_symptomatic_testing():
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.ADC] = True
-    pop.data[col.TB_PRIMARY_INFECTION] = False
+    pop.data[col.TB_INITIAL_INFECTION] = False
     pop.data[col.NON_TB_WHO3] = False
     # fixing some values
     pop.hiv_testing.date_start_testing = 2003.5
@@ -59,7 +59,7 @@ def test_hiv_symptomatic_testing():
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.ADC] = False
-    pop.data[col.TB_PRIMARY_INFECTION] = True
+    pop.data[col.TB_INITIAL_INFECTION] = True
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -77,7 +77,7 @@ def test_hiv_symptomatic_testing():
     # reset some columns
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.TB_PRIMARY_INFECTION] = False
+    pop.data[col.TB_INITIAL_INFECTION] = False
     pop.data[col.NON_TB_WHO3] = True
 
     # re-evolve population

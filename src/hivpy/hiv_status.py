@@ -99,7 +99,7 @@ class HIVStatusModule:
         population.init_variable(col.TB, False)
         population.init_variable(col.TB_DIAGNOSED, False)
         population.init_variable(col.TB_INFECTION_DATE, None)
-        population.init_variable(col.TB_PRIMARY_INFECTION, False)
+        population.init_variable(col.TB_INITIAL_INFECTION, False)
         population.init_variable(col.ADC, False)
         population.init_variable(col.C_MENINGITIS, False)
         population.init_variable(col.C_MENINGITIS_DIAGNOSED, False)
@@ -392,8 +392,8 @@ class HIVStatusModule:
         new_tb = pop.get_sub_pop_from_array(tb, HIV_pos)
         pop.set_present_variable(col.TB_INFECTION_DATE, pop.date, new_tb)
         # FIXME: may need to update this reset for non-HIV related TB
-        pop.set_present_variable(col.TB_PRIMARY_INFECTION, False)
-        pop.set_present_variable(col.TB_PRIMARY_INFECTION, True, new_tb)
+        pop.set_present_variable(col.TB_INITIAL_INFECTION, False)
+        pop.set_present_variable(col.TB_INITIAL_INFECTION, True, new_tb)
 
         # cryptococcal meningitis
         (cm, _) = disease_and_diagnosis(col.C_MENINGITIS,
