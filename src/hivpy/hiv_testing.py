@@ -231,7 +231,7 @@ class HIVTestingModule:
         Mark general population to undergo testing this time step.
         """
         # testing occurs after a certain year if there is no covid disruption
-        if ((pop.date.year >= self.date_start_testing)
+        if ((pop.date.year >= self.date_rate_testing_incr)
            & (not (self.covid_disrup_affected | self.testing_disrup_covid))):
 
             # mark sex workers for testing first
