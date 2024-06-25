@@ -9,7 +9,7 @@ from hivpy.population import Population
 def test_hiv_testing_covid():
 
     # build population
-    N = 100000
+    N = 100
     pop = Population(size=N, start_date=date(2010, 1, 1))
     # covid disruption is in place
     pop.hiv_testing.covid_disrup_affected = True
@@ -17,7 +17,21 @@ def test_hiv_testing_covid():
 
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
+    # check that nobody was tested
+    assert sum(pop.get_variable(col.EVER_TESTED)) == 0
 
+
+def test_hiv_testing_before_start():
+
+    # build population
+    N = 100
+    pop = Population(size=N, start_date=date(2003, 1, 1))
+    pop.data[col.ADC] = True
+    # start date is before testing begins
+    pop.hiv_testing.date_start_testing = 2003.5
+
+    # evolve population
+    pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
     # check that nobody was tested
     assert sum(pop.get_variable(col.EVER_TESTED)) == 0
 
