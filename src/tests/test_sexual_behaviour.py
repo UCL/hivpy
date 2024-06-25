@@ -247,7 +247,7 @@ def test_risk_adc():
     add_HIV_idx = rng.integers(0, N, size=5)
     add_ADC_idx = add_HIV_idx[[0, 1, 2]]
     pop.data.loc[add_HIV_idx, col.HIV_STATUS] = True
-    pop.data.loc[add_ADC_idx, pop.get_correct_column(col.ADC, dt=0)] = True
+    pop.data.loc[add_ADC_idx, col.ADC] = True
     # Update risk factors
     SBM.update_sex_behaviour(pop)
     expected_risk[add_ADC_idx] = 0.2
