@@ -235,7 +235,7 @@ def test_risk_adc():
     init_HIV_idx = rng.integers(0, N, size=5)
     init_ADC_idx = init_HIV_idx[[0, 2, 4]]
     pop.data.loc[init_HIV_idx, col.HIV_STATUS] = True
-    pop.data.loc[init_ADC_idx, pop.get_correct_column(col.ADC, dt=0)] = True
+    pop.data.loc[init_ADC_idx, col.ADC] = True
     expected_risk = np.ones(N)
     expected_risk[init_ADC_idx] = 0.2
     SBM = SexualBehaviourModule()
