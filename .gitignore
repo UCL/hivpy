@@ -13,3 +13,8 @@ __pycache__/
 
 # Generated documentation
 _build
+
+*.png
+*.sas7bdat
+*.csv
+*.sh
