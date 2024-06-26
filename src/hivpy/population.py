@@ -225,7 +225,7 @@ class Population:
             self.data.loc[sub_pop, target_col] = self.transform_group(groups, func,
                                                                       use_size, sub_pop)
 
-    def transform_group(self, param_list, func, use_size=True, sub_pop=None):
+    def transform_group(self, param_list, func, use_size=True, sub_pop=None, dropna=False):
         """
         Groups the data by a list of parameters and applies a function to each grouping.
 
@@ -238,7 +238,9 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`.
+        by `data.loc[sub_pop]`. \n
+        `dropna` is false by default to allow for the inclusion of missing values in groups, but
+        should be set to true if missing values should instead be dropped during groupby.
         """
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         param_list = list(map(lambda x: self.get_correct_column(x), param_list))
@@ -257,7 +259,7 @@ class Population:
             df = self.data.loc[sub_pop]
         else:
             df = self.data
-        return df.groupby(param_list)["Dummy"].transform(general_func)
+        return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: timedelta):
         """
