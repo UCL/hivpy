@@ -503,3 +503,88 @@ def test_primary_infection_prep_diagnosis():
     stdev = sqrt(mean * (1 - test_sens_prep_inj_primary_agab))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
+
+
+def test_general_population_diagnosis():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.IN_PRIMARY_INFECTION] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_TYPE] = None
+
+    # general outcomes
+    pop.hiv_status.update_HIV_diagnosis(pop)
+
+    # get stats
+    diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
+    mean = N * pop.hiv_status.test_sens_general
+    stdev = sqrt(mean * (1 - pop.hiv_status.test_sens_general))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
+
+
+def test_general_population_prep_diagnosis():
+    N = 1000
+    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.IN_PRIMARY_INFECTION] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_TYPE] = PrEPType.Injectable
+    # test sensitivities
+    pop.hiv_status.test_sens_prep_inj_3m_ab = 0.2
+    pop.hiv_status.test_sens_prep_inj_ge6m_ab = 0.5
+    pop.hiv_status.test_sens_prep_inj_3m_pcr = 0.7
+    pop.hiv_status.test_sens_prep_inj_ge6m_pcr = 0.8
+
+    # Ab + PrEP general outcomes (recent infection)
+    pop.hiv_status.prep_inj_pcr = False
+    pop.data[col.HIV_INFECTION_GE6M] = False
+    pop.hiv_status.update_HIV_diagnosis(pop)
+
+    # get stats
+    diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
+    mean = N * pop.hiv_status.test_sens_prep_inj_3m_ab
+    stdev = sqrt(mean * (1 - pop.hiv_status.test_sens_prep_inj_3m_ab))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
+
+    # reset diagnosis
+    pop.data[col.HIV_DIAGNOSED] = False
+    # Ab + PrEP general outcomes (older infection)
+    pop.data[col.HIV_INFECTION_GE6M] = True
+    pop.hiv_status.update_HIV_diagnosis(pop)
+
+    # get stats
+    diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
+    mean = N * pop.hiv_status.test_sens_prep_inj_ge6m_ab
+    stdev = sqrt(mean * (1 - pop.hiv_status.test_sens_prep_inj_ge6m_ab))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
+
+    # reset diagnosis
+    pop.data[col.HIV_DIAGNOSED] = False
+    # PCR + PrEP general outcomes (recent infection)
+    pop.hiv_status.prep_inj_pcr = True
+    pop.data[col.HIV_INFECTION_GE6M] = False
+    pop.hiv_status.update_HIV_diagnosis(pop)
+
+    # get stats
+    diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
+    mean = N * pop.hiv_status.test_sens_prep_inj_3m_pcr
+    stdev = sqrt(mean * (1 - pop.hiv_status.test_sens_prep_inj_3m_pcr))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
+
+    # reset diagnosis
+    pop.data[col.HIV_DIAGNOSED] = False
+    # PCR + PrEP general outcomes (older infection)
+    pop.data[col.HIV_INFECTION_GE6M] = True
+    pop.hiv_status.update_HIV_diagnosis(pop)
+
+    # get stats
+    diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
+    mean = N * pop.hiv_status.test_sens_prep_inj_ge6m_pcr
+    stdev = sqrt(mean * (1 - pop.hiv_status.test_sens_prep_inj_ge6m_pcr))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
