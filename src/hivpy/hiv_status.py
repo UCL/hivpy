@@ -484,8 +484,7 @@ class HIVStatusModule:
             # some people lost at diagnosis
             lost = pop.transform_group([col.SEX_WORKER], self.calc_primary_loss_at_diag,
                                        sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
-            pop.set_present_variable(col.UNDER_CARE, True,
-                                     sub_pop=pop.apply_bool_mask(diagnosed and not lost, primary_pop))
+            pop.set_present_variable(col.UNDER_CARE, ~lost, sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
 
         # remaining tested general population
         general_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, False),
@@ -503,12 +502,10 @@ class HIVStatusModule:
 
             # FIXME: should also include onart_tm1 and may need to be affected by date_most_recent_tb
             # some people lost at diagnosis
-            lost = pop.transform_group([col.SEX_WORKER, col.NUM_PARTNERS,
-                                        col.ADC, col.TB, col.NON_TB_WHO3],
+            lost = pop.transform_group([col.SEX_WORKER, col.NUM_PARTNERS, col.ADC, col.TB, col.NON_TB_WHO3],
                                        self.calc_general_loss_at_diag,
                                        sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
-            pop.set_present_variable(col.UNDER_CARE, True,
-                                     sub_pop=pop.apply_bool_mask(diagnosed and not lost, general_pop))
+            pop.set_present_variable(col.UNDER_CARE, ~lost, sub_pop=pop.apply_bool_mask(diagnosed, general_pop))
 
     def calc_prob_primary_diag(self, prep_type, prep_just_started):
         """
