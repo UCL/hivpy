@@ -513,24 +513,25 @@ class HIVStatusModule:
         diagnosed with HIV based on test sensitivity and injectable PrEP usage.
         """
         eff_test_sens_primary = 0
+        prep_inj = prep_type == PrEPType.Cabotegravir or prep_type == PrEPType.Lenacapavir
         # default Ab test type
         if self.hiv_test_type == HIVTestType.Ab:
             # injectable PrEP started before this time step
-            if prep_type == PrEPType.Injectable and not prep_just_started:
+            if prep_inj and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_ab
             else:
                 eff_test_sens_primary = self.test_sens_primary_ab
         # PCR test type
         elif self.hiv_test_type == HIVTestType.PCR:
             # injectable PrEP started before this time step
-            if prep_type == PrEPType.Injectable and not prep_just_started:
+            if prep_inj and not prep_just_started:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_pcr
             else:
                 eff_test_sens_primary = 0.86
         # Ag/Ab test type
         elif self.hiv_test_type == HIVTestType.AgAb:
             # injectable PrEP started before this time step
-            if prep_type == PrEPType.Injectable and not prep_just_started:
+            if prep_inj and not prep_just_started:
                 eff_test_sens_primary = 0
             else:
                 eff_test_sens_primary = 0.75
@@ -557,7 +558,7 @@ class HIVStatusModule:
         eff_test_sens_general = self.test_sens_general
         # FIXME: does injectable use timing matter for general diagnosis?
         # injectable PrEP in current use
-        if prep_type == PrEPType.Injectable:
+        if prep_type == PrEPType.Cabotegravir or prep_type == PrEPType.Lenacapavir:
             if self.prep_inj_pcr:
                 # infected for 6 months or more
                 if hiv_infection_ge6m:

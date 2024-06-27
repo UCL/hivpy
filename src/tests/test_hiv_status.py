@@ -460,7 +460,7 @@ def test_primary_infection_prep_diagnosis():
     pop.data[col.IN_PRIMARY_INFECTION] = True
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.Injectable
+    pop.data[col.PREP_TYPE] = PrEPType.Cabotegravir
     pop.data[col.PREP_JUST_STARTED] = False
     # test sensitivities
     pop.hiv_status.test_sens_prep_inj_primary_ab = 0.1
@@ -530,7 +530,7 @@ def test_general_population_prep_diagnosis():
     pop.data[col.IN_PRIMARY_INFECTION] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.Injectable
+    pop.data[col.PREP_TYPE] = PrEPType.Lenacapavir
     # test sensitivities
     pop.hiv_status.test_sens_prep_inj_3m_ab = 0.2
     pop.hiv_status.test_sens_prep_inj_ge6m_ab = 0.5
