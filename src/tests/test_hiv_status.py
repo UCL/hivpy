@@ -406,7 +406,7 @@ def test_no_infection_in_nonmonogamous_ltp():
     assert len(pop.get_sub_pop([(col.LTP_STATUS, op.eq, True)])) == 0
 
 
-def test_ltp_deterministic_variables():
+def test_infection_in_nonmonogamous_ltp():
     """
     Check that for a specific group in the population the estimation is as expected
     """
@@ -447,20 +447,20 @@ def test_ltp_deterministic_variables():
     assert np.isclose(HIVM.prop_monogamous[SexType.Female][0], 0.5)
     assert np.isclose(HIVM.incidence[SexType.Male], 0.1)
 
-    # Expect: ~ 50% of men's LTPs to be non monogamous (in age group 0)
+    # Expect: ~ 50% of men's LTPs to be non monogamous
     males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
                              (col.AGE_GROUP, op.eq, 0)])
     men_ltp_monogamous = pop.get_variable(col.LTP_MONOGAMOUS, males)
     assert 70 < sum(men_ltp_monogamous) < 130
 
-    # Expect: ~ 35% of non monogamous LTPs of men to be HIV+  (in age group 0)
-    # men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
-    # assert 20 < sum(men_ltp_status) < 50
+    # Expect: ~ 10% of non monogamous LTPs of men to become infected
+    men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
+    assert 5 < np.nansum(men_ltp_status) < 15
 
 
 def test_infection_in_monogamous_ltp():
     """
-    Check that the monogamous ltp transmission does not occur if noone has HIV.
+    Check the expected numbers are infected in monogamous ltp transmission.
     """
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
@@ -470,24 +470,26 @@ def test_infection_in_monogamous_ltp():
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.AGE_GROUP, 0)
-    # pop.set_present_variable(col.VIRAL_LOAD, rng.uniform(0, 8, N))
 
     male_sample = list(range(100))
-    pop.set_present_variable(col.STI, False, male_sample)
+    pop.set_present_variable(col.STI, True, male_sample)
     pop.set_present_variable(col.SEX, SexType.Male, male_sample)
-    pop.set_present_variable(col.VIRAL_LOAD, 6, male_sample)
-    # asert risk_ltp: 0-1.42
+    pop.set_present_variable(col.VIRAL_LOAD_GROUP, 4, male_sample)
+    # 99.7% of risk_ltp = 0.030- 1.89
 
     female_sample = list(range(100, 200))
-    pop.set_present_variable(col.STI, True, female_sample)
+    pop.set_present_variable(col.STI, False, female_sample)
     pop.set_present_variable(col.SEX, SexType.Female, female_sample)
-    pop.set_present_variable(col.VIRAL_LOAD, 5, female_sample)
-    # assert risk_ltp: 0-16.2
+    pop.set_present_variable(col.VIRAL_LOAD_GROUP, 3, female_sample)
+    # 99.7% of risk_ltp = 0.025-0.175
 
     HIVM = HIVStatusModule()
     HIVM.ltp_transmission(pop)
 
-    # male_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(male_sample)
-    # female_risk_ltp = HIVM.ltp_transmission(pop).calculate_risk_ltp(female_sample)
-    # assert (0 <= np.max(male_risk_ltp) <= 1.42)
-    # assert (0 <= np.max(female_risk_ltp) <= 16.2)
+    males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male)])
+    men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
+    assert 30 < np.nansum(men_ltp_status) < 60
+
+    females = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])
+    women_ltp_status = pop.get_variable(col.LTP_STATUS, females)
+    assert 1 < np.nansum(women_ltp_status) < 16

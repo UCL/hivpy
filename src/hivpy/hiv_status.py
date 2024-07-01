@@ -44,6 +44,8 @@ class HIVStatusModule:
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
                           SexType.Female: 0}
+        self.transmission_rate_means = [self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary]
+        self.transmission_rate_sigmas = [0.000025, 0.0025, 0.0075, 0.015, 0.025, 0.075]
         self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
         self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
         self.sti_transmission_factor = rng.choice([2., 3.])
@@ -347,75 +349,30 @@ class HIVStatusModule:
         population.set_present_variable(col.LTP_STATUS, partner_infected, people_with_nonmonogamous_ltp)
 
         # Monogamous Partner Case: subjects infect partners
-        def calculate_infected_ltp_monogamous(sex, age_group, size):
-            monogamous_people_hiv_pos = population.get_sub_pop([(col.SEX, op.eq, sex),
-                                                                (col.AGE_GROUP, op.eq, age_group),
-                                                                (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                (col.LTP_MONOGAMOUS, op.eq, True),
-                                                                (col.HIV_STATUS, op.eq, True)])
-            people_in_primary = population.get_sub_pop(
-                [(col.IN_PRIMARY_INFECTION, op.eq, True)])  # FIXME previous timestep?
-            monogamous_primary = population.get_sub_pop_intersection(monogamous_people_hiv_pos, people_in_primary)
-            viral_load = population.get_variable(col.VIRAL_LOAD, monogamous_people_hiv_pos)  # FIXME previous timestep?
-            people_with_sti = population.get_sub_pop([(col.STI, op.eq, True)])
-            monogamous_people_with_sti = population.get_sub_pop_intersection(monogamous_people_hiv_pos, people_with_sti)
+        def calculate_infected_ltp_monogamous(sex, age_group, vl_group, sti, size):
+            risk_to_ltp = rng.normal(
+                                    self.transmission_rate_means[vl_group],
+                                    self.transmission_rate_sigmas[vl_group],
+                                    size=size
+                                    )
+            if (sex == SexType.Male):
+                if (age_group == 0):
+                    risk_to_ltp *= self.young_women_transmission_factor
+                else:
+                    risk_to_ltp *= self.women_transmission_factor
+                if sti:
+                    risk_to_ltp *= self.sti_transmission_factor
 
-            viral_load_boundaries = [2.7, 3.7, 4.7, 5.7]
-            ub1 = [0.001, 0.01, 0.03, 0.06]
-            ub2 = [0.000025, 0.0025, 0.0075, 0.015]
+            return rng.uniform(0, 1, size) < risk_to_ltp
 
-            risk_ltp = np.zeros(population.size)
-
-            r = rng.uniform(0, 1, len(monogamous_people_hiv_pos))
-            fold_tr = np.full(len(monogamous_people_hiv_pos), 1)
-            fold_tr[r < 0.33] = 0.67
-            fold_tr[r > 0.67] = 1.5
-            rng_values = rng.normal(0, 1, len(monogamous_people_hiv_pos))
-            risk_ltp[monogamous_people_hiv_pos] = np.maximum(0, (0.10 * fold_tr + 0.25 * rng_values))
-            for vl in range(len(viral_load_boundaries)):
-                vl_mask = viral_load[monogamous_people_hiv_pos] < viral_load_boundaries[vl]
-                risk_ltp[monogamous_people_hiv_pos] = np.where(
-                                                                vl_mask.any(),
-                                                                np.maximum(0, ub1[vl] * fold_tr + ub2[vl] * rng_values),
-                                                                risk_ltp[monogamous_people_hiv_pos])
-                if vl_mask.any():
-                    break
-
-            if len(monogamous_primary) > 0:
-                risk_ltp[monogamous_primary] = np.maximum(0, [0.16 + 0.075 * rng.normal(0, 1, len(monogamous_primary))])
-
-            # higher transmission risk in women
-            if sex == SexType.Male:
-                r = rng.uniform(0, 1, len(monogamous_people_hiv_pos))
-                fold_change_w = np.full(len(monogamous_people_hiv_pos), 1.5)
-                fold_change_w[r < 0.05] = 1
-                fold_change_w[r >= 0.30] = 2
-                if age_group == 0:
-                    fold_change_w[(0.33 <= r) & (r <= 0.67)] *= 3
-                    fold_change_w[r > 0.67] *= 5
-
-                risk_ltp[monogamous_people_hiv_pos] *= fold_change_w
-
-            # higher transmission risk in people with STI
-            if len(monogamous_people_with_sti) > 0:
-                r = rng.uniform(0, 1, len(monogamous_people_with_sti))
-                fold_change_sti = np.full(len(monogamous_people_with_sti), 3)
-                fold_change_sti[r < 0.333] = 2
-                fold_change_sti[r > 0.67] = 5
-
-                risk_ltp[monogamous_people_with_sti] *= fold_change_sti
-
-            ltp_infected = rng.uniform(0, 1, size) < risk_ltp[monogamous_people_hiv_pos]
-
-            return ltp_infected
-
-        people_with_monogamous_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
-                                                             (col.LTP_MONOGAMOUS, op.eq, True)])
-        partner_infected = population.transform_group([col.SEX, col.AGE_GROUP],
+        people_with_monogamous_ltp_and_hiv = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
+                                                                    (col.LTP_MONOGAMOUS, op.eq, True),
+                                                                    (col.HIV_STATUS, op.eq, True)])
+        partner_infected = population.transform_group([col.SEX, col.AGE_GROUP, col.VIRAL_LOAD_GROUP, col.STI],
                                                       calculate_infected_ltp_monogamous,
                                                       use_size=True,
-                                                      sub_pop=people_with_monogamous_ltp)
-        population.set_present_variable(col.LTP_STATUS, partner_infected, people_with_monogamous_ltp)
+                                                      sub_pop=people_with_monogamous_ltp_and_hiv)
+        population.set_present_variable(col.LTP_STATUS, partner_infected, people_with_monogamous_ltp_and_hiv)
 
     def update_HIV_status(self, population: Population):
         """
