@@ -363,7 +363,7 @@ class HIVStatusModule:
                 if sti:
                     risk_to_ltp *= self.sti_transmission_factor
 
-            return rng.uniform(0, 1, size) < risk_to_ltp
+            return rng.uniform(0, 1, size=size) < risk_to_ltp
 
         people_with_monogamous_ltp_and_hiv = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
                                                                     (col.LTP_MONOGAMOUS, op.eq, True),
