@@ -40,7 +40,7 @@ def test_hiv_symptomatic_testing():
 
     # build population
     N = 100000
-    pop = Population(size=N, start_date=date(2016, 1, 1))
+    pop = Population(size=N, start_date=date(2003, 1, 1))
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
@@ -57,6 +57,14 @@ def test_hiv_symptomatic_testing():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
+    pop.hiv_testing.test_mark_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+    # check that nobody was tested before date_start_testing
+    assert sum(pop.get_variable(col.EVER_TESTED)) == 0
+
+    pop.date = date(2008, 1, 1)
+    # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
     pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
@@ -112,7 +120,7 @@ def test_non_hiv_symptomatic_testing():
 
     # build population
     N = 100000
-    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop = Population(size=N, start_date=date(2003, 1, 1))
     pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.HIV_DIAGNOSED] = False
@@ -126,6 +134,14 @@ def test_non_hiv_symptomatic_testing():
     pop.hiv_testing.testing_disrup_covid = False
 
     # evolve population
+    pop.hiv_testing.test_mark_non_hiv_symptomatic(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+    # check that nobody was tested before date_start_testing
+    assert sum(pop.get_variable(col.EVER_TESTED)) == 0
+
+    pop.date = date(2008, 1, 1)
+    # re-evolve population
     pop.hiv_testing.test_mark_non_hiv_symptomatic(pop)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
     pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
@@ -179,11 +195,11 @@ def test_general_testing_conditions():
 
     # build population
     N = 100000
-    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop = Population(size=N, start_date=date(2008, 1, 1))
     pop.data[col.AGE] = 20
     pop.data[col.HARD_REACH] = False
     pop.data[col.EVER_TESTED] = True
-    pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
+    pop.data[col.LAST_TEST_DATE] = date(2009, 1, 1)
     pop.data[col.NP_LAST_TEST] = 1
     # fixing some values
     pop.hiv_testing.date_start_testing = 2003.5
@@ -202,6 +218,14 @@ def test_general_testing_conditions():
     pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed)
 
     # evolve population
+    pop.hiv_testing.test_mark_general_pop(pop)
+    marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
+    pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
+    # check that nobody was tested before date_rate_testing_incr
+    assert all(pop.get_variable(col.LAST_TEST_DATE) > pop.date)
+
+    pop.date = date(2010, 1, 1)
+    # re-evolve population
     pop.hiv_testing.test_mark_general_pop(pop)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
     pop.hiv_testing.apply_test_outcomes_to_sub_pop(pop, marked_population)
