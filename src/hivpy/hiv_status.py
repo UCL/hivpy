@@ -40,6 +40,8 @@ class HIVStatusModule:
         # proportion of monogamous partners in general population for each sex and age group
         self.prop_monogamous = {SexType.Male: np.zeros(5),
                                 SexType.Female: np.zeros(5)}
+        self.prevalence = {SexType.Male: np.zeros(5),
+                                SexType.Female: np.zeros(5)}
         self.incidence_factor = {SexType.Male: 1,
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
@@ -57,7 +59,7 @@ class HIVStatusModule:
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
         self.vl_base_change = rng.choice([1.0, 1.5, 2.0])  # TODO: move to data file
         self.cd4_base_change = rng.choice([0.7, 0.85, 1.0, 1/0.85, 1/0.7])  # TODO: move to data file
-        self.resistance_mutations_prop_vlg = np.zeros(6)  # TODO: introduce resistance mutations per person
+        self.resistance_mutations_prop_vlg = np.zeros(6)  # TODO: resistance mutations per person/ viral load group
 
         self.initial_mean_sqrt_cd4 = 27.5
         self.sigma_cd4 = 1.2
@@ -408,6 +410,18 @@ class HIVStatusModule:
                                    calculate_risk_of_infection,
                                    use_size=True,
                                    sub_pop=people_with_ltp)
+        
+    def prob_of_new_ltp_already_infected(self, population: Population):
+        for sex in [SexType.Male, SexType.Female]:
+            for age_group in range(5):
+                people = population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                (col.AGE_GROUP, op.eq, age_group)])
+                people_with_hiv = population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                          (col.AGE_GROUP, op.eq, age_group),
+                                                          (col.HIV_STATUS, op.eq, True)])
+                if len(people) != 0:
+                    self.prevalence[sex][age_group] = len(people_with_hiv) / len(people)
+
 
     def update_HIV_status(self, population: Population):
         """

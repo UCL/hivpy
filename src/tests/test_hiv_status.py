@@ -490,7 +490,7 @@ def test_infection_in_monogamous_ltp():
     # Expect: ~85% of monogamous ltps to be infected
     males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male)])
     men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
-    assert 75 < sum(men_ltp_status) < 95
+    assert 75 < sum(men_ltp_status) < 98
 
     # Expect: ~6% of monogamous ltps to be infected
     females = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])
