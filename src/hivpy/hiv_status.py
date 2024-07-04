@@ -41,7 +41,7 @@ class HIVStatusModule:
         self.prop_monogamous = {SexType.Male: np.zeros(5),
                                 SexType.Female: np.zeros(5)}
         self.prevalence = {SexType.Male: np.zeros(5),
-                                SexType.Female: np.zeros(5)}
+                           SexType.Female: np.zeros(5)}
         self.incidence_factor = {SexType.Male: 1,
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
@@ -410,7 +410,7 @@ class HIVStatusModule:
                                    calculate_risk_of_infection,
                                    use_size=True,
                                    sub_pop=people_with_ltp)
-        
+
     def prob_of_new_ltp_already_infected(self, population: Population):
         for sex in [SexType.Male, SexType.Female]:
             for age_group in range(5):
@@ -422,6 +422,16 @@ class HIVStatusModule:
                 if len(people) != 0:
                     self.prevalence[sex][age_group] = len(people_with_hiv) / len(people)
 
+            def calculate_new_ltp_infection(sex, age_group, size):
+                return rng.uniform(0, 1, size) < self.prevalence[sex][age_group]
+
+            people_with_new_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
+                                                          (col.LTP_STATUS, op.eq, False)])
+            new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP],
+                                                          calculate_new_ltp_infection,
+                                                          use_size=True,
+                                                          sub_pop=people_with_new_ltp)
+            population.set_present_variable(col.LTP_STATUS, new_ltp_infected, people_with_new_ltp)
 
     def update_HIV_status(self, population: Population):
         """

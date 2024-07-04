@@ -528,3 +528,28 @@ def test_prob_infection_from_infected_ltp():
     assert max(risk_ltp_group2) < 0.385  # 99.7%
     assert np.mean(vlg_group2) == 5
     assert sum(ltp_in_primary_group2) == 100
+
+
+def test_prob_of_new_ltp_already_infected():
+    """
+    Test that the possibility of a new long-term partner already infected is as expected
+    """
+    N = 200
+    pop = Population(size=N, start_date=date(1990, 1, 1))
+
+    pop.set_present_variable(col.SEX, SexType.Female)
+    pop.set_present_variable(col.AGE, 18)
+    pop.set_present_variable(col.AGE_GROUP, 0)
+    pop.set_present_variable(col.LONG_TERM_PARTNER, True)
+
+    hiv_pos_sample = list(range(100, 200))
+    pop.set_present_variable(col.HIV_STATUS, True, hiv_pos_sample)
+
+    HIVM = HIVStatusModule()
+    HIVM.prob_of_new_ltp_already_infected(pop)
+
+    assert HIVM.prevalence[SexType.Female][0] == 0.5
+
+    # Expect: ~50% of womens' LTPs to be infected
+    women_ltp_status = pop.get_variable(col.LTP_STATUS)
+    assert 85 < sum(women_ltp_status) < 115
