@@ -496,3 +496,35 @@ def test_infection_in_monogamous_ltp():
     females = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])
     women_ltp_status = pop.get_variable(col.LTP_STATUS, females)
     assert 1 < sum(women_ltp_status) < 15
+
+
+def test_prob_infection_from_infected_ltp():
+    """
+    Check the expected infection risk is assigned to the subjects.
+    """
+    N = 200
+    pop = Population(size=N, start_date=date(1990, 1, 1))
+
+    pop.set_present_variable(col.LONG_TERM_PARTNER, True)
+
+    group1 = list(range(100))  # virally suppressed
+    group2 = list(range(100, 200))  # not virally suppressed and ltp_status = False
+    pop.set_present_variable(col.VIRAL_SUPPRESSION, True, group1)
+
+    # TBC if LTP_STATUS previous timestep needs to be used instead
+
+    HIVM = HIVStatusModule()
+    HIVM.prob_of_infection_from_infected_ltp(pop)
+
+    risk_ltp_group1 = pop.get_variable(col.RISK_LTP, group1)
+    vlg_group1 = pop.get_variable(col.VIRAL_LOAD_GROUP, group1)
+    assert max(risk_ltp_group1) < 0.0011  # 99.7%
+    assert np.mean(vlg_group1) == 0
+
+    risk_ltp_group2 = pop.get_variable(col.RISK_LTP, group2)
+    vlg_group2 = pop.get_variable(col.VIRAL_LOAD_GROUP, group2)
+    ltp_in_primary_group2 = pop.get_variable(col.LTP_IN_PRIMARY, group2)
+
+    assert max(risk_ltp_group2) < 0.385  # 99.7%
+    assert np.mean(vlg_group2) == 5
+    assert sum(ltp_in_primary_group2) == 100

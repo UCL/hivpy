@@ -47,7 +47,7 @@ class HIVStatusModule:
         self.transmission_rate_means = [self.tr_rate_undetectable_vl, 0.01, 0.03, 0.06, 0.1, self.tr_rate_primary]
         self.transmission_rate_sigmas = [0.000025, 0.0025, 0.0075, 0.015, 0.025, 0.075]
         self.women_transmission_factor = rng.choice([1., 1.5, 2.], p=[0.05, 0.25, 0.7])
-        self.young_women_transmission_factor = rng.choice([1., 2., 3.]) * self.women_transmission_factor
+        self.young_women_transmission_factor = rng.choice([1., 3., 5.]) * self.women_transmission_factor
         self.sti_transmission_factor = rng.choice([2., 3.])
         self.stp_transmission_means = self.transmission_factor * self.stp_transmission_factor * \
             np.array([0, self.tr_rate_undetectable_vl / self.transmission_factor, 0.01,
@@ -57,6 +57,7 @@ class HIVStatusModule:
         self.circumcision_risk_reduction = 0.4  # reduce infection risk by 60%
         self.vl_base_change = rng.choice([1.0, 1.5, 2.0])  # TODO: move to data file
         self.cd4_base_change = rng.choice([0.7, 0.85, 1.0, 1/0.85, 1/0.7])  # TODO: move to data file
+        self.resistance_mutations_prop_vlg = np.zeros(6)  # TODO: introduce resistance mutations per person
 
         self.initial_mean_sqrt_cd4 = 27.5
         self.sigma_cd4 = 1.2
@@ -97,12 +98,15 @@ class HIVStatusModule:
         population.init_variable(col.LTP_MONOGAMOUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
+        population.init_variable(col.LTP_IN_PRIMARY, False)
+        population.init_variable(col.RESISTANCE_MUTATIONS, 0)
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
         population.init_variable(col.VIRAL_LOAD, 0.0)
+        population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
 
         population.init_variable(col.WHO3_EVENT, False)
@@ -351,10 +355,10 @@ class HIVStatusModule:
         # Monogamous Partner Case: subjects infect partners
         def calculate_infected_ltp_monogamous(sex, age_group, vl_group, sti, size):
             risk_to_ltp = rng.normal(
-                                    self.transmission_rate_means[vl_group],
-                                    self.transmission_rate_sigmas[vl_group],
-                                    size=size
-                                    )
+                self.transmission_rate_means[vl_group],
+                self.transmission_rate_sigmas[vl_group],
+                size=size
+            )
             if (sex == SexType.Male):
                 if (age_group == 0):
                     risk_to_ltp *= self.young_women_transmission_factor
@@ -373,6 +377,37 @@ class HIVStatusModule:
                                                       use_size=True,
                                                       sub_pop=people_with_monogamous_ltp_and_hiv)
         population.set_present_variable(col.LTP_STATUS, partner_infected, people_with_monogamous_ltp_and_hiv)
+
+    def prob_of_infection_from_infected_ltp(self, population: Population):
+        """
+        Sets the probability of infecttion (RISK_LTP)for the population set
+          for which infection occurs from an infected long term partner.
+        """
+        def calculate_risk_of_infection(viral_suppression, ltp_status, size):
+            subgroup = population.get_sub_pop([(col.VIRAL_SUPPRESSION, op.eq, viral_suppression),
+                                               (col.LTP_STATUS, op.eq, ltp_status)])
+            if viral_suppression:
+                risk = rng.normal(self.tr_rate_undetectable_vl, 0.000025, size)
+                vlg = 0
+            else:
+                if ltp_status:
+                    risk = rng.normal((0.05*self.transmission_factor), 0.0125, size)
+                    vlg = 3
+                else:
+                    risk = rng.normal(self.tr_rate_primary, 0.075, size)
+                    vlg = 5
+                    population.set_present_variable(col.LTP_IN_PRIMARY, True, subgroup)
+
+            population.set_present_variable(col.RISK_LTP, risk, subgroup)
+            population.set_present_variable(col.VIRAL_LOAD_GROUP, vlg, subgroup)
+            population.set_present_variable(col.RESISTANCE_MUTATIONS, self.resistance_mutations_prop_vlg[vlg],
+                                            subgroup)
+
+        people_with_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True)])
+        population.transform_group([col.VIRAL_SUPPRESSION, col.LTP_STATUS],
+                                   calculate_risk_of_infection,
+                                   use_size=True,
+                                   sub_pop=people_with_ltp)
 
     def update_HIV_status(self, population: Population):
         """
