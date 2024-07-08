@@ -3,7 +3,7 @@ import operator as op
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, floatToDate, rng, timedelta
+from .common import AND, COND, OR, float_to_date, rng, timedelta
 from .hiv_testing_data import HIVTestingData
 
 
@@ -15,8 +15,8 @@ class HIVTestingModule:
         with importlib.resources.path("hivpy.data", "hiv_testing.yaml") as data_path:
             self.ht_data = HIVTestingData(data_path)
 
-        self.date_start_testing = floatToDate(self.ht_data.date_start_testing)
-        self.date_rate_testing_incr = floatToDate(self.ht_data.date_rate_testing_incr)
+        self.date_start_testing = float_to_date(self.ht_data.date_start_testing)
+        self.date_rate_testing_incr = float_to_date(self.ht_data.date_rate_testing_incr)
         self.init_rate_first_test = self.ht_data.init_rate_first_test
         self.eff_max_freq_testing = self.ht_data.eff_max_freq_testing
         self.test_scenario = self.ht_data.test_scenario
@@ -32,8 +32,8 @@ class HIVTestingModule:
         self.prob_test_tb = self.ht_data.prob_test_tb
         self.prob_test_non_tb_who3 = self.ht_data.prob_test_non_tb_who3
         self.test_targeting = self.ht_data.test_targeting.sample()
-        self.date_general_testing_plateau = floatToDate(self.ht_data.date_general_testing_plateau.sample())
-        self.date_targeted_testing_plateau = floatToDate(self.ht_data.date_targeted_testing_plateau)
+        self.date_general_testing_plateau = float_to_date(self.ht_data.date_general_testing_plateau.sample())
+        self.date_targeted_testing_plateau = float_to_date(self.ht_data.date_targeted_testing_plateau)
         self.an_lin_incr_test = self.ht_data.an_lin_incr_test.sample()
         self.incr_test_rate_sympt = self.ht_data.incr_test_rate_sympt.sample()
 

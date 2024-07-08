@@ -116,7 +116,7 @@ class date:
         return months1 / months2
 
 
-def floatToDate(fp_year):
+def float_to_date(fp_year):
     int_year = int(fp_year)
     int_month = int((fp_year - int_year) * 12)
     return date(int_year, int_month)

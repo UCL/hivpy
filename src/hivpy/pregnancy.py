@@ -10,7 +10,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import SexType, diff_years, floatToDate, rng, timedelta
+from .common import SexType, diff_years, float_to_date, rng, timedelta
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ class PregnancyModule:
 
         self.can_be_pregnant = self.p_data.can_be_pregnant
         self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
-        self.date_pmtct = floatToDate(self.p_data.date_pmtct)
+        self.date_pmtct = float_to_date(self.p_data.date_pmtct)
         self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
         self.fertility_factor = self.p_data.fertility_factor
         self.inc_cat = self.p_data.inc_cat.sample()
