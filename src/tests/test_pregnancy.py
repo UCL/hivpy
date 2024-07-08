@@ -2,7 +2,7 @@ import operator as op
 from math import ceil, isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta
+from hivpy.common import SexType, date, rng, timedelta, diff_years
 from hivpy.population import Population
 
 
@@ -264,7 +264,7 @@ def test_anc_and_pmtct():
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
     pop.pregnancy.rate_test_anc_inc = 1
-    pop.pregnancy.date_pmtct = 2004
+    pop.pregnancy.date_pmtct = date(2004)
     pop.pregnancy.pmtct_inc_rate = 1
 
     # advance pregnancy
@@ -279,7 +279,7 @@ def test_anc_and_pmtct():
 
     # get stats
     no_pmtct = sum(pop.data[col.PMTCT])
-    prob_pmtct = min((pop.date.year - pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
+    prob_pmtct = min(diff_years(pop.date, pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
     mean = no_anc * prob_pmtct
     stdev = sqrt(mean * (1 - prob_pmtct))
     # check pmtct value is within 3 standard deviations

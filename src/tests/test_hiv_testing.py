@@ -28,7 +28,7 @@ def test_hiv_testing_before_start():
     pop = Population(size=N, start_date=date(2003, 1, 1))
     pop.data[col.ADC] = True
     # start date is before testing begins
-    pop.hiv_testing.date_start_testing = 2003.5
+    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
 
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
@@ -366,14 +366,14 @@ def test_max_frequency_testing():
         pop.data[col.HIV_DIAGNOSED] = False
         pop.data[col.HARD_REACH] = False
         pop.data[col.EVER_TESTED] = True
-        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=pop.hiv_testing.days_to_wait[index]-30)
+        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(months=pop.hiv_testing.months_to_wait[index]-1)
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = 2003.5
-        pop.hiv_testing.date_rate_testing_incr = 2009
+        pop.hiv_testing.date_start_testing = floatToDate(2003.5)
+        pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
         pop.hiv_testing.eff_max_freq_testing = index
-        pop.hiv_testing.date_general_testing_plateau = 2015.5
+        pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
         # guaranteed testing
         pop.hiv_testing.an_lin_incr_test = 1
         pop.hiv_testing.no_test_if_np0 = False
