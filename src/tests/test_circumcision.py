@@ -18,10 +18,10 @@ def set_covid(circ_module, truth_val):
 
 
 def set_vmmc_default_dates(circ_module):
-    circ_module.vmmc_start_year = 2008
-    circ_module.circ_rate_change_year = 2013
-    circ_module.prob_circ_calc_cutoff_year = 2019
-    circ_module.policy_intervention_year = 2022
+    circ_module.vmmc_start_year = date(2008)
+    circ_module.circ_rate_change_year = date(2013)
+    circ_module.prob_circ_calc_cutoff_year = date(2019)
+    circ_module.policy_intervention_year = date(2022)
 
 
 def general_circumcision_checks(mean, stdev, no_circumcised, data):

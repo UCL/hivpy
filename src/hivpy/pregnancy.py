@@ -10,7 +10,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import SexType, rng, timedelta
+from .common import SexType, rng, timedelta, floatToDate, diff_years
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:
@@ -28,7 +28,7 @@ class PregnancyModule:
 
         self.can_be_pregnant = self.p_data.can_be_pregnant
         self.rate_want_no_children = self.p_data.rate_want_no_children  # dependent on time step length
-        self.date_pmtct = self.p_data.date_pmtct
+        self.date_pmtct = floatToDate(self.p_data.date_pmtct)
         self.pmtct_inc_rate = self.p_data.pmtct_inc_rate
         self.fertility_factor = self.p_data.fertility_factor
         self.inc_cat = self.p_data.inc_cat.sample()
@@ -165,9 +165,9 @@ class PregnancyModule:
 
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission
-        if pop.date.year >= self.date_pmtct:
+        if pop.date >= self.date_pmtct:
             # probability of prevention of mother to child transmission care
-            self.prob_pmtct = min((pop.date.year - self.date_pmtct) * self.pmtct_inc_rate, 0.975)
+            self.prob_pmtct = min(diff_years(pop.date, self.date_pmtct) * self.pmtct_inc_rate, 0.975)
             # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
             # this expression assumed ANC can only be true if pregnant
             in_anc = pop.get_sub_pop([(col.ART_NAIVE, op.eq, True),
