@@ -3,7 +3,7 @@ import operator as op
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, rng, timedelta, floatToDate, diff_years
+from .common import AND, COND, OR, floatToDate, rng, timedelta
 from .hiv_testing_data import HIVTestingData
 
 
@@ -238,8 +238,8 @@ class HIVTestingModule:
             self.test_mark_sex_workers(pop)
 
             # update testing probabilities
-            self.rate_rep_test = (min(pop.date, self.date_general_testing_plateau) - 
-                                            self.date_rate_testing_incr).years() * self.an_lin_incr_test
+            self.rate_rep_test = (min(pop.date, self.date_general_testing_plateau) -
+                                  self.date_rate_testing_incr).years() * self.an_lin_incr_test
             self.rate_first_test = self.init_rate_first_test + self.rate_rep_test
 
             # general population ready for testing

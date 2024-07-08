@@ -2,7 +2,7 @@ import operator as op
 from math import ceil, isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta, diff_years
+from hivpy.common import SexType, date, diff_years, rng, timedelta
 from hivpy.population import Population
 
 

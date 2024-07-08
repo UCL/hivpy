@@ -72,9 +72,9 @@ class date:
         return date(year, month, self.day)
 
     def __sub__(self, delta):
-        if(type(delta) == timedelta):
+        if (type(delta) is timedelta):
             return self.__add__(timedelta(years=-delta.year, months=-delta.month))
-        elif(type(delta) == date):
+        elif (type(delta) is date):
             month = (self.month - delta.month) % 12
             year = (self.year - delta.year) + (self.month - delta.month)//12
             return timedelta(year, month)
@@ -115,10 +115,12 @@ class date:
         months2 = dt.year * 12 + dt.month
         return months1 / months2
 
+
 def floatToDate(fp_year):
     int_year = int(fp_year)
     int_month = int((fp_year - int_year) * 12)
     return date(int_year, int_month)
+
 
 class timedelta:
     def __init__(self, years=0, months=0, days=0):
@@ -173,7 +175,7 @@ class timedelta:
         months1 = self.year * 12 + self.month
         months2 = x.year * 12 + x.month
         return months1 / months2
-    
+
     def years(self):
         return self.year + (self.month / 12)
 

@@ -10,7 +10,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import SexType, rng, timedelta, floatToDate, diff_years
+from .common import SexType, diff_years, floatToDate, rng, timedelta
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:

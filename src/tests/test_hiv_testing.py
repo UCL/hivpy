@@ -2,7 +2,7 @@ import operator as op
 from math import isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import date, rng, timedelta, floatToDate
+from hivpy.common import date, floatToDate, rng, timedelta
 from hivpy.population import Population
 
 

@@ -6,7 +6,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import SexType, rng, timedelta, date, diff_years
+from .common import SexType, date, diff_years, rng, timedelta
 
 
 class CircumcisionModule:
