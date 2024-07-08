@@ -2,7 +2,7 @@ import operator as op
 from math import isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import date, floatToDate, rng, timedelta
+from hivpy.common import date, float_to_date, rng, timedelta
 from hivpy.population import Population
 
 
@@ -28,7 +28,7 @@ def test_hiv_testing_before_start():
     pop = Population(size=N, start_date=date(2003, 1, 1))
     pop.data[col.ADC] = True
     # start date is before testing begins
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
 
     # evolve population
     pop.hiv_testing.update_hiv_testing(pop, timedelta(days=30))
@@ -48,8 +48,8 @@ def test_hiv_symptomatic_testing():
     pop.data[col.TB_INITIAL_INFECTION] = False
     pop.data[col.NON_TB_WHO3] = False
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.prob_test_who4 = 0.6
     pop.hiv_testing.prob_test_tb = 0.5
     pop.hiv_testing.prob_test_non_tb_who3 = 0.4
@@ -125,8 +125,8 @@ def test_non_hiv_symptomatic_testing():
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.HIV_DIAGNOSED] = False
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.prob_test_non_hiv_symptoms = 1
     pop.hiv_testing.prob_test_who4 = 0.6
     pop.hiv_testing.prob_test_non_tb_who3 = 0.4
@@ -166,8 +166,8 @@ def test_general_sex_worker_testing():
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=150)
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.eff_max_freq_testing = 0
     pop.hiv_testing.sw_test_regularly = True
     pop.hiv_testing.covid_disrup_affected = False
@@ -202,10 +202,10 @@ def test_general_testing_conditions():
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.NP_LAST_TEST] = 1
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.eff_max_freq_testing = 1
-    pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
+    pop.hiv_testing.date_general_testing_plateau = float_to_date(2015.5)
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -258,10 +258,10 @@ def test_first_time_testers():
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.init_rate_first_test = 0.1
-    pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
+    pop.hiv_testing.date_general_testing_plateau = float_to_date(2015.5)
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -295,10 +295,10 @@ def test_repeat_testers():
     pop.data[col.CIRCUMCISED] = False
     pop.data[col.CIRCUMCISION_DATE] = None
     # fixing some values
-    pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-    pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+    pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+    pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
     pop.hiv_testing.eff_max_freq_testing = 1
-    pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
+    pop.hiv_testing.date_general_testing_plateau = float_to_date(2015.5)
     pop.hiv_testing.an_lin_incr_test = 0.8
     pop.hiv_testing.no_test_if_np0 = False
     pop.hiv_testing.sw_test_regularly = False
@@ -335,11 +335,11 @@ def test_partner_reset_after_test():
         pop.data[col.NP_LAST_TEST] = 2
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-        pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+        pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+        pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
         pop.hiv_testing.eff_max_freq_testing = 1
         pop.hiv_testing.init_rate_first_test = 0.1
-        pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
+        pop.hiv_testing.date_general_testing_plateau = float_to_date(2015.5)
         pop.hiv_testing.an_lin_incr_test = 0.8
         pop.hiv_testing.no_test_if_np0 = False
         pop.hiv_testing.sw_test_regularly = False
@@ -373,10 +373,10 @@ def test_max_frequency_testing():
         pop.data[col.NP_LAST_TEST] = 1
         pop.data[col.NSTP_LAST_TEST] = 1
         # fixing some values
-        pop.hiv_testing.date_start_testing = floatToDate(2003.5)
-        pop.hiv_testing.date_rate_testing_incr = floatToDate(2009)
+        pop.hiv_testing.date_start_testing = float_to_date(2003.5)
+        pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
         pop.hiv_testing.eff_max_freq_testing = index
-        pop.hiv_testing.date_general_testing_plateau = floatToDate(2015.5)
+        pop.hiv_testing.date_general_testing_plateau = float_to_date(2015.5)
         # guaranteed testing
         pop.hiv_testing.an_lin_incr_test = 1
         pop.hiv_testing.no_test_if_np0 = False
