@@ -198,7 +198,7 @@ def test_general_testing_conditions():
     pop = Population(size=N, start_date=date(2008, 1, 1))
     pop.data[col.AGE] = 20
     pop.data[col.HARD_REACH] = False
-    pop.data[col.EVER_TESTED] = True
+    pop.data[col.EVER_TESTED] = False
     pop.data[col.LAST_TEST_DATE] = None
     pop.data[col.NP_LAST_TEST] = 1
     # fixing some values
@@ -227,6 +227,7 @@ def test_general_testing_conditions():
 
     pop.date = date(2010, 1, 1)
     pop.data[col.LAST_TEST_DATE] = date(2009)
+    pop.data[col.EVER_TESTED] = True
     # re-evolve population
     pop.hiv_testing.test_mark_general_pop(pop)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
