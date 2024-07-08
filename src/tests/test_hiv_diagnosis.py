@@ -17,7 +17,7 @@ def test_primary_infection_diagnosis():
     pop.data[col.PREP_TYPE] = None
     # test sensitivities
     pop.hiv_diagnosis.test_sens_primary_ab = 0.50
-    test_sens_primary_pcr = 0.86
+    test_sens_primary_na = 0.86
     test_sens_primary_agab = 0.75
 
     # Ab primary infection outcomes
@@ -33,14 +33,14 @@ def test_primary_infection_diagnosis():
 
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
-    # PCR primary infection outcomes
-    pop.hiv_diagnosis.hiv_test_type = HIVTestType.PCR
+    # NA primary infection outcomes
+    pop.hiv_diagnosis.hiv_test_type = HIVTestType.NA
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
     diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
-    mean = N * test_sens_primary_pcr
-    stdev = sqrt(mean * (1 - test_sens_primary_pcr))
+    mean = N * test_sens_primary_na
+    stdev = sqrt(mean * (1 - test_sens_primary_na))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
@@ -68,7 +68,7 @@ def test_primary_infection_prep_diagnosis():
     pop.data[col.PREP_JUST_STARTED] = False
     # test sensitivities
     pop.hiv_diagnosis.test_sens_prep_inj_primary_ab = 0.1
-    pop.hiv_diagnosis.test_sens_prep_inj_primary_pcr = 0.3
+    pop.hiv_diagnosis.test_sens_prep_inj_primary_na = 0.3
     test_sens_prep_inj_primary_agab = 0
 
     # Ab + PrEP primary infection outcomes
@@ -84,14 +84,14 @@ def test_primary_infection_prep_diagnosis():
 
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
-    # PCR + PrEP primary infection outcomes
-    pop.hiv_diagnosis.hiv_test_type = HIVTestType.PCR
+    # NA + PrEP primary infection outcomes
+    pop.hiv_diagnosis.hiv_test_type = HIVTestType.NA
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
     diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
-    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_primary_pcr
-    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_primary_pcr))
+    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_primary_na
+    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_primary_na))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
@@ -140,11 +140,11 @@ def test_general_population_prep_diagnosis():
     # test sensitivities
     pop.hiv_diagnosis.test_sens_prep_inj_3m_ab = 0.2
     pop.hiv_diagnosis.test_sens_prep_inj_ge6m_ab = 0.5
-    pop.hiv_diagnosis.test_sens_prep_inj_3m_pcr = 0.7
-    pop.hiv_diagnosis.test_sens_prep_inj_ge6m_pcr = 0.8
+    pop.hiv_diagnosis.test_sens_prep_inj_3m_na = 0.7
+    pop.hiv_diagnosis.test_sens_prep_inj_ge6m_na = 0.8
 
     # Ab + PrEP general outcomes (recent infection)
-    pop.hiv_diagnosis.prep_inj_pcr = False
+    pop.hiv_diagnosis.prep_inj_na = False
     pop.data[col.HIV_INFECTION_GE6M] = False
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
@@ -170,28 +170,28 @@ def test_general_population_prep_diagnosis():
 
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
-    # PCR + PrEP general outcomes (recent infection)
-    pop.hiv_diagnosis.prep_inj_pcr = True
+    # NA + PrEP general outcomes (recent infection)
+    pop.hiv_diagnosis.prep_inj_na = True
     pop.data[col.HIV_INFECTION_GE6M] = False
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
     diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
-    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_3m_pcr
-    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_3m_pcr))
+    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_3m_na
+    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_3m_na))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
-    # PCR + PrEP general outcomes (older infection)
+    # NA + PrEP general outcomes (older infection)
     pop.data[col.HIV_INFECTION_GE6M] = True
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
     diag_pop = len(pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, True)]))
-    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_ge6m_pcr
-    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_ge6m_pcr))
+    mean = N * pop.hiv_diagnosis.test_sens_prep_inj_ge6m_na
+    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.test_sens_prep_inj_ge6m_na))
     # check tested value is within 3 standard deviations
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 

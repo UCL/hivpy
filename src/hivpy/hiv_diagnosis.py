@@ -14,11 +14,11 @@ from .common import rng
 from .prep import PrEPType
 
 
-# Ab (default), PCR (RNA VL), Ag/Ab
+# Ab (default), NA (RNA VL / PCR), Ag/Ab
 class HIVTestType(IntEnum):
-    Ab = 0
-    PCR = 1
-    AgAb = 2
+    Ab = 0  # antibody only assay
+    NA = 1  # nucleic acid based
+    AgAb = 2  # antigen/antibody combined assay
 
 
 class HIVDiagnosisModule:
@@ -26,8 +26,8 @@ class HIVDiagnosisModule:
     def __init__(self, **kwargs):
         # FIXME: move these to data file
         self.hiv_test_type = HIVTestType.Ab
-        self.init_prep_inj_pcr = rng.choice([True, False], p=[0.5, 0.5])
-        self.prep_inj_pcr = rng.choice([True, False], p=[0.5, 0.5]) if self.init_prep_inj_pcr else 0
+        self.init_prep_inj_na = rng.choice([True, False], p=[0.5, 0.5])
+        self.prep_inj_na = rng.choice([True, False], p=[0.5, 0.5]) if self.init_prep_inj_na else 0
 
         self.test_sens_general = 0.98
         self.test_sens_primary_ab = rng.choice([0.5, 0.75])
@@ -35,9 +35,9 @@ class HIVDiagnosisModule:
         self.test_sens_prep_inj_3m_ab = rng.choice([0, 0.2])
         self.test_sens_prep_inj_ge6m_ab = rng.choice([0.10, 0.25, 0.50])
         self.tests_sens_prep_inj = rng.choice([0, 1, 2, 3])
-        self.test_sens_prep_inj_primary_pcr = [0.7, 0.5, 0.3, 0.2][self.tests_sens_prep_inj]
-        self.test_sens_prep_inj_3m_pcr = [0.85, 0.7, 0.5, 0.3][self.tests_sens_prep_inj]
-        self.test_sens_prep_inj_ge6m_pcr = [0.95, 0.8, 0.7, 0.5][self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_primary_na = [0.7, 0.5, 0.3, 0.2][self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_3m_na = [0.85, 0.7, 0.5, 0.3][self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_ge6m_na = [0.95, 0.8, 0.7, 0.5][self.tests_sens_prep_inj]
 
         self.prob_loss_at_diag = rng.choice([0.02, 0.05, 0.15, 0.35, 0.50],
                                             p=[0.60, 0.30, 0.05, 0.04, 0.01])
@@ -50,7 +50,7 @@ class HIVDiagnosisModule:
     def update_HIV_diagnosis(self, pop: Population):
         """
         Diagnose people that have been tested this time step. The default test type used
-        is Ab, but certain policy options make use of PCR (RNA VL) or Ag/Ab tests.
+        is Ab, but certain policy options make use of NA (RNA VL / PCR) or Ag/Ab tests.
         Accuracy depends on test sensitivity, PrEP usage, as well as CD4 count.
         """
         # tested population in primary infection
@@ -108,11 +108,11 @@ class HIVDiagnosisModule:
                 eff_test_sens_primary = self.test_sens_prep_inj_primary_ab
             else:
                 eff_test_sens_primary = self.test_sens_primary_ab
-        # PCR test type
-        elif self.hiv_test_type == HIVTestType.PCR:
+        # NA test type
+        elif self.hiv_test_type == HIVTestType.NA:
             # injectable PrEP started before this time step
             if prep_inj and not prep_just_started:
-                eff_test_sens_primary = self.test_sens_prep_inj_primary_pcr
+                eff_test_sens_primary = self.test_sens_prep_inj_primary_na
             else:
                 eff_test_sens_primary = 0.86
         # Ag/Ab test type
@@ -146,12 +146,12 @@ class HIVDiagnosisModule:
         # FIXME: does injectable use timing matter for general diagnosis?
         # injectable PrEP in current use
         if prep_type == PrEPType.Cabotegravir or prep_type == PrEPType.Lenacapavir:
-            if self.prep_inj_pcr:
+            if self.prep_inj_na:
                 # infected for 6 months or more
                 if hiv_infection_ge6m:
-                    eff_test_sens_general = self.test_sens_prep_inj_ge6m_pcr
+                    eff_test_sens_general = self.test_sens_prep_inj_ge6m_na
                 else:
-                    eff_test_sens_general = self.test_sens_prep_inj_3m_pcr
+                    eff_test_sens_general = self.test_sens_prep_inj_3m_na
             else:
                 # infected for 6 months or more
                 if hiv_infection_ge6m:
