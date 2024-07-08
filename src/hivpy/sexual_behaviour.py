@@ -160,6 +160,7 @@ class SexualBehaviourModule:
         population.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
         population.init_variable(col.RISK, 1)
         population.init_variable(col.LONG_TERM_PARTNER, False)
+        population.init_variable(col.LTP_NEW, False)
         population.init_variable(col.LTP_AGE_GROUP, 0)
         population.init_variable(col.LTP_LONGEVITY, 0)
         population.init_variable(col.SEX_MIX_AGE_GROUP, 0)
@@ -181,6 +182,7 @@ class SexualBehaviourModule:
         self.num_short_term_partners(population)
 
     def update_sex_behaviour(self, population: Population):
+        population.set_present_variable(col.LTP_NEW, False)
         self.update_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
         self.update_risk(population)
@@ -712,6 +714,8 @@ class SexualBehaviourModule:
             start_partnerless,
             population.get_sub_pop([(col.LONG_TERM_PARTNER, operator.eq, True)])
         )
+
+        population.set_present_variable(col.LTP_NEW, True, new_ltp_subpop)
 
         population.set_variable_by_group(
             col.LTP_LONGEVITY,

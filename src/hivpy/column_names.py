@@ -26,6 +26,7 @@ STP_AGE_GROUPS = "stp_age_groups"               # int array: age groups of short
 SEX_BEHAVIOUR = "sex_behaviour"                 # int: sexual behaviour grouping
 SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourClass(enum): Men, Young Women, Older Women, or Sex Workers
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
+LTP_NEW = "ltp_new"                             # bool: True if condomless sex with ltp is new this timestep
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has not short term partners o/w false
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
