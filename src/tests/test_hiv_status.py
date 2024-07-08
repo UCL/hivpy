@@ -508,6 +508,7 @@ def test_primary_infection_prep_diagnosis():
 def test_general_population_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
@@ -527,6 +528,7 @@ def test_general_population_diagnosis():
 def test_general_population_prep_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
@@ -632,6 +634,7 @@ def test_primary_loss_at_diagnosis():
 def test_general_loss_at_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False

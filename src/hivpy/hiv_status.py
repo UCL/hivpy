@@ -487,7 +487,8 @@ class HIVStatusModule:
             pop.set_present_variable(col.UNDER_CARE, ~lost, sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
 
         # remaining tested general population
-        general_pop = pop.get_sub_pop([(col.IN_PRIMARY_INFECTION, op.eq, False),
+        general_pop = pop.get_sub_pop([(col.HIV_STATUS, op.eq, True),
+                                       (col.IN_PRIMARY_INFECTION, op.eq, False),
                                        (col.LAST_TEST_DATE, op.eq, pop.date),
                                        (col.HIV_DIAGNOSED, op.eq, False)])
 
