@@ -8,9 +8,11 @@ import hivpy.column_names as col
 from .circumcision import CircumcisionModule
 from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
+from .hiv_diagnosis import HIVDiagnosisModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
+from .prep import PrEPModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = date(1989, 1, 1)
@@ -42,6 +44,8 @@ class Population:
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
         self.hiv_testing = HIVTestingModule()
+        self.hiv_diagnosis = HIVDiagnosisModule()
+        self.prep = PrEPModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -74,6 +78,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
+        self.prep.init_prep_variables(self)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
