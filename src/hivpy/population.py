@@ -79,6 +79,7 @@ class Population:
 
         self.hiv_status.init_HIV_variables(self)
         self.prep.init_prep_variables(self)
+        self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
         self.init_variable(col.NSTP_LAST_TEST, 0)
@@ -247,9 +248,6 @@ class Population:
         `dropna` is false by default to allow for the inclusion of missing values in groups, but
         should be set to true if missing values should instead be dropped during groupby.
         """
-        # Use Dummy column to in order to enable transform method and avoid any risks to data
-        param_list = list(map(lambda x: self.get_correct_column(x), param_list))
-
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
@@ -264,6 +262,7 @@ class Population:
             df = self.data.loc[sub_pop]
         else:
             df = self.data
+        # Use Dummy column to in order to enable transform method and avoid any risks to data
         return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: timedelta):
@@ -288,16 +287,19 @@ class Population:
         self.circumcision.update_vmmc(self, time_step)
         # Get the number of sexual partners this time step
         self.sexual_behaviour.update_sex_behaviour(self)
-        self.pregnancy.update_pregnancy(self, time_step)
+        self.pregnancy.update_pregnancy(self)
 
         # If HIV has been introduced, then run HIV relevant code
         if self.HIV_introduced:
             self.hiv_status.update_HIV_status(self)
-            self.hiv_testing.update_hiv_testing(self)
             HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
+            self.hiv_testing.update_hiv_testing(self, time_step)
             n_deaths = n_deaths + sum(HIV_deaths)
             if (n_deaths and self.apply_death):
                 self.drop_from_population(HIV_deaths)
+
+        # Some population cleanup
+        self.pregnancy.reset_anc_at_birth(self)
 
         # Apply non-hiv deaths
         non_HIV_deaths = self.demographics.determine_deaths(self, time_step)
