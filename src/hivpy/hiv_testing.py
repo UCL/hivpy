@@ -39,7 +39,7 @@ class HIVTestingModule:
 
         # eff_max_freq_testing is used as an index to pick the correct
         # minimum number of days to wait between tests from this list
-        self.months_to_wait = [12, 6, 3]  # 12 months, 6 months, 3 months
+        self.months_to_wait = [12, 6, 3]
 
         self.rate_first_test = 0
         self.rate_rep_test = 0
