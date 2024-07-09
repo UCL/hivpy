@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import importlib.resources
 import operator as op
 from enum import IntEnum
 
 import hivpy.column_names as col
 
 from .common import rng
+from .hiv_diagnosis_data import HIVDiagnosisData
 from .prep import PrEPType
 
 
@@ -24,23 +26,28 @@ class HIVTestType(IntEnum):
 class HIVDiagnosisModule:
 
     def __init__(self, **kwargs):
-        # FIXME: move these to data file
+
+        # init hiv diagnosis data
+        with importlib.resources.path("hivpy.data", "hiv_diagnosis.yaml") as data_path:
+            self.hd_data = HIVDiagnosisData(data_path)
+
+        # FIXME: consider how to move more variables to data file
         self.hiv_test_type = HIVTestType.Ab
-        self.init_prep_inj_na = rng.choice([True, False], p=[0.5, 0.5])
-        self.prep_inj_na = rng.choice([True, False], p=[0.5, 0.5]) if self.init_prep_inj_na else 0
+        self.init_prep_inj_na = rng.choice([True, False])
+        self.prep_inj_na = rng.choice([True, False]) if self.init_prep_inj_na else 0
 
-        self.test_sens_general = 0.98
-        self.test_sens_primary_ab = rng.choice([0.5, 0.75])
-        self.test_sens_prep_inj_primary_ab = rng.choice([0, 0.1])
-        self.test_sens_prep_inj_3m_ab = rng.choice([0, 0.2])
-        self.test_sens_prep_inj_ge6m_ab = rng.choice([0.10, 0.25, 0.50])
-        self.tests_sens_prep_inj = rng.choice([0, 1, 2, 3])
-        self.test_sens_prep_inj_primary_na = [0.7, 0.5, 0.3, 0.2][self.tests_sens_prep_inj]
-        self.test_sens_prep_inj_3m_na = [0.85, 0.7, 0.5, 0.3][self.tests_sens_prep_inj]
-        self.test_sens_prep_inj_ge6m_na = [0.95, 0.8, 0.7, 0.5][self.tests_sens_prep_inj]
+        self.test_sens_general = self.hd_data.test_sens_general
+        self.test_sens_primary_ab = self.hd_data.test_sens_primary_ab.sample()
+        self.test_sens_prep_inj_primary_ab = self.hd_data.test_sens_prep_inj_primary_ab.sample()
+        self.test_sens_prep_inj_3m_ab = self.hd_data.test_sens_prep_inj_3m_ab.sample()
+        self.test_sens_prep_inj_ge6m_ab = self.hd_data.test_sens_prep_inj_ge6m_ab.sample()
+        self.tests_sens_prep_inj = self.hd_data.tests_sens_prep_inj.sample()
+        # test_sens_prep_inj used as index for further sensitivity selection
+        self.test_sens_prep_inj_primary_na = self.hd_data.test_sens_prep_inj_primary_na[self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_3m_na = self.hd_data.test_sens_prep_inj_3m_na[self.tests_sens_prep_inj]
+        self.test_sens_prep_inj_ge6m_na = self.hd_data.test_sens_prep_inj_ge6m_na[self.tests_sens_prep_inj]
 
-        self.prob_loss_at_diag = rng.choice([0.02, 0.05, 0.15, 0.35, 0.50],
-                                            p=[0.60, 0.30, 0.05, 0.04, 0.01])
+        self.prob_loss_at_diag = self.hd_data.prob_loss_at_diag.sample()
         # FIXME: may be 2 or 3 if sw_art_disadv=1
         self.sw_incr_prob_loss_at_diag = 1
         self.higher_newp_less_engagement = rng.choice([True, False], p=[0.2, 0.8])
