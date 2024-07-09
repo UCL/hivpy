@@ -517,12 +517,12 @@ class SexualBehaviourModule:
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
         if (date1995 < date <= date2000):
-            dt = diff_years(date1995, date)
+            dt = diff_years(date, date1995)
             self.risk_population = yearly_change_90s**dt
         elif (date2000 < date < date2010):
             self.risk_population = yearly_change_90s**5
         elif (date2010 < date < date2021):
-            dt = diff_years(date2010, date)
+            dt = diff_years(date, date2010)
             self.risk_population = yearly_change_90s**5 * yearly_change_10s**dt
         elif (date2021 < date):
             self.risk_population = yearly_change_90s**5 * yearly_change_10s**11
@@ -615,7 +615,7 @@ class SexualBehaviourModule:
 
     def update_ltp_rate_change(self, date):
         if date1995 < date < date2000:
-            dt = diff_years(date1995, date)
+            dt = diff_years(date, date1995)
             self.ltp_rate_change = self.annual_ltp_rate_change**(dt)
         elif date >= date2000:
             self.ltp_rate_change = self.annual_ltp_rate_change**5

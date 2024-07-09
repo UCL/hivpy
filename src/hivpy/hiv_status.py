@@ -117,6 +117,8 @@ class HIVStatusModule:
         population.init_variable(col.NON_TB_WHO3, False)
         population.init_variable(col.TB, False)
         population.init_variable(col.TB_DIAGNOSED, False)
+        population.init_variable(col.TB_INFECTION_DATE, None)
+        population.init_variable(col.TB_INITIAL_INFECTION, False)
         population.init_variable(col.ADC, False)
         population.init_variable(col.C_MENINGITIS, False)
         population.init_variable(col.C_MENINGITIS_DIAGNOSED, False)
@@ -535,6 +537,13 @@ class HIVStatusModule:
 
         # TODO: people on treatment
 
+    def reset_diagnoses(self, pop: Population):
+        # Resets variables for diagnosis this timestep
+        pop.set_present_variable(col.TB_DIAGNOSED, False)
+        pop.set_present_variable(col.C_MENINGITIS_DIAGNOSED, False)
+        pop.set_present_variable(col.SBI_DIAGNOSED, False)
+        pop.set_present_variable(col.WHO4_OTHER_DIAGNOSED, False)
+
     def HIV_related_disease_risk(self, pop: Population, time_step: timedelta):
         # TODO: does disease risk apply to everyone who is alive?
         # calculate disease base rate
@@ -569,6 +578,11 @@ class HIVStatusModule:
         # TB WHO3
         (tb, _) = disease_and_diagnosis(col.TB, col.TB_DIAGNOSED, tb_rate, self.tb_base_diagnosis_prob)
         pop.set_present_variable(col.WHO3_EVENT, (who3_disease | tb), HIV_pos)
+        new_tb = pop.get_sub_pop_from_array(tb, HIV_pos)
+        pop.set_present_variable(col.TB_INFECTION_DATE, pop.date, new_tb)
+        # FIXME: may need to update this reset for non-HIV related TB
+        pop.set_present_variable(col.TB_INITIAL_INFECTION, False)
+        pop.set_present_variable(col.TB_INITIAL_INFECTION, True, new_tb)
 
         # cryptococcal meningitis
         (cm, _) = disease_and_diagnosis(col.C_MENINGITIS,

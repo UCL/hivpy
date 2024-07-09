@@ -11,6 +11,7 @@ Welcome to the HIVpy package. Below is an overview of the repository contents:
 ### Module-Specific Tutorials
 
 - [Circumcision Tutorial](circumcision.md)
+- [HIV Testing Tutorial](hiv_testing.md)
 - [Pregnancy Tutorial](pregnancy.md)
 - [Sexual Behaviour Tutorial](sexual_behaviour.md)
 
