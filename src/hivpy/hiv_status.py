@@ -98,6 +98,8 @@ class HIVStatusModule:
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.LTP_STATUS, False)
         population.init_variable(col.LTP_MONOGAMOUS, False)
+        population.init_variable(col.LTP_INFECTION_DATE, None)
+        population.init_variable(col.RISK_LTP_INFECTED, 0.0)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.LTP_IN_PRIMARY, False)
@@ -382,31 +384,33 @@ class HIVStatusModule:
 
     def prob_of_infection_from_infected_ltp(self, population: Population):
         """
-        Sets the probability of infecttion (RISK_LTP)for the population set
+        Sets the probability of infection for the population set
           for which infection occurs from an infected long term partner.
         """
-        def calculate_risk_of_infection(viral_suppression, ltp_status, size):
-            subgroup = population.get_sub_pop([(col.VIRAL_SUPPRESSION, op.eq, viral_suppression),
-                                               (col.LTP_STATUS, op.eq, ltp_status)])
+        def calculate_risk_of_infection(viral_suppression, ltp_primary, size):
+            people_vs = population.get_sub_pop([(col.VIRAL_SUPPRESSION, op.eq, viral_suppression)])
+            risk = rng.normal((0.05*self.transmission_factor), 0.0125, size)
+            vlgroup = 3
             if viral_suppression:
                 risk = rng.normal(self.tr_rate_undetectable_vl, 0.000025, size)
-                vlg = 0
-            else:
-                if ltp_status:
-                    risk = rng.normal((0.05*self.transmission_factor), 0.0125, size)
-                    vlg = 3
-                else:
-                    risk = rng.normal(self.tr_rate_primary, 0.075, size)
-                    vlg = 5
-                    population.set_present_variable(col.LTP_IN_PRIMARY, True, subgroup)
+                vlgroup = 0
+            if ltp_primary:
+                risk = rng.normal(self.tr_rate_primary, 0.075, size)
+                vlgroup = 5
+            population.set_present_variable(col.RISK_LTP_INFECTED, risk, people_vs)
+            population.set_present_variable(col.VIRAL_LOAD_GROUP, vlgroup, people_vs)
+            population.set_present_variable(col.RESISTANCE_MUTATIONS,
+                                            self.resistance_mutations_prop_vlg[vlgroup],
+                                            people_vs)
 
-            population.set_present_variable(col.RISK_LTP, risk, subgroup)
-            population.set_present_variable(col.VIRAL_LOAD_GROUP, vlg, subgroup)
-            population.set_present_variable(col.RESISTANCE_MUTATIONS, self.resistance_mutations_prop_vlg[vlg],
-                                            subgroup)
+        people_with_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
+                                                  (col.LTP_STATUS, op.eq, True)])
 
-        people_with_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True)])
-        population.transform_group([col.VIRAL_SUPPRESSION, col.LTP_STATUS],
+        ltp_infection_date = population.get_variable(col.LTP_INFECTION_DATE, people_with_ltp)
+        ltp_primary_infection = ltp_infection_date > (population.date - timedelta(days=90))
+        population.set_present_variable(col.LTP_IN_PRIMARY, ltp_primary_infection, people_with_ltp)
+
+        population.transform_group([col.VIRAL_SUPPRESSION, col.LTP_IN_PRIMARY],
                                    calculate_risk_of_infection,
                                    use_size=True,
                                    sub_pop=people_with_ltp)
@@ -414,19 +418,22 @@ class HIVStatusModule:
     def prob_of_new_ltp_already_infected(self, population: Population):
         for sex in [SexType.Male, SexType.Female]:
             for age_group in range(5):
-                people = population.get_sub_pop([(col.SEX, op.eq, sex),
-                                                (col.AGE_GROUP, op.eq, age_group)])
-                people_with_hiv = population.get_sub_pop([(col.SEX, op.eq, sex),
-                                                          (col.AGE_GROUP, op.eq, age_group),
-                                                          (col.HIV_STATUS, op.eq, True)])
-                if len(people) != 0:
-                    self.prevalence[sex][age_group] = len(people_with_hiv) / len(people)
+                opposite_sex = population.get_sub_pop([(col.SEX, op.ne, sex),
+                                                       (col.AGE_GROUP, op.eq, age_group)])
+                opposite_sex_with_hiv = population.get_sub_pop([(col.SEX, op.ne, sex),
+                                                                (col.AGE_GROUP, op.eq, age_group),
+                                                                (col.HIV_STATUS, op.eq, True)])
+
+                if len(opposite_sex) != 0:
+                    self.prevalence[sex][age_group] = len(opposite_sex_with_hiv) / len(opposite_sex)
 
             def calculate_new_ltp_infection(sex, age_group, size):
-                return rng.uniform(0, 1, size) < self.prevalence[sex][age_group]
+                infected = (rng.uniform(0, 1, size) < 0.5) | (rng.uniform(0, 1, size) <
+                                                              self.prevalence[sex][age_group])
+                return infected
 
-            people_with_new_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
-                                                          (col.LTP_STATUS, op.eq, False)])
+            people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
+
             new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP],
                                                           calculate_new_ltp_infection,
                                                           use_size=True,

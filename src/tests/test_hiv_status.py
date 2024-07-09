@@ -506,22 +506,22 @@ def test_prob_infection_from_infected_ltp():
     pop = Population(size=N, start_date=date(1990, 1, 1))
 
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
+    pop.set_present_variable(col.LTP_STATUS, True)
 
     group1 = list(range(100))  # virally suppressed
-    group2 = list(range(100, 200))  # not virally suppressed and ltp_status = False
+    group2 = list(range(100, 200))  # not virally suppressed and in primary infection
     pop.set_present_variable(col.VIRAL_SUPPRESSION, True, group1)
-
-    # TBC if LTP_STATUS previous timestep needs to be used instead
+    pop.set_present_variable(col.LTP_INFECTION_DATE, date(1989, 12, 1), group2)
 
     HIVM = HIVStatusModule()
     HIVM.prob_of_infection_from_infected_ltp(pop)
 
-    risk_ltp_group1 = pop.get_variable(col.RISK_LTP, group1)
+    risk_ltp_group1 = pop.get_variable(col.RISK_LTP_INFECTED, group1)
     vlg_group1 = pop.get_variable(col.VIRAL_LOAD_GROUP, group1)
     assert max(risk_ltp_group1) < 0.0011  # 99.7%
     assert np.mean(vlg_group1) == 0
 
-    risk_ltp_group2 = pop.get_variable(col.RISK_LTP, group2)
+    risk_ltp_group2 = pop.get_variable(col.RISK_LTP_INFECTED, group2)
     vlg_group2 = pop.get_variable(col.VIRAL_LOAD_GROUP, group2)
     ltp_in_primary_group2 = pop.get_variable(col.LTP_IN_PRIMARY, group2)
 
@@ -537,19 +537,24 @@ def test_prob_of_new_ltp_already_infected():
     N = 200
     pop = Population(size=N, start_date=date(1990, 1, 1))
 
-    pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.AGE_GROUP, 0)
-    pop.set_present_variable(col.LONG_TERM_PARTNER, True)
+    pop.set_present_variable(col.LTP_NEW, True)
 
-    hiv_pos_sample = list(range(100, 200))
-    pop.set_present_variable(col.HIV_STATUS, True, hiv_pos_sample)
+    women = list(range(0, 100))
+    pop.set_present_variable(col.SEX, SexType.Female, women)
+
+    men = list(range(100, 200))
+    pop.set_present_variable(col.SEX, SexType.Male, men)
+    men_with_hiv = list(range(150, 200))
+    pop.set_present_variable(col.HIV_STATUS, True, men_with_hiv)
 
     HIVM = HIVStatusModule()
     HIVM.prob_of_new_ltp_already_infected(pop)
 
     assert HIVM.prevalence[SexType.Female][0] == 0.5
 
-    # Expect: ~50% of womens' LTPs to be infected
-    women_ltp_status = pop.get_variable(col.LTP_STATUS)
-    assert 85 < sum(women_ltp_status) < 115
+    # Expect: ~80% of womens' LTPs to be infected
+    women_ltp_status = pop.get_variable(col.LTP_STATUS,
+                                        sub_pop=women)
+    assert 65 < sum(women_ltp_status) < 95

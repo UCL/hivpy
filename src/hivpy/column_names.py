@@ -14,6 +14,7 @@ RISK_BALANCE = "risk_balance"                   # float: risk factor to re-balan
 RISK_DIAGNOSIS = "risk_diagnosis"               # float: risk associated with recent HIV diagnosis
 RISK_PERSONAL = "risk_personal"                 # float: individual risk reduction applied with a certain probability
 RISK_LTP = "risk_long_term_partnered"           # float: risk reduction for people in long term partnerships
+RISK_LTP_INFECTED = "risk_ltp_infected"         # float: risk of infection from infected long term partner
 RISK_ART_ADHERENCE = "risk_art_adherence"       # float: risk reduction associated with low ART adherence
 RISK_INITIAL = "risk_initial"                   # float: initial risk reduction factor
 CIRCUMCISED = "circumcised"                     # bool: True if a man is circumcised
@@ -29,6 +30,7 @@ LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has 
 LTP_NEW = "ltp_new"                             # bool: True if condomless sex with ltp is new this timestep
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has not short term partners o/w false
+LTP_INFECTION_DATE = "ltp_infection_date"       # date: date at which the long term partner gets infected o/w None if not infected
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
 ANC = "anc"                                     # bool: True if in antenatal care
