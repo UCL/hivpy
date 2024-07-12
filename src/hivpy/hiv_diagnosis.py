@@ -11,7 +11,7 @@ from enum import IntEnum
 
 import hivpy.column_names as col
 
-from .common import rng
+from .common import rng, timedelta
 from .hiv_diagnosis_data import HIVDiagnosisData
 from .prep import PrEPType
 
@@ -86,6 +86,11 @@ class HIVDiagnosisModule:
                                        (col.HIV_DIAGNOSED, op.eq, False)])
 
         if len(general_pop) > 0:
+            # set infection timeframe bool
+            general_infection_dates = pop.get_variable(col.DATE_HIV_INFECTION, general_pop)
+            pop.set_present_variable(col.HIV_INFECTION_GE6M,
+                                     [pop.date]*len(general_infection_dates) - general_infection_dates >=
+                                     timedelta(months=6), general_pop)
             # general diagnosis outcomes
             diagnosed = pop.transform_group([col.PREP_TYPE, col.HIV_INFECTION_GE6M],
                                             self.calc_general_diag_outcomes, sub_pop=general_pop)

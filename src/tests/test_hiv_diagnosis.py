@@ -12,6 +12,7 @@ def test_primary_infection_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
+    pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_TYPE] = None
@@ -62,6 +63,7 @@ def test_primary_infection_prep_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
+    pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_TYPE] = PrEPType.Cabotegravir
@@ -114,6 +116,7 @@ def test_general_population_diagnosis():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_TYPE] = None
@@ -145,7 +148,7 @@ def test_general_population_prep_diagnosis():
 
     # Ab + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = False
-    pop.data[col.HIV_INFECTION_GE6M] = False
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 9, 1)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -158,7 +161,7 @@ def test_general_population_prep_diagnosis():
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
     # Ab + PrEP general outcomes (older infection)
-    pop.data[col.HIV_INFECTION_GE6M] = True
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 6, 1)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -172,7 +175,7 @@ def test_general_population_prep_diagnosis():
     pop.data[col.HIV_DIAGNOSED] = False
     # NA + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = True
-    pop.data[col.HIV_INFECTION_GE6M] = False
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 9, 1)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -185,7 +188,7 @@ def test_general_population_prep_diagnosis():
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
     # NA + PrEP general outcomes (older infection)
-    pop.data[col.HIV_INFECTION_GE6M] = True
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 6, 1)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -200,6 +203,7 @@ def test_primary_loss_at_diagnosis():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
+    pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_TYPE] = None
@@ -240,6 +244,7 @@ def test_general_loss_at_diagnosis():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
+    pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_TYPE] = None
