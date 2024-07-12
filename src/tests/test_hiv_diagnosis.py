@@ -272,6 +272,19 @@ def test_general_loss_at_diagnosis():
 
     # reset diagnosis
     pop.data[col.HIV_DIAGNOSED] = False
+    # general outcomes (less engaged but no stp)
+    pop.data[col.NUM_PARTNERS] = 0
+    pop.hiv_diagnosis.update_HIV_diagnosis(pop)
+
+    # get stats
+    lost = len(pop.get_sub_pop([(col.UNDER_CARE, op.eq, False)]))
+    mean = N * pop.hiv_diagnosis.prob_loss_at_diag
+    stdev = sqrt(mean * (1 - pop.hiv_diagnosis.prob_loss_at_diag))
+    # check tested value is within 3 standard deviations
+    assert mean - 3 * stdev <= lost <= mean + 3 * stdev
+
+    # reset diagnosis
+    pop.data[col.HIV_DIAGNOSED] = False
     # general outcomes (adc or tb)
     pop.data[col.ADC] = True
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
