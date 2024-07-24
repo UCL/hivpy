@@ -8,9 +8,11 @@ import hivpy.column_names as col
 from .circumcision import CircumcisionModule
 from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
+from .hiv_diagnosis import HIVDiagnosisModule
 from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
+from .prep import PrEPModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = date(1989, 1, 1)
@@ -42,6 +44,8 @@ class Population:
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
         self.hiv_testing = HIVTestingModule()
+        self.hiv_diagnosis = HIVDiagnosisModule()
+        self.prep = PrEPModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -74,6 +78,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
+        self.prep.init_prep_variables(self)
         self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
         self.init_variable(col.LAST_TEST_DATE, None)
@@ -226,7 +231,7 @@ class Population:
             self.data.loc[sub_pop, target_col] = self.transform_group(groups, func,
                                                                       use_size, sub_pop)
 
-    def transform_group(self, param_list, func, use_size=True, sub_pop=None):
+    def transform_group(self, param_list, func, use_size=True, sub_pop=None, dropna=False):
         """
         Groups the data by a list of parameters and applies a function to each grouping.
 
@@ -239,7 +244,9 @@ class Population:
         of the group as an argument. \n
         `sub_pop` is `None` by default, in which case the transform acts upon the entire dataframe.
         If `sub_pop` is defined, then it acts only on the part of the dataframe defined
-        by `data.loc[sub_pop]`.
+        by `data.loc[sub_pop]`. \n
+        `dropna` is false by default to allow for the inclusion of missing values in groups, but
+        should be set to true if missing values should instead be dropped during groupby.
         """
         def general_func(g):
             if len(param_list) == 1:
@@ -256,7 +263,7 @@ class Population:
         else:
             df = self.data
         # Use Dummy column to in order to enable transform method and avoid any risks to data
-        return df.groupby(param_list)["Dummy"].transform(general_func)
+        return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
 
     def evolve(self, time_step: timedelta):
         """

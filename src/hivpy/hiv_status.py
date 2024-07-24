@@ -86,10 +86,12 @@ class HIVStatusModule:
         population.init_variable(col.HIV_STATUS, False)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
+        population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
+        population.init_variable(col.UNDER_CARE, False)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
         population.init_variable(col.VIRAL_LOAD, 0.0)
         population.init_variable(col.X4_VIRUS, False)

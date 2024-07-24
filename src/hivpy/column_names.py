@@ -59,8 +59,10 @@ NP_LAST_TEST = "np_last_test"                   # int: total number of condomles
 HIV_STATUS = "HIV_status"                       # bool: True if person is HIV positive, o/w False
 DATE_HIV_INFECTION = "date_HIV_infection"       # None | date: date of HIV infection if HIV+, o/w None
 IN_PRIMARY_INFECTION = "in_primary_infection"   # bool: True if a person contracted HIV within 3 months of the current date, o/w False
+HIV_INFECTION_GE6M = "HIV_infection_ge6m"       # bool: True is a person has been infected with HIV for 6 months or more (DUMMY)
 HIV_DIAGNOSED = "HIV_diagnosed"                 # bool: True if individual had a positive HIV test
 HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of HIV diagnosis (to nearest timestep) if HIV+, o/w None
+UNDER_CARE = "under_care"                       # bool: True if under care after a positive HIV diagnosis
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 0-5 placing bounds on viral load for an HIV positive person
 VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ person
 CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter; set to None for people w/o HIV
@@ -81,6 +83,8 @@ SBI_DIAGNOSED = "sbi_diagnosed"                 # Bool: True if SBI diagnosed th
 WHO4_OTHER = "who4_other"                       # Bool: True if other WHO4 disease occurs this timestep
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disease diagnosed this timestep
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
+PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None (DUMMY)
+PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
