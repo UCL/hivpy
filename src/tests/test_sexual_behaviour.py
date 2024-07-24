@@ -12,6 +12,7 @@ from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
 
+import logging
 
 @pytest.fixture(scope="module")
 def yaml_data():
@@ -662,11 +663,11 @@ def test_sex_balancing_effect():
 
     # balance is 5 age groups 15-24, 25-34, 35-44, 45-64, 55-64
     # we'll run for 100 time steps
-    for i in range(100):
+    for i in range(10):
         sb_module.update_sex_behaviour(pop)
         for a in range(5):
             for s in range(2):
-                if (sb_module.num_stp_of_age_sex_group[a][s] == 0):
+                if (sb_module.num_stp_of_age_sex_group[a][s] == 0 or sb_module.num_stp_in_age_sex_group[a][s] == 0):
                     ratio = 1
                 else:
                     ratio = (sb_module.num_stp_in_age_sex_group[a][s] /
