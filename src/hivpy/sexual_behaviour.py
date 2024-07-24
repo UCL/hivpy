@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.resources
-import logging
 import operator
 from enum import IntEnum
 from typing import TYPE_CHECKING
@@ -601,7 +600,7 @@ class SexualBehaviourModule:
         def get_ratio(sex, age):
             if (self.num_stp_of_age_sex_group[age][sex] > 0):
                 ratio = self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
-                #logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
+                # logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
                 return ratio
             else:
                 return 1

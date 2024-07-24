@@ -1,5 +1,6 @@
 import importlib.resources
 import itertools
+# import logging
 import operator
 
 import numpy as np
@@ -12,7 +13,6 @@ from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
 
-import logging
 
 @pytest.fixture(scope="module")
 def yaml_data():
