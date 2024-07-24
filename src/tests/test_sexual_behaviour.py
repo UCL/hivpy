@@ -663,7 +663,7 @@ def test_sex_balancing_effect():
 
     # balance is 5 age groups 15-24, 25-34, 35-44, 45-64, 55-64
     # we'll run for 100 time steps
-    for i in range(10):
+    for i in range(100):
         sb_module.update_sex_behaviour(pop)
         for a in range(5):
             for s in range(2):
