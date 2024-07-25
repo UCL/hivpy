@@ -27,6 +27,9 @@ SEX_BEHAVIOUR = "sex_behaviour"                 # int: sexual behaviour grouping
 SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourClass(enum): Men, Young Women, Older Women, or Sex Workers
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
+LTP_HIV_STATUS = "ltp_HIV_status"               # bool: True if an individual's long term partner is infected with HIV (DUMMY)
+LTP_HIV_DIAGNOSED = "ltp_HIV_diagnosed"         # bool: True if an individual's long term partner is diagnosed with HIV (DUMMY)
+LTP_ON_ART = "ltp_on_art"                       # bool: True if an individual's long term partner is on ART (DUMMY)
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
 ANC = "anc"                                     # bool: True if in antenatal care
@@ -85,6 +88,7 @@ WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disea
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
 PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None (DUMMY)
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
+PREP_ELIGIBLE = "prep_eligible"                 # Bool: True if an individual is eligible for PrEP usage
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
