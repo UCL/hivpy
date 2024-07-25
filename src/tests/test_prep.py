@@ -119,3 +119,28 @@ def test_prep_eligibility_women_only():
     stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
     # expecting greater % of the population to be risk informed
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
+
+    # STRATEGY 7 & 11
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # FIXME: include active people + add variety to stp activity timing
+    # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
+    pop.prep.prep_strategy = 7  # same as 11 but uses base risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    mean = N * pop.prep.prob_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_risk_informed_prep))
+    # expecting base % of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
+    pop.prep.prep_strategy = 11  # same as 7 but uses greater risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    mean = N * pop.prep.prob_greater_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
+    # expecting greater % of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
