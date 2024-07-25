@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import operator as op
 from enum import IntEnum
 
 import hivpy.column_names as col
 
-from .common import date, rng
+from .common import AND, COND, OR, date, rng
 
 
 class PrEPType(IntEnum):
@@ -41,3 +42,38 @@ class PrEPModule:
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
+
+    def get_at_risk_pop(self, pop: Population):
+        """
+        Return the sub-population that either has one or more short-term partners or
+        has a diagnosed long-term partner who is not on ART.
+        """
+        return pop.get_sub_pop(OR(COND(col.NUM_PARTNERS, op.ge, 1),
+                                  AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                      COND(col.LTP_ON_ART, op.eq, False))))
+
+    def get_risk_informed_pop(self, pop: Population, prob_risk_informed_prep):
+        """
+        Return the sub-population that has a long-term partner who is not on ART
+        and pass the probability to fulfill the criteria for risk-informed PrEP.
+        """
+        # FIXME: is it correct to include the LTP_HIV_STATUS == False condition here
+        # to avoid potential double-dipping with get_suspect_risk_pop?
+        risk_informed_pop = pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                COND(col.LTP_ON_ART, op.eq, False),
+                                                COND(col.LTP_HIV_STATUS, op.eq, False)))
+        r = rng.uniform(size=len(risk_informed_pop))
+        rip_mask = r < prob_risk_informed_prep
+        return pop.apply_bool_mask(rip_mask, risk_informed_pop)
+
+    def get_suspect_risk_pop(self, pop: Population):
+        """
+        Return the sub-population that has a long-term partner who is not on ART but is infected
+        and pass the higher probability to fulfill the criteria for risk-informed PrEP.
+        """
+        suspect_risk_pop = pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                               COND(col.LTP_ON_ART, op.eq, False),
+                                               COND(col.LTP_HIV_STATUS, op.eq, True)))
+        r = rng.uniform(size=len(suspect_risk_pop))
+        srp_mask = r < self.prob_suspect_risk_prep
+        return pop.apply_bool_mask(srp_mask, suspect_risk_pop)
