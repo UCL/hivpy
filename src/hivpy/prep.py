@@ -128,6 +128,19 @@ class PrEPModule:
                     agyw_pop, pop.get_sub_pop_union(
                         self.get_at_risk_pop(pop), pop.get_sub_pop_union(
                             self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # at risk and informed women
+            elif self.prep_strategy == 6 or self.prep_strategy == 10:
+                gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.SEX, op.eq, SexType.Female)))
+                gen_age_pop = pop.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                  COND(col.AGE, op.lt, 50)))
+                # gen_fem AND (at_risk OR (gen_age AND (risk_informed OR suspect_risk)))
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    gen_fem_pop, pop.get_sub_pop_union(
+                        self.get_at_risk_pop(pop), pop.get_sub_pop_intersection(
+                            gen_age_pop, pop.get_sub_pop_union(
+                                self.get_risk_informed_pop(pop, prob_risk_informed_prep),
+                                self.get_suspect_risk_pop(pop)))))
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
