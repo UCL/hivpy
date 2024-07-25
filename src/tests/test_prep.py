@@ -89,3 +89,33 @@ def test_prep_eligibility_women_only():
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
     # only half of the population are 15-25
     assert eligible == N/2
+
+    # STRATEGY 6 & 10
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.NUM_PARTNERS] = 0  # nobody is inherently at risk
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_ON_ART] = False
+    pop.data[col.LTP_HIV_STATUS] = False
+    pop.prep.prob_risk_informed_prep = 0.3
+    pop.prep.prob_greater_risk_informed_prep = 0.6
+    # gen_fem AND (at_risk OR (gen_age AND (risk_informed OR suspect_risk)))
+    pop.prep.prep_strategy = 6  # same as 10 but uses base risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    mean = N * pop.prep.prob_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_risk_informed_prep))
+    # expecting base % of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # gen_fem AND (at_risk OR (gen_age AND (risk_informed OR suspect_risk)))
+    pop.prep.prep_strategy = 10  # same as 6 but uses greater risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    mean = N * pop.prep.prob_greater_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
+    # expecting greater % of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
