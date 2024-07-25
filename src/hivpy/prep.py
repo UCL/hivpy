@@ -141,6 +141,22 @@ class PrEPModule:
                             gen_age_pop, pop.get_sub_pop_union(
                                 self.get_risk_informed_pop(pop, prob_risk_informed_prep),
                                 self.get_suspect_risk_pop(pop)))))
+            # active and informed women
+            elif self.prep_strategy == 7 or self.prep_strategy == 11:
+                gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.SEX, op.eq, SexType.Female),
+                                                  COND(col.AGE, op.ge, 15),
+                                                  COND(col.AGE, op.lt, 50)))
+                # FIXME: NUM_PARTNERS column needs update to work with previous time steps
+                # --> introduce new column to keep track of consecutive stp activity?
+                active_stp_pop = pop.get_sub_pop(OR(COND(pop.get_correct_column(col.NUM_PARTNERS), op.ge, 1),
+                                                    COND(pop.get_correct_column(col.NUM_PARTNERS, dt=1), op.ge, 1),
+                                                    COND(pop.get_correct_column(col.NUM_PARTNERS, dt=2), op.ge, 1)))
+                # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    gen_fem_pop, pop.get_sub_pop_union(
+                        active_stp_pop, pop.get_sub_pop_union(
+                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
