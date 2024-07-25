@@ -8,9 +8,11 @@ if TYPE_CHECKING:
 import operator as op
 from enum import IntEnum
 
+import pandas as pd
+
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, date, rng
+from .common import AND, COND, OR, SexType, date, rng
 
 
 class PrEPType(IntEnum):
@@ -77,3 +79,55 @@ class PrEPModule:
         r = rng.uniform(size=len(suspect_risk_pop))
         srp_mask = r < self.prob_suspect_risk_prep
         return pop.apply_bool_mask(srp_mask, suspect_risk_pop)
+
+    def prep_eligibility(self, pop: Population):
+        """
+        Mark people who are eligible for PrEP this time step.
+        """
+        # oral prep expected to be introduced earliest - FIXME: should we stick with a min of the dates after all?
+        if pop.date >= self.date_prep_intro[PrEPType.Oral]:
+
+            prob_risk_informed_prep = (self.prob_greater_risk_informed_prep if 8 <= self.prep_strategy <= 11
+                                       else self.prob_risk_informed_prep)
+
+            # nobody is eligible by default
+            prep_eligible_pop = pd.Index([], dtype="int64")
+            # reset old prep eligibility
+            pop.set_present_variable(col.PREP_ELIGIBLE, False)
+
+            # female sex workers + adolescent girls and young women
+            if self.prep_strategy == 1:
+                fsw_agyw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                   COND(col.SEX, op.eq, SexType.Female),
+                                                   OR(COND(col.SEX_WORKER, op.eq, True),
+                                                      AND(COND(col.AGE, op.ge, 15),
+                                                          COND(col.AGE, op.lt, 25)))))
+                # fsw_agyw AND (at_risk OR risk_informed OR suspect_risk)
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    fsw_agyw_pop, pop.get_sub_pop_union(
+                        self.get_at_risk_pop(pop), pop.get_sub_pop_union(
+                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # female sex workers
+            elif self.prep_strategy == 2:
+                fsw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                              COND(col.SEX, op.eq, SexType.Female),
+                                              COND(col.SEX_WORKER, op.eq, True)))
+                # fsw AND (at_risk OR risk_informed OR suspect_risk)
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    fsw_pop, pop.get_sub_pop_union(
+                        self.get_at_risk_pop(pop), pop.get_sub_pop_union(
+                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # adolescent girls and young women
+            elif self.prep_strategy == 3:
+                agyw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                               COND(col.SEX, op.eq, SexType.Female),
+                                               COND(col.AGE, op.ge, 15),
+                                               COND(col.AGE, op.lt, 25)))
+                # agyw AND (at_risk OR risk_informed OR suspect_risk)
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    agyw_pop, pop.get_sub_pop_union(
+                        self.get_at_risk_pop(pop), pop.get_sub_pop_union(
+                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+
+            if len(prep_eligible_pop) > 0:
+                pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
