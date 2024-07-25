@@ -1,7 +1,8 @@
+import operator as op
 from math import sqrt
 
 import hivpy.column_names as col
-from hivpy.common import date
+from hivpy.common import SexType, date
 from hivpy.population import Population
 
 
@@ -48,3 +49,43 @@ def test_suspect_risk_pop():
     stdev = sqrt(mean * (1 - pop.prep.prob_suspect_risk_prep))
     # expecting ~50% of the population to suspect they are at risk
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
+
+
+def test_prep_eligibility_women_only():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.SEX] = SexType.Female
+    pop.data[col.SEX_WORKER] = [False, True] * (N // 2)
+    pop.data[col.AGE] = [20, 30] * (N // 2)
+    pop.data[col.NUM_PARTNERS] = 1  # everyone is at risk
+
+    # STRATEGY 1-3
+
+    # fsw_agyw AND (at_risk OR risk_informed OR suspect_risk)
+    pop.prep.prep_strategy = 1
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # everyone fulfills the necessary eligibility conditions
+    assert eligible == N
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # fsw AND (at_risk OR risk_informed OR suspect_risk)
+    pop.prep.prep_strategy = 2
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # only half of the population are sex workers
+    assert eligible == N/2
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # agyw AND (at_risk OR risk_informed OR suspect_risk)
+    pop.prep.prep_strategy = 3
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # only half of the population are 15-25
+    assert eligible == N/2
