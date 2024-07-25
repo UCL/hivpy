@@ -183,6 +183,12 @@ class Population:
         """
         return pd.Index.intersection(subpop_1, subpop_2)
 
+    def get_sub_pop_union(self, subpop_1, subpop_2):
+        """
+        Get the indexing of the union of two subpopulations.
+        """
+        return pd.Index.union(subpop_1, subpop_2)
+
     def get_sub_pop_from_array(self, array, sub_pop=None):
         if sub_pop is None:
             return self.data.index[array]
