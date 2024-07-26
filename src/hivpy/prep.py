@@ -139,7 +139,7 @@ class PrEPModule:
                     self.get_at_risk_pop(pop), pop.get_sub_pop_intersection(
                         gen_fem_pop, pop.get_sub_pop_union(
                             self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
-            # general active and informed population
+            # general recently active and informed population
             elif self.prep_strategy == 5 or self.prep_strategy == 9:
                 gen_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                               COND(col.AGE, op.ge, 15),
@@ -163,7 +163,7 @@ class PrEPModule:
                             gen_age_pop, pop.get_sub_pop_union(
                                 self.get_risk_informed_pop(pop, prob_risk_informed_prep),
                                 self.get_suspect_risk_pop(pop)))))
-            # active and informed women
+            # recently active and informed women
             elif self.prep_strategy == 7 or self.prep_strategy == 11:
                 gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                   COND(col.SEX, op.eq, SexType.Female),
@@ -175,6 +175,21 @@ class PrEPModule:
                     gen_fem_pop, pop.get_sub_pop_union(
                         active_stp_pop, pop.get_sub_pop_union(
                             self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # general recently active population
+            elif self.prep_strategy == 12:
+                gen_pop = pop.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, False))
+                active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=9))))
+                # gen AND active
+                prep_eligible_pop = pop.get_sub_pop_intersection(gen_pop, active_pop)
+            # recently active women
+            elif self.prep_strategy == 13:
+                gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.SEX, op.eq, SexType.Female)))
+                active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=9))))
+                # gen_fem AND active
+                prep_eligible_pop = pop.get_sub_pop_intersection(gen_fem_pop, active_pop)
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
