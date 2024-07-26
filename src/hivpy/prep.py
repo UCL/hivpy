@@ -87,7 +87,8 @@ class PrEPModule:
         # oral prep expected to be introduced earliest - FIXME: should we stick with a min of the dates after all?
         if pop.date >= self.date_prep_intro[PrEPType.Oral]:
 
-            prob_risk_informed_prep = (self.prob_greater_risk_informed_prep if 8 <= self.prep_strategy <= 11
+            prob_risk_informed_prep = (self.prob_greater_risk_informed_prep
+                                       if (8 <= self.prep_strategy <= 11 or self.prep_strategy == 14)
                                        else self.prob_risk_informed_prep)
 
             # nobody is eligible by default
@@ -190,6 +191,20 @@ class PrEPModule:
                                                 COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=9))))
                 # gen_fem AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(gen_fem_pop, active_pop)
+            # general active at risk population and informed women
+            elif self.prep_strategy == 14:
+                gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.SEX, op.eq, SexType.Female),
+                                                  COND(col.AGE, op.ge, 15),
+                                                  COND(col.AGE, op.lt, 50)))
+                active_at_risk_pop = pop.get_sub_pop(OR(COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6)),
+                                                        AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                            COND(col.LTP_ON_ART, op.eq, False))))
+                # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
+                prep_eligible_pop = pop.get_sub_pop_union(
+                    active_at_risk_pop, pop.get_sub_pop_intersection(
+                        gen_fem_pop, pop.get_sub_pop_union(
+                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
