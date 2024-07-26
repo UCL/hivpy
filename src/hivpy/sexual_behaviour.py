@@ -157,6 +157,7 @@ class SexualBehaviourModule:
 
     def init_sex_behaviour(self, population: Population):
         population.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
+        population.init_variable(col.LAST_STP_DATE, None)
         population.init_variable(col.RISK, 1)
         population.init_variable(col.LONG_TERM_PARTNER, False)
         population.init_variable(col.LTP_AGE_GROUP, 0)

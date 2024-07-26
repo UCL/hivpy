@@ -12,7 +12,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, date, rng
+from .common import AND, COND, OR, SexType, date, rng, timedelta
 
 
 class PrEPType(IntEnum):
@@ -158,11 +158,7 @@ class PrEPModule:
                                                   COND(col.SEX, op.eq, SexType.Female),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50)))
-                # FIXME: NUM_PARTNERS column needs update to work with previous time steps
-                # --> introduce new column to keep track of consecutive stp activity?
-                active_stp_pop = pop.get_sub_pop(OR(COND(pop.get_correct_column(col.NUM_PARTNERS), op.ge, 1),
-                                                    COND(pop.get_correct_column(col.NUM_PARTNERS, dt=1), op.ge, 1),
-                                                    COND(pop.get_correct_column(col.NUM_PARTNERS, dt=2), op.ge, 1)))
+                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=9)))
                 # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_fem_pop, pop.get_sub_pop_union(

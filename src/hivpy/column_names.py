@@ -21,6 +21,7 @@ CIRCUMCISION_DATE = "circumcision_date"         # None | datetime.date: date of 
 VMMC = "vmmc"                                   # bool: True if voluntary medical male circumcision was applied
 
 NUM_PARTNERS = "num_partners"                   # float: number of short term condomless sex partners during the current time step
+LAST_STP_DATE = "last_stp_date"                 # None | datetime.date: date of most recent short-term partnership, o/w None if never partnered (DUMMY)
 SEX_MIX_AGE_GROUP = "sex_mix_age_group"         # int: discrete age group for sexual mixing
 STP_AGE_GROUPS = "stp_age_groups"               # int array: age groups of short term partners
 SEX_BEHAVIOUR = "sex_behaviour"                 # int: sexual behaviour grouping
