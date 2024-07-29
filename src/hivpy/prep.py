@@ -59,8 +59,6 @@ class PrEPModule:
         Return the sub-population that has a long-term partner who is not on ART
         and pass the probability to fulfill the criteria for risk-informed PrEP.
         """
-        # FIXME: is it correct to include the LTP_HIV_STATUS == False condition here
-        # to avoid potential double-dipping with get_suspect_risk_pop?
         risk_informed_pop = pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                                 COND(col.LTP_ON_ART, op.eq, False),
                                                 COND(col.LTP_HIV_STATUS, op.eq, False)))
@@ -84,8 +82,8 @@ class PrEPModule:
         """
         Mark people who are eligible for PrEP this time step.
         """
-        # oral prep expected to be introduced earliest - FIXME: should we stick with a min of the dates after all?
-        if pop.date >= self.date_prep_intro[PrEPType.Oral]:
+        # start when first type of prep is introduced
+        if pop.date >= min(self.date_prep_intro):
 
             prob_risk_informed_prep = (self.prob_greater_risk_informed_prep
                                        if (8 <= self.prep_strategy <= 11 or self.prep_strategy == 14)
