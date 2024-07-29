@@ -56,6 +56,7 @@ class PregnancyModule:
         self.init_fertility(pop)
         pop.init_variable(col.PREGNANT, False)
         pop.init_variable(col.LAST_PREGNANCY_DATE, None)
+        pop.init_variable(col.BREASTFEEDING, False)
         pop.init_variable(col.ANC, False)
         pop.init_variable(col.PMTCT, False)
         pop.init_variable(col.ART_NAIVE, True)

@@ -203,6 +203,16 @@ class PrEPModule:
                     active_at_risk_pop, pop.get_sub_pop_intersection(
                         gen_fem_pop, pop.get_sub_pop_union(
                             self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # pregnant and lactating/breastfeeding women
+            elif self.prep_strategy == 16:
+                plw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                              COND(col.SEX, op.eq, SexType.Female),
+                                              OR(COND(col.PREGNANT, op.eq, True),
+                                                 COND(col.BREASTFEEDING, op.eq, True))))
+                active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=9))))
+                # plw AND active
+                prep_eligible_pop = pop.get_sub_pop_intersection(plw_pop, active_pop)
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
