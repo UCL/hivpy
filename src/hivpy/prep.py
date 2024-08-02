@@ -211,6 +211,21 @@ class PrEPModule:
                     active_at_risk_pop, pop.get_sub_pop_intersection(
                         gen_fem_pop, pop.get_sub_pop_union(
                             self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+            # serodiscordant couples
+            elif self.prep_strategy == 15:
+                gen_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                  COND(col.LTP_HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.AGE, op.ge, 15),
+                                                  COND(col.AGE, op.lt, 50),
+                                                  OR(COND(col.R_PREP, op.lt, 0.01),  # (alt) risk informed
+                                                     AND(COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep),
+                                                         COND(col.LTP_HIV_STATUS, op.eq, True)))))  # (alt) suspect risk
+                at_risk_ltp_pop = pop.get_sub_pop(AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                      OR(COND(col.LTP_ON_ART, op.eq, False))))
+                # FIXME: need to make sure col.HIV_DIAGNOSED == False applies to everyone
+                # at_risk_ltp OR gen_ltp
+                prep_eligible_pop = pop.get_sub_pop_union(at_risk_ltp_pop, gen_ltp_pop)
             # pregnant and lactating/breastfeeding women
             elif self.prep_strategy == 16:
                 plw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
