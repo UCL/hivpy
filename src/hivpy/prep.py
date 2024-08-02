@@ -51,7 +51,7 @@ class PrEPModule:
         Reroll the r_prep value for each individual that was ineligible for PrEP last time step.
         """
         ineligible_pop = pop.get_sub_pop(COND(col.PREP_ELIGIBLE, op.eq, False))
-        pop.set_present_variable(col.R_PREP, rng.uniform(size=len(ineligible_pop)))
+        pop.set_present_variable(col.R_PREP, rng.uniform(size=len(ineligible_pop)), sub_pop=ineligible_pop)
 
     def get_at_risk_pop(self, pop: Population):
         """

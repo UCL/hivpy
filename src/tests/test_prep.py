@@ -53,6 +53,31 @@ def test_suspect_risk_pop():
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
 
 
+def test_prep_eligibility_continuity():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.data[col.AGE] = 30
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_ON_ART] = False
+    pop.data[col.LTP_HIV_STATUS] = [True, False] * (N // 2)
+    pop.data[col.R_PREP] = 1.0
+
+    pop.prep.prep_strategy = 9
+    pop.prep.prep_eligibility(pop)
+    # check all r_prep values were rerolled (nobody started out eligible)
+    assert all(pop.data[col.R_PREP] < 1.0)
+
+    # get initial eligible pop
+    init_eligible = pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)])
+    # set eligibility again
+    pop.prep.prep_eligibility(pop)
+    new_eligible = pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)])
+    # check all previously eligible people are still eligible
+    assert set(init_eligible).issubset(new_eligible)
+    # check there are now more eligible people
+    assert len(new_eligible) > len(init_eligible)
+
+
 def test_prep_eligibility_women_only():
     N = 1000
     pop = Population(size=N, start_date=date(2020, 1, 1))
