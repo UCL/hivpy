@@ -24,6 +24,7 @@ def test_risk_informed_pop():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
     pop.data[col.LTP_HIV_STATUS] = False
+    pop.prep.reroll_r_prep(pop)
     pop.prep.prob_risk_informed_prep = 0.1
 
     # get stats
@@ -41,6 +42,7 @@ def test_suspect_risk_pop():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
     pop.data[col.LTP_HIV_STATUS] = True
+    pop.prep.reroll_r_prep(pop)
     pop.prep.prob_suspect_risk_prep = 0.5
 
     # get stats

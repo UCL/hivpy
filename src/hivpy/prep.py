@@ -38,12 +38,20 @@ class PrEPModule:
         self.prob_prep_restart = rng.choice([0.05, 0.10, 0.20])
 
     def init_prep_variables(self, pop: Population):
+        pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
+
+    def reroll_r_prep(self, pop: Population):
+        """
+        Reroll the r_prep value for each individual that was ineligible for PrEP last time step.
+        """
+        ineligible_pop = pop.get_sub_pop(COND(col.PREP_ELIGIBLE, op.eq, False))
+        pop.set_present_variable(col.R_PREP, rng.uniform(size=len(ineligible_pop)))
 
     def get_at_risk_pop(self, pop: Population):
         """
@@ -59,24 +67,20 @@ class PrEPModule:
         Return the sub-population that has a long-term partner who is not on ART
         and pass the probability to fulfill the criteria for risk-informed PrEP.
         """
-        risk_informed_pop = pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LTP_ON_ART, op.eq, False),
-                                                COND(col.LTP_HIV_STATUS, op.eq, False)))
-        r = rng.uniform(size=len(risk_informed_pop))
-        rip_mask = r < prob_risk_informed_prep
-        return pop.apply_bool_mask(rip_mask, risk_informed_pop)
+        return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                   COND(col.LTP_ON_ART, op.eq, False),
+                                   COND(col.LTP_HIV_STATUS, op.eq, False),
+                                   COND(col.R_PREP, op.lt, prob_risk_informed_prep)))
 
     def get_suspect_risk_pop(self, pop: Population):
         """
         Return the sub-population that has a long-term partner who is not on ART but is infected
         and pass the higher probability to fulfill the criteria for risk-informed PrEP.
         """
-        suspect_risk_pop = pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                               COND(col.LTP_ON_ART, op.eq, False),
-                                               COND(col.LTP_HIV_STATUS, op.eq, True)))
-        r = rng.uniform(size=len(suspect_risk_pop))
-        srp_mask = r < self.prob_suspect_risk_prep
-        return pop.apply_bool_mask(srp_mask, suspect_risk_pop)
+        return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                   COND(col.LTP_ON_ART, op.eq, False),
+                                   COND(col.LTP_HIV_STATUS, op.eq, True),
+                                   COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
 
     def prep_eligibility(self, pop: Population):
         """
@@ -91,6 +95,8 @@ class PrEPModule:
 
             # nobody is eligible by default
             prep_eligible_pop = pd.Index([], dtype="int64")
+            # reroll r_prep for those that were ineligible last time step
+            self.reroll_r_prep(pop)
             # reset old prep eligibility
             pop.set_present_variable(col.PREP_ELIGIBLE, False)
 
@@ -133,6 +139,7 @@ class PrEPModule:
                                                   COND(col.SEX, op.eq, SexType.Female),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50)))
+                # FIXME: need to make sure col.HIV_DIAGNOSED == False applies to everyone
                 # at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
                 prep_eligible_pop = pop.get_sub_pop_union(
                     self.get_at_risk_pop(pop), pop.get_sub_pop_intersection(
@@ -198,6 +205,7 @@ class PrEPModule:
                 active_at_risk_pop = pop.get_sub_pop(OR(COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6)),
                                                         AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
                                                             COND(col.LTP_ON_ART, op.eq, False))))
+                # FIXME: need to make sure col.HIV_DIAGNOSED == False applies to everyone
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
                 prep_eligible_pop = pop.get_sub_pop_union(
                     active_at_risk_pop, pop.get_sub_pop_intersection(
