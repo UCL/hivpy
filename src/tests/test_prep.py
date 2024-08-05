@@ -1,6 +1,8 @@
 import operator as op
 from math import sqrt
 
+import pytest
+
 import hivpy.column_names as col
 from hivpy.common import SexType, date, timedelta
 from hivpy.population import Population
@@ -51,6 +53,29 @@ def test_suspect_risk_pop():
     stdev = sqrt(mean * (1 - pop.prep.prob_suspect_risk_prep))
     # expecting ~50% of the population to suspect they are at risk
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
+
+
+@pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
+def test_prep_ineligible(prep_strategy):
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.data[col.HIV_DIAGNOSED] = [True, False] * (N // 2)
+    pop.prep.prep_strategy = prep_strategy
+    pop.prep.prep_eligibility(pop)
+
+    # check that nobody diagnosed with HIV is eligible
+    assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                (col.HIV_DIAGNOSED, op.eq, True)])) == 0
+
+    # check that nobody under 15 or over 50 is eligible
+    assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                (col.AGE, op.lt, 15),
+                                (col.AGE, op.ge, 50)])) == 0
+
+    # check that no men are eligible in women only strategies
+    if prep_strategy not in [4, 5, 8, 9, 12, 14, 15]:
+        assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                    (col.SEX, op.eq, SexType.Male)])) == 0
 
 
 def test_prep_eligibility_continuity():
