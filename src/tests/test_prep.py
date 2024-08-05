@@ -102,6 +102,11 @@ def test_prep_eligibility_continuity():
     # check there are now more eligible people
     assert len(new_eligible) > len(init_eligible)
 
+    pop.data[col.AGE] = 50
+    pop.prep.prep_eligibility(pop)
+    # check that everyone has aged out of eligibility
+    assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)])) == 0
+
 
 def test_prep_eligibility_women_only():
     N = 1000
