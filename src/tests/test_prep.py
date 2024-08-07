@@ -362,3 +362,18 @@ def test_prep_eligibility_all():
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
     # 60% of the population has recently (<=6 months) been sexually active
     assert eligible == N * 0.6
+
+    # STRATEGY 15
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, True] * (N // 4)  # half of the population inherently at risk
+    # at_risk_ltp OR gen_ltp
+    pop.prep.prep_strategy = 15
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    mean = N * 0.51
+    stdev = sqrt(mean * (1 - 0.51))
+    # expecting an additional 1% of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
