@@ -225,7 +225,7 @@ class PrEPModule:
                                                          COND(col.LTP_HIV_STATUS, op.eq, True)))))  # (alt) suspect risk
                 at_risk_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                       COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
-                                                      OR(COND(col.LTP_ON_ART, op.eq, False))))
+                                                      COND(col.LTP_ON_ART, op.eq, False)))
                 # at_risk_ltp OR gen_ltp
                 prep_eligible_pop = pop.get_sub_pop_union(at_risk_ltp_pop, gen_ltp_pop)
             # pregnant and lactating/breastfeeding women
