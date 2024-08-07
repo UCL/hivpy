@@ -232,6 +232,18 @@ def test_prep_eligibility_women_only():
     # 90% of the population has recently (<=9 months) been sexually active
     assert eligible == N * 0.9
 
+    # STRATEGY 16
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.BREASTFEEDING] = [True, False] * (N // 2)
+    # plw AND active
+    pop.prep.prep_strategy = 16
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # 50% of the population is breastfeeding and has recently (<=9 months) been sexually active
+    assert eligible == N * 0.5
+
 
 def test_prep_eligibility_all():
     N = 1000
