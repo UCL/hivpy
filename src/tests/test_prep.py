@@ -220,3 +220,53 @@ def test_prep_eligibility_women_only():
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
     # 90% of the population has recently been sexually active
     assert eligible == N * 0.9
+
+
+def test_prep_eligibility_all():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.AGE] = 30
+    pop.data[col.SEX] = [SexType.Female, SexType.Male] * (N // 2)
+    pop.data[col.NUM_PARTNERS] = [0, 0, 0, 1] * (N // 4)  # half of all men are inherently at risk
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LTP_ON_ART] = False
+    pop.data[col.LTP_HIV_STATUS] = False
+    pop.prep.prob_risk_informed_prep = 0.3
+    pop.prep.prob_greater_risk_informed_prep = 0.6
+
+    # STRATEGY 4 & 8
+
+    # at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
+    pop.prep.prep_strategy = 4  # same as 8 but uses base risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible_men = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                        (col.SEX, op.eq, SexType.Male)]))
+    # check no inactive men are eligible
+    assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                (col.SEX, op.eq, SexType.Male),
+                                (col.NUM_PARTNERS, op.eq, 0)])) == 0
+    # half of all men (and a quarter of the population) are eligible
+    assert eligible_men == N/4
+
+    eligible_women = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                          (col.SEX, op.eq, SexType.Female)]))
+    mean = len(pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])) * pop.prep.prob_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_risk_informed_prep))
+    # expecting base % of women to be risk informed
+    assert mean - 3 * stdev <= eligible_women <= mean + 3 * stdev
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
+    pop.prep.prep_strategy = 8  # same as 4 but uses greater risk informed prob
+    pop.prep.prep_eligibility(pop)
+
+    eligible_women = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                          (col.SEX, op.eq, SexType.Female)]))
+    mean = len(pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])) * pop.prep.prob_greater_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
+    # expecting greater % of the population to be risk informed
+    assert mean - 3 * stdev <= eligible_women <= mean + 3 * stdev
