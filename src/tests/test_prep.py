@@ -196,7 +196,7 @@ def test_prep_eligibility_women_only():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently been sexually active
+    # 90% of the population has recently (<=9 months) been sexually active
     assert eligible == N * 0.9
 
     pop.data[col.PREP_ELIGIBLE] = False
@@ -218,7 +218,7 @@ def test_prep_eligibility_women_only():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently been sexually active
+    # 90% of the population has recently (<=9 months) been sexually active
     assert eligible == N * 0.9
 
 
@@ -234,6 +234,7 @@ def test_prep_eligibility_all():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
     pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_HIV_DIAGNOSED] = False
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
 
@@ -249,7 +250,7 @@ def test_prep_eligibility_all():
     assert len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
                                 (col.SEX, op.eq, SexType.Male),
                                 (col.NUM_PARTNERS, op.eq, 0)])) == 0
-    # half of all men (and a quarter of the population) are eligible
+    # half of all men (a quarter of the population) are eligible
     assert eligible_men == N/4
 
     eligible_women = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
@@ -268,7 +269,7 @@ def test_prep_eligibility_all():
                                           (col.SEX, op.eq, SexType.Female)]))
     mean = len(pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])) * pop.prep.prob_greater_risk_informed_prep
     stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
-    # expecting greater % of the population to be risk informed
+    # expecting greater % of women to be risk informed
     assert mean - 3 * stdev <= eligible_women <= mean + 3 * stdev
 
     # STRATEGY 5 & 9
@@ -290,7 +291,7 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently been sexually active
+    # 90% of the population has recently (<=9 months) been sexually active
     assert eligible == N * 0.9
 
     pop.data[col.PREP_ELIGIBLE] = False
@@ -312,5 +313,41 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently been sexually active
+    # 90% of the population has recently (<=9 months) been sexually active
     assert eligible == N * 0.9
+
+    # STRATEGY 12
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    # gen AND active
+    pop.prep.prep_strategy = 12
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # 90% of the population has recently (<=9 months) been sexually active
+    assert eligible == N * 0.9
+
+    # STRATEGY 14
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.LONG_TERM_PARTNER] = True
+    pop.data[col.LAST_STP_DATE] = None
+    # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
+    pop.prep.prep_strategy = 14
+    pop.prep.prep_eligibility(pop)
+
+    eligible_women = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True),
+                                          (col.SEX, op.eq, SexType.Female)]))
+    mean = len(pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])) * pop.prep.prob_greater_risk_informed_prep
+    stdev = sqrt(mean * (1 - pop.prep.prob_greater_risk_informed_prep))
+    # expecting greater % of women to be risk informed
+    assert mean - 3 * stdev <= eligible_women <= mean + 3 * stdev
+
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.LONG_TERM_PARTNER] = False
+    pop.data[col.LAST_STP_DATE] = [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10)
+    pop.prep.prep_eligibility(pop)
+
+    eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
+    # 60% of the population has recently (<=6 months) been sexually active
+    assert eligible == N * 0.6
