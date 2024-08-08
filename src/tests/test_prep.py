@@ -13,10 +13,10 @@ def test_at_risk_pop():
     pop = Population(size=N, start_date=date(2020, 1, 1))
     # at_risk = num_stp >= 1 OR (ltp_diag AND not ltp_on_art)
     pop.data[col.NUM_PARTNERS] = [0, 1] * (N // 2)
-    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False] * (N // 2)
+    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, False] * (N // 4)
     pop.data[col.LTP_ON_ART] = False
     # everyone fulfills one of the conditions for being at risk
-    assert len(pop.prep.get_at_risk_pop(pop)) == N
+    assert len(pop.prep.get_at_risk_pop(pop)) == N//4 * 3
 
 
 def test_risk_informed_pop():
