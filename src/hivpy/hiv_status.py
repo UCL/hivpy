@@ -276,41 +276,25 @@ class HIVStatusModule:
         Sets population set for which HIV transmission occurs from a long term partner.
         Considers monogamous and non-monogamous relationships.
         """
-        num_neg_women_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, SexType.Female),
-                                                                         (col.HIV_STATUS, op.eq, False),
-                                                                         (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                         (col.LTP_STATUS, op.eq, True)]))
-        num_pos_men_with_negative_partner = len(population.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                                                                        (col.HIV_STATUS, op.eq, True),
-                                                                        (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                        (col.LTP_STATUS, op.eq, False)]))
 
-        num_neg_men_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                                                                       (col.HIV_STATUS, op.eq, False),
-                                                                       (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                       (col.LTP_STATUS, op.eq, True)]))
-        num_pos_women_with_negative_partner = len(population.get_sub_pop([(col.SEX, op.eq, SexType.Female),
-                                                                          (col.HIV_STATUS, op.eq, True),
-                                                                          (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                          (col.LTP_STATUS, op.eq, False)]))
-
-        ltp_hiv_status_difference_women = num_neg_women_with_infected_parter - num_pos_men_with_negative_partner
-        ltp_hiv_status_difference_men = num_neg_men_with_infected_parter - num_pos_women_with_negative_partner
+        # Fractional differences in number of serodiscordant couples based on sex of HIV negative partner
+        ltp_hiv_status_difference_neg_women = self.get_hiv_status_difference(SexType.Female, population) / population.size 
+        ltp_hiv_status_difference_neg_men = self.get_hiv_status_difference(SexType.Male, population) / population.size
 
         def calculate_incidence_factor(delta_hiv_ltp):
             incidence_factor = 1
-            boundaries = np.array([-5000, -2000, -500, -200, -75, -20])   # TODO / 100000 * population.size
+            boundaries = np.array([-0.05, -0.02, -0.005, -0.002, -0.00075, -0.0002])
             multiplier = [abs(delta_hiv_ltp)/3, abs(delta_hiv_ltp)/50,
                           abs(delta_hiv_ltp)/100, abs(delta_hiv_ltp)/100,  3.5, 2.5]
             for i in range(6):
                 if delta_hiv_ltp < boundaries[i]:
-                    incidence_factor = incidence_factor * multiplier[i]
+                    incidence_factor = multiplier[i]
                     break
 
             return incidence_factor
 
-        self.incidence_factor = {SexType.Male: calculate_incidence_factor(ltp_hiv_status_difference_men),
-                                 SexType.Female: calculate_incidence_factor(ltp_hiv_status_difference_women)}
+        self.incidence_factor = {SexType.Male: calculate_incidence_factor(ltp_hiv_status_difference_neg_men),
+                                 SexType.Female: calculate_incidence_factor(ltp_hiv_status_difference_neg_women)}
 
         for sex in [SexType.Male, SexType.Female]:
             for age_group in range(5):
@@ -383,6 +367,28 @@ class HIVStatusModule:
                                                       use_size=True,
                                                       sub_pop=people_with_monogamous_ltp_and_hiv)
         population.set_present_variable(col.LTP_STATUS, partner_infected, people_with_monogamous_ltp_and_hiv)
+
+    def get_hiv_status_difference(self, sex, population: Population):
+        """
+        Gets the different in the number of people of a given sex who are HIV negative and who have infected LTP, 
+        and the number of people of the opposite sex who are HIV positive and have a negative LTP.
+        Only applies to those between 15 and 65.
+        """
+        num_neg_sex_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                                       (col.HIV_STATUS, op.eq, False),
+                                                                       (col.LONG_TERM_PARTNER, op.eq, True),
+                                                                       (col.LTP_STATUS, op.eq, True),
+                                                                       (col.AGE, op.ge, 15),
+                                                                       (col.AGE, op.lt, 65)]))
+        num_pos_other_sex_with_negative_partner = len(population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
+                                                                              (col.HIV_STATUS, op.eq, True),
+                                                                              (col.LONG_TERM_PARTNER, op.eq, True),
+                                                                              (col.LTP_STATUS, op.eq, False),
+                                                                              (col.AGE, op.ge, 15),
+                                                                              (col.AGE, op.lt, 65)]))
+
+        ltp_hiv_status_difference = num_neg_sex_with_infected_parter - num_pos_other_sex_with_negative_partner
+        return ltp_hiv_status_difference
 
     def prob_of_infection_from_infected_ltp(self, population: Population):
         """
