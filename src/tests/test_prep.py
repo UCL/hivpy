@@ -240,14 +240,18 @@ def test_prep_eligibility_women_only():
     # STRATEGY 16
 
     pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.BREASTFEEDING] = [True, False] * (N // 2)
-    # pregnant/lactating women AND active
+    # pregnant_or_lactating_women AND (at_risk OR risk_informed OR suspect_risk)
     pop.prep.prep_strategy = 16
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 40% of the population is breastfeeding and has recently (< 9 months) been sexually active
-    assert eligible == N * 0.4
+    mean = N * 0.5 * pop.prep.prob_risk_informed_prep
+    stdev = sqrt(mean * (1 - 0.5 * pop.prep.prob_risk_informed_prep))
+    print("elig", eligible, "vs mean", mean)
+    # expecting base % of half of the population to be risk informed
+    assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
 
 
 def test_prep_eligibility_all():

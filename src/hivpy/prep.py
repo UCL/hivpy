@@ -248,10 +248,12 @@ class PrEPModule:
                                               COND(col.SEX, op.eq, SexType.Female),
                                               OR(COND(col.PREGNANT, op.eq, True),
                                                  COND(col.BREASTFEEDING, op.eq, True))))
-                active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
-                # plw AND active
-                prep_eligible_pop = pop.get_sub_pop_intersection(plw_pop, active_pop)
+                # plw AND (at_risk OR risk_informed OR suspect_risk)
+                prep_eligible_pop = pop.get_sub_pop_intersection(
+                    plw_pop, pop.get_sub_pop_union(
+                        self.get_at_risk_pop(pop),
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep),
+                        self.get_suspect_risk_pop(pop)))
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
