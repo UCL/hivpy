@@ -36,23 +36,28 @@ def test_risk_informed_pop():
     # expecting ~10% of the population to be risk informed
     assert mean - 3 * stdev <= no_risk_informed <= mean + 3 * stdev
 
+    pop.data[col.LONG_TERM_PARTNER] = False
+    no_risk_informed = len(pop.prep.get_risk_informed_pop(pop, pop.prep.prob_risk_informed_prep))
+    assert no_risk_informed == 0
+
 
 def test_suspect_risk_pop():
     N = 1000
     pop = Population(size=N, start_date=date(2020, 1, 1))
     # suspect_risk = ltp AND not ltp_on_art AND ltp_infected AND r < prob_suspect_risk_prep
     pop.data[col.LONG_TERM_PARTNER] = True
-    pop.data[col.LTP_ON_ART] = False
+    pop.data[col.LTP_ON_ART] = [True, False] * (N//2)
     pop.data[col.LTP_HIV_STATUS] = True
     pop.prep.reroll_r_prep(pop)
     pop.prep.prob_suspect_risk_prep = 0.5
 
     # get stats
     no_suspect_risk = len(pop.prep.get_suspect_risk_pop(pop))
-    mean = N * pop.prep.prob_suspect_risk_prep
+    mean = (N/2) * pop.prep.prob_suspect_risk_prep
     stdev = sqrt(mean * (1 - pop.prep.prob_suspect_risk_prep))
-    # expecting ~50% of the population to suspect they are at risk
+    # expecting ~50% of the population with partners NOT on ART to suspect they are at risk
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
+
 
 
 @pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
