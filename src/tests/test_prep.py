@@ -320,8 +320,8 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently (<=9 months) been sexually active
-    assert eligible == N * 0.9
+    # 60% of the population has recently (<=9 months) been sexually active
+    assert eligible == N * 0.6
 
     pop.data[col.PREP_ELIGIBLE] = False
     pop.data[col.LONG_TERM_PARTNER] = True
@@ -342,8 +342,8 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently (<=9 months) been sexually active
-    assert eligible == N * 0.9
+    # 60% of the population has recently (<=9 months) been sexually active
+    assert eligible == N * 0.6
 
     # STRATEGY 12
 
@@ -353,8 +353,8 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 90% of the population has recently (<=9 months) been sexually active
-    assert eligible == N * 0.9
+    # 60% of the population has recently (<=9 months) been sexually active
+    assert eligible == N * 0.6
 
     # STRATEGY 14
 
@@ -378,8 +378,8 @@ def test_prep_eligibility_all():
     pop.prep.prep_eligibility(pop)
 
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
-    # 60% of the population has recently (<=6 months) been sexually active
-    assert eligible == N * 0.6
+    # 30% of the population has recently (<=3 months) been sexually active
+    assert eligible == N * 0.3
 
     # STRATEGY 15
 

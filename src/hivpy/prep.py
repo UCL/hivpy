@@ -226,7 +226,7 @@ class PrEPModule:
                                                   COND(col.AGE, op.lt, 50)))
                 active_at_risk_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                          OR(COND(col.LAST_STP_DATE, op.ge,
-                                                                 pop.date - timedelta(months=6)),
+                                                                 pop.date - timedelta(months=3)),
                                                             AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
                                                                 COND(col.LTP_ON_ART, op.eq, False)))))
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
