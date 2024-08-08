@@ -166,7 +166,7 @@ class PrEPModule:
                 gen_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                               COND(col.AGE, op.ge, 15),
                                               COND(col.AGE, op.lt, 50)))
-                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6)))
+                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9)))
                 # gen AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_pop, pop.get_sub_pop_union(
@@ -194,7 +194,7 @@ class PrEPModule:
                                                   COND(col.SEX, op.eq, SexType.Female),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50)))
-                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6)))
+                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9)))
                 # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_fem_pop, pop.get_sub_pop_union(
@@ -207,7 +207,7 @@ class PrEPModule:
             elif self.prep_strategy == 12:
                 gen_pop = pop.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, False))
                 active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6))))
+                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
                 # gen AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(gen_pop, active_pop)
             # recently active women
@@ -215,7 +215,7 @@ class PrEPModule:
                 gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                   COND(col.SEX, op.eq, SexType.Female)))
                 active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6))))
+                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
                 # gen_fem AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(gen_fem_pop, active_pop)
             # general active at risk population and informed women
@@ -225,8 +225,8 @@ class PrEPModule:
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50)))
                 active_at_risk_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
-                                                         OR(COND(col.LAST_STP_DATE, op.ge,
-                                                                 pop.date - timedelta(months=3)),
+                                                         OR(COND(col.LAST_STP_DATE, op.gt,
+                                                                 pop.date - timedelta(months=6)),
                                                             AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
                                                                 COND(col.LTP_ON_ART, op.eq, False)))))
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
@@ -256,7 +256,7 @@ class PrEPModule:
                                               OR(COND(col.PREGNANT, op.eq, True),
                                                  COND(col.BREASTFEEDING, op.eq, True))))
                 active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.ge, pop.date - timedelta(months=6))))
+                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
                 # plw AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(plw_pop, active_pop)
 
