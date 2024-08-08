@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import importlib.resources
 import operator as op
 from enum import IntEnum
 
@@ -13,6 +14,7 @@ import pandas as pd
 import hivpy.column_names as col
 
 from .common import AND, COND, OR, SexType, date, rng, timedelta
+from .prep_data import PrEPData
 
 
 class PrEPType(IntEnum):
@@ -25,17 +27,24 @@ class PrEPType(IntEnum):
 class PrEPModule:
 
     def __init__(self, **kwargs):
-        # FIXME: move these to data file
-        self.prep_strategy = rng.choice([4, 8, 14])
-        self.date_prep_intro = [date(2018, 3), date(2027), date(3000), date(2100)]
-        self.prob_risk_informed_prep = 0.05
-        self.prob_greater_risk_informed_prep = 0.1
-        self.prob_suspect_risk_prep = 0.5
 
-        self.rate_test_onprep_any = 1
-        self.prep_willing_threshold = 0.2
-        self.prob_test_prep_start = rng.choice([0.25, 0.50, 0.75])
-        self.prob_prep_restart = rng.choice([0.05, 0.10, 0.20])
+        # init prep data
+        with importlib.resources.path("hivpy.data", "prep.yaml") as data_path:
+            self.p_data = PrEPData(data_path)
+
+        self.prep_strategy = self.p_data.prep_strategy.sample()
+        self.date_prep_intro = [date(self.p_data.date_prep_oral_intro),
+                                date(self.p_data.date_prep_cab_intro),
+                                date(self.p_data.date_prep_len_intro),
+                                date(self.p_data.date_prep_vr_intro)]
+        self.prob_risk_informed_prep = self.p_data.prob_risk_informed_prep
+        self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
+        self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
+
+        self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
+        self.prep_willing_threshold = self.p_data.prep_willing_threshold
+        self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
+        self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.R_PREP, 1.0)
