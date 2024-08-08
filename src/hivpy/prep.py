@@ -198,8 +198,8 @@ class PrEPModule:
                 # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_fem_pop, pop.get_sub_pop_union(
-                        active_stp_pop, 
-                        self.get_risk_informed_pop(pop, prob_risk_informed_prep), 
+                        active_stp_pop,
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep),
                         self.get_suspect_risk_pop(pop)
                     )
                 )

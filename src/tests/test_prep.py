@@ -59,7 +59,6 @@ def test_suspect_risk_pop():
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
 
 
-
 @pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
 def test_prep_ineligible(prep_strategy):
     N = 1000
