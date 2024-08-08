@@ -1,0 +1,19 @@
+# prep eligibility
+prep_strategy:
+  Value: [4, 8, 14]
+date_prep_oral_intro: 2018.25
+date_prep_cab_intro: 2027
+date_prep_len_intro: 3000
+date_prep_vr_intro: 2100
+# eligibility probabilities (r_prep boundaries)
+prob_risk_informed_prep: 0.05
+prob_greater_risk_informed_prep: 0.1
+prob_suspect_risk_prep: 0.5
+
+# starting prep
+rate_test_onprep_any: 1
+prep_willing_threshold: 0.2
+prob_test_prep_start:
+  Value: [0.25, 0.50, 0.75]
+prob_prep_restart:
+  Value: [0.05, 0.10, 0.20]
