@@ -104,7 +104,7 @@ def test_prep_eligibility_continuity():
     new_eligible = pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)])
     # check all previously eligible people are still eligible
     assert set(init_eligible).issubset(new_eligible)
-    # check there are now more eligible people
+    # check there are now more eligible people (demonstrates that r_prep is recalculated for those ineligible)
     assert len(new_eligible) > len(init_eligible)
 
     pop.data[col.AGE] = 50
