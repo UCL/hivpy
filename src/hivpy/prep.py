@@ -129,8 +129,11 @@ class PrEPModule:
                 # fsw AND (at_risk OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     fsw_pop, pop.get_sub_pop_union(
-                        self.get_at_risk_pop(pop), pop.get_sub_pop_union(
-                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+                        self.get_at_risk_pop(pop),
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep),
+                        self.get_suspect_risk_pop(pop)
+                    )
+                )
             # adolescent girls and young women
             elif self.prep_strategy == 3:
                 agyw_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
@@ -140,8 +143,11 @@ class PrEPModule:
                 # agyw AND (at_risk OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     agyw_pop, pop.get_sub_pop_union(
-                        self.get_at_risk_pop(pop), pop.get_sub_pop_union(
-                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+                        self.get_at_risk_pop(pop),
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep),
+                        self.get_suspect_risk_pop(pop)
+                    )
+                )
             # general at risk population and informed women
             elif self.prep_strategy == 4 or self.prep_strategy == 8:
                 gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
@@ -164,8 +170,11 @@ class PrEPModule:
                 # gen AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_pop, pop.get_sub_pop_union(
-                        active_stp_pop, pop.get_sub_pop_union(
-                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+                        active_stp_pop,
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep),
+                        self.get_suspect_risk_pop(pop)
+                    )
+                )
             # at risk and informed women
             elif self.prep_strategy == 6 or self.prep_strategy == 10:
                 gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
@@ -189,8 +198,11 @@ class PrEPModule:
                 # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_fem_pop, pop.get_sub_pop_union(
-                        active_stp_pop, pop.get_sub_pop_union(
-                            self.get_risk_informed_pop(pop, prob_risk_informed_prep), self.get_suspect_risk_pop(pop))))
+                        active_stp_pop, 
+                        self.get_risk_informed_pop(pop, prob_risk_informed_prep), 
+                        self.get_suspect_risk_pop(pop)
+                    )
+                )
             # general recently active population
             elif self.prep_strategy == 12:
                 gen_pop = pop.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, False))
