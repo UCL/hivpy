@@ -732,3 +732,9 @@ class SexualBehaviourModule:
             self.continue_ltp,
             sub_pop=start_partnered
         )
+
+        # end ltp for over 65
+        over65 = population.get_sub_pop(COND(col.AGE, operator.ge, 65))
+        population.set_present_variable(col.LONG_TERM_PARTNER, False, over65)
+        population.set_present_variable(col.LTP_STATUS, False, over65)
+        
