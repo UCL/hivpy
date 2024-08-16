@@ -34,7 +34,8 @@ class HIVDiagnosisModule:
         # FIXME: consider how to move more variables to data file
         self.hiv_test_type = HIVTestType.Ab
         self.init_prep_inj_na = rng.choice([True, False])
-        self.prep_inj_na = rng.choice([True, False]) if self.init_prep_inj_na else 0
+        # FIXME: should this variable affect the value of hiv_test_type or is it completely separate?
+        self.prep_inj_na = rng.choice([True, False]) if self.init_prep_inj_na else False
 
         self.test_sens_general = self.hd_data.test_sens_general
         self.test_sens_primary_ab = self.hd_data.test_sens_primary_ab.sample()
