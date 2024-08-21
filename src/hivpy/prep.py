@@ -41,12 +41,23 @@ class PrEPModule:
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
 
+        self.prep_oral_pref_beta = rng.choice([1.1, 1.3, 1.5])
+        self.prep_inj_pref_beta = self.prep_oral_pref_beta + 0.3
+        self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
+
         self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
         self.prep_willing_threshold = self.p_data.prep_willing_threshold
         self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
     def init_prep_variables(self, pop: Population):
+        pop.init_variable(col.PREP_ORAL_PREF, 0)
+        pop.init_variable(col.PREP_INJ_PREF, 0)
+        pop.init_variable(col.PREP_VR_PREF, 0)
+        pop.init_variable(col.PREP_ORAL_WILLING, False)
+        pop.init_variable(col.PREP_INJ_WILLING, False)
+        pop.init_variable(col.PREP_VR_WILLING, False)
+        pop.init_variable(col.PREP_ANY_WILLING, False)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
@@ -90,6 +101,38 @@ class PrEPModule:
                                    COND(col.LTP_ON_ART, op.eq, False),
                                    COND(col.LTP_HIV_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
+
+    def prep_willingness(self, pop: Population):
+        """
+        Determine which individuals are willing to take PrEP, as well as their PrEP preferences.
+        """
+        # oral prep willingness
+        if pop.date >= self.date_prep_intro[PrEPType.Oral]:
+            over_15_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+            pref = rng.beta(self.prep_oral_pref_beta, 5, size=len(over_15_pop))
+            pop.set_present_variable(col.PREP_ORAL_PREF, pref, over_15_pop)
+            willingness = pref > self.prep_willing_threshold
+            pop.set_present_variable(col.PREP_ORAL_WILLING, willingness, over_15_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_pop))
+
+        # injectable prep willingness
+        if pop.date >= min(self.date_prep_intro[PrEPType.Cabotegravir], self.date_prep_intro[PrEPType.Lenacapavir]):
+            over_15_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+            pref = rng.beta(self.prep_inj_pref_beta, 5, size=len(over_15_pop))
+            pop.set_present_variable(col.PREP_INJ_PREF, pref, over_15_pop)
+            willingness = pref > self.prep_willing_threshold
+            pop.set_present_variable(col.PREP_INJ_WILLING, willingness, over_15_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_pop))
+
+        # vr prep willingness (women only)
+        if pop.date >= self.date_prep_intro[PrEPType.VaginalRing]:
+            over_15_fem_pop = pop.get_sub_pop([(col.AGE, op.ge, 15),
+                                               (col.SEX, op.eq, SexType.Female)])
+            pref = rng.beta(self.prep_vr_pref_beta, 5, size=len(over_15_fem_pop))
+            pop.set_present_variable(col.PREP_VR_PREF, pref, over_15_fem_pop)
+            willingness = pref > self.prep_willing_threshold
+            pop.set_present_variable(col.PREP_VR_WILLING, willingness, over_15_fem_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_fem_pop))
 
     def prep_eligibility(self, pop: Population):
         """
