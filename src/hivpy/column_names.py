@@ -98,6 +98,7 @@ PREP_VR_WILLING = "prep_vr_willing"             # Bool: True if an individual is
 PREP_ANY_WILLING = "prep_any_willing"           # Bool: True if an individual is willing to use at least one type of PrEP
 PREP_ELIGIBLE = "prep_eligible"                 # Bool: True if an individual is eligible for PrEP usage
 PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None (DUMMY)
+EVER_PREP = "ever_prep"                         # Bool: True if an individual has ever been on PrEP
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY

@@ -63,6 +63,7 @@ class PrEPModule:
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
+        pop.init_variable(col.EVER_PREP, False)
         pop.init_variable(col.PREP_JUST_STARTED, False)
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
@@ -103,6 +104,39 @@ class PrEPModule:
                                    COND(col.LTP_ON_ART, op.eq, False),
                                    COND(col.LTP_HIV_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
+
+    def get_presumed_hiv_neg_pop(self, pop: Population):
+        """
+        Return the sub-population that has been tested and is HIV positive but
+        received a false negative result.
+        """
+        # FIXME: should these individuals also be fixed instead of rerolling false negatives?
+        false_neg_pop = pop.get_sub_pop(AND(COND(col.EVER_TESTED, op.eq, True),
+                                            COND(col.HIV_STATUS, op.eq, True)))
+
+        # general test sensitivity
+        eff_test_sens = pop.hiv_diagnosis.test_sens_general
+        if not pop.hiv_diagnosis.init_prep_inj_na:
+            # FIXME: does this have to be exactly 3 months ago or can it be <=?
+            recently_infected_pop = pop.get_sub_pop_intersection(
+                pop.get_sub_pop(COND(col.DATE_HIV_INFECTION, op.eq, pop.date - date(0.25))), false_neg_pop)
+
+            # expand sensitivity into a list
+            eff_test_sens = [pop.hiv_diagnosis.test_sens_general] * len(false_neg_pop)
+            false_neg_list = list(false_neg_pop)
+            # find indices in false_neg_pop that correspond to people belonging to recently_infected_pop
+            common_i = [false_neg_list.index(i) for i in false_neg_list if i in recently_infected_pop]
+
+            # FIXME: is there a better way to do this?
+            for i in common_i:
+                # lower test sensitivity used to mimic more people starting prep when they have hiv
+                eff_test_sens[i] = pop.hiv_diagnosis.test_sens_primary_ab
+
+        # false negative outcomes
+        r = rng.uniform(size=len(false_neg_pop))
+        mask = r > eff_test_sens
+
+        return pop.apply_bool_mask(mask, false_neg_pop)
 
     def prep_willingness(self, pop: Population):
         """
