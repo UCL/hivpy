@@ -64,7 +64,13 @@ class PrEPModule:
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.EVER_PREP, False)
+        pop.init_variable(col.FIRST_PREP_START_DATE, None)
+        pop.init_variable(col.LAST_PREP_START_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
+        pop.init_variable(col.PREP_ORAL_TESTED, False)
+        pop.init_variable(col.PREP_CAB_TESTED, False)
+        pop.init_variable(col.PREP_LEN_TESTED, False)
+        pop.init_variable(col.PREP_VR_TESTED, False)
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
@@ -362,3 +368,73 @@ class PrEPModule:
 
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
+
+    def prep_usage(self, pop: Population):
+        """
+        Update PrEP usage for people starting, restarting, and stopping PrEP.
+        """
+        # start when first type of prep is introduced
+        if pop.date >= min(self.date_prep_intro):
+
+            # starting prep for the first time
+            eligible = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
+                                        (col.HIV_DIAGNOSED, op.eq, False),
+                                        (col.PREP_ELIGIBLE, op.eq, True),
+                                        (col.PREP_ANY_WILLING, op.eq, True),
+                                        (col.EVER_PREP, op.eq, False),
+                                        (col.LAST_TEST_DATE, op.eq, pop.date)])  # FIXME: should we limit by test date?
+
+            starting_prep_pop = pop.get_sub_pop_intersection(
+                eligible, pop.get_sub_pop_union(
+                    pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)), self.get_presumed_hiv_neg_pop(pop)))
+
+            # tested explicitly to start oral prep
+            starting_oral_prep_pop = pop.get_sub_pop_intersection(
+                starting_prep_pop, pop.get_sub_pop(COND(col.PREP_ORAL_TESTED, op.eq, True)))
+
+            if len(starting_oral_prep_pop) > 0:
+                pop.set_present_variable(col.PREP_TYPE, PrEPType.Oral, starting_oral_prep_pop)
+                pop.set_present_variable(col.EVER_PREP, True, starting_oral_prep_pop)
+                # FIXME: should start dates be sub-divided by prep types?
+                pop.set_present_variable(col.FIRST_PREP_START_DATE, pop.date, starting_oral_prep_pop)
+                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_oral_prep_pop)
+
+            # tested explicitly to start injectable Cab prep
+            starting_cab_prep_pop = pop.get_sub_pop_intersection(
+                starting_prep_pop, pop.get_sub_pop(COND(col.PREP_CAB_TESTED, op.eq, True)))
+
+            if len(starting_cab_prep_pop) > 0:
+                pop.set_present_variable(col.PREP_TYPE, PrEPType.Cabotegravir, starting_cab_prep_pop)
+                pop.set_present_variable(col.EVER_PREP, True, starting_cab_prep_pop)
+                # FIXME: should start dates be sub-divided by prep types?
+                pop.set_present_variable(col.FIRST_PREP_START_DATE, pop.date, starting_cab_prep_pop)
+                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_cab_prep_pop)
+
+            # tested explicitly to start injectable Cab prep
+            starting_len_prep_pop = pop.get_sub_pop_intersection(
+                starting_prep_pop, pop.get_sub_pop(COND(col.PREP_LEN_TESTED, op.eq, True)))
+
+            if len(starting_len_prep_pop) > 0:
+                pop.set_present_variable(col.PREP_TYPE, PrEPType.Lenacapavir, starting_len_prep_pop)
+                pop.set_present_variable(col.EVER_PREP, True, starting_len_prep_pop)
+                # FIXME: should start dates be sub-divided by prep types?
+                pop.set_present_variable(col.FIRST_PREP_START_DATE, pop.date, starting_len_prep_pop)
+                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_len_prep_pop)
+
+            # tested explicitly to start vaginal ring prep
+            starting_vr_prep_pop = pop.get_sub_pop_intersection(
+                starting_prep_pop, pop.get_sub_pop(COND(col.PREP_VR_TESTED, op.eq, True)))
+
+            if len(starting_vr_prep_pop) > 0:
+                pop.set_present_variable(col.PREP_TYPE, PrEPType.VaginalRing, starting_vr_prep_pop)
+                pop.set_present_variable(col.EVER_PREP, True, starting_vr_prep_pop)
+                # FIXME: should start dates be sub-divided by prep types?
+                pop.set_present_variable(col.FIRST_PREP_START_DATE, pop.date, starting_vr_prep_pop)
+                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_vr_prep_pop)
+
+            # FIXME: not tested explicitly to start prep
+            # starting_any_prep_pop = pop.get_sub_pop_intersection(
+            #    starting_prep_pop, pop.get_sub_pop(AND(COND(col.PREP_ORAL_TESTED, op.eq, False),
+            #                                           COND(col.PREP_CAB_TESTED, op.eq, False),
+            #                                           COND(col.PREP_LEN_TESTED, op.eq, False),
+            #                                           COND(col.PREP_VR_TESTED, op.eq, False))))
