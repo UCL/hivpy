@@ -44,8 +44,8 @@ class PrEPModule:
         self.prep_oral_pref_beta = rng.choice([1.1, 1.3, 1.5])
         self.prep_inj_pref_beta = self.prep_oral_pref_beta + 0.3
         self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
-        self.vl_prevalence_affects_prep = rng.choice([True, False], p=[0.33, 0.66])
-        self.vl_prevalence_prep_threshold = rng.choice(0.005, 0.01)
+        self.vl_prevalence_affects_prep = rng.choice([True, False], p=[1/3, 2/3])
+        self.vl_prevalence_prep_threshold = rng.choice([0.005, 0.01])
 
         self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
         self.prep_willing_threshold = self.p_data.prep_willing_threshold
@@ -110,6 +110,7 @@ class PrEPModule:
         """
         # FIXME: when should this be run? if the intention is to only calculate willingness once at the start,
         # preference values should likely be set without date restrictions
+
         # oral prep willingness
         if pop.date >= self.date_prep_intro[PrEPType.Oral]:
             over_15_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
@@ -144,10 +145,15 @@ class PrEPModule:
             pop.set_present_variable(col.PREP_VR_WILLING, willingness, over_15_fem_pop)
             pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_fem_pop))
 
+        # FIXME: do we need to keep track of everyone's highest PrEP preference here?
+        # having the actual ranking may be more useful depending on availability
+
+        gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
         # find prevalence of people with a viral load of over 1000
-        vl_prevalence = len(
-            pop.get_sub_pop([(col.VIRAL_LOAD, op.gt, 1000), (col.AGE, op.ge, 15), (col.AGE, op.lt, 50)])) / len(
-                pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
+        vl_prevalence = (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.gt, 1000),
+                                              (col.AGE, op.ge, 15),
+                                              (col.AGE, op.lt, 50)])) / gen_pop
+                         if gen_pop > 0 else 0)
 
         # there's a chance nobody is willing to take PrEP if unsuppressed viral load prevalence is too low
         if self.vl_prevalence_affects_prep and vl_prevalence < self.vl_prevalence_prep_threshold:

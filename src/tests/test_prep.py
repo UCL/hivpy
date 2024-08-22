@@ -8,6 +8,33 @@ from hivpy.common import SexType, date, timedelta
 from hivpy.population import Population
 
 
+def test_prep_willingness():
+    N = 100
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.data[col.VIRAL_LOAD] = 10000
+    # make all prep types available
+    pop.prep.date_prep_intro = [date(2000), date(2000), date(2000), date(2000)]
+    # adjust chances of higher preference
+    pop.prep.prep_oral_pref_beta = 3
+    pop.prep.prep_inj_pref_beta = 3.3
+    pop.prep.prep_vr_pref_beta = 2.9
+    # vl prevalence accounted for
+    pop.prep.vl_prevalence_affects_prep = True
+    pop.prep.vl_prevalence_prep_threshold = 0.5
+
+    pop.prep.prep_willingness(pop)
+
+    # some willingness has been established
+    assert sum(pop.data[col.PREP_ANY_WILLING]) > 0
+
+    # reset willingness with low viral load prevalence
+    pop.data[col.VIRAL_LOAD] = 100
+    pop.prep.prep_willingness(pop)
+
+    # no willingness remains
+    assert sum(pop.data[col.PREP_ANY_WILLING]) == 0
+
+
 def test_at_risk_pop():
     N = 100
     pop = Population(size=N, start_date=date(2020, 1, 1))
@@ -249,7 +276,6 @@ def test_prep_eligibility_women_only():
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
     mean = N * 0.5 * pop.prep.prob_risk_informed_prep
     stdev = sqrt(mean * (1 - 0.5 * pop.prep.prob_risk_informed_prep))
-    print("elig", eligible, "vs mean", mean)
     # expecting base % of half of the population to be risk informed
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
 
