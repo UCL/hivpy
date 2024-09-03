@@ -1,4 +1,3 @@
-import operator
 import operator as op
 
 import numpy as np
@@ -98,11 +97,11 @@ def test_hiv_initial_ages(pop_with_initial_hiv: Population):
     """
     Check that HIV is not introduced to anyone <= 15 or > 65.
     """
-    under_15s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                  (col.AGE, operator.le, 15)])
-    over_65s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                 (col.AGE, operator.gt, 65)])
-    HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+    under_15s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True),
+                                                  (col.AGE, op.le, 15)])
+    over_65s = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True),
+                                                 (col.AGE, op.gt, 65)])
+    HIV_pos = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
     assert not any(under_15s)
     assert not any(over_65s)
     assert any(HIV_pos)
@@ -111,7 +110,7 @@ def test_hiv_initial_ages(pop_with_initial_hiv: Population):
 def test_hiv_update(pop_with_initial_hiv: Population):
     pd.set_option('display.max_columns', None)
     prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
-    initial_infected = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True)])
+    initial_infected = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
     for i in range(10):
         pop_with_initial_hiv.date += timedelta(days=30)
         pop_with_initial_hiv.hiv_status.set_viral_load_groups(pop_with_initial_hiv)
@@ -124,8 +123,8 @@ def test_hiv_update(pop_with_initial_hiv: Population):
                    == pop_with_initial_hiv.date)
     print("Num new HIV+ = ", sum(new_cases))
     miracles = (~current_status) & (prev_status)
-    under_15s_idx = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, operator.eq, True),
-                                                      (col.AGE, operator.le, 15)])
+    under_15s_idx = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True),
+                                                      (col.AGE, op.le, 15)])
     assert not any(miracles)
     assert any(new_cases)
     assert not any(under_15s_idx)
@@ -337,7 +336,7 @@ def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex
     neg_cd4_counts = pop.get_variable(col.CD4, hivneg_subpop)
     assert np.allclose(neg_cd4_counts, 0.0)
     hiv_pop_by_sex = pop.get_sub_pop_intersection(
-        pop.get_sub_pop([(col.SEX, operator.eq, sex)]),
+        pop.get_sub_pop([(col.SEX, op.eq, sex)]),
         hivpos_subpop
     )
     cd4_counts = pop.get_variable(col.CD4, hiv_pop_by_sex)

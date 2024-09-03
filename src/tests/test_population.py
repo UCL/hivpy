@@ -99,3 +99,21 @@ def test_compound_expression():
     sexes = pop.get_variable(col.SEX, female_over_25_or_male_under_25)
     assert all((ages < 25) | (sexes == SexType.Female))
     assert all((ages > 25) | (sexes == SexType.Male))
+
+
+def test_unions():
+    pop = Population(size=1000, start_date=date(1989, 1, 1))
+
+    # males
+    males = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
+    # over 25
+    over25 = pop.get_sub_pop(COND(col.AGE, op.ge, 25))
+    # under 10
+    under10 = pop.get_sub_pop(COND(col.AGE, op.lt, 10))
+    # all of the above
+    expectation = pop.get_sub_pop(OR(COND(col.SEX, op.eq, SexType.Male),
+                                     COND(col.AGE, op.ge, 25),
+                                     COND(col.AGE, op.lt, 10)))
+    # union
+    union = pop.get_sub_pop_union(males, over25, under10)
+    assert all(expectation == union)
