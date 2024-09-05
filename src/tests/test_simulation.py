@@ -70,3 +70,46 @@ def test_death_occurs(tmp_path):
     # ...and that there is at least one death overall!
     # FIXME This is not guaranteed at the moment because of the values used
     # assert results.num_alive[-1] < results.num_alive[0]
+
+
+def test_error_intervention_before_start(tmp_path):
+    """
+    Ensure that we throw an error if the intervention date is before the start.
+    """
+    start = date(1989, 1)
+    end = date(1995, 1)
+    intervention = start - timedelta(days=365)
+    with pytest.raises(SimulationException):
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
+                         graph_outputs=[], intervention_date=intervention, population_size=100)
+
+
+def test_error_intervention_after_end(tmp_path):
+    """
+    Ensure that we throw an error if the intervention date is after the end.
+    """
+    start = date(1989, 1)
+    end = date(1995, 1)
+    intervention = end + timedelta(days=365)
+    with pytest.raises(SimulationException):
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
+                         graph_outputs=[], intervention_date=intervention, population_size=100)
+
+
+def test_intervention(tmp_path):
+    """
+    Assert that intervention happens and the two population groups are not the same
+    """
+    size = 1000
+    start = date(1989, 1)
+    step = timedelta(days=90)
+    end = date(1995, 1)
+    intervention = date(1992, 1)
+    config = SimulationConfig(size, start, end, tmp_path, [], step, intervention)
+    simulation_handler = SimulationHandler(config)
+    simulation_handler.run()
+    pop = simulation_handler.population
+    pop_intervention = simulation_handler.modified_population
+
+    # assert pop_intervention is not a shallow copy
+    assert pop is not pop_intervention

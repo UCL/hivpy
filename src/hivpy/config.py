@@ -55,6 +55,7 @@ class SimulationConfig:
     output_dir: Path
     graph_outputs: list
     time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
+    intervention_date: date = field(default_factory=lambda: None)
 
     def _validate(self):
         """
@@ -63,6 +64,9 @@ class SimulationConfig:
         try:
             assert self.stop_date >= self.start_date + self.time_step
             assert self.time_step > timedelta(days=0)
+            if self.intervention_date:
+                assert self.intervention_date >= self.start_date + self.time_step
+                assert self.intervention_date <= self.stop_date - self.time_step
         except AssertionError:
             raise SimulationException("Invalid simulation configuration.")
 
