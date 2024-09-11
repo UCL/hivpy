@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import logging
 import os
+from copy import deepcopy
 from datetime import datetime
 
 import pandas as pd
+
+import hivpy.column_names as col
 
 from . import output
 from .config import SimulationConfig
 from .output import SimulationOutput
 from .population import Population
 from .post_processing import graph_output
-import hivpy.column_names as col
-from copy import deepcopy
 
 
 class SimulationHandler:
@@ -35,7 +36,7 @@ class SimulationHandler:
         self.output_path = self.output_dir / (
             "simulation_output_" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
         self.output_path_intervention = self.output_dir / (
-            "simulation_output_intervention" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
+            "simulation_output_intervention_i" + str(datetime.now().strftime("%Y%m%d-%H%M%S")) + ".csv")
 
     def _initialise_population(self):
         self.population = Population(self.simulation_config.population_size,
