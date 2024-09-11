@@ -66,8 +66,9 @@ def create_simulation(experiment_param):
             output_dir.mkdir()
         if 'intervention_year' in experiment_param.keys():
             intervention_date = date(int(experiment_param['intervention_year']), 1, 1)
+            intervention_option = int(experiment_param['intervention_option'])
             simconfiguration = SimulationConfig(population_size, start_date, end_date, output_dir,
-                                                graph_outputs, interval, intervention_date)
+                                                graph_outputs, interval, intervention_date, intervention_option)
         else:
             simconfiguration = SimulationConfig(population_size, start_date, end_date, output_dir,
                                                 graph_outputs, interval)

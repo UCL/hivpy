@@ -1,5 +1,6 @@
 import pytest
 
+import hivpy.column_names as col
 from hivpy import SimulationConfig, SimulationException
 from hivpy.common import date, timedelta
 from hivpy.simulation import SimulationHandler
@@ -96,7 +97,7 @@ def test_error_intervention_after_end(tmp_path):
                          graph_outputs=[], intervention_date=intervention, population_size=100)
 
 
-def test_intervention(tmp_path):
+def test_population_after_intervention(tmp_path):
     """
     Assert that intervention happens and the two population groups are not the same
     """
@@ -113,3 +114,22 @@ def test_intervention(tmp_path):
 
     # assert pop_intervention is not a shallow copy
     assert pop is not pop_intervention
+
+
+def test_intervention_option(tmp_path):
+    """
+    Assert that the population is modified at the intervention timestep based on option number
+    """
+    size = 1000
+    start = date(1989, 1)
+    step = timedelta(days=90)
+    end = date(1995, 1)
+    intervention = date(1992, 1)
+    option = 1
+    config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option)
+    simulation_handler = SimulationHandler(config)
+
+    simulation_handler.run()
+
+    tested = simulation_handler.modified_population.get_variable(col.EVER_TESTED)
+    assert sum(tested) > 950

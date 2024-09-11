@@ -42,8 +42,9 @@ class SimulationHandler:
         self.population = Population(self.simulation_config.population_size,
                                      self.simulation_config.start_date)
 
-    def intervention(self, pop):
-        pop.set_present_variable(col.TEST_MARK, True)
+    def intervention(self, pop, option):
+        if option == 1:
+            pop.set_present_variable(col.TEST_MARK, True)
         return pop
 
     def run(self):
@@ -55,6 +56,7 @@ class SimulationHandler:
 
         if self.simulation_config.intervention_date:
             end_date = self.simulation_config.intervention_date
+            interv_option = self.simulation_config.intervention_option
             message = "Reached intervention year"
         else:
             end_date = self.simulation_config.stop_date
@@ -73,7 +75,7 @@ class SimulationHandler:
             self.modified_population = deepcopy(self.population)
             self.intervention_output = deepcopy(self.output)
             # call intervention function
-            self.modified_population = self.intervention(self.modified_population)
+            self.modified_population = self.intervention(self.modified_population, interv_option)
 
             while date <= self.simulation_config.stop_date:
                 logging.info("Timestep %s\n", date)

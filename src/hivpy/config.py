@@ -56,6 +56,7 @@ class SimulationConfig:
     graph_outputs: list
     time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
     intervention_date: date = None
+    intervention_option: int = 0
 
     def _validate(self):
         """

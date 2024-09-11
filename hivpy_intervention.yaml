@@ -3,6 +3,8 @@ EXPERIMENT:
   start_year: 1989
   end_year: 2021
   time_interval_days: 90
+  intervention_year: 2000
+  intervention_option: 0
   simulation_output_dir: output
   graph_outputs: []
 

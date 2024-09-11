@@ -34,10 +34,10 @@ def test_dummy_workflow(tmp_path, sample_experiment_params):
 
 def test_intervention_year():
     """
-    Assert that the hivpy.yaml file is used and runs with intervention year
+    Assert that the hivpy_intervention.yaml file is used and runs with intervention year
     Needs refinement - To revisit this
     """
-    with open("hivpy.yaml", 'r') as sample_file:
+    with open("hivpy_intervention.yaml", 'r') as sample_file:
         hivpy_experiment_params = yaml.safe_load(sample_file)
     hivpy_config = create_experiment(hivpy_experiment_params)
     run_experiment(hivpy_config)
