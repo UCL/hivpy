@@ -148,42 +148,55 @@ class PrEPModule:
         """
         Determine which individuals are willing to take PrEP, as well as their PrEP preferences.
         """
-        # FIXME: when should this be run? if the intention is to only calculate willingness once at the start,
-        # preference values should likely be set without date restrictions
-
         # oral prep willingness
         if pop.date >= self.date_prep_intro[PrEPType.Oral]:
-            over_15_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+            # find those who turned 15 this time step
+            sub_pop = pop.get_sub_pop([(col.AGE, op.eq, 15)])
+            # unless the current date is the introduction date
+            if pop.date == self.date_prep_intro[PrEPType.Oral]:
+                # then find all over 15s
+                sub_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
             # random preference beta distribution
-            pref = rng.beta(self.prep_oral_pref_beta, 5, size=len(over_15_pop))
-            pop.set_present_variable(col.PREP_ORAL_PREF, pref, over_15_pop)
+            pref = rng.beta(self.prep_oral_pref_beta, 5, size=len(sub_pop))
+            pop.set_present_variable(col.PREP_ORAL_PREF, pref, sub_pop)
             # determine willingness by comparing to threshold
             willingness = pref > self.prep_willing_threshold
-            pop.set_present_variable(col.PREP_ORAL_WILLING, willingness, over_15_pop)
-            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_pop))
+            pop.set_present_variable(col.PREP_ORAL_WILLING, willingness, sub_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
 
         # injectable prep willingness
         if pop.date >= min(self.date_prep_intro[PrEPType.Cabotegravir], self.date_prep_intro[PrEPType.Lenacapavir]):
-            over_15_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+            # find those who turned 15 this time step
+            sub_pop = pop.get_sub_pop([(col.AGE, op.eq, 15)])
+            # unless the current date is the introduction date
+            if pop.date == min(self.date_prep_intro[PrEPType.Cabotegravir], self.date_prep_intro[PrEPType.Lenacapavir]):
+                # then find all over 15s
+                sub_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
             # random preference beta distribution
-            pref = rng.beta(self.prep_inj_pref_beta, 5, size=len(over_15_pop))
-            pop.set_present_variable(col.PREP_INJ_PREF, pref, over_15_pop)
+            pref = rng.beta(self.prep_inj_pref_beta, 5, size=len(sub_pop))
+            pop.set_present_variable(col.PREP_INJ_PREF, pref, sub_pop)
             # determine willingness by comparing to threshold
             willingness = pref > self.prep_willing_threshold
-            pop.set_present_variable(col.PREP_INJ_WILLING, willingness, over_15_pop)
-            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_pop))
+            pop.set_present_variable(col.PREP_INJ_WILLING, willingness, sub_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
 
         # vr prep willingness (women only)
         if pop.date >= self.date_prep_intro[PrEPType.VaginalRing]:
-            over_15_fem_pop = pop.get_sub_pop([(col.AGE, op.ge, 15),
-                                               (col.SEX, op.eq, SexType.Female)])
+            # find those who turned 15 this time step
+            sub_pop = pop.get_sub_pop([(col.AGE, op.eq, 15),
+                                       (col.SEX, op.eq, SexType.Female)])
+            # unless the current date is the introduction date
+            if pop.date == self.date_prep_intro[PrEPType.Oral]:
+                # then find all over 15s
+                sub_pop = pop.get_sub_pop([(col.AGE, op.ge, 15),
+                                           (col.SEX, op.eq, SexType.Female)])
             # random preference beta distribution
-            pref = rng.beta(self.prep_vr_pref_beta, 5, size=len(over_15_fem_pop))
-            pop.set_present_variable(col.PREP_VR_PREF, pref, over_15_fem_pop)
+            pref = rng.beta(self.prep_vr_pref_beta, 5, size=len(sub_pop))
+            pop.set_present_variable(col.PREP_VR_PREF, pref, sub_pop)
             # determine willingness by comparing to threshold
             willingness = pref > self.prep_willing_threshold
-            pop.set_present_variable(col.PREP_VR_WILLING, willingness, over_15_fem_pop)
-            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, over_15_fem_pop))
+            pop.set_present_variable(col.PREP_VR_WILLING, willingness, sub_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
 
         # FIXME: do we need to keep track of everyone's highest PrEP preference here?
         # having the actual ranking may be more useful depending on availability
