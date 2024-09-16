@@ -287,6 +287,7 @@ class Population:
         if self.HIV_introduced:
             self.hiv_status.set_primary_infection(self)
             self.hiv_status.set_viral_load_groups(self)
+            self.prep.prep_willingness(self)
 
         if self.circumcision.vmmc_disrup_covid:
             self.circumcision.update_birth_circumcision(self.data, time_step, self.date)
