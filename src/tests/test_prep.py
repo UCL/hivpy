@@ -10,7 +10,8 @@ from hivpy.population import Population
 
 def test_prep_willingness():
     N = 100
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop.data[col.AGE] = 20
     pop.data[col.VIRAL_LOAD] = 10000
     # make all prep types available
     pop.prep.date_prep_intro = [date(2000), date(2000), date(2000), date(2000)]
@@ -22,9 +23,18 @@ def test_prep_willingness():
     pop.prep.vl_prevalence_affects_prep = True
     pop.prep.vl_prevalence_prep_threshold = 0.5
 
+    # willingness calculated for over 15s
     pop.prep.prep_willingness(pop)
 
     # some willingness has been established
+    assert sum(pop.data[col.PREP_ANY_WILLING]) > 0
+
+    # willingness calculated for those who turned 15 this time step
+    pop.date = date(2020, 1, 1)
+    pop.data[col.AGE] = 15
+    pop.prep.prep_willingness(pop)
+
+    # some willingness has been re-established
     assert sum(pop.data[col.PREP_ANY_WILLING]) > 0
 
     # reset willingness with low viral load prevalence
