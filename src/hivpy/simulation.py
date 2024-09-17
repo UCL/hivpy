@@ -7,8 +7,6 @@ from datetime import datetime
 
 import pandas as pd
 
-import hivpy.column_names as col
-
 from . import output
 from .config import SimulationConfig
 from .output import SimulationOutput
@@ -44,7 +42,7 @@ class SimulationHandler:
 
     def intervention(self, pop, option):
         if option == 1:
-            pop.set_present_variable(col.TEST_MARK, True)
+            pop.sexual_behaviour.sw_program_start_date = pop.date
         return pop
 
     def run(self):
