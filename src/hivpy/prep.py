@@ -146,7 +146,7 @@ class PrEPModule:
             sub_pop = pop.get_sub_pop([(col.AGE, op.eq, 15),
                                        (col.SEX, op.eq, SexType.Female)])
             # unless the current date is the introduction date
-            if pop.date == self.date_prep_intro[PrEPType.Oral]:
+            if pop.date == self.date_prep_intro[PrEPType.VaginalRing]:
                 # then find all over 15s
                 sub_pop = pop.get_sub_pop([(col.AGE, op.ge, 15),
                                            (col.SEX, op.eq, SexType.Female)])
