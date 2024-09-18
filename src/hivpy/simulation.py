@@ -42,8 +42,14 @@ class SimulationHandler:
 
     def intervention(self, pop, option):
         if option == 1:
-            pop.sexual_behaviour.sw_program_start_date = pop.date
+            pop.sexual_behaviour.sw_program_start_date = pop.date - self.simulation_config.time_step
+        if option == 2:
+            pop.circumcision.policy_intervention_year = pop.date - self.simulation_config.time_step
         return pop
+
+    def update_intervention(self, pop, option):
+        intervention_pop = self.intervention(pop, option)
+        return intervention_pop
 
     def run(self):
 
@@ -78,15 +84,17 @@ class SimulationHandler:
             while date <= self.simulation_config.stop_date:
                 logging.info("Timestep %s\n", date)
 
-                # option 1 intervention
+                # intervention
                 self.modified_population = self.modified_population.evolve(time_step)
                 self.intervention_output.update_summary_stats(date, self.modified_population, time_step)
+                # repeat intervention according to option number
+                if self.simulation_config.recurrent_intervention:
+                    self.modified_population = self.update_intervention(self.modified_population, option=2)
 
-                # option 2 no intervention
+                # no intervention
                 self.population = self.population.evolve(time_step)
                 self.output.update_summary_stats(date, self.population, time_step)
 
-                # continue till end
                 date = date + time_step
             logging.info("Finished")
 

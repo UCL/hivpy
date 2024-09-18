@@ -113,4 +113,24 @@ def test_intervention_option(tmp_path):
     simulation_handler.run()
 
     modified_date = simulation_handler.modified_population.sexual_behaviour.sw_program_start_date
-    assert modified_date == intervention + step
+    assert modified_date == intervention
+
+
+def test_recurrent_intervention(tmp_path):
+    """
+    Assert that the intervention is being updated when required
+    And with a different option number
+    """
+    size = 1000
+    start = date(1989, 1)
+    step = timedelta(days=90)
+    end = date(1995, 1)
+    intervention = date(1992, 1)
+    option = 1
+    repeat_interv = True
+    config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option, repeat_interv)
+    simulation_handler = SimulationHandler(config)
+
+    simulation_handler.run()
+
+    assert simulation_handler.modified_population.circumcision.policy_intervention_year == end

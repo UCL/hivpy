@@ -5,6 +5,7 @@ EXPERIMENT:
   time_interval_days: 90
   intervention_year: 2000
   intervention_option: 0
+  repeat_intervention: True
   simulation_output_dir: output
   graph_outputs: []
 

@@ -67,8 +67,10 @@ def create_simulation(experiment_param):
         if 'intervention_year' in experiment_param.keys():
             intervention_date = date(int(experiment_param['intervention_year']), 1, 1)
             intervention_option = int(experiment_param['intervention_option'])
+            recurrent_intervention = int(experiment_param['repeat_intervention'])
             simconfiguration = SimulationConfig(population_size, start_date, end_date, output_dir,
-                                                graph_outputs, interval, intervention_date, intervention_option)
+                                                graph_outputs, interval, intervention_date,
+                                                intervention_option, recurrent_intervention)
         else:
             simconfiguration = SimulationConfig(population_size, start_date, end_date, output_dir,
                                                 graph_outputs, interval)
