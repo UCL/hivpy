@@ -42,7 +42,8 @@ class PrEPModule:
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
 
         self.prep_oral_pref_beta = rng.choice([1.1, 1.3, 1.5])
-        self.prep_inj_pref_beta = self.prep_oral_pref_beta + 0.3
+        self.prep_cab_pref_beta = self.prep_oral_pref_beta + 0.3
+        self.prep_len_pref_beta = self.prep_cab_pref_beta
         self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
         self.vl_prevalence_affects_prep = rng.choice([True, False], p=[1/3, 2/3])
         self.vl_prevalence_prep_threshold = rng.choice([0.005, 0.01])
@@ -54,10 +55,12 @@ class PrEPModule:
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)
-        pop.init_variable(col.PREP_INJ_PREF, 0)
+        pop.init_variable(col.PREP_CAB_PREF, 0)
+        pop.init_variable(col.PREP_LEN_PREF, 0)
         pop.init_variable(col.PREP_VR_PREF, 0)
         pop.init_variable(col.PREP_ORAL_WILLING, False)
-        pop.init_variable(col.PREP_INJ_WILLING, False)
+        pop.init_variable(col.PREP_CAB_WILLING, False)
+        pop.init_variable(col.PREP_LEN_WILLING, False)
         pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
         pop.init_variable(col.R_PREP, 1.0)
@@ -135,8 +138,11 @@ class PrEPModule:
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral], self.prep_oral_pref_beta,
                                  col.PREP_ORAL_PREF, col.PREP_ORAL_WILLING)
         # injectable prep pref + willingness
-        self.set_prep_preference(pop, min(self.date_prep_intro[PrEPType.Cabotegravir], self.date_prep_intro[PrEPType.Lenacapavir]),
-                                 self.prep_inj_pref_beta, col.PREP_INJ_PREF, col.PREP_INJ_WILLING)
+        # FIXME: should Cab be controlled by an availability flag instead of introduction date?
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir], self.prep_cab_pref_beta,
+                                 col.PREP_CAB_PREF, col.PREP_CAB_WILLING)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir], self.prep_len_pref_beta,
+                                 col.PREP_LEN_PREF, col.PREP_LEN_WILLING)
         # vr prep pref + willingness (women only)
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
                                  col.PREP_VR_PREF, col.PREP_VR_WILLING,
@@ -155,7 +161,8 @@ class PrEPModule:
         # there's a chance nobody is willing to take PrEP if unsuppressed viral load prevalence is too low
         if self.vl_prevalence_affects_prep and vl_prevalence < self.vl_prevalence_prep_threshold:
             pop.set_present_variable(col.PREP_ORAL_WILLING, False)
-            pop.set_present_variable(col.PREP_INJ_WILLING, False)
+            pop.set_present_variable(col.PREP_CAB_WILLING, False)
+            pop.set_present_variable(col.PREP_LEN_WILLING, False)
             pop.set_present_variable(col.PREP_VR_WILLING, False)
             pop.set_present_variable(col.PREP_ANY_WILLING, False)
 
