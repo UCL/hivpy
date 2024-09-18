@@ -10,10 +10,12 @@ from hivpy.population import Population
 
 def reset_prep_willingness_cols(pop: Population):
     pop.set_present_variable(col.PREP_ORAL_PREF, 0)
-    pop.set_present_variable(col.PREP_INJ_PREF, 0)
+    pop.set_present_variable(col.PREP_CAB_PREF, 0)
+    pop.set_present_variable(col.PREP_LEN_PREF, 0)
     pop.set_present_variable(col.PREP_VR_PREF, 0)
     pop.set_present_variable(col.PREP_ORAL_WILLING, False)
-    pop.set_present_variable(col.PREP_INJ_WILLING, False)
+    pop.set_present_variable(col.PREP_CAB_WILLING, False)
+    pop.set_present_variable(col.PREP_LEN_WILLING, False)
     pop.set_present_variable(col.PREP_VR_WILLING, False)
     pop.set_present_variable(col.PREP_ANY_WILLING, False)
 
@@ -27,7 +29,8 @@ def test_prep_willingness():
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     # adjust chances of higher preference
     pop.prep.prep_oral_pref_beta = 3
-    pop.prep.prep_inj_pref_beta = 3.3
+    pop.prep.prep_cab_pref_beta = 3.3
+    pop.prep.prep_len_pref_beta = 3.3
     pop.prep.prep_vr_pref_beta = 2.9
     # vl prevalence accounted for
     pop.prep.vl_prevalence_affects_prep = True
@@ -42,7 +45,8 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some oral willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) == 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
 
     reset_prep_willingness_cols(pop)
@@ -50,7 +54,17 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some  inj willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) > 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
+    assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+
+    reset_prep_willingness_cols(pop)
+    pop.date = date(4000, 1, 1)
+    pop.prep.prep_willingness(pop)
+    # some  inj willingness established
+    assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
 
     reset_prep_willingness_cols(pop)
@@ -58,7 +72,8 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some vr willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) == 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) > 0
 
     # willingness calculated for those who turned 15 this time step
@@ -68,7 +83,8 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some oral willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) == 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
 
     reset_prep_willingness_cols(pop)
@@ -76,7 +92,17 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some oral + inj willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) > 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
+    assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+
+    reset_prep_willingness_cols(pop)
+    pop.date = date(4020, 1, 1)
+    pop.prep.prep_willingness(pop)
+    # some oral + inj willingness established
+    assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
 
     reset_prep_willingness_cols(pop)
@@ -84,7 +110,8 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     # some oral + inj + vr willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
-    assert sum(pop.data[col.PREP_INJ_WILLING]) > 0
+    assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
+    assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
     assert sum(pop.data[col.PREP_VR_WILLING]) > 0
 
     # reset willingness with low viral load prevalence
