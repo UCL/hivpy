@@ -9,7 +9,7 @@ from hivpy.prep import PrEPType
 
 
 def test_primary_infection_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
     pop.data[col.DATE_HIV_INFECTION] = pop.date
@@ -60,7 +60,7 @@ def test_primary_infection_diagnosis():
 
 
 def test_primary_infection_prep_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
     pop.data[col.DATE_HIV_INFECTION] = pop.date
@@ -112,7 +112,7 @@ def test_primary_infection_prep_diagnosis():
 
 
 def test_general_population_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
@@ -133,7 +133,7 @@ def test_general_population_diagnosis():
 
 
 def test_general_population_prep_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
@@ -200,7 +200,7 @@ def test_general_population_prep_diagnosis():
 
 
 def test_primary_loss_at_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.IN_PRIMARY_INFECTION] = True
     pop.data[col.DATE_HIV_INFECTION] = pop.date
@@ -240,7 +240,7 @@ def test_primary_loss_at_diagnosis():
 
 
 def test_general_loss_at_diagnosis():
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = True
     pop.data[col.IN_PRIMARY_INFECTION] = False
