@@ -6,6 +6,7 @@ import pytest
 import hivpy.column_names as col
 from hivpy.common import SexType, date, timedelta
 from hivpy.population import Population
+from hivpy.prep import PrEPType
 
 
 def reset_prep_willingness_cols(pop: Population):
@@ -13,6 +14,7 @@ def reset_prep_willingness_cols(pop: Population):
     pop.set_present_variable(col.PREP_CAB_PREF, 0)
     pop.set_present_variable(col.PREP_LEN_PREF, 0)
     pop.set_present_variable(col.PREP_VR_PREF, 0)
+    pop.set_present_variable(col.PREP_PREF_RANKED, None)
     pop.set_present_variable(col.PREP_ORAL_WILLING, False)
     pop.set_present_variable(col.PREP_CAB_WILLING, False)
     pop.set_present_variable(col.PREP_LEN_WILLING, False)
@@ -48,6 +50,8 @@ def test_prep_willingness():
     assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+    # check for highest preference
+    assert all([i[0] is PrEPType.Oral for i in pop.data[col.PREP_PREF_RANKED]])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(3000, 1, 1)
@@ -57,6 +61,8 @@ def test_prep_willingness():
     assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+    # check for highest preference
+    assert all([i[0] is PrEPType.Cabotegravir for i in pop.data[col.PREP_PREF_RANKED]])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(4000, 1, 1)
@@ -66,6 +72,8 @@ def test_prep_willingness():
     assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
     assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+    # check for highest preference
+    assert all([i[0] is PrEPType.Lenacapavir for i in pop.data[col.PREP_PREF_RANKED]])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(5000, 1, 1)
@@ -75,6 +83,8 @@ def test_prep_willingness():
     assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
     assert sum(pop.data[col.PREP_VR_WILLING]) > 0
+    # check for highest preference (ignore floats to weed out nan values for men)
+    assert all([i[0] is PrEPType.VaginalRing for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
 
     # willingness calculated for those who turned 15 this time step
     reset_prep_willingness_cols(pop)
