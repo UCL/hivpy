@@ -58,6 +58,7 @@ class PrEPModule:
         pop.init_variable(col.PREP_CAB_PREF, 0)
         pop.init_variable(col.PREP_LEN_PREF, 0)
         pop.init_variable(col.PREP_VR_PREF, 0)
+        pop.init_variable(col.PREP_PREF_RANKED, None)
         pop.init_variable(col.PREP_ORAL_WILLING, False)
         pop.init_variable(col.PREP_CAB_WILLING, False)
         pop.init_variable(col.PREP_LEN_WILLING, False)
@@ -134,6 +135,8 @@ class PrEPModule:
         """
         Determine which individuals are willing to take PrEP, as well as their PrEP preferences.
         """
+        # initial preference values
+        init_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
         # oral prep pref + willingness
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral], self.prep_oral_pref_beta,
                                  col.PREP_ORAL_PREF, col.PREP_ORAL_WILLING)
@@ -147,6 +150,19 @@ class PrEPModule:
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
                                  col.PREP_VR_PREF, col.PREP_VR_WILLING,
                                  sub_pop_mod=pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))
+
+        # new preference values
+        new_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # find people whose preference has changed this time step
+        changed_pref_pop = new_prefs.compare(init_prefs).index
+
+        if len(changed_pref_pop) > 0:
+            # get ranking outcomes
+            # FIXME: not sure if transform group is the best way to do this, but it works for now
+            pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
+                                              col.PREP_LEN_PREF, col.PREP_VR_PREF],
+                                             self.calc_prep_pref_ranks, sub_pop=changed_pref_pop, use_size=False)
+            pop.set_present_variable(col.PREP_PREF_RANKED, pref_ranks)
 
         # FIXME: do we need to keep track of everyone's highest PrEP preference here?
         # having the actual ranking may be more useful depending on availability
@@ -165,6 +181,14 @@ class PrEPModule:
             pop.set_present_variable(col.PREP_LEN_WILLING, False)
             pop.set_present_variable(col.PREP_VR_WILLING, False)
             pop.set_present_variable(col.PREP_ANY_WILLING, False)
+
+    def calc_prep_pref_ranks(self, oral_pref, cab_pref, len_pref, vr_pref):
+        """
+        Calculates PrEP preference rankings based on all preference values.
+        """
+        prefs = [oral_pref, cab_pref, len_pref, vr_pref]
+        sorted_pref_indices = sorted(range(len(prefs)), key=lambda x: prefs[x], reverse=True)
+        return [[PrEPType(i) for i in sorted_pref_indices]]
 
     def prep_eligibility(self, pop: Population):
         """
