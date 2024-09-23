@@ -89,9 +89,17 @@ WHO4_OTHER = "who4_other"                       # Bool: True if other WHO4 disea
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disease diagnosed this timestep
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
 R_PREP = "r_prep"                               # float: a semi-permanent random personal variable that determines whether someone is risk informed or suspects they are at risk enough to take PrEP
+PREP_ANY_WILLING = "prep_any_willing"           # Bool: True if an individual is willing to use at least one type of PrEP
 PREP_ELIGIBLE = "prep_eligible"                 # Bool: True if an individual is eligible for PrEP usage
 PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None (DUMMY)
+EVER_PREP = "ever_prep"                         # Bool: True if an individual has ever been on PrEP
+FIRST_PREP_START_DATE = "first_prep_start_date"     # None | date: start date of first ever PrEP usage (DUMMY)
+LAST_PREP_START_DATE = "last_prep_start_date"       # None | date: start date of most recent PrEP usage (DUMMY)
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
+PREP_ORAL_TESTED = "prep_oral_tested"           # Bool: True if an individual has tested explicitly to start oral PrEP (DUMMY)
+PREP_CAB_TESTED = "prep_cab_tested"             # Bool: True if an individual has tested explicitly to start injectable Cab PrEP (DUMMY)
+PREP_LEN_TESTED = "prep_len_tested"             # Bool: True if an individual has tested explicitly to start injectable Len PrEP (DUMMY)
+PREP_VR_TESTED = "prep_vr_tested"               # Bool: True if an individual has tested explicitly to start vaginal ring PrEP (DUMMY)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 
