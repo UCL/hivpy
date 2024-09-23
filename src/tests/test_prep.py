@@ -6,6 +6,7 @@ import pytest
 import hivpy.column_names as col
 from hivpy.common import SexType, date, timedelta
 from hivpy.population import Population
+from hivpy.prep import PrEPType
 
 
 def test_at_risk_pop():
@@ -398,3 +399,34 @@ def test_prep_eligibility_all():
     stdev = sqrt(mean * (1 - 0.51))
     # expecting an additional 1% of the population to be risk informed
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
+
+
+def test_prep_usage():
+    N = 100
+    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.HARD_REACH] = False
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.HIV_STATUS] = False
+    pop.data[col.PREP_ELIGIBLE] = True
+    pop.data[col.PREP_ANY_WILLING] = True
+    pop.data[col.EVER_PREP] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    # tested explicitly to start prep
+    pop.data[col.PREP_ORAL_TESTED] = [True, False, False, False] * (N // 4)
+    pop.data[col.PREP_CAB_TESTED] = [False, True, False, False] * (N // 4)
+    pop.data[col.PREP_LEN_TESTED] = [False, False, True, False] * (N // 4)
+    pop.data[col.PREP_VR_TESTED] = [False, False, False, True] * (N // 4)
+
+    pop.prep.prep_usage(pop)
+    # prep types spread evenly among population
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Oral) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N/4
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = [True, False] * (N // 2)
+    pop.prep.prep_usage(pop)
+    # only 50% eligible to start prep for the first time
+    assert sum(pop.data[col.PREP_TYPE].isnull()) == N/2
