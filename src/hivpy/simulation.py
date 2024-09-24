@@ -43,8 +43,8 @@ class SimulationHandler:
     def intervention(self, pop, option):
         if option == 1:
             pop.sexual_behaviour.sw_program_start_date = pop.date - self.simulation_config.time_step
-        if option == 2:
-            pop.circumcision.policy_intervention_year = pop.date - self.simulation_config.time_step
+        if option == 2 and pop.date == datetime(2002, 1, 1):
+            pop.circumcision.policy_intervention_year = pop.date
         return pop
 
     def update_intervention(self, pop, option):

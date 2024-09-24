@@ -48,4 +48,13 @@ if option == 1:
 Alternative options can be added in a similar way. 
 
 #### Recurrent intervention 
-If the `repeat_intervention` is set to True in the configuration file, the intervention is set to repeat for every timestep after the intervention year. This option is currently hard-coded in the simulation module. The `update_intervention` function takes as input the population that needs to be modified and the intervention option value to be implemented and calls the `intervention` function per timestep. 
+If the `repeat_intervention` is set to True in the configuration file, the intervention is set to repeat for every timestep after the intervention year. The intervention option is currently hard-coded in the simulation module. The `update_intervention` function takes as input the population that needs to be modified and the intervention option value to be implemented and calls the `intervention` function per timestep. The start, duration and end of this intervention can be modified directly in the `intervention` function. 
+
+For example, to modify the date of the intervention year in the circumcision module given a specific date, say 01/01/2002, the `intervention` function will be changed to allow this under the option no.2:
+
+```bash
+ if option == 2 and pop.date == datetime(2002, 1, 1):
+            pop.circumcision.policy_intervention_year = pop.date
+```
+
+this option is implemented when calling: `update_intervention(pop, option=2)`
