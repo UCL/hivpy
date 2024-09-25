@@ -250,7 +250,6 @@ def test_prep_eligibility_women_only():
     eligible = len(pop.get_sub_pop([(col.PREP_ELIGIBLE, op.eq, True)]))
     mean = N * 0.5 * pop.prep.prob_risk_informed_prep
     stdev = sqrt(mean * (1 - 0.5 * pop.prep.prob_risk_informed_prep))
-    print("elig", eligible, "vs mean", mean)
     # expecting base % of half of the population to be risk informed
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
 
@@ -403,7 +402,7 @@ def test_prep_eligibility_all():
 
 def test_prep_usage():
     N = 100
-    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     pop.data[col.HARD_REACH] = False
     pop.data[col.HIV_DIAGNOSED] = False
