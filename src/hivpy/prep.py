@@ -52,7 +52,10 @@ class PrEPModule:
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.EVER_PREP, False)
-        pop.init_variable(col.FIRST_PREP_START_DATE, None)
+        pop.init_variable(col.FIRST_ORAL_START_DATE, None)
+        pop.init_variable(col.FIRST_CAB_START_DATE, None)
+        pop.init_variable(col.FIRST_LEN_START_DATE, None)
+        pop.init_variable(col.FIRST_VR_START_DATE, None)
         pop.init_variable(col.LAST_PREP_START_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
         pop.init_variable(col.PREP_ORAL_TESTED, False)
@@ -298,7 +301,7 @@ class PrEPModule:
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
 
-    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type, prep_tested_col):
+    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type, prep_tested_col, first_start_col):
         """
         Update people starting PrEP for the first time after testing to start PrEP.
         """
@@ -311,8 +314,7 @@ class PrEPModule:
             if len(starting_prep_pop) > 0:
                 pop.set_present_variable(col.PREP_TYPE, prep_type, starting_prep_pop)
                 pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
-                # FIXME: sub-divide first start dates by prep type
-                pop.set_present_variable(col.FIRST_PREP_START_DATE, pop.date, starting_prep_pop)
+                pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
 
     def prep_usage(self, pop: Population):
@@ -332,13 +334,17 @@ class PrEPModule:
                 pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)), self.get_presumed_hiv_neg_pop(pop)))
 
         # starting oral prep
-        self.tested_start_prep(pop, starting_prep_pop, PrEPType.Oral, col.PREP_ORAL_TESTED)
+        self.tested_start_prep(
+            pop, starting_prep_pop, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
         # starting injectable cab prep
-        self.tested_start_prep(pop, starting_prep_pop, PrEPType.Cabotegravir, col.PREP_CAB_TESTED)
+        self.tested_start_prep(
+            pop, starting_prep_pop, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
         # starting injectable len prep
-        self.tested_start_prep(pop, starting_prep_pop, PrEPType.Lenacapavir, col.PREP_LEN_TESTED)
+        self.tested_start_prep(
+            pop, starting_prep_pop, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
         # starting vr prep
-        self.tested_start_prep(pop, starting_prep_pop, PrEPType.VaginalRing, col.PREP_VR_TESTED)
+        self.tested_start_prep(
+            pop, starting_prep_pop, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
 
         # FIXME: not tested explicitly to start prep
         # starting_any_prep_pop = pop.get_sub_pop_intersection(
