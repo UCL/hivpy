@@ -45,8 +45,20 @@ class PrEPModule:
         self.prep_willing_threshold = self.p_data.prep_willing_threshold
         self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
+        # FIXME: add to yaml
+        # probability of starting prep in people who are eligible and willing
+        # tested for HIV according to base rate of testing
+        self.prob_base_prep_start = rng.choice([0.05, 0.1, 0.2])
 
     def init_prep_variables(self, pop: Population):
+        pop.init_variable(col.PREP_ORAL_RANK, 0)
+        pop.init_variable(col.PREP_CAB_RANK, 0)
+        pop.init_variable(col.PREP_LEN_RANK, 0)
+        pop.init_variable(col.PREP_VR_RANK, 0)
+        pop.init_variable(col.PREP_ORAL_WILLING, False)
+        pop.init_variable(col.PREP_CAB_WILLING, False)
+        pop.init_variable(col.PREP_LEN_WILLING, False)
+        pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
@@ -333,22 +345,63 @@ class PrEPModule:
             eligible, pop.get_sub_pop_union(
                 pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)), self.get_presumed_hiv_neg_pop(pop)))
 
-        # starting oral prep
+        # starting oral prep after testing
         self.tested_start_prep(
             pop, starting_prep_pop, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
-        # starting injectable cab prep
+        # starting injectable cab prep after testing
         self.tested_start_prep(
             pop, starting_prep_pop, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
-        # starting injectable len prep
+        # starting injectable len prep after testing
         self.tested_start_prep(
             pop, starting_prep_pop, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
-        # starting vr prep
+        # starting vr prep after testing
         self.tested_start_prep(
             pop, starting_prep_pop, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
 
-        # FIXME: not tested explicitly to start prep
-        # starting_any_prep_pop = pop.get_sub_pop_intersection(
-        #    starting_prep_pop, pop.get_sub_pop(AND(COND(col.PREP_ORAL_TESTED, op.eq, False),
-        #                                           COND(col.PREP_CAB_TESTED, op.eq, False),
-        #                                           COND(col.PREP_LEN_TESTED, op.eq, False),
-        #                                           COND(col.PREP_VR_TESTED, op.eq, False))))
+        # not tested explicitly to start prep
+        starting_prep_pop = pop.get_sub_pop_intersection(
+           starting_prep_pop, pop.get_sub_pop(AND(COND(col.PREP_ORAL_TESTED, op.eq, False),
+                                                  COND(col.PREP_CAB_TESTED, op.eq, False),
+                                                  COND(col.PREP_LEN_TESTED, op.eq, False),
+                                                  COND(col.PREP_VR_TESTED, op.eq, False))))
+
+        if len(starting_prep_pop) > 0:
+            # FIXME: can we pass the date to transform_group in a better way?
+            self.date = pop.date
+            # FIXME: using separate pref ranking columns for compatibility with
+            # transform group - not congruent with PR #199
+            prep_types = pop.transform_group([col.PREP_ORAL_RANK, col.PREP_CAB_RANK,
+                                              col.PREP_LEN_RANK, col.PREP_VR_RANK,
+                                              col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
+                                              col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
+                                             self.calc_willing_start_prep, sub_pop=starting_prep_pop)
+            pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
+
+    def calc_willing_start_prep(self, oral_pref, cab_pref, len_pref, vr_pref,
+                                oral_willing, cab_willing, len_willing, vr_willing, size):
+        """
+        Update people starting PrEP for the first time without explicitly testing to start PrEP.
+        """
+        # group pref ranks and willingness
+        prefs = [oral_pref, cab_pref, len_pref, vr_pref]
+        willing = [oral_willing, cab_willing, len_willing, vr_willing]
+
+        # zip prep type and willingness together and sort by pref rank
+        sorted_zipped = sorted(zip(range(4), willing), key=lambda x: prefs[x[0]])
+        sorted_dict = dict(sorted_zipped)
+
+        starting_prep = None
+        # find prep type someone is willing to take with the highest pref that is currently available
+        for prep_type in sorted_dict:
+            willing = sorted_dict[prep_type]
+            if self.date >= self.date_prep_intro[prep_type] and willing:
+                starting_prep = prep_type
+                break
+
+        # outcomes
+        r = rng.uniform(size=size)
+        # FIXME: may need different probabilities for different prep types
+        starting = r < self.prob_base_prep_start
+        prep = [starting_prep if s else None for s in starting]
+
+        return prep
