@@ -31,6 +31,9 @@ LTP_NEW = "ltp_new"                             # bool: True if condomless sex w
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
 LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has not short term partners o/w false
 LTP_INFECTION_DATE = "ltp_infection_date"       # date: date at which the long term partner gets infected o/w None if not infected
+LTP_DIAGNOSED = "ltp_diagnosed"                 # bool: True if a person's long term partner has been diagnosed, o/w false
+LTP_ART = "ltp_art"                             # bool: True if a person's long term partner is on ART
+LTP_VIRAL_SUPPRESSED = "ltp_viral_suppressed"   # bool: True if a person's long term partner is virally suppressed
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
 PREGNANT = "pregnant"                           # bool: True if a woman is currently pregnant
 ANC = "anc"                                     # bool: True if in antenatal care
@@ -39,6 +42,8 @@ LAST_PREGNANCY_DATE = "last_pregnancy_date"     # None | datetime.date: date of 
 NUM_CHILDREN = "num_children"                   # int: number of children a woman has
 NUM_HIV_CHILDREN = "num_HIV_children"           # int: number of children infected with HIV a woman has
 WANT_NO_CHILDREN = "want_no_children"           # bool: True if a woman does not want any more children
+
+ON_ART = "on_art"                               # bool: True if a person is currently on ART
 
 SEX_WORKER = "sex_worker"                       # bool: True if person is a sex worker, o/w False
 SW_AGE_GROUP = "sw_age_group"                   # int: categorises sex worker behaviour by age
