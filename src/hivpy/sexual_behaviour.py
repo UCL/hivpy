@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.resources
-import logging
 import operator
 from enum import IntEnum
 from typing import TYPE_CHECKING
@@ -158,6 +157,7 @@ class SexualBehaviourModule:
 
     def init_sex_behaviour(self, population: Population):
         population.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
+        population.init_variable(col.LAST_STP_DATE, None)
         population.init_variable(col.RISK, 1)
         population.init_variable(col.LONG_TERM_PARTNER, False)
         population.init_variable(col.LTP_NEW, False)
@@ -603,7 +603,7 @@ class SexualBehaviourModule:
         def get_ratio(sex, age):
             if (self.num_stp_of_age_sex_group[age][sex] > 0):
                 ratio = self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
-                logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
+                # logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
                 return ratio
             else:
                 return 1

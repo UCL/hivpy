@@ -1,5 +1,6 @@
 import importlib.resources
 import itertools
+# import logging
 import operator
 
 import numpy as np
@@ -666,7 +667,7 @@ def test_sex_balancing_effect():
         sb_module.update_sex_behaviour(pop)
         for a in range(5):
             for s in range(2):
-                if (sb_module.num_stp_of_age_sex_group[a][s] == 0):
+                if (sb_module.num_stp_of_age_sex_group[a][s] == 0 or sb_module.num_stp_in_age_sex_group[a][s] == 0):
                     ratio = 1
                 else:
                     ratio = (sb_module.num_stp_in_age_sex_group[a][s] /
