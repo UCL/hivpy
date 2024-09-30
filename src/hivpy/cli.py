@@ -1,7 +1,6 @@
 import argparse
 import pathlib
 
-
 import yaml
 
 from hivpy.experiment import create_experiment, run_experiment
