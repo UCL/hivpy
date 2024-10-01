@@ -426,6 +426,68 @@ def test_prep_usage():
 
     pop.data[col.PREP_TYPE] = None
     pop.data[col.EVER_PREP] = [True, False] * (N // 2)
+    pop.data[col.FIRST_ORAL_START_DATE] = None
+    pop.data[col.FIRST_CAB_START_DATE] = None
+    pop.data[col.FIRST_LEN_START_DATE] = None
+    pop.data[col.FIRST_VR_START_DATE] = None
+    pop.data[col.LAST_PREP_START_DATE] = None
     pop.prep.prep_usage(pop)
+
     # only 50% eligible to start prep for the first time
     assert sum(pop.data[col.PREP_TYPE].isnull()) == N/2
+    # check that people who aren't on a specific type of prep don't have start dates
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Oral) == (pop.data[col.FIRST_ORAL_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Cabotegravir) == (pop.data[col.FIRST_CAB_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
+    assert all(pop.data[col.PREP_TYPE].notnull() == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    # introduce different preference ranking distributions
+    pop.data[col.PREP_ORAL_RANK] = [1, 2, 3, 4] * (N // 4)
+    pop.data[col.PREP_CAB_RANK] = [2, 1, 2, 3] * (N // 4)
+    pop.data[col.PREP_LEN_RANK] = [3, 3, 1, 2] * (N // 4)
+    pop.data[col.PREP_VR_RANK] = [4, 4, 4, 1] * (N // 4)
+    # all willing to take any prep
+    pop.data[col.PREP_ORAL_WILLING] = True
+    pop.data[col.PREP_CAB_WILLING] = True
+    pop.data[col.PREP_LEN_WILLING] = True
+    pop.data[col.PREP_VR_WILLING] = True
+    # not tested explicitly to start prep
+    pop.data[col.PREP_ORAL_TESTED] = False
+    pop.data[col.PREP_CAB_TESTED] = False
+    pop.data[col.PREP_LEN_TESTED] = False
+    pop.data[col.PREP_VR_TESTED] = False
+    # 100% chance to start prep
+    pop.prep.prob_base_prep_start = 1
+
+    pop.prep.prep_usage(pop)
+    # everyone starts their most preferred prep type
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) == (pop.data[col.PREP_ORAL_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == (pop.data[col.PREP_LEN_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == (pop.data[col.PREP_VR_RANK] == 1))
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    # nobody is willing to take oral or cab
+    pop.data[col.PREP_ORAL_WILLING] = False
+    pop.data[col.PREP_CAB_WILLING] = False
+    pop.prep.prep_usage(pop)
+
+    # everyone is either on len or vr
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N * 0.75
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N * 0.25
+    # check that people who aren't on a specific type of prep don't have start dates
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
+    assert all(pop.data[col.LAST_PREP_START_DATE] == pop.date)
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(6000)]
+    pop.prep.prep_usage(pop)
+    # everyone is on len because vr is not yet available
+    assert all(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
+    assert all(pop.data[col.FIRST_LEN_START_DATE] == pop.date)
