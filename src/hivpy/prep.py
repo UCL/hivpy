@@ -375,7 +375,26 @@ class PrEPModule:
                                               col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
                                               col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
                                              self.calc_willing_start_prep, sub_pop=starting_prep_pop)
+            # FIXME: refactor assignments
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
+            pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
+            pop.set_present_variable(col.FIRST_ORAL_START_DATE, pop.date,
+                                     pop.get_sub_pop_intersection(
+                                         starting_prep_pop,
+                                         pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Oral))))
+            pop.set_present_variable(col.FIRST_CAB_START_DATE, pop.date,
+                                     pop.get_sub_pop_intersection(
+                                         starting_prep_pop,
+                                         pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir))))
+            pop.set_present_variable(col.FIRST_LEN_START_DATE, pop.date,
+                                     pop.get_sub_pop_intersection(
+                                         starting_prep_pop,
+                                         pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir))))
+            pop.set_present_variable(col.FIRST_VR_START_DATE, pop.date,
+                                     pop.get_sub_pop_intersection(
+                                         starting_prep_pop,
+                                         pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.VaginalRing))))
+            pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
 
     def calc_willing_start_prep(self, oral_pref, cab_pref, len_pref, vr_pref,
                                 oral_willing, cab_willing, len_willing, vr_willing, size):
