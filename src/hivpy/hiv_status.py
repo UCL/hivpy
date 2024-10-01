@@ -477,20 +477,24 @@ class HIVStatusModule:
         ltp_off_ART = population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                  COND(col.LTP_ART, op.eq, False)))
 
-        proportion_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
-                                                                     COND(col.ON_ART, op.eq, True),
-                                                                     COND(col.AGE, op.ge, 15),
-                                                                     COND(col.AGE, op.lt, 65)))) / \
-            len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
-                                           COND(col.AGE, op.ge, 15),
-                                           COND(col.AGE, op.lt, 15))))
-        proportion_LTP_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
-                                                                     COND(col.LTP_ART, op.eq, True),
-                                                                     COND(col.AGE, op.ge, 15),
-                                                                     COND(col.AGE, op.lt, 65)))) / \
-            len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
-                                           COND(col.AGE, op.ge, 15),
-                                           COND(col.AGE, op.lt, 15))))
+        num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
+                                                              COND(col.ON_ART, op.eq, True),
+                                                              COND(col.AGE, op.ge, 15),
+                                                              COND(col.AGE, op.lt, 65))))
+        num_diagnosed = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
+                                                       COND(col.AGE, op.ge, 15),
+                                                       COND(col.AGE, op.lt, 15))))
+        proportion_diagnosed_on_art = num_diagnosed_on_art / num_diagnosed
+
+        num_ltp_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
+                                                                  COND(col.LTP_ART, op.eq, True),
+                                                                  COND(col.AGE, op.ge, 15),
+                                                                  COND(col.AGE, op.lt, 65))))
+        num_ltp_diagnosed = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
+                                                           COND(col.AGE, op.ge, 15),
+                                                           COND(col.AGE, op.lt, 15))))
+        proportion_LTP_diagnosed_on_art = num_ltp_diagnosed_on_art / num_ltp_diagnosed
+
         diff_proportion_on_art = proportion_diagnosed_on_art - proportion_LTP_diagnosed_on_art
 
         prob_start_ART = 0
@@ -519,22 +523,23 @@ class HIVStatusModule:
         remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < 0.97
 
         # chance of becoming virally suppressed if not previously suppressed
-        proportion_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                                     COND(col.AGE, op.lt, 65),
-                                                                     COND(col.ON_ART, op.eq, True),
-                                                                     COND(col.VIRAL_SUPPRESSION, True)))) / \
-            len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                           COND(col.AGE, op.lt, 65),
-                                           COND(col.ON_ART, op.eq, True),
-                                           COND(col.VIRAL_SUPPRESSION, False))))
-        proportion_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                                         COND(col.AGE, op.lt, 65),
-                                                                         COND(col.LTP_ART, op.eq, True),
-                                                                         COND(col.LTP_VIRAL_SUPPRESSED, True)))) / \
-            len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                           COND(col.AGE, op.lt, 65),
-                                           COND(col.LTP_ART, op.eq, True),
-                                           COND(col.LTP_VIRAL_SUPPRESSED, False))))
+        num_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                              COND(col.AGE, op.lt, 65),
+                                                              COND(col.ON_ART, op.eq, True),
+                                                              COND(col.VIRAL_SUPPRESSION, True))))
+        num_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                    COND(col.AGE, op.lt, 65),
+                                                    COND(col.ON_ART, op.eq, True))))
+        proportion_viral_suppressed =  num_viral_suppressed / num_on_art
+            
+        num_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                                  COND(col.AGE, op.lt, 65),
+                                                                  COND(col.LTP_ART, op.eq, True),
+                                                                  COND(col.LTP_VIRAL_SUPPRESSED, True))))
+        num_ltp_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                        COND(col.AGE, op.lt, 65),
+                                                        COND(col.LTP_ART, op.eq, True))))
+        proportion_ltp_viral_suppressed = num_ltp_viral_suppressed / num_ltp_on_art
         diff_proportion_viral_suppressed = proportion_viral_suppressed - proportion_ltp_viral_suppressed
         prob_viral_suppressed = 0
         if (diff_proportion_viral_suppressed > 0 and diff_proportion_viral_suppressed < 0.05):
