@@ -41,12 +41,29 @@ class PrEPModule:
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
 
+        self.prep_oral_pref_beta = rng.choice([1.1, 1.3, 1.5])
+        self.prep_cab_pref_beta = self.prep_oral_pref_beta + 0.3
+        self.prep_len_pref_beta = self.prep_cab_pref_beta
+        self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
+        self.vl_prevalence_affects_prep = rng.choice([True, False], p=[1/3, 2/3])
+        self.vl_prevalence_prep_threshold = rng.choice([0.005, 0.01])
+
         self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
         self.prep_willing_threshold = self.p_data.prep_willing_threshold
         self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
     def init_prep_variables(self, pop: Population):
+        pop.init_variable(col.PREP_ORAL_PREF, 0)
+        pop.init_variable(col.PREP_CAB_PREF, 0)
+        pop.init_variable(col.PREP_LEN_PREF, 0)
+        pop.init_variable(col.PREP_VR_PREF, 0)
+        pop.init_variable(col.PREP_PREF_RANKED, None)
+        pop.init_variable(col.PREP_ORAL_WILLING, False)
+        pop.init_variable(col.PREP_CAB_WILLING, False)
+        pop.init_variable(col.PREP_LEN_WILLING, False)
+        pop.init_variable(col.PREP_VR_WILLING, False)
+        pop.init_variable(col.PREP_ANY_WILLING, False)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
@@ -90,6 +107,88 @@ class PrEPModule:
                                    COND(col.LTP_ON_ART, op.eq, False),
                                    COND(col.LTP_HIV_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
+
+    def set_prep_preference(self, pop: Population, date_intro, pref_beta, pref_col, willing_col, sub_pop_mod=None):
+        """
+        Set preference values for a specific type of PrEP and determine willingness.
+        """
+        if pop.date >= date_intro:
+            # find those who turned 15 this time step
+            sub_pop = pop.get_sub_pop([(col.AGE, op.eq, 15)])
+            # unless the current date is the introduction date
+            if pop.date == date_intro:
+                # then find all over 15s
+                sub_pop = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+            # find intersection if further modifications should be made to the sub-pop
+            if sub_pop_mod is not None:
+                sub_pop = pop.get_sub_pop_intersection(sub_pop, sub_pop_mod)
+
+            # random preference beta distribution
+            pref = rng.beta(pref_beta, 5, size=len(sub_pop))
+            pop.set_present_variable(pref_col, pref, sub_pop)
+            # determine willingness by comparing to threshold
+            willingness = pref > self.prep_willing_threshold
+            pop.set_present_variable(willing_col, willingness, sub_pop)
+            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
+
+    def prep_willingness(self, pop: Population):
+        """
+        Determine which individuals are willing to take PrEP, as well as their PrEP preferences.
+        """
+        # initial preference values
+        init_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # oral prep pref + willingness
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral], self.prep_oral_pref_beta,
+                                 col.PREP_ORAL_PREF, col.PREP_ORAL_WILLING)
+        # injectable prep pref + willingness
+        # FIXME: should Cab be controlled by an availability flag instead of introduction date?
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir], self.prep_cab_pref_beta,
+                                 col.PREP_CAB_PREF, col.PREP_CAB_WILLING)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir], self.prep_len_pref_beta,
+                                 col.PREP_LEN_PREF, col.PREP_LEN_WILLING)
+        # vr prep pref + willingness (women only)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
+                                 col.PREP_VR_PREF, col.PREP_VR_WILLING,
+                                 sub_pop_mod=pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))
+
+        # new preference values
+        new_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # find people whose preference has changed this time step
+        changed_pref_pop = new_prefs.compare(init_prefs).index
+
+        if len(changed_pref_pop) > 0:
+            # get ranking outcomes
+            # FIXME: not sure if transform group is the best way to do this, but it works for now
+            pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
+                                              col.PREP_LEN_PREF, col.PREP_VR_PREF],
+                                             self.calc_prep_pref_ranks, sub_pop=changed_pref_pop, use_size=False)
+            pop.set_present_variable(col.PREP_PREF_RANKED, pref_ranks)
+
+        # FIXME: do we need to keep track of everyone's highest PrEP preference here?
+        # having the actual ranking may be more useful depending on availability
+
+        gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
+        # find prevalence of people with a viral load of over 1000
+        vl_prevalence = (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.gt, 1000),
+                                              (col.AGE, op.ge, 15),
+                                              (col.AGE, op.lt, 50)])) / gen_pop
+                         if gen_pop > 0 else 0)
+
+        # there's a chance nobody is willing to take PrEP if unsuppressed viral load prevalence is too low
+        if self.vl_prevalence_affects_prep and vl_prevalence < self.vl_prevalence_prep_threshold:
+            pop.set_present_variable(col.PREP_ORAL_WILLING, False)
+            pop.set_present_variable(col.PREP_CAB_WILLING, False)
+            pop.set_present_variable(col.PREP_LEN_WILLING, False)
+            pop.set_present_variable(col.PREP_VR_WILLING, False)
+            pop.set_present_variable(col.PREP_ANY_WILLING, False)
+
+    def calc_prep_pref_ranks(self, oral_pref, cab_pref, len_pref, vr_pref):
+        """
+        Calculates PrEP preference rankings based on all preference values.
+        """
+        prefs = [oral_pref, cab_pref, len_pref, vr_pref]
+        sorted_pref_indices = sorted(range(len(prefs)), key=lambda x: prefs[x], reverse=True)
+        return [[PrEPType(i) for i in sorted_pref_indices]]
 
     def prep_eligibility(self, pop: Population):
         """
