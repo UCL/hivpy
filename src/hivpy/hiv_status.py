@@ -98,18 +98,12 @@ class HIVStatusModule:
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
     def init_HIV_variables(self, population: Population):
+        # Personal HIV status / progression
         population.init_variable(col.HIV_STATUS, False)
-        population.init_variable(col.LTP_STATUS, False)
-        population.init_variable(col.LTP_MONOGAMOUS, False)
-        population.init_variable(col.LTP_INFECTION_DATE, None)
-        population.init_variable(col.LTP_ART, False)
-        population.init_variable(col.LTP_VIRAL_SUPRESSED, False)
         population.init_variable(col.RISK_LTP_INFECTED, 0.0)
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
-        population.init_variable(col.LTP_IN_PRIMARY, False)
-        population.init_variable(col.LTP_DIAGNOSED, False)
         population.init_variable(col.RESISTANCE_MUTATIONS, 0)
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
@@ -121,6 +115,18 @@ class HIVStatusModule:
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
 
+        # Long term partners
+        population.init_variable(col.LTP_STATUS, False)
+        population.init_variable(col.RECENT_LTP_STATUS, False)
+        population.init_variable(col.LTP_DIAGNOSED, False)
+        population.init_variable(col.RECENT_LTP_DIAGNOSED, False)
+        population.init_variable(col.LTP_IN_PRIMARY, False)
+        population.init_variable(col.LTP_MONOGAMOUS, False)
+        population.init_variable(col.LTP_INFECTION_DATE, None)
+        population.init_variable(col.LTP_ART, False)
+        population.init_variable(col.LTP_VIRAL_SUPPRESSED, False)
+
+        # Disease
         population.init_variable(col.WHO3_EVENT, False)
         population.init_variable(col.NON_TB_WHO3, False)
         population.init_variable(col.TB, False)
@@ -564,6 +570,15 @@ class HIVStatusModule:
         population.set_present_variable(col.LTP_DIAGNOSED, False, sub_pop)
         population.set_present_variable(col.LTP_ART, False, sub_pop)
 
+    def update_recent_ltp_status(self, population: Population):
+        # Updates recent LTP status for people with LTPs
+        # People without LTPs are unchanged (i.e. fixed from previous partner)
+        people_with_ltp = population.get_sub_pop(COND(col.LONG_TERM_PARTNER, op.eq, True))
+        ltp_statuses = population.get_variable(col.LTP_STATUS, people_with_ltp)
+        ltp_diagnoses = population.get_variable(col.LTP_DIAGNOSED, people_with_ltp)
+        population.set_present_variable(col.RECENT_LTP_STATUS, ltp_statuses, people_with_ltp)
+        population.set_present_variable(col.RECENT_LTP_DIAGNOSED, ltp_diagnoses, people_with_ltp)
+
     def get_hiv_status_difference(self, sex, population: Population):
         """
         Gets the different in the number of people of a given sex who are HIV negative and who have infected LTP,
@@ -631,14 +646,18 @@ class HIVStatusModule:
                 if len(opposite_sex) != 0:
                     self.prevalence[sex][age_group] = len(opposite_sex_with_hiv) / len(opposite_sex)
 
-            def calculate_new_ltp_infection(sex, age_group, size):
+            def calculate_new_ltp_infection(sex, age_group, recent_ltp_status, size):
+                # 50% chance a "new" LTP is return to condomless sex with most recent LTP
+                former_ltp = rng.uniform(size=size) < 0.5
+                
+                
                 infected = (rng.uniform(0, 1, size) < 0.5) | (rng.uniform(0, 1, size) <
                                                               self.prevalence[sex][age_group])
                 return infected
 
             people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
 
-            new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP],
+            new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP, col.RECENT_LTP_STATUS],
                                                           calculate_new_ltp_infection,
                                                           use_size=True,
                                                           sub_pop=people_with_new_ltp)
