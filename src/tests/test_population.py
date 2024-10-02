@@ -117,3 +117,21 @@ def test_unions():
     # union
     union = pop.get_sub_pop_union(males, over25, under10)
     assert all(expectation == union)
+
+
+def test_population_deep_copy():
+    """
+    Assert that a deep copy of the population is generated for the intervention
+    """
+    from copy import deepcopy
+
+    size = 1000
+    pop = Population(size=size, start_date=date(1989, 1, 1))
+    pop_intervention = deepcopy(pop)
+    pop_intervention.set_present_variable(col.TEST_MARK, True)
+    pop_for_testing = pop.get_variable(col.TEST_MARK)
+    modified_pop_for_testing = pop_intervention.get_variable(col.TEST_MARK)
+
+    # assert pop_intervention is not a shallow copy
+    assert sum(pop_for_testing) == 0
+    assert sum(modified_pop_for_testing) == 1000

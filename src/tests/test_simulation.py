@@ -70,3 +70,67 @@ def test_death_occurs(tmp_path):
     # ...and that there is at least one death overall!
     # FIXME This is not guaranteed at the moment because of the values used
     # assert results.num_alive[-1] < results.num_alive[0]
+
+
+def test_error_intervention_before_start(tmp_path):
+    """
+    Ensure that we throw an error if the intervention date is before the start.
+    """
+    start = date(1989, 1)
+    end = date(1995, 1)
+    intervention = start - timedelta(days=365)
+    with pytest.raises(SimulationException):
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
+                         graph_outputs=[], intervention_date=intervention, population_size=100)
+
+
+def test_error_intervention_after_end(tmp_path):
+    """
+    Ensure that we throw an error if the intervention date is after the end.
+    """
+    start = date(1989, 1)
+    end = date(1995, 1)
+    intervention = end + timedelta(days=365)
+    with pytest.raises(SimulationException):
+        SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
+                         graph_outputs=[], intervention_date=intervention, population_size=100)
+
+
+def test_intervention_option(tmp_path):
+    """
+    Assert that the option number is implemented
+    In this case for the sexual worker program start date
+    """
+    size = 1000
+    start = date(1989, 1)
+    step = timedelta(days=90)
+    end = date(1995, 1)
+    intervention = date(1992, 1)
+    option = -1
+    config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option)
+    simulation_handler = SimulationHandler(config)
+
+    simulation_handler.run()
+
+    modified_date = simulation_handler.modified_population.sexual_behaviour.sw_program_start_date
+    assert modified_date == intervention
+
+
+def test_recurrent_intervention(tmp_path):
+    """
+    Assert that the intervention is being updated when required
+    And with a different option number and date
+    """
+    size = 1000
+    start = date(1989, 1)
+    step = timedelta(days=90)
+    end = date(2005, 1)
+    intervention = date(2000, 1)
+    option = -2
+    repeat_interv = True
+    config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option, repeat_interv)
+    simulation_handler = SimulationHandler(config)
+
+    simulation_handler.run()
+
+    assert simulation_handler.modified_population.circumcision.policy_intervention_year == date(2002, 1, 1)
