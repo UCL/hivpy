@@ -45,11 +45,19 @@ def test_prep_willingness():
     # willingness calculated for over 15s
     pop.date = date(2000, 1, 1)
     pop.prep.prep_willingness(pop)
+    
+    under_15s = pop.get_sub_pop(COND(col.AGE, op.lt, 15))
+    over_15s = pop.get_sub_pop(COND(col.AGE, op.ge, 15))
     # some oral willingness established
-    assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
-    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
-    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
-    assert sum(pop.data[col.PREP_VR_WILLING]) == 0
+    assert sum(pop.get_variable(col.PREP_ORAL_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, under_15s)) == 0
+    
+    assert sum(pop.get_variable(col.PREP_ORAL_WILLING, over_15s)) > 0
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
     # check for highest preference
     assert all([i[0] is PrEPType.Oral for i in pop.data[col.PREP_PREF_RANKED]])
 
