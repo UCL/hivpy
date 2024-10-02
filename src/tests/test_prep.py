@@ -25,9 +25,9 @@ def reset_prep_willingness_cols(pop: Population):
 def test_prep_willingness():
     N = 100
     pop = Population(size=N, start_date=date(1999, 1, 1))
-    pop.data[col.AGE] = 20
+    pop.data[col.AGE] = [10, 20] * (N // 2)
     pop.data[col.VIRAL_LOAD] = 10000
-    # make all prep types available
+    # all prep types have different intro dates
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     # adjust chances of higher preference
     pop.prep.prep_oral_pref_beta = 3
@@ -42,56 +42,67 @@ def test_prep_willingness():
     pop.prep.prep_willingness(pop)
     assert sum(pop.data[col.PREP_ANY_WILLING]) == 0
 
-    # willingness calculated for over 15s
+    # find sub-pops
+    under_15s = pop.get_sub_pop([(col.AGE, op.lt, 15)])
+    over_15s = pop.get_sub_pop([(col.AGE, op.ge, 15)])
+    # willingness calculated for under and over 15s
     pop.date = date(2000, 1, 1)
     pop.prep.prep_willingness(pop)
-    
-    under_15s = pop.get_sub_pop(COND(col.AGE, op.lt, 15))
-    over_15s = pop.get_sub_pop(COND(col.AGE, op.ge, 15))
-    # some oral willingness established
+
+    # no willingness established for under 15s
     assert sum(pop.get_variable(col.PREP_ORAL_WILLING, under_15s)) == 0
-    assert sum(pop.get_variable(col.PREP_CAB_WILLING, under_15s)) == 0
-    assert sum(pop.get_variable(col.PREP_LEN_WILLING, under_15s)) == 0
-    assert sum(pop.get_variable(col.PREP_VR_WILLING, under_15s)) == 0
-    
+    assert sum(pop.get_variable(col.PREP_ANY_WILLING, under_15s)) == 0
+    # some oral willingness established for over 15s
     assert sum(pop.get_variable(col.PREP_ORAL_WILLING, over_15s)) > 0
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check for highest preference
-    assert all([i[0] is PrEPType.Oral for i in pop.data[col.PREP_PREF_RANKED]])
+    # check for highest preference (ignore floats to discount nan values for under 15s)
+    assert all([i[0] is PrEPType.Oral for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(3000, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some  inj willingness established
-    assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
-    assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
-    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
-    assert sum(pop.data[col.PREP_VR_WILLING]) == 0
-    # check for highest preference
-    assert all([i[0] is PrEPType.Cabotegravir for i in pop.data[col.PREP_PREF_RANKED]])
+
+    # no willingness established for under 15s
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_ANY_WILLING, under_15s)) == 0
+    # some cab willingness established for over 15s
+    assert sum(pop.get_variable(col.PREP_ORAL_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) > 0
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
+    # check for highest preference (ignore floats to discount nan values for under 15s)
+    assert all([i[0] is PrEPType.Cabotegravir for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(4000, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some  inj willingness established
-    assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
-    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
-    assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
-    assert sum(pop.data[col.PREP_VR_WILLING]) == 0
-    # check for highest preference
-    assert all([i[0] is PrEPType.Lenacapavir for i in pop.data[col.PREP_PREF_RANKED]])
+
+    # no willingness established for under 15s
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_ANY_WILLING, under_15s)) == 0
+    # some len willingness established for over 15s
+    assert sum(pop.get_variable(col.PREP_ORAL_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) > 0
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
+    # check for highest preference (ignore floats to discount nan values for under 15s)
+    assert all([i[0] is PrEPType.Lenacapavir for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
 
     reset_prep_willingness_cols(pop)
     pop.date = date(5000, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some vr willingness established
-    assert sum(pop.data[col.PREP_ORAL_WILLING]) == 0
-    assert sum(pop.data[col.PREP_CAB_WILLING]) == 0
-    assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
-    assert sum(pop.data[col.PREP_VR_WILLING]) > 0
-    # check for highest preference (ignore floats to weed out nan values for men)
+
+    # no willingness established for under 15s
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, under_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_ANY_WILLING, under_15s)) == 0
+    # some vr willingness established for over 15s
+    assert sum(pop.get_variable(col.PREP_ORAL_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
+    assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) > 0
+    # check for highest preference (ignore floats to discount nan values for men and under 15s)
     assert all([i[0] is PrEPType.VaginalRing for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
 
     # willingness calculated for those who turned 15 this time step
@@ -108,7 +119,7 @@ def test_prep_willingness():
     reset_prep_willingness_cols(pop)
     pop.date = date(3020, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some oral + inj willingness established
+    # some oral + cab willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
     assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) == 0
@@ -117,7 +128,7 @@ def test_prep_willingness():
     reset_prep_willingness_cols(pop)
     pop.date = date(4020, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some oral + inj willingness established
+    # some oral + cab + len willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
     assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
@@ -126,7 +137,7 @@ def test_prep_willingness():
     reset_prep_willingness_cols(pop)
     pop.date = date(5020, 1, 1)
     pop.prep.prep_willingness(pop)
-    # some oral + inj + vr willingness established
+    # some oral + cab + len + vr willingness established
     assert sum(pop.data[col.PREP_ORAL_WILLING]) > 0
     assert sum(pop.data[col.PREP_CAB_WILLING]) > 0
     assert sum(pop.data[col.PREP_LEN_WILLING]) > 0
