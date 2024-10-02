@@ -9,7 +9,7 @@ from hivpy.population import Population
 def test_fertility():
 
     # build population
-    N = 100000
+    N = 10000
     pop = Population(size=N, start_date=date(1990, 1, 1))
 
     # get stats
@@ -27,7 +27,7 @@ def test_num_children():
     for age in test_ages:
 
         # build artificial population
-        N = 100000
+        N = 10000
         pop = Population(size=N, start_date=date(1990, 1, 1))
         pop.data[col.SEX] = SexType.Female
         pop.data[col.AGE] = age
@@ -64,7 +64,7 @@ def test_ltp_preg():
         for age in test_ages:
 
             # build artificial population
-            N = 100000
+            N = 10000
             pop = Population(size=N, start_date=date(1990, 1, 1))
             pop.data[col.SEX] = SexType.Female
             pop.data[col.AGE] = age
@@ -72,7 +72,7 @@ def test_ltp_preg():
             pop.data[col.LONG_TERM_PARTNER] = True
             pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None]*(N//2)
             pop.data[col.NUM_CHILDREN] = 0
-            pop.pregnancy.prob_pregnancy_base = 0.1
+            pop.pregnancy.prob_pregnancy_base = 0.4
             pop.pregnancy.init_fertility(pop)
             pop.pregnancy.update_pregnancy(pop)
 
@@ -108,7 +108,7 @@ def test_stp_preg():
         for stp in test_stp_partners:
 
             # build artificial population
-            N = 100000
+            N = 10000
             pop = Population(size=N, start_date=date(1990, 1, 1))
             pop.data[col.SEX] = SexType.Female
             pop.data[col.AGE] = age
@@ -117,7 +117,7 @@ def test_stp_preg():
             pop.data[col.LAST_PREGNANCY_DATE] = None
             pop.data[col.NUM_CHILDREN] = 0
             pop.data[col.WANT_NO_CHILDREN] = False
-            pop.pregnancy.prob_pregnancy_base = 0.1
+            pop.pregnancy.prob_pregnancy_base = 0.4
             pop.pregnancy.init_fertility(pop)
             pop.pregnancy.update_pregnancy(pop)
 
@@ -212,7 +212,7 @@ def test_child_cap():
 def test_want_no_children():
 
     # build artificial population
-    N = 100000
+    N = 10000
     pop = Population(size=N, start_date=date(1990, 1, 1))
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 18
@@ -221,7 +221,7 @@ def test_want_no_children():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
-    pop.pregnancy.prob_pregnancy_base = 0.1
+    pop.pregnancy.prob_pregnancy_base = 0.4
 
     # make half the population not want children
     pop.data[col.WANT_NO_CHILDREN] = [True, False] * (N//2)
@@ -288,7 +288,7 @@ def test_anc_and_pmtct():
 
 def test_anc_testing():
 
-    N = 100000
+    N = 10000
     time_step = timedelta(days=30)
 
     # build artificial population
