@@ -41,15 +41,12 @@ class SimulationHandler:
                                      self.simulation_config.start_date)
 
     def intervention(self, pop, option):
-        if option == 1:
+        # Negative intervention options have been reserved for demonstration / testing
+        if option == -1:
             pop.sexual_behaviour.sw_program_start_date = pop.date - self.simulation_config.time_step
-        if option == 2 and pop.date == datetime(2002, 1, 1):
+        elif option == -2 and pop.date == datetime(2002, 1, 1):
             pop.circumcision.policy_intervention_year = pop.date
         return pop
-
-    def update_intervention(self, pop, option):
-        intervention_pop = self.intervention(pop, option)
-        return intervention_pop
 
     def run(self):
 
@@ -89,7 +86,7 @@ class SimulationHandler:
                 self.intervention_output.update_summary_stats(date, self.modified_population, time_step)
                 # repeat intervention according to option number
                 if self.simulation_config.recurrent_intervention:
-                    self.modified_population = self.update_intervention(self.modified_population, option=2)
+                    self.modified_population = self.intervention(self.modified_population, interv_option)
 
                 # no intervention
                 self.population = self.population.evolve(time_step)

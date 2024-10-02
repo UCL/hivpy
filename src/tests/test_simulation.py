@@ -106,7 +106,7 @@ def test_intervention_option(tmp_path):
     step = timedelta(days=90)
     end = date(1995, 1)
     intervention = date(1992, 1)
-    option = 1
+    option = -1
     config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option)
     simulation_handler = SimulationHandler(config)
 
@@ -126,7 +126,7 @@ def test_recurrent_intervention(tmp_path):
     step = timedelta(days=90)
     end = date(2005, 1)
     intervention = date(2000, 1)
-    option = 1
+    option = -2
     repeat_interv = True
     config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option, repeat_interv)
     simulation_handler = SimulationHandler(config)
