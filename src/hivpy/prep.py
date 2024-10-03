@@ -66,7 +66,6 @@ class PrEPModule:
         pop.init_variable(col.PREP_CAB_RANK, 0)
         pop.init_variable(col.PREP_LEN_RANK, 0)
         pop.init_variable(col.PREP_VR_RANK, 0)
-        pop.init_variable(col.PREP_PREF_RANKED, None)
         pop.init_variable(col.PREP_ORAL_WILLING, False)
         pop.init_variable(col.PREP_CAB_WILLING, False)
         pop.init_variable(col.PREP_LEN_WILLING, False)
@@ -212,10 +211,11 @@ class PrEPModule:
             pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
                                               col.PREP_LEN_PREF, col.PREP_VR_PREF],
                                              self.calc_prep_pref_ranks, sub_pop=changed_pref_pop, use_size=False)
-            pop.set_present_variable(col.PREP_PREF_RANKED, pref_ranks)
-
-        # FIXME: do we need to keep track of everyone's highest PrEP preference here?
-        # having the actual ranking may be more useful depending on availability
+            # set ranks for each prep type
+            pop.set_present_variable(col.PREP_ORAL_RANK, [i[0] for i in pref_ranks], changed_pref_pop)
+            pop.set_present_variable(col.PREP_CAB_RANK, [i[1] for i in pref_ranks], changed_pref_pop)
+            pop.set_present_variable(col.PREP_LEN_RANK, [i[2] for i in pref_ranks], changed_pref_pop)
+            pop.set_present_variable(col.PREP_VR_RANK, [i[3] for i in pref_ranks], changed_pref_pop)
 
         gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
         # find prevalence of people with a viral load of over 1000
@@ -234,11 +234,16 @@ class PrEPModule:
 
     def calc_prep_pref_ranks(self, oral_pref, cab_pref, len_pref, vr_pref):
         """
-        Calculates PrEP preference rankings based on all preference values.
+        Returns PrEP preference rankings based on all preference values.
         """
+        ranks = [0, 0, 0, 0]
         prefs = [oral_pref, cab_pref, len_pref, vr_pref]
+        # reverse sort preference values (position indicates rank, value indicates prep type)
         sorted_pref_indices = sorted(range(len(prefs)), key=lambda x: prefs[x], reverse=True)
-        return [[PrEPType(i) for i in sorted_pref_indices]]
+        # assign rank per prep type (position indicates prep type, value indicates rank)
+        for i in range(len(prefs)):
+            ranks[sorted_pref_indices[i]] = i+1
+        return [ranks]
 
     def prep_eligibility(self, pop: Population):
         """
@@ -493,14 +498,14 @@ class PrEPModule:
     def calc_willing_start_prep(self, oral_pref, cab_pref, len_pref, vr_pref,
                                 oral_willing, cab_willing, len_willing, vr_willing, size):
         """
-        Update people starting PrEP for the first time without explicitly testing to start PrEP.
+        Returns PrEP types for people starting PrEP for the first time without explicitly
+        testing to start PrEP. Individual preferences and availability are taken into account.
         """
         # group pref ranks and willingness
         prefs = [oral_pref, cab_pref, len_pref, vr_pref]
         willing = [oral_willing, cab_willing, len_willing, vr_willing]
-
         # zip prep type and willingness together and sort by pref rank
-        sorted_zipped = sorted(zip(range(4), willing), key=lambda x: prefs[x[0]])
+        sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
         sorted_dict = dict(sorted_zipped)
 
         starting_prep = None

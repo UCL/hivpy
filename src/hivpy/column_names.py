@@ -98,7 +98,6 @@ PREP_ORAL_RANK = "prep_oral_rank"               # int: an individual's preferenc
 PREP_CAB_RANK = "prep_cab_rank"                 # int: an individual's preference ranking for injectable Cabotegravir PrEP
 PREP_LEN_RANK = "prep_len_rank"                 # int: an individual's preference ranking for injectable Lenacapavir PrEP
 PREP_VR_RANK = "prep_vr_rank"                   # int: an individual's preference ranking for vaginal ring PrEP
-PREP_PREF_RANKED = "prep_pref_ranked"           # None | prep.PrEPType(enum) list: a ranked list of PrEP type preferences
 PREP_ORAL_WILLING = "prep_oral_willing"         # Bool: True if an individual is willing to use oral PrEP
 PREP_CAB_WILLING = "prep_cab_willing"           # Bool: True if an individual is willing to use injectable Cabotegravir PrEP
 PREP_LEN_WILLING = "prep_len_willing"           # Bool: True if an individual is willing to use injectable Lenacapavir PrEP
