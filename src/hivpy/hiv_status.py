@@ -97,6 +97,8 @@ class HIVStatusModule:
         self.cm_mortality_factor = rng.choice([3, 5, 10])
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
+    ## Initialisation ----------------------------------------------------------------------------------
+
     def init_HIV_variables(self, population: Population):
         # Personal HIV status / progression
         population.init_variable(col.HIV_STATUS, False)
@@ -168,6 +170,8 @@ class HIVStatusModule:
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
         self.initialise_HIV_progression(population, newly_infected)
 
+    ## Updating Statistics -----------------------------------------------------------------------------
+
     def update_partner_risk_vectors(self, population: Population):
         """
         Calculate the risk factor associated with each sex and age group.
@@ -222,47 +226,7 @@ class HIVStatusModule:
                 else:
                     self.ratio_non_monogamous_primary[sex][age_group] = len(non_monogamous_pos) / num_non_monogamous
 
-    def set_primary_infection(self, population: Population):
-        # Update primary infection status
-        past_primary_infection = population.get_sub_pop(
-            [(col.DATE_HIV_INFECTION, op.le, population.date - timedelta(days=90))])
-        population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
-
-    def set_viral_load_groups(self, population: Population):
-        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
-        population.set_present_variable(col.VIRAL_LOAD_GROUP,
-                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
-                                                    np.array([2.7, 3.7, 4.7, 5.7])),
-                                        HIV_positive_pop)
-
-    def init_resistance_mutations(self, population: Population):
-        """
-        Initialise drug resistance mutations at the start of the simulation to False.
-        """
-        population.init_variable(col.TA_MUTATION, False)
-        population.init_variable(col.M184_MUTATION, False)
-        population.init_variable(col.K65_MUTATION, False)
-        population.init_variable(col.Q151_MUTATION, False)
-        population.init_variable(col.K103_MUTATION, False)
-        population.init_variable(col.Y181_MUTATION, False)
-        population.init_variable(col.G190_MUTATION, False)
-        population.init_variable(col.P32_MUTATION, False)
-        population.init_variable(col.P33_MUTATION, False)
-        population.init_variable(col.P46_MUTATION, False)
-        population.init_variable(col.P47_MUTATION, False)
-        population.init_variable(col.P50L_MUTATION, False)
-        population.init_variable(col.P50V_MUTATION, False)
-        population.init_variable(col.P54_MUTATION, False)
-        population.init_variable(col.P76_MUTATION, False)
-        population.init_variable(col.P82_MUTATION, False)
-        population.init_variable(col.P84_MUTATION, False)
-        population.init_variable(col.P88_MUTATION, False)
-        population.init_variable(col.P90_MUTATION, False)
-        population.init_variable(col.IN118_MUTATION, False)
-        population.init_variable(col.IN140_MUTATION, False)
-        population.init_variable(col.IN148_MUTATION, False)
-        population.init_variable(col.IN155_MUTATION, False)
-        population.init_variable(col.IN263_MUTATION, False)
+    ## Short Term Partner Transmission -----------------------------------------------------------------
 
     def stp_HIV_transmission(self, person):
         """
@@ -302,6 +266,8 @@ class HIVStatusModule:
                     break
 
         return infection
+
+    ## Long Term Partner Transmission and Progression --------------------------------------------------
 
     def set_ltp_age_groups(self, population: Population):
         age_groups = np.digitize(population.get_variable(col.AGE), [15, 25, 35, 45, 55, 65])
@@ -428,7 +394,6 @@ class HIVStatusModule:
                                                       > (ratio_concordance), males_in_concordant)
                 self.reset_ltp_status(population, random_concordant_males)
 
-    # TODO: LTP diagnosis, viral supression, and ART (SAS 4572)
     def diagnose_and_treat_ltp(population: Population):
         """
         Set diagnosis, viral supression, and ART status for long term partners
@@ -579,28 +544,6 @@ class HIVStatusModule:
         population.set_present_variable(col.RECENT_LTP_STATUS, ltp_statuses, people_with_ltp)
         population.set_present_variable(col.RECENT_LTP_DIAGNOSED, ltp_diagnoses, people_with_ltp)
 
-    def get_hiv_status_difference(self, sex, population: Population):
-        """
-        Gets the different in the number of people of a given sex who are HIV negative and who have infected LTP,
-        and the number of people of the opposite sex who are HIV positive and have a negative LTP.
-        Only applies to those between 15 and 65.
-        """
-        num_neg_sex_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, sex),
-                                                                       (col.HIV_STATUS, op.eq, False),
-                                                                       (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                       (col.LTP_STATUS, op.eq, True),
-                                                                       (col.AGE, op.ge, 15),
-                                                                       (col.AGE, op.lt, 65)]))
-        num_pos_other_sex_with_negative_partner = len(population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
-                                                                              (col.HIV_STATUS, op.eq, True),
-                                                                              (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                              (col.LTP_STATUS, op.eq, False),
-                                                                              (col.AGE, op.ge, 15),
-                                                                              (col.AGE, op.lt, 65)]))
-
-        ltp_hiv_status_difference = num_neg_sex_with_infected_parter - num_pos_other_sex_with_negative_partner
-        return ltp_hiv_status_difference
-
     def prob_of_infection_from_infected_ltp(self, population: Population):
         """
         Sets the probability of infection for the population
@@ -635,6 +578,9 @@ class HIVStatusModule:
                                    sub_pop=people_with_ltp)
 
     def prob_of_new_ltp_already_infected(self, population: Population):
+        """
+        Calculates the probability of new partners being infected
+        """
         for sex in [SexType.Male, SexType.Female]:
             for age_group in range(5):
                 opposite_sex = population.get_sub_pop([(col.SEX, op.ne, sex),
@@ -647,12 +593,12 @@ class HIVStatusModule:
                     self.prevalence[sex][age_group] = len(opposite_sex_with_hiv) / len(opposite_sex)
 
             def calculate_new_ltp_infection(sex, age_group, recent_ltp_status, size):
+                infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
+
                 # 50% chance a "new" LTP is return to condomless sex with most recent LTP
-                former_ltp = rng.uniform(size=size) < 0.5
+                if(recent_ltp_status):
+                    infected = infected | (rng.uniform(size=size) < 0.5)
                 
-                
-                infected = (rng.uniform(0, 1, size) < 0.5) | (rng.uniform(0, 1, size) <
-                                                              self.prevalence[sex][age_group])
                 return infected
 
             people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
@@ -662,6 +608,75 @@ class HIVStatusModule:
                                                           use_size=True,
                                                           sub_pop=people_with_new_ltp)
             population.set_present_variable(col.LTP_STATUS, new_ltp_infected, people_with_new_ltp)
+
+            new_infected_ltp = population.get_sub_pop_intersection(people_with_new_ltp,
+                                                                   population.get_sub_pop(COND(col.LTP_STATUS, op.eq, True)))
+            
+    ## HIV Progression ---------------------------------------------------------------------------------
+
+    def set_primary_infection(self, population: Population):
+        # Update primary infection status
+        past_primary_infection = population.get_sub_pop(
+            [(col.DATE_HIV_INFECTION, op.le, population.date - timedelta(days=90))])
+        population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
+
+    def set_viral_load_groups(self, population: Population):
+        HIV_positive_pop = population.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+        population.set_present_variable(col.VIRAL_LOAD_GROUP,
+                                        np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
+                                                    np.array([2.7, 3.7, 4.7, 5.7])),
+                                        HIV_positive_pop)
+
+    def init_resistance_mutations(self, population: Population):
+        """
+        Initialise drug resistance mutations at the start of the simulation to False.
+        """
+        population.init_variable(col.TA_MUTATION, False)
+        population.init_variable(col.M184_MUTATION, False)
+        population.init_variable(col.K65_MUTATION, False)
+        population.init_variable(col.Q151_MUTATION, False)
+        population.init_variable(col.K103_MUTATION, False)
+        population.init_variable(col.Y181_MUTATION, False)
+        population.init_variable(col.G190_MUTATION, False)
+        population.init_variable(col.P32_MUTATION, False)
+        population.init_variable(col.P33_MUTATION, False)
+        population.init_variable(col.P46_MUTATION, False)
+        population.init_variable(col.P47_MUTATION, False)
+        population.init_variable(col.P50L_MUTATION, False)
+        population.init_variable(col.P50V_MUTATION, False)
+        population.init_variable(col.P54_MUTATION, False)
+        population.init_variable(col.P76_MUTATION, False)
+        population.init_variable(col.P82_MUTATION, False)
+        population.init_variable(col.P84_MUTATION, False)
+        population.init_variable(col.P88_MUTATION, False)
+        population.init_variable(col.P90_MUTATION, False)
+        population.init_variable(col.IN118_MUTATION, False)
+        population.init_variable(col.IN140_MUTATION, False)
+        population.init_variable(col.IN148_MUTATION, False)
+        population.init_variable(col.IN155_MUTATION, False)
+        population.init_variable(col.IN263_MUTATION, False)
+
+    def get_hiv_status_difference(self, sex, population: Population):
+        """
+        Gets the different in the number of people of a given sex who are HIV negative and who have infected LTP,
+        and the number of people of the opposite sex who are HIV positive and have a negative LTP.
+        Only applies to those between 15 and 65.
+        """
+        num_neg_sex_with_infected_parter = len(population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                                       (col.HIV_STATUS, op.eq, False),
+                                                                       (col.LONG_TERM_PARTNER, op.eq, True),
+                                                                       (col.LTP_STATUS, op.eq, True),
+                                                                       (col.AGE, op.ge, 15),
+                                                                       (col.AGE, op.lt, 65)]))
+        num_pos_other_sex_with_negative_partner = len(population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
+                                                                              (col.HIV_STATUS, op.eq, True),
+                                                                              (col.LONG_TERM_PARTNER, op.eq, True),
+                                                                              (col.LTP_STATUS, op.eq, False),
+                                                                              (col.AGE, op.ge, 15),
+                                                                              (col.AGE, op.lt, 65)]))
+
+        ltp_hiv_status_difference = num_neg_sex_with_infected_parter - num_pos_other_sex_with_negative_partner
+        return ltp_hiv_status_difference
 
     def update_HIV_status(self, population: Population):
         """
