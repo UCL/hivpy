@@ -751,7 +751,7 @@ class HIVStatusModule:
         and then prob of n partners independently not infecting you is (1-Pr)**n,
         so probability of infection is 1-((1-Pr)**n).
         """
-        self.update_partner_risk_vectors(population)
+        self.update_HIV_statistics(population)
         # select uninfected people that have at least one short-term partner
         HIV_neg_active_pop = population.get_sub_pop([(col.HIV_STATUS, op.eq, False),
                                                      (col.NUM_PARTNERS, op.gt, 0)])
