@@ -176,6 +176,16 @@ class HIVStatusModule:
     # Updating Statistics -----------------------------------------------------------------------------
     # These functions all need to be called each time step in order to use the HIV module -------------
 
+    def update_HIV_statistics(self, population:Population):
+        """
+        Updates all relevant population statistics for this module to run correctly
+        """
+        self.update_partner_risk_vectors(population)
+        self.update_LTP_risk_vectors(population)
+        self.update_diagnosis_stats(population)
+        self.update_viral_suppression_stats(population)
+        self.update_art_stats(population)
+
     def update_partner_risk_vectors(self, population: Population):
         """
         Calculate the risk factor associated with each sex and age group.
@@ -250,7 +260,7 @@ class HIVStatusModule:
             self.ltp_diagnosis_rate[sex] = population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex]) / \
                 population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])
 
-    def update_viral_suppression_statistics(self, population):
+    def update_viral_suppression_stats(self, population):
         num_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                               COND(col.AGE, op.lt, 65),
                                                               COND(col.ON_ART, op.eq, True),
@@ -271,7 +281,7 @@ class HIVStatusModule:
         self.diff_proportion_viral_suppressed = self.proportion_viral_suppressed - self.proportion_ltp_viral_suppressed
 
     # TODO: Probably move to ART module when it is ready
-    def update_art_statistics(self, population):
+    def update_art_stats(self, population):
         num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                               COND(col.ON_ART, op.eq, True),
                                                               COND(col.AGE, op.ge, 15),
