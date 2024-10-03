@@ -174,6 +174,7 @@ class HIVStatusModule:
         self.initialise_HIV_progression(population, newly_infected)
 
     ## Updating Statistics -----------------------------------------------------------------------------
+    ## These functions all need to be called each time step in order to use the HIV module -------------
 
     def update_partner_risk_vectors(self, population: Population):
         """
@@ -456,9 +457,6 @@ class HIVStatusModule:
 
         ltp_off_ART = population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                  COND(col.LTP_ART, op.eq, False)))
-
-        self.update_art_statistics(population)
-
         starting_ART = self.get_ltps_starting_art(ltp_off_ART)
 
         # Update ART statuses
@@ -609,28 +607,39 @@ class HIVStatusModule:
                 if len(opposite_sex) != 0:
                     self.prevalence[sex][age_group] = len(opposite_sex_with_hiv) / len(opposite_sex)
 
-            def calculate_new_ltp_infection(sex, age_group, recent_ltp_status, size):
-                infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
+        def calculate_new_ltp_infection(sex, age_group, recent_ltp_status, size):
+            infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
 
-                # 50% chance a "new" LTP is return to condomless sex with most recent LTP
-                if(recent_ltp_status):
-                    infected = infected | (rng.uniform(size=size) < 0.5)
+            # 50% chance a "new" LTP is return to condomless sex with most recent LTP
+            if(recent_ltp_status):
+                infected = infected | (rng.uniform(size=size) < 0.5)
                 
-                return infected
+            return infected
 
-            people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
+        people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
 
-            new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP, col.RECENT_LTP_STATUS],
-                                                          calculate_new_ltp_infection,
-                                                          use_size=True,
-                                                          sub_pop=people_with_new_ltp)
-            population.set_present_variable(col.LTP_STATUS, new_ltp_infected, people_with_new_ltp)
+        new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP, col.RECENT_LTP_STATUS],
+                                                      calculate_new_ltp_infection,
+                                                      use_size=True,
+                                                      sub_pop=people_with_new_ltp)
+        population.set_present_variable(col.LTP_STATUS, new_ltp_infected, people_with_new_ltp)
 
-            new_infected_ltp = population.get_sub_pop_intersection(people_with_new_ltp,
-                                                                   population.get_sub_pop(COND(col.LTP_STATUS, op.eq, True)))
-            
-            self.diagnose_ltp(population, new_infected_ltp)
-            ## TODO: Implement post testing date modifications
+        new_infected_ltp = population.get_sub_pop_intersection(people_with_new_ltp,
+                                                               population.get_sub_pop(COND(col.LTP_STATUS, op.eq, True)))
+        
+        self.diagnose_ltp(population, new_infected_ltp)
+        ## TODO: Implement post testing date modifications
+
+        # ART of diagnosed partners
+        ltp_on_ART = population.get_sub_pop(COND(col.LTP_ART, op.eq, True))
+        continuing_ART = self.get_ltps_continuing_art(ltp_on_ART)
+
+        ltp_off_ART = population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
+                                                 COND(col.LTP_ART, op.eq, False)))
+        starting_ART = self.get_ltps_starting_art(ltp_off_ART)
+        # Update ART statuses
+        population.set_present_variable(col.LTP_ART, continuing_ART, ltp_on_ART)
+        population.set_present_variable(col.LTP_ART, starting_ART, ltp_off_ART)
 
 
     ## HIV Progression ---------------------------------------------------------------------------------
