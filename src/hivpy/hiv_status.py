@@ -97,6 +97,9 @@ class HIVStatusModule:
         self.cm_mortality_factor = rng.choice([3, 5, 10])
         self.other_adc_mortality_factor = rng.choice([1.5, 2, 3])
 
+        self.diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
+        self.ltp_diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
+
     ## Initialisation ----------------------------------------------------------------------------------
 
     def init_HIV_variables(self, population: Population):
@@ -225,6 +228,48 @@ class HIVStatusModule:
                     self.ratio_non_monogamous_primary[sex][age_group] = 0
                 else:
                     self.ratio_non_monogamous_primary[sex][age_group] = len(non_monogamous_pos) / num_non_monogamous
+
+    def update_diagnosis_stats(self, population: Population):
+        people_with_hiv = population.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+        people_diagnosed = population.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, True))
+
+        pop_by_sex = {SexType.Male: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Male)),
+                      SexType.Female: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))}
+        
+        people_with_infected_ltp = population.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                              COND(col.LTP_STATUS, op.eq, True)))
+        ltp_diagnosed = population.get_sub_pop_intersection(
+            people_with_infected_ltp,
+            population.get_sub_pop(COND(col.LTP_DIAGNOSED, op.eq, True)))
+        
+        for sex in SexType:
+            other_sex = opposite_sex(sex)
+            self.diagnosis_rate[sex] = population.get_sub_pop_intersection(people_diagnosed, pop_by_sex[sex]) / \
+                population.get_sub_pop_intersection(people_with_hiv, pop_by_sex[sex])
+            self.ltp_diagnosis_rate[sex] = population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex]) / \
+                population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])
+
+    ## TODO: Probably move to ART module when it is ready
+    def update_art_statistics(self, population):
+        num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
+                                                              COND(col.ON_ART, op.eq, True),
+                                                              COND(col.AGE, op.ge, 15),
+                                                              COND(col.AGE, op.lt, 65))))
+        num_diagnosed = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
+                                                       COND(col.AGE, op.ge, 15),
+                                                       COND(col.AGE, op.lt, 15))))
+        self.proportion_diagnosed_on_art = num_diagnosed_on_art / num_diagnosed
+
+        num_ltp_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
+                                                                  COND(col.LTP_ART, op.eq, True),
+                                                                  COND(col.AGE, op.ge, 15),
+                                                                  COND(col.AGE, op.lt, 65))))
+        num_ltp_diagnosed = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
+                                                           COND(col.AGE, op.ge, 15),
+                                                           COND(col.AGE, op.lt, 15))))
+        self.proportion_LTP_diagnosed_on_art = num_ltp_diagnosed_on_art / num_ltp_diagnosed
+
+        self.diff_proportion_on_art = self.proportion_diagnosed_on_art - self.proportion_LTP_diagnosed_on_art
 
     ## Short Term Partner Transmission -----------------------------------------------------------------
 
@@ -394,95 +439,30 @@ class HIVStatusModule:
                                                       > (ratio_concordance), males_in_concordant)
                 self.reset_ltp_status(population, random_concordant_males)
 
-    def diagnose_and_treat_ltp(population: Population):
+    def diagnose_and_treat_ltp(self, population: Population):
         """
         Set diagnosis, viral supression, and ART status for long term partners
         """
-
-        # set up some useful sub populations
-        people_with_infected_ltp = population.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                              COND(col.LTP_STATUS, op.eq, True)))
-        ltp_diagnosed = population.get_sub_pop_intersection(
-            people_with_infected_ltp,
-            population.get_sub_pop(COND(col.LTP_DIAGNOSED, op.eq, True)))
-        ltp_undiagnosed = population.get_sub_pop_intersection(
-            people_with_infected_ltp,
-            population.get_sub_pop(COND(col.LTP_DIAGNOSED, op.eq, False)))
-
-        people_with_hiv = population.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
-        people_diagnosed = population.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, True))
-
-        pop_by_sex = {SexType.Male: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Male)),
-                      SexType.Female: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))}
-
         # Address inbalances in proportion of people of each sex who are diagnosed, and the proportion of
         # LTPs of each sex who are diagnosed (adjusts LTP_DIAGNOSED)
-        for sex in SexType:
-            other_sex = opposite_sex(sex)
-            proportion_diagnosed = population.get_sub_pop_intersection(people_diagnosed, pop_by_sex[sex]) / \
-                population.get_sub_pop_intersection(people_with_hiv, pop_by_sex[sex])
-            proportion_ltp_diagnosed = population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex]) / \
-                population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])
-            diagnosis_discrepency = proportion_diagnosed - proportion_ltp_diagnosed
-            prob_diagnosis_correction = 0
-            if (0 <= diagnosis_discrepency < 0.5):
-                prob_diagnosis_correction = proportion_diagnosed / 5
-            elif (0.5 <= diagnosis_discrepency < 0.1):
-                prob_diagnosis_correction = proportion_diagnosed / 2
-            elif (0.1 <= diagnosis_discrepency):
-                prob_diagnosis_correction = proportion_diagnosed
-
-            random_mask = rng.uniform(size=len(ltp_undiagnosed)) < prob_diagnosis_correction
-            random_subset = population.get_sub_pop_from_array(random_mask, ltp_undiagnosed)
-            population.set_present_variable(col.LTP_DIAGNOSED, True, random_subset)
-
-        # Update LTP diagnosed sub-pop to reflect new values
-        ltp_diagnosed = population.get_sub_pop_intersection(
-            people_with_infected_ltp, population.get_sub_pop(COND(col.LTP_DIAGNOSED, op.eq, True)))
+        ltp_undiagnosed = population.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
+                                                         COND(col.LTP_STATUS, op.eq, True),
+                                                         COND(col.LTP_DIAGNOSED, op.eq, False)))
+        self.diagnose_ltp(population, ltp_undiagnosed)
 
         # ART for those diagnosed
-        # 2% chance that LTP on ART go off ART
         ltp_on_ART = population.get_sub_pop(COND(col.LTP_ART, op.eq, True))
-        staying_on_ART = rng.uniform(size=len(ltp_on_ART)) < 0.98
+        continuing_ART = self.get_ltps_continuing_art(ltp_on_ART)
 
         ltp_off_ART = population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                  COND(col.LTP_ART, op.eq, False)))
 
-        num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
-                                                              COND(col.ON_ART, op.eq, True),
-                                                              COND(col.AGE, op.ge, 15),
-                                                              COND(col.AGE, op.lt, 65))))
-        num_diagnosed = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
-                                                       COND(col.AGE, op.ge, 15),
-                                                       COND(col.AGE, op.lt, 15))))
-        proportion_diagnosed_on_art = num_diagnosed_on_art / num_diagnosed
+        self.update_art_statistics(population)
 
-        num_ltp_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
-                                                                  COND(col.LTP_ART, op.eq, True),
-                                                                  COND(col.AGE, op.ge, 15),
-                                                                  COND(col.AGE, op.lt, 65))))
-        num_ltp_diagnosed = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
-                                                           COND(col.AGE, op.ge, 15),
-                                                           COND(col.AGE, op.lt, 15))))
-        proportion_LTP_diagnosed_on_art = num_ltp_diagnosed_on_art / num_ltp_diagnosed
-
-        diff_proportion_on_art = proportion_diagnosed_on_art - proportion_LTP_diagnosed_on_art
-
-        prob_start_ART = 0
-        if (diff_proportion_on_art > 0 and diff_proportion_on_art < 0.05):
-            prob_start_ART = proportion_diagnosed_on_art * 0.2
-        elif (diff_proportion_on_art < 0.1):
-            prob_start_ART = proportion_diagnosed_on_art * 0.5
-        elif (proportion_diagnosed_on_art < 0.95):
-            prob_start_ART = proportion_diagnosed_on_art
-        else:
-            prob_start_ART = 1
-
-        # TODO: Update with ART intro date when there is an ART module in place
-        starting_ART = rng.uniform(size=len(ltp_off_ART)) < prob_start_ART
+        starting_ART = self.get_ltps_starting_art(ltp_off_ART)
 
         # Update ART statuses
-        population.set_present_variable(col.LTP_ART, staying_on_ART, ltp_on_ART)
+        population.set_present_variable(col.LTP_ART, continuing_ART, ltp_on_ART)
         population.set_present_variable(col.LTP_ART, starting_ART, ltp_off_ART)
         ltp_on_ART = population.get_sub_pop(COND(col.LTP_ART, op.eq, True))  # update subpopulation to reflect changes
 
@@ -524,6 +504,43 @@ class HIVStatusModule:
         # Update viral suppression
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, remaining_suppressed, viral_suppressed_ltp)
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, becoming_suppressed, viral_unsuppressed_ltp)
+
+    def get_ltps_continuing_art(self, ltp_on_ART):
+        # 2% chance that LTP on ART go off ART
+        continuing_ART = rng.uniform(size=len(ltp_on_ART)) < 0.98
+        return continuing_ART
+
+    def get_ltps_starting_art(self, ltp_off_ART):
+        prob_start_ART = 0
+        if (self.diff_proportion_on_art > 0 and self.diff_proportion_on_art < 0.05):
+            prob_start_ART = self.proportion_diagnosed_on_art * 0.2
+        elif (self.diff_proportion_on_art < 0.1):
+            prob_start_ART = self.proportion_diagnosed_on_art * 0.5
+        elif (self.proportion_diagnosed_on_art < 0.95):
+            prob_start_ART = self.proportion_diagnosed_on_art
+        else:
+            prob_start_ART = 1
+
+        # TODO: Update with ART intro date when there is an ART module in place
+        starting_ART = rng.uniform(size=len(ltp_off_ART)) < prob_start_ART
+        return starting_ART
+
+    def diagnose_ltp(self, population, ltp_undiagnosed_subpop):
+        for sex in SexType:
+            proportion_diagnosed = self.diagnosis_rate[sex]
+            diagnosis_discrepency = proportion_diagnosed - self.ltp_diagnosis_rate[sex]
+            prob_diagnosis_correction = 0
+            if (0 <= diagnosis_discrepency < 0.5):
+                prob_diagnosis_correction = proportion_diagnosed / 5
+            elif (0.5 <= diagnosis_discrepency < 0.1):
+                prob_diagnosis_correction = proportion_diagnosed / 2
+            elif (0.1 <= diagnosis_discrepency):
+                prob_diagnosis_correction = proportion_diagnosed
+            ltp_undiagnosed_by_sex = population.get_sub_pop_intersection(ltp_undiagnosed_subpop,
+                                                                         population.get_sub_pop(COND(col.SEX, op.eq, sex)))
+            random_mask = rng.uniform(size=len(ltp_undiagnosed_by_sex)) < prob_diagnosis_correction
+            random_subset = population.get_sub_pop_from_array(random_mask, ltp_undiagnosed_by_sex)
+            population.set_present_variable(col.LTP_DIAGNOSED, True, random_subset)
 
     def reset_ltp_status(self, population, sub_pop):
         """
@@ -612,6 +629,10 @@ class HIVStatusModule:
             new_infected_ltp = population.get_sub_pop_intersection(people_with_new_ltp,
                                                                    population.get_sub_pop(COND(col.LTP_STATUS, op.eq, True)))
             
+            self.diagnose_ltp(population, new_infected_ltp)
+            ## TODO: Implement post testing date modifications
+
+
     ## HIV Progression ---------------------------------------------------------------------------------
 
     def set_primary_infection(self, population: Population):
