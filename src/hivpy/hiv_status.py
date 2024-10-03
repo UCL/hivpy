@@ -100,7 +100,7 @@ class HIVStatusModule:
         self.diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
         self.ltp_diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
 
-    ## Initialisation ----------------------------------------------------------------------------------
+    # Initialisation ----------------------------------------------------------------------------------
 
     def init_HIV_variables(self, population: Population):
         # Personal HIV status / progression
@@ -173,8 +173,8 @@ class HIVStatusModule:
         newly_infected = population.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
         self.initialise_HIV_progression(population, newly_infected)
 
-    ## Updating Statistics -----------------------------------------------------------------------------
-    ## These functions all need to be called each time step in order to use the HIV module -------------
+    # Updating Statistics -----------------------------------------------------------------------------
+    # These functions all need to be called each time step in order to use the HIV module -------------
 
     def update_partner_risk_vectors(self, population: Population):
         """
@@ -236,13 +236,13 @@ class HIVStatusModule:
 
         pop_by_sex = {SexType.Male: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Male)),
                       SexType.Female: population.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))}
-        
+
         people_with_infected_ltp = population.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                                               COND(col.LTP_STATUS, op.eq, True)))
         ltp_diagnosed = population.get_sub_pop_intersection(
             people_with_infected_ltp,
             population.get_sub_pop(COND(col.LTP_DIAGNOSED, op.eq, True)))
-        
+
         for sex in SexType:
             other_sex = opposite_sex(sex)
             self.diagnosis_rate[sex] = population.get_sub_pop_intersection(people_diagnosed, pop_by_sex[sex]) / \
@@ -258,8 +258,8 @@ class HIVStatusModule:
         num_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                     COND(col.AGE, op.lt, 65),
                                                     COND(col.ON_ART, op.eq, True))))
-        self.proportion_viral_suppressed =  num_viral_suppressed / num_on_art
-            
+        self.proportion_viral_suppressed = num_viral_suppressed / num_on_art
+
         num_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                                   COND(col.AGE, op.lt, 65),
                                                                   COND(col.LTP_ART, op.eq, True),
@@ -270,7 +270,7 @@ class HIVStatusModule:
         self.proportion_ltp_viral_suppressed = num_ltp_viral_suppressed / num_ltp_on_art
         self.diff_proportion_viral_suppressed = self.proportion_viral_suppressed - self.proportion_ltp_viral_suppressed
 
-    ## TODO: Probably move to ART module when it is ready
+    # TODO: Probably move to ART module when it is ready
     def update_art_statistics(self, population):
         num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                               COND(col.ON_ART, op.eq, True),
@@ -292,7 +292,7 @@ class HIVStatusModule:
 
         self.diff_proportion_on_art = self.proportion_diagnosed_on_art - self.proportion_LTP_diagnosed_on_art
 
-    ## Short Term Partner Transmission -----------------------------------------------------------------
+    # Short Term Partner Transmission -----------------------------------------------------------------
 
     def stp_HIV_transmission(self, person):
         """
@@ -333,7 +333,7 @@ class HIVStatusModule:
 
         return infection
 
-    ## Long Term Partner Transmission and Progression --------------------------------------------------
+    # Long Term Partner Transmission and Progression --------------------------------------------------
 
     def set_ltp_age_groups(self, population: Population):
         age_groups = np.digitize(population.get_variable(col.AGE), [15, 25, 35, 45, 55, 65])
@@ -467,8 +467,8 @@ class HIVStatusModule:
         # Address inbalances in proportion of people of each sex who are diagnosed, and the proportion of
         # LTPs of each sex who are diagnosed (adjusts LTP_DIAGNOSED)
         ltp_undiagnosed = population.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                         COND(col.LTP_STATUS, op.eq, True),
-                                                         COND(col.LTP_DIAGNOSED, op.eq, False)))
+                                                     COND(col.LTP_STATUS, op.eq, True),
+                                                     COND(col.LTP_DIAGNOSED, op.eq, False)))
         self.diagnose_ltp(population, ltp_undiagnosed)
 
         # ART for those diagnosed
@@ -617,9 +617,9 @@ class HIVStatusModule:
             infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
 
             # 50% chance a "new" LTP is return to condomless sex with most recent LTP
-            if(recent_ltp_status):
+            if (recent_ltp_status):
                 infected = infected | (rng.uniform(size=size) < 0.5)
-                
+
             return infected
 
         people_with_new_ltp = population.get_sub_pop([(col.LTP_NEW, op.eq, True)])
@@ -630,14 +630,14 @@ class HIVStatusModule:
                                                       sub_pop=people_with_new_ltp)
         population.set_present_variable(col.LTP_STATUS, new_ltp_infected, people_with_new_ltp)
 
-        new_infected_ltp = population.get_sub_pop_intersection(people_with_new_ltp,
-                                                               population.get_sub_pop(COND(col.LTP_STATUS, op.eq, True)))
-        
+        new_infected_ltp = population.get_sub_pop(AND(COND(col.LTP_STATUS, op.eq, True),
+                                                      COND(col.LTP_NEW, op.eq, True)))
+
         self.diagnose_ltp(population, new_infected_ltp)
-        ## TODO: Implement post testing date modifications
+        # TODO: Implement post testing date modifications
 
         # ART of diagnosed partners
-        ## TODO: check if this makes any sense given that a new partner shouldn't have an existing ART status
+        # TODO: check if this makes any sense given that a new partner shouldn't have an existing ART status
         ltp_on_ART = population.get_sub_pop(AND(COND(col.LTP_ART, op.eq, True),
                                                 COND(col.LTP_NEW, op.eq, True)))
         continuing_ART = self.get_ltps_continuing_art(ltp_on_ART)
@@ -666,8 +666,7 @@ class HIVStatusModule:
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, remaining_suppressed, viral_suppressed_ltp)
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, becoming_suppressed, viral_unsuppressed_ltp)
 
-
-    ## HIV Progression ---------------------------------------------------------------------------------
+    # HIV Progression ---------------------------------------------------------------------------------
 
     def set_primary_infection(self, population: Population):
         # Update primary infection status
