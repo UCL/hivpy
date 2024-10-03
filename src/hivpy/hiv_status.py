@@ -176,7 +176,7 @@ class HIVStatusModule:
     # Updating Statistics -----------------------------------------------------------------------------
     # These functions all need to be called each time step in order to use the HIV module -------------
 
-    def update_HIV_statistics(self, population:Population):
+    def update_HIV_statistics(self, population: Population):
         """
         Updates all relevant population statistics for this module to run correctly
         """
