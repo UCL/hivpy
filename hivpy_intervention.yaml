@@ -1,0 +1,16 @@
+EXPERIMENT:
+  population: 1000
+  start_year: 1989
+  end_year: 2021
+  time_interval_days: 90
+  intervention_year: 2000
+  intervention_option: 0
+  repeat_intervention: True
+  simulation_output_dir: output
+  graph_outputs: []
+
+LOGGING:
+  log_directory: log
+  logfile_prefix: hivpy
+  log_file_level: DEBUG
+  console_log_level: WARNING
