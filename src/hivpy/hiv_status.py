@@ -13,7 +13,8 @@ import pandas as pd
 import hivpy.column_names as col
 
 from . import output
-from .common import AND, COND, SexType, opposite_sex, rng, timedelta, safe_ratio
+from .common import (AND, COND, SexType, opposite_sex, rng, safe_ratio,
+                     timedelta)
 
 
 class HIVStatusModule:
@@ -119,7 +120,7 @@ class HIVStatusModule:
         population.init_variable(col.VIRAL_LOAD, 0.0)
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
-        
+
         # TODO: move to ART module
         population.init_variable(col.ON_ART, False)
 
