@@ -250,6 +250,26 @@ class HIVStatusModule:
             self.ltp_diagnosis_rate[sex] = population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex]) / \
                 population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])
 
+    def update_viral_suppression_statistics(self, population):
+        num_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                              COND(col.AGE, op.lt, 65),
+                                                              COND(col.ON_ART, op.eq, True),
+                                                              COND(col.VIRAL_SUPPRESSION, True))))
+        num_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                    COND(col.AGE, op.lt, 65),
+                                                    COND(col.ON_ART, op.eq, True))))
+        self.proportion_viral_suppressed =  num_viral_suppressed / num_on_art
+            
+        num_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                                  COND(col.AGE, op.lt, 65),
+                                                                  COND(col.LTP_ART, op.eq, True),
+                                                                  COND(col.LTP_VIRAL_SUPPRESSED, True))))
+        num_ltp_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
+                                                        COND(col.AGE, op.lt, 65),
+                                                        COND(col.LTP_ART, op.eq, True))))
+        self.proportion_ltp_viral_suppressed = num_ltp_viral_suppressed / num_ltp_on_art
+        self.diff_proportion_viral_suppressed = self.proportion_viral_suppressed - self.proportion_ltp_viral_suppressed
+
     ## TODO: Probably move to ART module when it is ready
     def update_art_statistics(self, population):
         num_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
@@ -472,36 +492,22 @@ class HIVStatusModule:
         remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < 0.97
 
         # chance of becoming virally suppressed if not previously suppressed
-        num_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                              COND(col.AGE, op.lt, 65),
-                                                              COND(col.ON_ART, op.eq, True),
-                                                              COND(col.VIRAL_SUPPRESSION, True))))
-        num_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                    COND(col.AGE, op.lt, 65),
-                                                    COND(col.ON_ART, op.eq, True))))
-        proportion_viral_suppressed =  num_viral_suppressed / num_on_art
-            
-        num_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                                  COND(col.AGE, op.lt, 65),
-                                                                  COND(col.LTP_ART, op.eq, True),
-                                                                  COND(col.LTP_VIRAL_SUPPRESSED, True))))
-        num_ltp_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
-                                                        COND(col.AGE, op.lt, 65),
-                                                        COND(col.LTP_ART, op.eq, True))))
-        proportion_ltp_viral_suppressed = num_ltp_viral_suppressed / num_ltp_on_art
-        diff_proportion_viral_suppressed = proportion_viral_suppressed - proportion_ltp_viral_suppressed
-        prob_viral_suppressed = 0
-        if (diff_proportion_viral_suppressed > 0 and diff_proportion_viral_suppressed < 0.05):
-            prob_viral_suppressed = proportion_viral_suppressed * 0.2
-        elif (diff_proportion_viral_suppressed < 0.1):
-            prob_viral_suppressed = proportion_viral_suppressed * 0.5
-        else:
-            prob_viral_suppressed = proportion_viral_suppressed
-        becoming_suppressed = rng.uniform(size=len(viral_unsuppressed_ltp)) < prob_viral_suppressed
+        becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
 
         # Update viral suppression
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, remaining_suppressed, viral_suppressed_ltp)
         population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, becoming_suppressed, viral_unsuppressed_ltp)
+
+    def get_ltp_becoming_suppressed(self, viral_unsuppressed_ltp):
+        prob_viral_suppressed = 0
+        if (self.diff_proportion_viral_suppressed > 0 and self.diff_proportion_viral_suppressed < 0.05):
+            prob_viral_suppressed = self.proportion_viral_suppressed * 0.2
+        elif (self.diff_proportion_viral_suppressed < 0.1):
+            prob_viral_suppressed = self.proportion_viral_suppressed * 0.5
+        else:
+            prob_viral_suppressed = self.proportion_viral_suppressed
+        becoming_suppressed = rng.uniform(size=len(viral_unsuppressed_ltp)) < prob_viral_suppressed
+        return becoming_suppressed
 
     def get_ltps_continuing_art(self, ltp_on_ART):
         # 2% chance that LTP on ART go off ART
@@ -631,15 +637,34 @@ class HIVStatusModule:
         ## TODO: Implement post testing date modifications
 
         # ART of diagnosed partners
-        ltp_on_ART = population.get_sub_pop(COND(col.LTP_ART, op.eq, True))
+        ## TODO: check if this makes any sense given that a new partner shouldn't have an existing ART status
+        ltp_on_ART = population.get_sub_pop(AND(COND(col.LTP_ART, op.eq, True),
+                                                COND(col.LTP_NEW, op.eq, True)))
         continuing_ART = self.get_ltps_continuing_art(ltp_on_ART)
 
         ltp_off_ART = population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
-                                                 COND(col.LTP_ART, op.eq, False)))
+                                                 COND(col.LTP_ART, op.eq, False),
+                                                 COND(col.LTP_NEW, op.eq, True)))
         starting_ART = self.get_ltps_starting_art(ltp_off_ART)
         # Update ART statuses
         population.set_present_variable(col.LTP_ART, continuing_ART, ltp_on_ART)
         population.set_present_variable(col.LTP_ART, starting_ART, ltp_off_ART)
+
+        # Viral load suppression in LTP
+        viral_suppressed_ltp = population.get_sub_pop(AND(COND(col.LTP_VIRAL_SUPPRESSED, op.eq, True),
+                                                          COND(col.LTP_NEW, op.eq, True)))
+        viral_unsuppressed_ltp = population.get_sub_pop(AND(COND(col.LTP_VIRAL_SUPPRESSED, op.eq, False),
+                                                            COND(col.LTP_NEW, op.eq, True)))
+
+        # 3% chance that virally suppressed person becomes un-suppressed
+        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < 0.97
+
+        # chance of becoming virally suppressed if not previously suppressed
+        becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
+
+        # Update viral suppression
+        population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, remaining_suppressed, viral_suppressed_ltp)
+        population.set_present_variable(col.LTP_VIRAL_SUPPRESSED, becoming_suppressed, viral_unsuppressed_ltp)
 
 
     ## HIV Progression ---------------------------------------------------------------------------------
