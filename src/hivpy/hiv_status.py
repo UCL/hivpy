@@ -13,7 +13,7 @@ import pandas as pd
 import hivpy.column_names as col
 
 from . import output
-from .common import AND, COND, SexType, opposite_sex, rng, timedelta
+from .common import AND, COND, SexType, opposite_sex, rng, timedelta, safe_ratio
 
 
 class HIVStatusModule:
@@ -36,7 +36,7 @@ class HIVStatusModule:
                                    SexType.Female: np.zeros(5)}
         # Ratio of non monogamous people in primary infection
         self.ratio_non_monogamous_primary = {SexType.Male: np.zeros(7),
-                                             SexType.Male: np.zeros(7)}
+                                             SexType.Female: np.zeros(7)}
         # proportion of stps with different viral load groups in general population for each sex and age group
         self.ratio_vl_stp = {SexType.Male: [np.zeros(6)]*5,
                              SexType.Female: [np.zeros(6)]*5}
@@ -119,6 +119,9 @@ class HIVStatusModule:
         population.init_variable(col.VIRAL_LOAD, 0.0)
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
+        
+        # TODO: move to ART module
+        population.init_variable(col.ON_ART, False)
 
         # Long term partners
         population.init_variable(col.LTP_STATUS, False)
@@ -255,29 +258,29 @@ class HIVStatusModule:
 
         for sex in SexType:
             other_sex = opposite_sex(sex)
-            self.diagnosis_rate[sex] = population.get_sub_pop_intersection(people_diagnosed, pop_by_sex[sex]) / \
-                population.get_sub_pop_intersection(people_with_hiv, pop_by_sex[sex])
-            self.ltp_diagnosis_rate[sex] = population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex]) / \
-                population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])
+            self.diagnosis_rate[sex] = safe_ratio(len(population.get_sub_pop_intersection(people_diagnosed, pop_by_sex[sex])),
+                                                  len(population.get_sub_pop_intersection(people_with_hiv, pop_by_sex[sex])))
+            self.ltp_diagnosis_rate[sex] = safe_ratio(len(population.get_sub_pop_intersection(ltp_diagnosed, pop_by_sex[other_sex])),
+                                                      len(population.get_sub_pop_intersection(people_with_infected_ltp, pop_by_sex[other_sex])))
 
     def update_viral_suppression_stats(self, population):
         num_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                               COND(col.AGE, op.lt, 65),
                                                               COND(col.ON_ART, op.eq, True),
-                                                              COND(col.VIRAL_SUPPRESSION, True))))
+                                                              COND(col.VIRAL_SUPPRESSION, op.eq, True))))
         num_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                     COND(col.AGE, op.lt, 65),
                                                     COND(col.ON_ART, op.eq, True))))
-        self.proportion_viral_suppressed = num_viral_suppressed / num_on_art
+        self.proportion_viral_suppressed = safe_ratio(num_viral_suppressed, num_on_art)
 
         num_ltp_viral_suppressed = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                                   COND(col.AGE, op.lt, 65),
                                                                   COND(col.LTP_ART, op.eq, True),
-                                                                  COND(col.LTP_VIRAL_SUPPRESSED, True))))
+                                                                  COND(col.LTP_VIRAL_SUPPRESSED, op.eq, True))))
         num_ltp_on_art = len(population.get_sub_pop(AND(COND(col.AGE, op.ge, 15),
                                                         COND(col.AGE, op.lt, 65),
                                                         COND(col.LTP_ART, op.eq, True))))
-        self.proportion_ltp_viral_suppressed = num_ltp_viral_suppressed / num_ltp_on_art
+        self.proportion_ltp_viral_suppressed = safe_ratio(num_ltp_viral_suppressed, num_ltp_on_art)
         self.diff_proportion_viral_suppressed = self.proportion_viral_suppressed - self.proportion_ltp_viral_suppressed
 
     # TODO: Probably move to ART module when it is ready
@@ -289,7 +292,7 @@ class HIVStatusModule:
         num_diagnosed = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                        COND(col.AGE, op.ge, 15),
                                                        COND(col.AGE, op.lt, 15))))
-        self.proportion_diagnosed_on_art = num_diagnosed_on_art / num_diagnosed
+        self.proportion_diagnosed_on_art = safe_ratio(num_diagnosed_on_art, num_diagnosed)
 
         num_ltp_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                                   COND(col.LTP_ART, op.eq, True),
@@ -298,7 +301,7 @@ class HIVStatusModule:
         num_ltp_diagnosed = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                            COND(col.AGE, op.ge, 15),
                                                            COND(col.AGE, op.lt, 15))))
-        self.proportion_LTP_diagnosed_on_art = num_ltp_diagnosed_on_art / num_ltp_diagnosed
+        self.proportion_LTP_diagnosed_on_art = safe_ratio(num_ltp_diagnosed_on_art, num_ltp_diagnosed)
 
         self.diff_proportion_on_art = self.proportion_diagnosed_on_art - self.proportion_LTP_diagnosed_on_art
 
