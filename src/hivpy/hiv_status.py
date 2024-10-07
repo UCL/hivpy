@@ -292,7 +292,7 @@ class HIVStatusModule:
                                                               COND(col.AGE, op.lt, 65))))
         num_diagnosed = len(population.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                        COND(col.AGE, op.ge, 15),
-                                                       COND(col.AGE, op.lt, 15))))
+                                                       COND(col.AGE, op.lt, 65))))
         self.proportion_diagnosed_on_art = safe_ratio(num_diagnosed_on_art, num_diagnosed)
 
         num_ltp_diagnosed_on_art = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
@@ -301,7 +301,7 @@ class HIVStatusModule:
                                                                   COND(col.AGE, op.lt, 65))))
         num_ltp_diagnosed = len(population.get_sub_pop(AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                            COND(col.AGE, op.ge, 15),
-                                                           COND(col.AGE, op.lt, 15))))
+                                                           COND(col.AGE, op.lt, 65))))
         self.proportion_LTP_diagnosed_on_art = safe_ratio(num_ltp_diagnosed_on_art, num_ltp_diagnosed)
 
         self.diff_proportion_on_art = self.proportion_diagnosed_on_art - self.proportion_LTP_diagnosed_on_art
