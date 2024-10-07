@@ -251,7 +251,7 @@ def test_want_no_children():
 def test_anc_and_pmtct():
 
     # build artificial population
-    N = 1000
+    N = 10000
     pop = Population(size=N, start_date=date(2010, 1, 1))
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 20
@@ -387,7 +387,7 @@ def test_anc_testing():
 
 def test_infected_births():
 
-    N = 100
+    N = 1000
     time_step = timedelta(days=90)
 
     # build artificial population
