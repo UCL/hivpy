@@ -101,7 +101,8 @@ class HIVStatusModule:
         self.diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
         self.ltp_diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
         self.prob_repeated_ltp = 0.5
-        self.prob_remain_suppressed = 0.97
+        self.prob_ltp_remain_suppressed = 0.97
+        self.prob_ltp_continue_ART = 0.98
 
     # Initialisation ----------------------------------------------------------------------------------
 
@@ -527,7 +528,7 @@ class HIVStatusModule:
         viral_unsuppressed_ltp = population.get_sub_pop(COND(col.LTP_VIRAL_SUPPRESSED, op.eq, False))
 
         # 3% chance that virally suppressed person becomes un-suppressed
-        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_remain_suppressed
+        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_ltp_remain_suppressed
 
         # chance of becoming virally suppressed if not previously suppressed
         becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
@@ -549,7 +550,7 @@ class HIVStatusModule:
 
     def get_ltps_continuing_art(self, ltp_on_ART):
         # 2% chance that LTP on ART go off ART
-        continuing_ART = rng.uniform(size=len(ltp_on_ART)) < 0.98
+        continuing_ART = rng.uniform(size=len(ltp_on_ART)) < self.prob_ltp_continue_ART
         return continuing_ART
 
     def get_ltps_starting_art(self, ltp_off_ART):
@@ -698,7 +699,7 @@ class HIVStatusModule:
                                                             COND(col.LTP_NEW, op.eq, True)))
 
         # 3% chance that virally suppressed person becomes un-suppressed
-        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_remain_suppressed
+        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_ltp_remain_suppressed
 
         # chance of becoming virally suppressed if not previously suppressed
         becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
