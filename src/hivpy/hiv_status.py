@@ -363,6 +363,13 @@ class HIVStatusModule:
 
     # Long Term Partner Transmission and Progression --------------------------------------------------
 
+    def update_ltp_HIV(self, population: Population):
+        self.update_HIV_statistics(population)
+        self.ltp_acquiring_HIV(population)
+        self.diagnose_and_treat_ltp(population)
+        self.set_infection_from_infected_ltp(population)
+        self.set_new_ltp_already_infected(population)
+
     def set_ltp_age_groups(self, population: Population):
         age_groups = np.digitize(population.get_variable(col.AGE), [15, 25, 35, 45, 55, 65])
         population.set_present_variable(col.LTP_AGE_GROUP, age_groups)
@@ -398,28 +405,7 @@ class HIVStatusModule:
 
         self.set_ltp_age_groups(population)
 
-        for sex in [SexType.Male, SexType.Female]:
-            for age_group in range(5):
-                this_sex_with_ltp = population.get_sub_pop([(col.SEX, op.eq, sex),
-                                                            (col.LTP_AGE_GROUP, op.eq, age_group),
-                                                            (col.LONG_TERM_PARTNER, op.eq, True)])
-                op_sex_with_ltp = population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
-                                                          (col.LTP_AGE_GROUP, op.eq, age_group),
-                                                          (col.LONG_TERM_PARTNER, op.eq, True)])
-                num_op_sex_with_ltp = len(op_sex_with_ltp)
-                num_op_sex_monogamous = len(population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
-                                                                    (col.LTP_AGE_GROUP, op.eq, age_group),
-                                                                    (col.LONG_TERM_PARTNER, op.eq, True),
-                                                                    (col.NUM_PARTNERS, op.eq, 0)]))
-                if num_op_sex_with_ltp == 0:
-                    self.prop_monogamous[opposite_sex(sex)][age_group] = 0
-                else:
-                    self.prop_monogamous[opposite_sex(sex)][age_group] = num_op_sex_monogamous / num_op_sex_with_ltp
-
-                partner_is_monogamous = rng.uniform(0, 1, len(this_sex_with_ltp)
-                                                    ) < self.prop_monogamous[opposite_sex(sex)][age_group]
-
-                population.set_present_variable(col.LTP_MONOGAMOUS, partner_is_monogamous, this_sex_with_ltp)
+        self.set_monogamous_ltp(population)
 
         # Non Monogamous Partner Case: partner is infected by another person
         def calculate_infected_ltp(sex, age_group, size):
@@ -487,6 +473,30 @@ class HIVStatusModule:
                     population.get_sub_pop_from_array(rng.random(len(males_in_concordant))
                                                       > (ratio_concordance), males_in_concordant)
                 self.reset_ltp_status(population, random_concordant_males)
+
+    def set_monogamous_ltp(self, population):
+        for sex in [SexType.Male, SexType.Female]:
+            for age_group in range(5):
+                this_sex_with_ltp = population.get_sub_pop([(col.SEX, op.eq, sex),
+                                                            (col.LTP_AGE_GROUP, op.eq, age_group),
+                                                            (col.LONG_TERM_PARTNER, op.eq, True)])
+                op_sex_with_ltp = population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
+                                                          (col.LTP_AGE_GROUP, op.eq, age_group),
+                                                          (col.LONG_TERM_PARTNER, op.eq, True)])
+                num_op_sex_with_ltp = len(op_sex_with_ltp)
+                num_op_sex_monogamous = len(population.get_sub_pop([(col.SEX, op.eq, opposite_sex(sex)),
+                                                                    (col.LTP_AGE_GROUP, op.eq, age_group),
+                                                                    (col.LONG_TERM_PARTNER, op.eq, True),
+                                                                    (col.NUM_PARTNERS, op.eq, 0)]))
+                if num_op_sex_with_ltp == 0:
+                    self.prop_monogamous[opposite_sex(sex)][age_group] = 0
+                else:
+                    self.prop_monogamous[opposite_sex(sex)][age_group] = num_op_sex_monogamous / num_op_sex_with_ltp
+
+                partner_is_monogamous = rng.uniform(0, 1, len(this_sex_with_ltp)
+                                                    ) < self.prop_monogamous[opposite_sex(sex)][age_group]
+
+                population.set_present_variable(col.LTP_MONOGAMOUS, partner_is_monogamous, this_sex_with_ltp)
 
     def diagnose_and_treat_ltp(self, population: Population):
         """
@@ -594,7 +604,7 @@ class HIVStatusModule:
         population.set_present_variable(col.RECENT_LTP_DIAGNOSED, ltp_diagnoses, people_with_ltp)
         population.set_present_variable(col.RECENT_LTP_ART, ltps_on_art, people_with_ltp)
 
-    def prob_of_infection_from_infected_ltp(self, population: Population):
+    def set_infection_from_infected_ltp(self, population: Population):
         """
         Sets the probability of infection for the population
         for which infection occurs from an infected long term partner.
@@ -615,19 +625,19 @@ class HIVStatusModule:
                                             self.resistance_mutations_prop_vlg[vlgroup],
                                             people_vs)
 
-        people_with_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
-                                                  (col.LTP_STATUS, op.eq, True)])
+        people_with_infected_ltp = population.get_sub_pop([(col.LONG_TERM_PARTNER, op.eq, True),
+                                                           (col.LTP_STATUS, op.eq, True)])
 
-        ltp_infection_date = population.get_variable(col.LTP_INFECTION_DATE, people_with_ltp)
+        ltp_infection_date = population.get_variable(col.LTP_INFECTION_DATE, people_with_infected_ltp)
         ltp_primary_infection = ltp_infection_date > (population.date - timedelta(days=90))
-        population.set_present_variable(col.LTP_IN_PRIMARY, ltp_primary_infection, people_with_ltp)
+        population.set_present_variable(col.LTP_IN_PRIMARY, ltp_primary_infection, people_with_infected_ltp)
 
         population.transform_group([col.VIRAL_SUPPRESSION, col.LTP_IN_PRIMARY],
                                    calculate_risk_of_infection,
                                    use_size=True,
-                                   sub_pop=people_with_ltp)
+                                   sub_pop=people_with_infected_ltp)
 
-    def prob_of_new_ltp_already_infected(self, population: Population):
+    def set_new_ltp_already_infected(self, population: Population):
         """
         Calculates the probability of new partners being infected
         """

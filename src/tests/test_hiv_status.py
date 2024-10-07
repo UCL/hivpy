@@ -526,7 +526,7 @@ def test_prob_infection_from_infected_ltp():
     pop.set_present_variable(col.LTP_INFECTION_DATE, date(1989, 12, 1), group2)
 
     HIVM = HIVStatusModule()
-    HIVM.prob_of_infection_from_infected_ltp(pop)
+    HIVM.infection_from_infected_ltp(pop)
 
     risk_ltp_group1 = pop.get_variable(col.RISK_LTP_INFECTED, group1)
     vlg_group1 = pop.get_variable(col.VIRAL_LOAD_GROUP, group1)
