@@ -44,8 +44,8 @@ class HIVStatusModule:
         # proportion of monogamous partners in general population for each sex and age group
         self.prop_monogamous = {SexType.Male: np.zeros(5),
                                 SexType.Female: np.zeros(5)}
-        self.prevalence = {SexType.Male: np.zeros(5),
-                           SexType.Female: np.zeros(5)}
+        self.prevalence = {SexType.Male: np.zeros(7),
+                           SexType.Female: np.zeros(7)}
         self.incidence_factor = {SexType.Male: 1,
                                  SexType.Female: 1}
         self.incidence = {SexType.Male: 0,
@@ -196,12 +196,13 @@ class HIVStatusModule:
         self.update_art_stats(population)
 
     def update_HIV_prevalence(self, population):
+        self.set_ltp_age_groups(population)
         for sex in [SexType.Male, SexType.Female]:
-            for age_group in range(5):
+            for age_group in range(1,6):  # don't want under-15s or over 65s
                 opposite_sex = population.get_sub_pop([(col.SEX, op.ne, sex),
-                                                       (col.AGE_GROUP, op.eq, age_group)])
+                                                       (col.LTP_AGE_GROUP, op.eq, age_group)])
                 opposite_sex_with_hiv = population.get_sub_pop([(col.SEX, op.ne, sex),
-                                                                (col.AGE_GROUP, op.eq, age_group),
+                                                                (col.LTP_AGE_GROUP, op.eq, age_group),
                                                                 (col.HIV_STATUS, op.eq, True)])
 
                 if len(opposite_sex) != 0:
@@ -669,7 +670,7 @@ class HIVStatusModule:
             infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
             return infected
 
-        new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP],
+        new_ltp_infected = population.transform_group([col.SEX, col.LTP_AGE_GROUP],
                                                       calculate_new_ltp_infection,
                                                       use_size=True,
                                                       sub_pop=uninfected_ltp)
