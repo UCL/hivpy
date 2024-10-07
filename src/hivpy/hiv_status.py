@@ -645,7 +645,7 @@ class HIVStatusModule:
         Calculates the probability of new partners being infected
         """
         self.update_HIV_prevalence(population)
-        
+
         # chance for new LTP to be the most recent LTP
         # Carries over properties like HIV status and diagnosis
         people_with_new_ltp = population.get_sub_pop(COND(col.LTP_NEW, op.eq, True))
@@ -660,14 +660,15 @@ class HIVStatusModule:
         population.set_present_variable(col.LTP_ART,
                                         population.get_variable(col.RECENT_LTP_ART, people_with_prev_ltp),
                                         people_with_prev_ltp)
-        
+
         # Apply to all uninfected LTP based on prevalence
         uninfected_ltp = population.get_sub_pop(AND(COND(col.LTP_NEW, op.eq, True),
                                                     COND(col.LTP_STATUS, op.eq, False)))
+
         def calculate_new_ltp_infection(sex, age_group, size):
             infected = rng.uniform(size=size) < self.prevalence[sex][age_group]
             return infected
-        
+
         new_ltp_infected = population.transform_group([col.SEX, col.AGE_GROUP],
                                                       calculate_new_ltp_infection,
                                                       use_size=True,
