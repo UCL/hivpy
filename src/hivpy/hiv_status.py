@@ -103,6 +103,7 @@ class HIVStatusModule:
         self.prob_repeated_ltp = 0.5
         self.prob_ltp_remain_suppressed = 0.97
         self.prob_ltp_continue_ART = 0.98
+        self.diff_proportion_on_art = 0
 
     # Initialisation ----------------------------------------------------------------------------------
 
