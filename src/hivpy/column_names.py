@@ -37,6 +37,7 @@ LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long 
 LTP_INFECTION_DATE = "ltp_infection_date"       # date: date at which the long term partner gets infected o/w None if not infected
 LTP_DIAGNOSED = "ltp_diagnosed"                 # bool: True if a person's long term partner has been diagnosed, o/w False
 RECENT_LTP_DIAGNOSED = "recent_ltp_diagnosed"   # bool: True if a person's most recent long term partner was diagnosed
+RECENT_LTP_ART = "recent_ltp_art"               # bool: True if a person's most recent long term partner was on ART
 LTP_ART = "ltp_art"                             # bool: True if a person's long term partner is on ART
 LTP_VIRAL_SUPPRESSED = "ltp_viral_suppressed"   # bool: True if a person's long term partner is virally suppressed
 LOW_FERTILITY = "low_fertility"                 # bool: True if a woman is considered to have a 0% chance of pregnancy, o/w False
