@@ -101,6 +101,7 @@ class HIVStatusModule:
         self.diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
         self.ltp_diagnosis_rate = {SexType.Male: 0.0, SexType.Female: 0.0}
         self.prob_repeated_ltp = 0.5
+        self.prob_remain_suppressed = 0.97
 
     # Initialisation ----------------------------------------------------------------------------------
 
@@ -526,7 +527,7 @@ class HIVStatusModule:
         viral_unsuppressed_ltp = population.get_sub_pop(COND(col.LTP_VIRAL_SUPPRESSED, op.eq, False))
 
         # 3% chance that virally suppressed person becomes un-suppressed
-        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < 0.97
+        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_remain_suppressed
 
         # chance of becoming virally suppressed if not previously suppressed
         becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
@@ -697,7 +698,7 @@ class HIVStatusModule:
                                                             COND(col.LTP_NEW, op.eq, True)))
 
         # 3% chance that virally suppressed person becomes un-suppressed
-        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < 0.97
+        remaining_suppressed = rng.uniform(size=len(viral_suppressed_ltp)) < self.prob_remain_suppressed
 
         # chance of becoming virally suppressed if not previously suppressed
         becoming_suppressed = self.get_ltp_becoming_suppressed(viral_unsuppressed_ltp)
