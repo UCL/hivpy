@@ -544,7 +544,7 @@ def test_prep_eligibility_all():
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
 
 
-def test_prep_usage():
+def test_starting_prep():
     N = 100
     pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
@@ -561,7 +561,7 @@ def test_prep_usage():
     pop.data[col.PREP_LEN_TESTED] = [False, False, True, False] * (N // 4)
     pop.data[col.PREP_VR_TESTED] = [False, False, False, True] * (N // 4)
 
-    pop.prep.prep_usage(pop)
+    pop.prep.start_prep(pop)
     # prep types spread evenly among population
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Oral) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == N/4
@@ -575,7 +575,7 @@ def test_prep_usage():
     pop.data[col.FIRST_LEN_START_DATE] = None
     pop.data[col.FIRST_VR_START_DATE] = None
     pop.data[col.LAST_PREP_START_DATE] = None
-    pop.prep.prep_usage(pop)
+    pop.prep.start_prep(pop)
 
     # only 50% eligible to start prep for the first time
     assert sum(pop.data[col.PREP_TYPE].isnull()) == N/2
@@ -606,7 +606,7 @@ def test_prep_usage():
     # 100% chance to start prep
     pop.prep.prob_base_prep_start = 1
 
-    pop.prep.prep_usage(pop)
+    pop.prep.start_prep(pop)
     # everyone starts their most preferred prep type
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) == (pop.data[col.PREP_ORAL_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
@@ -618,7 +618,7 @@ def test_prep_usage():
     # nobody is willing to take oral or cab
     pop.data[col.PREP_ORAL_WILLING] = False
     pop.data[col.PREP_CAB_WILLING] = False
-    pop.prep.prep_usage(pop)
+    pop.prep.start_prep(pop)
 
     # everyone is either on len or vr
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N * 0.75
@@ -631,7 +631,7 @@ def test_prep_usage():
     pop.data[col.PREP_TYPE] = None
     pop.data[col.EVER_PREP] = False
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(6000)]
-    pop.prep.prep_usage(pop)
+    pop.prep.start_prep(pop)
     # everyone is on len because vr is not yet available
     assert all(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
     assert all(pop.data[col.FIRST_LEN_START_DATE] == pop.date)

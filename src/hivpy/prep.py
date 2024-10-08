@@ -496,11 +496,10 @@ class PrEPModule:
 
         return prep
 
-    def prep_usage(self, pop: Population):
+    def start_prep(self, pop: Population):
         """
-        Update PrEP usage for people starting, restarting, and stopping PrEP.
+        Update PrEP usage for people starting PrEP for the first time.
         """
-        # starting prep for the first time
         eligible = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
                                     (col.HIV_DIAGNOSED, op.eq, False),
                                     (col.PREP_ELIGIBLE, op.eq, True),
@@ -527,3 +526,10 @@ class PrEPModule:
 
         # not tested explicitly to start prep
         self.general_start_prep(pop, starting_prep_pop)
+
+    def prep_usage(self, pop: Population):
+        """
+        Update PrEP usage for people starting, restarting, switching, and stopping PrEP.
+        """
+        # starting prep for the first time
+        self.start_prep(pop)
