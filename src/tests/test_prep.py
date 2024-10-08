@@ -204,6 +204,32 @@ def test_suspect_risk_pop():
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
 
 
+def test_presumed_hiv_neg_pop():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.data[col.EVER_TESTED] = True
+    pop.data[col.HIV_STATUS] = True
+    pop.data[col.DATE_HIV_INFECTION] = date(2019, 12, 1)
+    pop.hiv_diagnosis.init_prep_inj_na = True
+    pop.hiv_diagnosis.test_sens_general = 0.8
+    pop.hiv_diagnosis.test_sens_primary_ab = 0.5
+
+    # get stats (general test sensitivity)
+    no_presumed_hiv_neg = len(pop.prep.get_presumed_hiv_neg_pop(pop))
+    mean = N * (1 - pop.hiv_diagnosis.test_sens_general)
+    stdev = sqrt(mean * pop.hiv_diagnosis.test_sens_general)
+    # expecting ~20% of the population to be false negative
+    assert mean - 3 * stdev <= no_presumed_hiv_neg <= mean + 3 * stdev
+
+    pop.hiv_diagnosis.init_prep_inj_na = False
+    # get stats (primary test sensitivity)
+    no_presumed_hiv_neg = len(pop.prep.get_presumed_hiv_neg_pop(pop))
+    mean = N * (1 - pop.hiv_diagnosis.test_sens_primary_ab)
+    stdev = sqrt(mean * pop.hiv_diagnosis.test_sens_primary_ab)
+    # expecting ~50% of the population to be false negative
+    assert mean - 3 * stdev <= no_presumed_hiv_neg <= mean + 3 * stdev
+
+
 @pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
 def test_prep_ineligible(prep_strategy):
     N = 1000

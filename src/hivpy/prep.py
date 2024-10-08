@@ -138,7 +138,7 @@ class PrEPModule:
         if not pop.hiv_diagnosis.init_prep_inj_na:
             # infected up to 3 months ago
             recently_infected_pop = pop.get_sub_pop_intersection(
-                pop.get_sub_pop(COND(col.DATE_HIV_INFECTION, op.le, pop.date - timedelta(months=3))), false_neg_pop)
+                pop.get_sub_pop(COND(col.DATE_HIV_INFECTION, op.ge, pop.date - timedelta(months=3))), false_neg_pop)
 
             # expand sensitivity into a list
             eff_test_sens = [pop.hiv_diagnosis.test_sens_general] * len(false_neg_pop)
