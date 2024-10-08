@@ -41,21 +41,21 @@ class PrEPModule:
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
 
-        self.prep_oral_pref_beta = rng.choice([1.1, 1.3, 1.5])
+        self.prep_oral_pref_beta = self.p_data.prep_oral_pref_beta.sample()
         self.prep_cab_pref_beta = self.prep_oral_pref_beta + 0.3
         self.prep_len_pref_beta = self.prep_cab_pref_beta
         self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
         self.vl_prevalence_affects_prep = rng.choice([True, False], p=[1/3, 2/3])
-        self.vl_prevalence_prep_threshold = rng.choice([0.005, 0.01])
+        self.vl_prevalence_prep_threshold = self.p_data.vl_prevalence_prep_threshold.sample()
 
         self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
         self.prep_willing_threshold = self.p_data.prep_willing_threshold
         self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
+        # probability of starting prep in people who are eligible, willing,
+        # and tested for HIV according to base rate of testing
+        self.prob_base_prep_start = self.p_data.prob_base_prep_start.sample()
+        # FIXME: values are the same as for prob_base_prep_start, can we just re-sample that?
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
-        # FIXME: add to yaml
-        # probability of starting prep in people who are eligible and willing
-        # tested for HIV according to base rate of testing
-        self.prob_base_prep_start = rng.choice([0.05, 0.1, 0.2])
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)

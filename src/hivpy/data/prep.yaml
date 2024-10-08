@@ -10,10 +10,20 @@ prob_risk_informed_prep: 0.05
 prob_greater_risk_informed_prep: 0.1
 prob_suspect_risk_prep: 0.5
 
+# prep preference beta
+prep_oral_pref_beta:
+  Value: [1.1, 1.3, 1.5]
+# effect of low vl on prep willingness
+vl_prevalence_prep_threshold:
+  Value: [0.005, 0.01]
+
 # starting prep
 rate_test_onprep_any: 1
 prep_willing_threshold: 0.2
 prob_test_prep_start:
   Value: [0.25, 0.50, 0.75]
+prob_base_prep_start:
+  Value: [0.05, 0.10, 0.20]
+# FIXME: do we need this to be separate from prob_base_prep_start?
 prob_prep_restart:
   Value: [0.05, 0.10, 0.20]
