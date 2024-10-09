@@ -630,7 +630,10 @@ def test_starting_prep():
     pop.data[col.PREP_LEN_TESTED] = False
     pop.data[col.PREP_VR_TESTED] = False
     # 100% chance to start prep
-    pop.prep.prob_base_prep_start = 1
+    pop.prep.prob_oral_prep_start = 1
+    pop.prep.prob_cab_prep_start = 1
+    pop.prep.prob_len_prep_start = 1
+    pop.prep.prob_vr_prep_start = 1
 
     pop.prep.start_prep(pop)
     # everyone starts their most preferred prep type

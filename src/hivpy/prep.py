@@ -54,6 +54,11 @@ class PrEPModule:
         # probability of starting prep in people who are eligible, willing,
         # and tested for HIV according to base rate of testing
         self.prob_base_prep_start = self.p_data.prob_base_prep_start.sample()
+        # FIXME: add 4-year scale up for these probabilities
+        self.prob_oral_prep_start = self.prob_base_prep_start
+        self.prob_cab_prep_start = self.prob_base_prep_start
+        self.prob_len_prep_start = self.prob_base_prep_start
+        self.prob_vr_prep_start = self.prob_base_prep_start
         # FIXME: values are the same as for prob_base_prep_start, can we just re-sample that?
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
@@ -490,8 +495,14 @@ class PrEPModule:
 
         # outcomes
         r = rng.uniform(size=size)
-        # FIXME: may need different probabilities for different prep types
-        starting = r < self.prob_base_prep_start
+        if PrEPType(starting_prep) is PrEPType.Oral:
+            starting = r < self.prob_oral_prep_start
+        elif PrEPType(starting_prep) is PrEPType.Cabotegravir:
+            starting = r < self.prob_cab_prep_start
+        elif PrEPType(starting_prep) is PrEPType.Lenacapavir:
+            starting = r < self.prob_len_prep_start
+        elif PrEPType(starting_prep) is PrEPType.VaginalRing:
+            starting = r < self.prob_vr_prep_start
         prep = [starting_prep if s else None for s in starting]
 
         return prep
