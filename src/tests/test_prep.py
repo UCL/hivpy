@@ -571,7 +571,7 @@ def test_prep_eligibility_all():
 
 
 def test_starting_prep():
-    N = 100
+    N = 1000
     pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     pop.data[col.HARD_REACH] = False
@@ -629,13 +629,43 @@ def test_starting_prep():
     pop.data[col.PREP_CAB_TESTED] = False
     pop.data[col.PREP_LEN_TESTED] = False
     pop.data[col.PREP_VR_TESTED] = False
+    # all prep types have different start probabilities
+    pop.prep.prob_oral_prep_start = 0.9
+    pop.prep.prob_cab_prep_start = 0.8
+    pop.prep.prob_len_prep_start = 0.7
+    pop.prep.prob_vr_prep_start = 0.6
+
+    pop.prep.start_prep(pop)
+    # test oral prep type start probability
+    no_on_oral = sum(pop.data[col.PREP_TYPE] == PrEPType.Oral)
+    mean = N/4 * pop.prep.prob_oral_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_oral_prep_start))
+    assert mean - 3 * stdev <= no_on_oral <= mean + 3 * stdev
+    # test cab prep type start probability
+    no_on_cab = sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir)
+    mean = N/4 * pop.prep.prob_cab_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_cab_prep_start))
+    assert mean - 3 * stdev <= no_on_cab <= mean + 3 * stdev
+    # test len prep type start probability
+    no_on_len = sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
+    mean = N/4 * pop.prep.prob_len_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_len_prep_start))
+    assert mean - 3 * stdev <= no_on_len <= mean + 3 * stdev
+    # test vr prep type start probability
+    no_on_vr = sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)
+    mean = N/4 * pop.prep.prob_vr_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_vr_prep_start))
+    assert mean - 3 * stdev <= no_on_vr <= mean + 3 * stdev
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
     # 100% chance to start prep
     pop.prep.prob_oral_prep_start = 1
     pop.prep.prob_cab_prep_start = 1
     pop.prep.prob_len_prep_start = 1
     pop.prep.prob_vr_prep_start = 1
-
     pop.prep.start_prep(pop)
+
     # everyone starts their most preferred prep type
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) == (pop.data[col.PREP_ORAL_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
