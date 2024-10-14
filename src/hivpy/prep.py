@@ -136,6 +136,7 @@ class PrEPModule:
         received a false negative result.
         """
         false_neg_pop = pop.get_sub_pop(AND(COND(col.EVER_TESTED, op.eq, True),
+                                            COND(col.HIV_DIAGNOSED, op.eq, False),
                                             COND(col.HIV_STATUS, op.eq, True)))
 
         # general test sensitivity

@@ -208,12 +208,17 @@ def test_presumed_hiv_neg_pop():
     N = 1000
     pop = Population(size=N, start_date=date(2020, 1, 1))
     pop.data[col.EVER_TESTED] = True
+    pop.data[col.HIV_DIAGNOSED] = True
     pop.data[col.HIV_STATUS] = True
     pop.data[col.DATE_HIV_INFECTION] = date(2019, 12, 1)
     pop.hiv_diagnosis.init_prep_inj_na = True
     pop.hiv_diagnosis.test_sens_general = 0.8
     pop.hiv_diagnosis.test_sens_primary_ab = 0.5
 
+    # nobody should be false negative because everyone is diagnosed
+    assert len(pop.prep.get_presumed_hiv_neg_pop(pop)) == 0
+
+    pop.data[col.HIV_DIAGNOSED] = False
     # get stats (general test sensitivity)
     no_presumed_hiv_neg = len(pop.prep.get_presumed_hiv_neg_pop(pop))
     mean = N * (1 - pop.hiv_diagnosis.test_sens_general)
