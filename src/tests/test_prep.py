@@ -60,8 +60,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check oral is highest preference (ignore unassigned 0 ranks for under 15s)
-    assert all(pop.data[col.PREP_ORAL_RANK] <= 1)
+    # check oral is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_ORAL_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_ORAL_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(3000, 1, 1)
@@ -75,8 +76,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) > 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check cab is highest preference (ignore unassigned 0 ranks for under 15s)
-    assert all(pop.data[col.PREP_CAB_RANK] <= 1)
+    # check cab is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_CAB_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_CAB_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(4000, 1, 1)
@@ -90,8 +92,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) > 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check len is highest preference (ignore unassigned 0 ranks for under 15s)
-    assert all(pop.data[col.PREP_LEN_RANK] <= 1)
+    # check len is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_LEN_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_LEN_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(5000, 1, 1)
@@ -105,8 +108,14 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) > 0
-    # check vr is highest preference (ignore unassigned 0 ranks for men and under 15s)
-    assert all(pop.data[col.PREP_VR_RANK] <= 1)
+    # check vr is highest preference (or unassigned 0 ranks for men and under 15s)
+    assert all(pop.get_variable(col.PREP_VR_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_VR_RANK,
+                                pop.get_sub_pop_intersection(
+                                    over_15s, pop.get_sub_pop([(col.SEX, op.eq, SexType.Male)]))) == 0)
+    assert all(pop.get_variable(col.PREP_VR_RANK,
+                                pop.get_sub_pop_intersection(
+                                    over_15s, pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))) == 1)
 
     # willingness calculated for those who turned 15 this time step
     reset_prep_willingness_cols(pop)
