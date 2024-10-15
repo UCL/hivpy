@@ -130,6 +130,8 @@ class PrEPModule:
                                    COND(col.LTP_HIV_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
 
+    # FIXME: this function may be removed if there are no issues with
+    # updating PrEP after HIV diagnosis during population evolution
     def get_presumed_hiv_neg_pop(self, pop: Population):
         """
         Return the sub-population that has been tested and is HIV positive but
@@ -520,8 +522,9 @@ class PrEPModule:
                                     (col.LAST_TEST_DATE, op.eq, pop.date)])
         # factor in both true and false negatives in hiv status
         starting_prep_pop = pop.get_sub_pop_intersection(
-            eligible, pop.get_sub_pop_union(
-                pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)), self.get_presumed_hiv_neg_pop(pop)))
+            eligible, pop.get_sub_pop(OR(COND(col.HIV_STATUS, op.eq, False),
+                                         AND(COND(col.HIV_STATUS, op.eq, True),
+                                             COND(col.HIV_DIAGNOSED, op.eq, False)))))
 
         # starting oral prep after testing
         self.tested_start_prep(
@@ -541,7 +544,7 @@ class PrEPModule:
 
     def prep_usage(self, pop: Population):
         """
-        Update PrEP usage for people starting, restarting, switching, and stopping PrEP.
+        Update PrEP usage for people starting, continuing, switching, restarting, and stopping PrEP.
         """
         # starting prep for the first time
         self.start_prep(pop)
