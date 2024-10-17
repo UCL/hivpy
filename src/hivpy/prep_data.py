@@ -21,9 +21,13 @@ class PrEPData(DataReader):
             self.prob_greater_risk_informed_prep = self.data["prob_greater_risk_informed_prep"]
             self.prob_suspect_risk_prep = self.data["prob_suspect_risk_prep"]
 
+            self.prep_oral_pref_beta = self._get_discrete_dist("prep_oral_pref_beta")
+            self.vl_prevalence_prep_threshold = self._get_discrete_dist("vl_prevalence_prep_threshold")
+
             self.rate_test_onprep_any = self.data["rate_test_onprep_any"]
             self.prep_willing_threshold = self.data["prep_willing_threshold"]
             self.prob_test_prep_start = self._get_discrete_dist("prob_test_prep_start")
+            self.prob_base_prep_start = self._get_discrete_dist("prob_base_prep_start")
             self.prob_prep_restart = self._get_discrete_dist("prob_prep_restart")
 
         except KeyError as ke:

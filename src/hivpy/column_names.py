@@ -88,20 +88,34 @@ SBI_DIAGNOSED = "sbi_diagnosed"                 # Bool: True if SBI diagnosed th
 WHO4_OTHER = "who4_other"                       # Bool: True if other WHO4 disease occurs this timestep
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # Bool: True if other WHO4 disease diagnosed this timestep
 ADC = "AIDS_defining_condition"                 # Bool: presence of AIDS defining condition (any WHO4)
+
 R_PREP = "r_prep"                               # float: a semi-permanent random personal variable that determines whether someone is risk informed or suspects they are at risk enough to take PrEP
 PREP_ORAL_PREF = "prep_oral_pref"               # float: a value that determines and individual's preference for oral PrEP
 PREP_CAB_PREF = "prep_cab_pref"                 # float: a value that determines and individual's preference for injectable Cabotegravir PrEP
 PREP_LEN_PREF = "prep_len_pref"                 # float: a value that determines and individual's preference for injectable Lenacapavir PrEP
 PREP_VR_PREF = "prep_vr_pref"                   # float: a value that determines and individual's preference for vaginal ring PrEP
-PREP_PREF_RANKED = "prep_pref_ranked"           # None | prep.PrEPType(enum) list: a ranked list of PrEP type preferences
+PREP_ORAL_RANK = "prep_oral_rank"               # int: an individual's preference ranking for oral PrEP
+PREP_CAB_RANK = "prep_cab_rank"                 # int: an individual's preference ranking for injectable Cabotegravir PrEP
+PREP_LEN_RANK = "prep_len_rank"                 # int: an individual's preference ranking for injectable Lenacapavir PrEP
+PREP_VR_RANK = "prep_vr_rank"                   # int: an individual's preference ranking for vaginal ring PrEP
 PREP_ORAL_WILLING = "prep_oral_willing"         # Bool: True if an individual is willing to use oral PrEP
 PREP_CAB_WILLING = "prep_cab_willing"           # Bool: True if an individual is willing to use injectable Cabotegravir PrEP
 PREP_LEN_WILLING = "prep_len_willing"           # Bool: True if an individual is willing to use injectable Lenacapavir PrEP
 PREP_VR_WILLING = "prep_vr_willing"             # Bool: True if an individual is willing to use vaginal ring PrEP
 PREP_ANY_WILLING = "prep_any_willing"           # Bool: True if an individual is willing to use at least one type of PrEP
 PREP_ELIGIBLE = "prep_eligible"                 # Bool: True if an individual is eligible for PrEP usage
-PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None (DUMMY)
+PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None
+EVER_PREP = "ever_prep"                         # Bool: True if an individual has ever been on PrEP
+FIRST_ORAL_START_DATE = "first_oral_start_date"     # None | date: start date of first ever oral PrEP usage
+FIRST_CAB_START_DATE = "first_cab_start_date"       # None | date: start date of first ever injectable Cab PrEP usage
+FIRST_LEN_START_DATE = "first_len_start_date"       # None | date: start date of first ever injectable Len PrEP usage
+FIRST_VR_START_DATE = "first_vr_start_date"         # None | date: start date of first ever vaginal ring PrEP usage
+LAST_PREP_START_DATE = "last_prep_start_date"       # None | date: start date of most recent PrEP usage
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
+PREP_ORAL_TESTED = "prep_oral_tested"           # Bool: True if an individual has tested explicitly to start oral PrEP (DUMMY)
+PREP_CAB_TESTED = "prep_cab_tested"             # Bool: True if an individual has tested explicitly to start injectable Cab PrEP (DUMMY)
+PREP_LEN_TESTED = "prep_len_tested"             # Bool: True if an individual has tested explicitly to start injectable Len PrEP (DUMMY)
+PREP_VR_TESTED = "prep_vr_tested"               # Bool: True if an individual has tested explicitly to start vaginal ring PrEP (DUMMY)
 
 ART_ADHERENCE = "art_adherence"                 # DUMMY
 

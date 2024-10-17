@@ -14,7 +14,10 @@ def reset_prep_willingness_cols(pop: Population):
     pop.set_present_variable(col.PREP_CAB_PREF, 0)
     pop.set_present_variable(col.PREP_LEN_PREF, 0)
     pop.set_present_variable(col.PREP_VR_PREF, 0)
-    pop.set_present_variable(col.PREP_PREF_RANKED, None)
+    pop.set_present_variable(col.PREP_ORAL_RANK, 0)
+    pop.set_present_variable(col.PREP_CAB_RANK, 0)
+    pop.set_present_variable(col.PREP_LEN_RANK, 0)
+    pop.set_present_variable(col.PREP_VR_RANK, 0)
     pop.set_present_variable(col.PREP_ORAL_WILLING, False)
     pop.set_present_variable(col.PREP_CAB_WILLING, False)
     pop.set_present_variable(col.PREP_LEN_WILLING, False)
@@ -57,8 +60,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check for highest preference (ignore floats to discount nan values for under 15s)
-    assert all([i[0] is PrEPType.Oral for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
+    # check oral is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_ORAL_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_ORAL_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(3000, 1, 1)
@@ -72,8 +76,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) > 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check for highest preference (ignore floats to discount nan values for under 15s)
-    assert all([i[0] is PrEPType.Cabotegravir for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
+    # check cab is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_CAB_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_CAB_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(4000, 1, 1)
@@ -87,8 +92,9 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) > 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) == 0
-    # check for highest preference (ignore floats to discount nan values for under 15s)
-    assert all([i[0] is PrEPType.Lenacapavir for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
+    # check len is highest preference (or unassigned 0 ranks for under 15s)
+    assert all(pop.get_variable(col.PREP_LEN_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_LEN_RANK, over_15s) == 1)
 
     reset_prep_willingness_cols(pop)
     pop.date = date(5000, 1, 1)
@@ -102,8 +108,14 @@ def test_prep_willingness():
     assert sum(pop.get_variable(col.PREP_CAB_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_LEN_WILLING, over_15s)) == 0
     assert sum(pop.get_variable(col.PREP_VR_WILLING, over_15s)) > 0
-    # check for highest preference (ignore floats to discount nan values for men and under 15s)
-    assert all([i[0] is PrEPType.VaginalRing for i in pop.data[col.PREP_PREF_RANKED] if type(i) is not float])
+    # check vr is highest preference (or unassigned 0 ranks for men and under 15s)
+    assert all(pop.get_variable(col.PREP_VR_RANK, under_15s) == 0)
+    assert all(pop.get_variable(col.PREP_VR_RANK,
+                                pop.get_sub_pop_intersection(
+                                    over_15s, pop.get_sub_pop([(col.SEX, op.eq, SexType.Male)]))) == 0)
+    assert all(pop.get_variable(col.PREP_VR_RANK,
+                                pop.get_sub_pop_intersection(
+                                    over_15s, pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))) == 1)
 
     # willingness calculated for those who turned 15 this time step
     reset_prep_willingness_cols(pop)
@@ -199,6 +211,37 @@ def test_suspect_risk_pop():
     stdev = sqrt(mean * (1 - pop.prep.prob_suspect_risk_prep))
     # expecting ~50% of the population with partners NOT on ART to suspect they are at risk
     assert mean - 3 * stdev <= no_suspect_risk <= mean + 3 * stdev
+
+
+def test_presumed_hiv_neg_pop():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.data[col.EVER_TESTED] = True
+    pop.data[col.HIV_DIAGNOSED] = True
+    pop.data[col.HIV_STATUS] = True
+    pop.data[col.DATE_HIV_INFECTION] = date(2019, 12, 1)
+    pop.hiv_diagnosis.init_prep_inj_na = True
+    pop.hiv_diagnosis.test_sens_general = 0.8
+    pop.hiv_diagnosis.test_sens_primary_ab = 0.5
+
+    # nobody should be false negative because everyone is diagnosed
+    assert len(pop.prep.get_presumed_hiv_neg_pop(pop)) == 0
+
+    pop.data[col.HIV_DIAGNOSED] = False
+    # get stats (general test sensitivity)
+    no_presumed_hiv_neg = len(pop.prep.get_presumed_hiv_neg_pop(pop))
+    mean = N * (1 - pop.hiv_diagnosis.test_sens_general)
+    stdev = sqrt(mean * pop.hiv_diagnosis.test_sens_general)
+    # expecting ~20% of the population to be false negative
+    assert mean - 3 * stdev <= no_presumed_hiv_neg <= mean + 3 * stdev
+
+    pop.hiv_diagnosis.init_prep_inj_na = False
+    # get stats (primary test sensitivity)
+    no_presumed_hiv_neg = len(pop.prep.get_presumed_hiv_neg_pop(pop))
+    mean = N * (1 - pop.hiv_diagnosis.test_sens_primary_ab)
+    stdev = sqrt(mean * pop.hiv_diagnosis.test_sens_primary_ab)
+    # expecting ~50% of the population to be false negative
+    assert mean - 3 * stdev <= no_presumed_hiv_neg <= mean + 3 * stdev
 
 
 @pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
@@ -539,3 +582,129 @@ def test_prep_eligibility_all():
     stdev = sqrt(mean * (1 - 0.51))
     # expecting an additional 1% of the population to be risk informed
     assert mean - 3 * stdev <= eligible <= mean + 3 * stdev
+
+
+def test_starting_prep():
+    N = 1000
+    pop = Population(size=N, start_date=date(5000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.HARD_REACH] = False
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.HIV_STATUS] = False
+    pop.data[col.PREP_ELIGIBLE] = True
+    pop.data[col.PREP_ANY_WILLING] = True
+    pop.data[col.EVER_PREP] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    # tested explicitly to start prep
+    pop.data[col.PREP_ORAL_TESTED] = [True, False, False, False] * (N // 4)
+    pop.data[col.PREP_CAB_TESTED] = [False, True, False, False] * (N // 4)
+    pop.data[col.PREP_LEN_TESTED] = [False, False, True, False] * (N // 4)
+    pop.data[col.PREP_VR_TESTED] = [False, False, False, True] * (N // 4)
+
+    pop.prep.start_prep(pop)
+    # prep types spread evenly among population
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Oral) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N/4
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N/4
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = [True, False] * (N // 2)
+    pop.data[col.FIRST_ORAL_START_DATE] = None
+    pop.data[col.FIRST_CAB_START_DATE] = None
+    pop.data[col.FIRST_LEN_START_DATE] = None
+    pop.data[col.FIRST_VR_START_DATE] = None
+    pop.data[col.LAST_PREP_START_DATE] = None
+    pop.prep.start_prep(pop)
+
+    # only 50% eligible to start prep for the first time
+    assert sum(pop.data[col.PREP_TYPE].isnull()) == N/2
+    # check that people who aren't on a specific type of prep don't have start dates
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Oral) == (pop.data[col.FIRST_ORAL_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Cabotegravir) == (pop.data[col.FIRST_CAB_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
+    assert all(pop.data[col.PREP_TYPE].notnull() == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    # introduce different preference ranking distributions
+    pop.data[col.PREP_ORAL_RANK] = [1, 2, 3, 4] * (N // 4)
+    pop.data[col.PREP_CAB_RANK] = [2, 1, 2, 3] * (N // 4)
+    pop.data[col.PREP_LEN_RANK] = [3, 3, 1, 2] * (N // 4)
+    pop.data[col.PREP_VR_RANK] = [4, 4, 4, 1] * (N // 4)
+    # all willing to take any prep
+    pop.data[col.PREP_ORAL_WILLING] = True
+    pop.data[col.PREP_CAB_WILLING] = True
+    pop.data[col.PREP_LEN_WILLING] = True
+    pop.data[col.PREP_VR_WILLING] = True
+    # not tested explicitly to start prep
+    pop.data[col.PREP_ORAL_TESTED] = False
+    pop.data[col.PREP_CAB_TESTED] = False
+    pop.data[col.PREP_LEN_TESTED] = False
+    pop.data[col.PREP_VR_TESTED] = False
+    # all prep types have different start probabilities
+    pop.prep.prob_oral_prep_start = 0.9
+    pop.prep.prob_cab_prep_start = 0.8
+    pop.prep.prob_len_prep_start = 0.7
+    pop.prep.prob_vr_prep_start = 0.6
+
+    pop.prep.start_prep(pop)
+    # test oral prep type start probability
+    no_on_oral = sum(pop.data[col.PREP_TYPE] == PrEPType.Oral)
+    mean = N/4 * pop.prep.prob_oral_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_oral_prep_start))
+    assert mean - 3 * stdev <= no_on_oral <= mean + 3 * stdev
+    # test cab prep type start probability
+    no_on_cab = sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir)
+    mean = N/4 * pop.prep.prob_cab_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_cab_prep_start))
+    assert mean - 3 * stdev <= no_on_cab <= mean + 3 * stdev
+    # test len prep type start probability
+    no_on_len = sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
+    mean = N/4 * pop.prep.prob_len_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_len_prep_start))
+    assert mean - 3 * stdev <= no_on_len <= mean + 3 * stdev
+    # test vr prep type start probability
+    no_on_vr = sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)
+    mean = N/4 * pop.prep.prob_vr_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_vr_prep_start))
+    assert mean - 3 * stdev <= no_on_vr <= mean + 3 * stdev
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    # 100% chance to start prep
+    pop.prep.prob_oral_prep_start = 1
+    pop.prep.prob_cab_prep_start = 1
+    pop.prep.prob_len_prep_start = 1
+    pop.prep.prob_vr_prep_start = 1
+    pop.prep.start_prep(pop)
+
+    # everyone starts their most preferred prep type
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) == (pop.data[col.PREP_ORAL_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == (pop.data[col.PREP_LEN_RANK] == 1))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == (pop.data[col.PREP_VR_RANK] == 1))
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    # nobody is willing to take oral or cab
+    pop.data[col.PREP_ORAL_WILLING] = False
+    pop.data[col.PREP_CAB_WILLING] = False
+    pop.prep.start_prep(pop)
+
+    # everyone is either on len or vr
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N * 0.75
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N * 0.25
+    # check that people who aren't on a specific type of prep don't have start dates
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
+    assert all(pop.data[col.LAST_PREP_START_DATE] == pop.date)
+
+    pop.data[col.PREP_TYPE] = None
+    pop.data[col.EVER_PREP] = False
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(6000)]
+    pop.prep.start_prep(pop)
+    # everyone is on len because vr is not yet available
+    assert all(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
+    assert all(pop.data[col.FIRST_LEN_START_DATE] == pop.date)
