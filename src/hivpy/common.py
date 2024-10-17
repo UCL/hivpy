@@ -60,6 +60,20 @@ def opposite_sex(sex: SexType):
     return (1 - sex)
 
 
+def sub_pop_ratio(sp1, sp2):
+    if len(sp2) == 0:
+        return 0
+    else:
+        return len(sp1) / len(sp2)
+
+
+def safe_ratio(n1, n2):
+    if n2 == 0:
+        return 0
+    else:
+        return n1/n2
+
+
 class date:
     def __init__(self, year, month=1, day=1):
         self.year = year
