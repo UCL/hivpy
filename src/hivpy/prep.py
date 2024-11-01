@@ -308,6 +308,26 @@ class PrEPModule:
 
         return favoured_prep
 
+    def prep_propensity(self, pop: Population):
+        """
+        Determine PrEP preference values, willingness to take PrEP, PrEP preference ranks, and favoured PrEP type.
+        """
+        # store initial preference values
+        init_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # set preference values
+        self.prep_preference(pop)
+        # set willingness values
+        self.prep_willingness(pop)
+        # get new preference values
+        new_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # find people whose preference has changed this time step
+        changed_pref_pop = new_prefs.compare(init_prefs).index
+        if len(changed_pref_pop) > 0:
+            # update preference ranks
+            self.prep_pref_ranks(pop, changed_pref_pop)
+            # update favoured prep
+            self.favoured_prep(pop, changed_pref_pop)
+
     def prep_eligibility(self, pop: Population):
         """
         Mark people who are eligible for PrEP this time step.
