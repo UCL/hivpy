@@ -103,7 +103,12 @@ PREP_CAB_WILLING = "prep_cab_willing"           # Bool: True if an individual is
 PREP_LEN_WILLING = "prep_len_willing"           # Bool: True if an individual is willing to use injectable Lenacapavir PrEP
 PREP_VR_WILLING = "prep_vr_willing"             # Bool: True if an individual is willing to use vaginal ring PrEP
 PREP_ANY_WILLING = "prep_any_willing"           # Bool: True if an individual is willing to use at least one type of PrEP
+FAVOURED_PREP_TYPE = "favoured_prep_type"       # None | prep.PrEPType(enum): PrEP type with highest preference an individual is willing to take that is also currently available, o/w None
 PREP_ELIGIBLE = "prep_eligible"                 # Bool: True if an individual is eligible for PrEP usage
+PREP_ORAL_TESTED = "prep_oral_tested"           # Bool: True if an individual has tested explicitly to start oral PrEP (DUMMY)
+PREP_CAB_TESTED = "prep_cab_tested"             # Bool: True if an individual has tested explicitly to start injectable Cab PrEP (DUMMY)
+PREP_LEN_TESTED = "prep_len_tested"             # Bool: True if an individual has tested explicitly to start injectable Len PrEP (DUMMY)
+PREP_VR_TESTED = "prep_vr_tested"               # Bool: True if an individual has tested explicitly to start vaginal ring PrEP (DUMMY)
 PREP_TYPE = "prep_type"                         # None | prep.PrEPType(enum): Oral, Cabotegravir, Lenacapavir, or VaginalRing if PrEP is being used, o/w None
 EVER_PREP = "ever_prep"                         # Bool: True if an individual has ever been on PrEP
 FIRST_ORAL_START_DATE = "first_oral_start_date"     # None | date: start date of first ever oral PrEP usage
@@ -112,13 +117,8 @@ FIRST_LEN_START_DATE = "first_len_start_date"       # None | date: start date of
 FIRST_VR_START_DATE = "first_vr_start_date"         # None | date: start date of first ever vaginal ring PrEP usage
 LAST_PREP_START_DATE = "last_prep_start_date"       # None | date: start date of most recent PrEP usage
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
-PREP_ORAL_TESTED = "prep_oral_tested"           # Bool: True if an individual has tested explicitly to start oral PrEP (DUMMY)
-PREP_CAB_TESTED = "prep_cab_tested"             # Bool: True if an individual has tested explicitly to start injectable Cab PrEP (DUMMY)
-PREP_LEN_TESTED = "prep_len_tested"             # Bool: True if an individual has tested explicitly to start injectable Len PrEP (DUMMY)
-PREP_VR_TESTED = "prep_vr_tested"               # Bool: True if an individual has tested explicitly to start vaginal ring PrEP (DUMMY)
 
-ART_ADHERENCE = "art_adherence"                 # DUMMY
-
+ART_ADHERENCE = "art_adherence"                 # None | Float: percentage of ART intake that is adhered to
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
 M184_MUTATION = "m184m"
 K65_MUTATION = "k65m"

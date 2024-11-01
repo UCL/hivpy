@@ -76,6 +76,7 @@ class PrEPModule:
         pop.init_variable(col.PREP_LEN_WILLING, False)
         pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
+        pop.init_variable(col.FAVOURED_PREP_TYPE, None)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
         pop.init_variable(col.PREP_TYPE, None)
@@ -269,6 +270,43 @@ class PrEPModule:
         for i in range(len(prefs)):
             ranks[sorted_pref_indices[i]] = i+1
         return [ranks]
+
+    def favoured_prep(self, pop: Population, sub_pop=None):
+        """
+        Determine favoured PrEP type using preference ranks. Favoured PrEP is the type of PrEP an individual
+        is willing to take with the highest preference value that is also currently available.
+        """
+        # FIXME: can we pass the date to transform_group in a better way?
+        self.date = pop.date
+        # find prep type with highest preference an individual is willing to take that is also currently available
+        favoured_prep = pop.transform_group([col.PREP_ORAL_RANK, col.PREP_CAB_RANK,
+                                             col.PREP_LEN_RANK, col.PREP_VR_RANK,
+                                             col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
+                                             col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
+                                            self.calc_favoured_prep, sub_pop=sub_pop, use_size=False)
+        pop.set_present_variable(col.FAVOURED_PREP_TYPE, favoured_prep, sub_pop)
+
+    def calc_favoured_prep(self, oral_rank, cab_rank, len_rank, vr_rank,
+                           oral_willing, cab_willing, len_willing, vr_willing):
+        """
+        Returns favoured PrEP type based on willingness, preference rank and availability.
+        """
+        # group pref ranks and willingness
+        prefs = [oral_rank, cab_rank, len_rank, vr_rank]
+        willing = [oral_willing, cab_willing, len_willing, vr_willing]
+        # zip prep type and willingness together and sort by pref rank
+        sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
+        sorted_dict = dict(sorted_zipped)
+
+        favoured_prep = None
+        # find prep type someone is willing to take with the highest pref that is currently available
+        for prep_type in sorted_dict:
+            willing = sorted_dict[prep_type]
+            if self.date >= self.date_prep_intro[prep_type] and willing:
+                favoured_prep = prep_type
+                break
+
+        return favoured_prep
 
     def prep_eligibility(self, pop: Population):
         """
@@ -465,18 +503,11 @@ class PrEPModule:
                                                   COND(col.PREP_VR_TESTED, op.eq, False))))
 
         if len(starting_prep_pop) > 0:
-            # FIXME: can we pass the date to transform_group in a better way?
-            self.date = pop.date
             # starting prep outcomes
-            prep_types = pop.transform_group([col.PREP_ORAL_RANK, col.PREP_CAB_RANK,
-                                              col.PREP_LEN_RANK, col.PREP_VR_RANK,
-                                              col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
-                                              col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
-                                             self.calc_willing_start_prep, sub_pop=starting_prep_pop)
-
+            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_starting_prep,
+                                             sub_pop=starting_prep_pop, dropna=True)
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
-            pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
 
             def set_prep_start_date(pop: Population, starting_prep_pop, prep_type, start_date_col):
                 """
@@ -487,43 +518,29 @@ class PrEPModule:
                                              starting_prep_pop,
                                              pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, prep_type))))
 
+            # set start dates
+            pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
             set_prep_start_date(pop, starting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
             set_prep_start_date(pop, starting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
             set_prep_start_date(pop, starting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
             set_prep_start_date(pop, starting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
 
-    def calc_willing_start_prep(self, oral_pref, cab_pref, len_pref, vr_pref,
-                                oral_willing, cab_willing, len_willing, vr_willing, size):
+    def calc_starting_prep(self, favoured_prep, size):
         """
         Returns PrEP types for people starting PrEP for the first time without explicitly
         testing to start PrEP. Individual preferences and availability are taken into account.
         """
-        # group pref ranks and willingness
-        prefs = [oral_pref, cab_pref, len_pref, vr_pref]
-        willing = [oral_willing, cab_willing, len_willing, vr_willing]
-        # zip prep type and willingness together and sort by pref rank
-        sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
-        sorted_dict = dict(sorted_zipped)
-
-        starting_prep = None
-        # find prep type someone is willing to take with the highest pref that is currently available
-        for prep_type in sorted_dict:
-            willing = sorted_dict[prep_type]
-            if self.date >= self.date_prep_intro[prep_type] and willing:
-                starting_prep = prep_type
-                break
-
         # outcomes
         r = rng.uniform(size=size)
-        if PrEPType(starting_prep) is PrEPType.Oral:
+        if PrEPType(favoured_prep) is PrEPType.Oral:
             starting = r < self.prob_oral_prep_start
-        elif PrEPType(starting_prep) is PrEPType.Cabotegravir:
+        elif PrEPType(favoured_prep) is PrEPType.Cabotegravir:
             starting = r < self.prob_cab_prep_start
-        elif PrEPType(starting_prep) is PrEPType.Lenacapavir:
+        elif PrEPType(favoured_prep) is PrEPType.Lenacapavir:
             starting = r < self.prob_len_prep_start
-        elif PrEPType(starting_prep) is PrEPType.VaginalRing:
+        elif PrEPType(favoured_prep) is PrEPType.VaginalRing:
             starting = r < self.prob_vr_prep_start
-        prep = [starting_prep if s else None for s in starting]
+        prep = [favoured_prep if s else None for s in starting]
 
         return prep
 
