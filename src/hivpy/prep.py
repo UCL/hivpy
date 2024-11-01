@@ -242,6 +242,21 @@ class PrEPModule:
         pop.set_present_variable(willing_col, willingness)
         pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness))
 
+    def prep_pref_ranks(self, pop: Population, sub_pop=None):
+        """
+        Rank PrEP preferences.
+        """
+        # get ranking outcomes
+        # FIXME: not sure if transform group is the best way to do this, but it works for now
+        pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
+                                          col.PREP_LEN_PREF, col.PREP_VR_PREF],
+                                         self.calc_prep_pref_ranks, sub_pop=sub_pop, use_size=False)
+        # set ranks for each prep type
+        pop.set_present_variable(col.PREP_ORAL_RANK, [i[0] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_CAB_RANK, [i[1] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_LEN_RANK, [i[2] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_VR_RANK, [i[3] for i in pref_ranks], sub_pop)
+
     def calc_prep_pref_ranks(self, oral_pref, cab_pref, len_pref, vr_pref):
         """
         Returns PrEP preference rankings based on all preference values.
