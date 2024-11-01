@@ -165,9 +165,26 @@ class PrEPModule:
 
         return pop.apply_bool_mask(mask, false_neg_pop)
 
-    def set_prep_preference(self, pop: Population, date_intro, pref_beta, pref_col, willing_col, sub_pop_mod=None):
+    def prep_preference(self, pop: Population):
         """
-        Set preference values for a specific type of PrEP and determine willingness.
+        Determine PrEP preferences for all PrEP types.
+        """
+        # oral prep pref
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral],
+                                 self.prep_oral_pref_beta, col.PREP_ORAL_PREF)
+        # injectable prep pref
+        # FIXME: should Cab be controlled by an availability flag instead of introduction date?
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir],
+                                 self.prep_cab_pref_beta, col.PREP_CAB_PREF)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir],
+                                 self.prep_len_pref_beta, col.PREP_LEN_PREF)
+        # vr prep pref (women only)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
+                                 col.PREP_VR_PREF, sub_pop_mod=pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))
+
+    def set_prep_preference(self, pop: Population, date_intro, pref_beta, pref_col, sub_pop_mod=None):
+        """
+        Set preference values for a specific type of PrEP.
         """
         if pop.date >= date_intro:
             # find those who turned 15 this time step
@@ -183,10 +200,6 @@ class PrEPModule:
             # random preference beta distribution
             pref = rng.beta(pref_beta, 5, size=len(sub_pop))
             pop.set_present_variable(pref_col, pref, sub_pop)
-            # determine willingness by comparing to threshold
-            willingness = pref > self.prep_willing_threshold
-            pop.set_present_variable(willing_col, willingness, sub_pop)
-            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
 
     def prep_willingness(self, pop: Population):
         """
