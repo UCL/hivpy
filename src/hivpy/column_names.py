@@ -117,6 +117,12 @@ FIRST_LEN_START_DATE = "first_len_start_date"       # None | date: start date of
 FIRST_VR_START_DATE = "first_vr_start_date"         # None | date: start date of first ever vaginal ring PrEP usage
 LAST_PREP_START_DATE = "last_prep_start_date"       # None | date: start date of most recent PrEP usage
 PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step
+CONT_ON_PREP = "cont_on_prep"                   # None | timedelta: total length of continuous usage of current PrEP based on user intention (breaks due to ineligibility do not count against continuity)
+CONT_ACTIVE_ON_PREP = "cont_active_on_prep"     # None | timedelta: actual total length of continuous usage of current PrEP
+CUMULATIVE_PREP_ORAL = "cumulative_prep_oral"   # None | timedelta: total length of cumulative oral PrEP usage
+CUMULATIVE_PREP_CAB = "cumulative_prep_cab"     # None | timedelta: total length of cumulative injectable Cab PrEP usage
+CUMULATIVE_PREP_LEN = "cumulative_prep_len"     # None | timedelta: total length of cumulative injectable Len PrEP usage
+CUMULATIVE_PREP_VR = "cumulative_prep_vr"       # None | timedelta: total length of cumulative injectable vaginal ring PrEP usage
 
 ART_ADHERENCE = "art_adherence"                 # None | Float: percentage of ART intake that is adhered to
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
