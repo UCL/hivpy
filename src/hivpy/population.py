@@ -271,6 +271,17 @@ class Population:
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
 
+    def col_apply(self, param_list, func, sub_pop=None):
+        """
+        Applies a function to specific columns in the dataframe.
+        """
+        if sub_pop is not None:
+            df = self.data.loc[sub_pop]
+        else:
+            df = self.data
+        # Lambda function used to extract param column contents
+        return df.apply(lambda x: func(*[x[p] for p in param_list]), axis=1)
+
     def evolve(self, time_step: timedelta):
         """
         Advance the population by one time step.

@@ -79,6 +79,10 @@ class PrEPModule:
         pop.init_variable(col.FAVOURED_PREP_TYPE, None)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
+        pop.init_variable(col.PREP_ORAL_TESTED, False)
+        pop.init_variable(col.PREP_CAB_TESTED, False)
+        pop.init_variable(col.PREP_LEN_TESTED, False)
+        pop.init_variable(col.PREP_VR_TESTED, False)
         pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.EVER_PREP, False)
         pop.init_variable(col.FIRST_ORAL_START_DATE, None)
@@ -87,10 +91,6 @@ class PrEPModule:
         pop.init_variable(col.FIRST_VR_START_DATE, None)
         pop.init_variable(col.LAST_PREP_START_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
-        pop.init_variable(col.PREP_ORAL_TESTED, False)
-        pop.init_variable(col.PREP_CAB_TESTED, False)
-        pop.init_variable(col.PREP_LEN_TESTED, False)
-        pop.init_variable(col.PREP_VR_TESTED, False)
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
@@ -98,12 +98,12 @@ class PrEPModule:
     # FIXME: should this function be in another module?
     def get_vl_prevalence(self, pop: Population):
         """
-        Return the prevalence of people between 15 and 50 years old with a viral load of over 1000.
+        Return the prevalence of people between 15 and 50 years old with a viral load of over 3.0.
         Affects willingness to take PrEP.
         """
         gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
-        # find prevalence of people with a viral load of over 1000
-        return (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.gt, 1000),
+        # find prevalence of people with a viral load of over 3.0
+        return (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.ge, 3.0),
                                      (col.AGE, op.ge, 15),
                                      (col.AGE, op.lt, 50)])) / gen_pop
                 if gen_pop > 0 else 0)
@@ -248,10 +248,9 @@ class PrEPModule:
         Rank PrEP preferences.
         """
         # get ranking outcomes
-        # FIXME: not sure if transform group is the best way to do this, but it works for now
-        pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
-                                          col.PREP_LEN_PREF, col.PREP_VR_PREF],
-                                         self.calc_prep_pref_ranks, sub_pop=sub_pop, use_size=False)
+        pref_ranks = pop.col_apply([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
+                                    col.PREP_LEN_PREF, col.PREP_VR_PREF],
+                                   self.calc_prep_pref_ranks, sub_pop=sub_pop)
         # set ranks for each prep type
         pop.set_present_variable(col.PREP_ORAL_RANK, [i[0] for i in pref_ranks], sub_pop)
         pop.set_present_variable(col.PREP_CAB_RANK, [i[1] for i in pref_ranks], sub_pop)
@@ -269,7 +268,7 @@ class PrEPModule:
         # assign rank per prep type (position indicates prep type, value indicates rank)
         for i in range(len(prefs)):
             ranks[sorted_pref_indices[i]] = i+1
-        return [ranks]
+        return ranks
 
     def favoured_prep(self, pop: Population, sub_pop=None):
         """
@@ -325,8 +324,8 @@ class PrEPModule:
         if len(changed_pref_pop) > 0:
             # update preference ranks
             self.prep_pref_ranks(pop, changed_pref_pop)
-            # update favoured prep
-            self.favoured_prep(pop, changed_pref_pop)
+        # update favoured prep
+        self.favoured_prep(pop, changed_pref_pop)
 
     def prep_eligibility(self, pop: Population):
         """
