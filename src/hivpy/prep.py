@@ -61,6 +61,11 @@ class PrEPModule:
         self.prob_vr_prep_start = self.prob_base_prep_start
         # FIXME: values are the same as for prob_base_prep_start, can we just re-sample that?
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
+        # FIXME: stop probabilities dependent on time step length
+        self.prob_oral_prep_stop = self.p_data.prob_base_prep_stop.sample()
+        self.prob_cab_prep_stop = self.p_data.prob_base_prep_stop.sample()
+        self.prob_len_prep_stop = self.prob_cab_prep_stop
+        self.prob_vr_prep_stop = self.p_data.prob_base_prep_stop_nonuniform.sample()
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)
