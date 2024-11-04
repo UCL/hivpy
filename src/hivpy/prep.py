@@ -507,6 +507,7 @@ class PrEPModule:
             if len(starting_prep_pop) > 0:
                 pop.set_present_variable(col.PREP_TYPE, prep_type, starting_prep_pop)
                 pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
+                pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
                 pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
 
@@ -527,6 +528,7 @@ class PrEPModule:
                                              sub_pop=starting_prep_pop, dropna=True)
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
+            pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
 
             def set_prep_start_date(pop: Population, starting_prep_pop, prep_type, start_date_col):
                 """
@@ -567,6 +569,10 @@ class PrEPModule:
         """
         Update PrEP usage for people starting PrEP for the first time.
         """
+        # clear just_started flag
+        pop.set_present_variable(col.PREP_JUST_STARTED, False,
+                                 pop.get_sub_pop([(col.LAST_PREP_START_DATE, op.ne, pop.date)]))
+        # find people eligible to start for the first time
         eligible = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
                                     (col.HIV_DIAGNOSED, op.eq, False),
                                     (col.PREP_ELIGIBLE, op.eq, True),

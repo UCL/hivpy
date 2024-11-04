@@ -116,7 +116,7 @@ FIRST_CAB_START_DATE = "first_cab_start_date"       # None | date: start date of
 FIRST_LEN_START_DATE = "first_len_start_date"       # None | date: start date of first ever injectable Len PrEP usage
 FIRST_VR_START_DATE = "first_vr_start_date"         # None | date: start date of first ever vaginal ring PrEP usage
 LAST_PREP_START_DATE = "last_prep_start_date"       # None | date: start date of most recent PrEP usage
-PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step (DUMMY)
+PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began this time step
 
 ART_ADHERENCE = "art_adherence"                 # None | Float: percentage of ART intake that is adhered to
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
