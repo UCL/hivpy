@@ -317,7 +317,7 @@ class Population:
             if (n_deaths and self.apply_death):
                 self.drop_from_population(HIV_deaths)
             self.hiv_diagnosis.update_HIV_diagnosis(self)
-            self.prep.prep_usage(self)
+            self.prep.prep_usage(self, time_step)
 
         # Some population cleanup
         self.pregnancy.reset_anc_at_birth(self)
