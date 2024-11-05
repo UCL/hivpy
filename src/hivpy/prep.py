@@ -589,27 +589,22 @@ class PrEPModule:
                                     (col.PREP_ANY_WILLING, op.eq, True),
                                     (col.EVER_PREP, op.eq, False),
                                     (col.LAST_TEST_DATE, op.eq, pop.date)])
-        # factor in both true and false negatives in hiv status
-        starting_prep_pop = pop.get_sub_pop_intersection(
-            eligible, pop.get_sub_pop(OR(COND(col.HIV_STATUS, op.eq, False),
-                                         AND(COND(col.HIV_STATUS, op.eq, True),
-                                             COND(col.HIV_DIAGNOSED, op.eq, False)))))
 
         # starting oral prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
+            pop, eligible, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
         # starting injectable cab prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
+            pop, eligible, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
         # starting injectable len prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
+            pop, eligible, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
         # starting vr prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
+            pop, eligible, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
 
         # not tested explicitly to start prep
-        self.general_start_prep(pop, starting_prep_pop)
+        self.general_start_prep(pop, eligible)
 
     def prep_usage(self, pop: Population):
         """
