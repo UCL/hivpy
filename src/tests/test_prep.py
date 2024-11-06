@@ -739,3 +739,97 @@ def test_starting_prep():
     # everyone is on len because vr is not yet available
     assert all(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
     assert all(pop.data[col.FIRST_LEN_START_DATE] == pop.date)
+
+
+def test_continuing_prep():
+    N = 100
+    time_step = timedelta(months=1)
+    pop = Population(size=N, start_date=date(5000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.EVER_PREP] = True
+    pop.data[col.LAST_PREP_STOP_DATE] = None
+    pop.data[col.PREP_JUST_STARTED] = False
+    pop.data[col.CONT_ON_PREP] = timedelta(months=3)
+    pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=2)
+    pop.data[col.CUMULATIVE_PREP_ORAL] = time_step
+    pop.data[col.CUMULATIVE_PREP_CAB] = time_step
+    pop.data[col.CUMULATIVE_PREP_LEN] = time_step
+    pop.data[col.CUMULATIVE_PREP_VR] = time_step
+    pop.data[col.LAST_TEST_DATE] = pop.date - timedelta(months=3)
+    # prep types spread evenly among population
+    pop.data[col.PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                               PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+    # everyone is taking their favoured prep type
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                                        PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+    # 10% chance to stop prep
+    prob_base_prep_stop = 0.1
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+
+    pop.prep.continue_prep(pop, time_step)
+    # expecting 90% of people to continue prep
+    no_on_prep = sum(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=3))
+    mean = N * (1 - prob_base_prep_stop)
+    stdev = sqrt(mean * prob_base_prep_stop)
+    assert mean - 3 * stdev <= no_on_prep <= mean + 3 * stdev
+    # expecting 10% of people to stop prep
+    no_off_prep = sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date)
+    mean = N * prob_base_prep_stop
+    stdev = sqrt(mean * (1 - prob_base_prep_stop))
+    assert mean - 3 * stdev <= no_off_prep <= mean + 3 * stdev
+
+    # check cumulative prep usage (those that stopped should not be incremented)
+    assert all(((pop.data[col.CUMULATIVE_PREP_ORAL] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Oral)) |
+               ((pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_CAB] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir)) |
+               ((pop.data[col.CUMULATIVE_PREP_CAB] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_LEN] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)) |
+               ((pop.data[col.CUMULATIVE_PREP_LEN] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_VR] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)) |
+               ((pop.data[col.CUMULATIVE_PREP_VR] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+
+    pop.data[col.LAST_PREP_STOP_DATE] = None
+    # nobody is taking their favoured prep type
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.VaginalRing, PrEPType.Lenacapavir,
+                                        PrEPType.Cabotegravir, PrEPType.Oral] * (N // 4)
+
+    pop.prep.continue_prep(pop, time_step)
+    # expecting 90% of people to switch prep
+    no_on_prep = sum(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=1))
+    mean = N * (1 - prob_base_prep_stop)
+    stdev = sqrt(mean * prob_base_prep_stop)
+    assert mean - 3 * stdev <= no_on_prep <= mean + 3 * stdev
+    # expecting 10% of people to stop prep
+    no_off_prep = sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date)
+    mean = N * prob_base_prep_stop
+    stdev = sqrt(mean * (1 - prob_base_prep_stop))
+    assert mean - 3 * stdev <= no_off_prep <= mean + 3 * stdev
+
+    # check cumulative prep usage (those that stopped should not be incremented)
+    assert all(((pop.data[col.CUMULATIVE_PREP_ORAL] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Oral)) |
+               ((pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_CAB] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir)) |
+               ((pop.data[col.CUMULATIVE_PREP_CAB] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_LEN] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)) |
+               ((pop.data[col.CUMULATIVE_PREP_LEN] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+    assert all(((pop.data[col.CUMULATIVE_PREP_VR] == timedelta(months=2)) ==
+                (pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)) |
+               ((pop.data[col.CUMULATIVE_PREP_VR] == time_step) ==
+                (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
