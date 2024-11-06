@@ -597,6 +597,12 @@ def test_starting_prep():
     pop.data[col.PREP_ANY_WILLING] = True
     pop.data[col.EVER_PREP] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.CONT_ON_PREP] = None
+    pop.data[col.CONT_ACTIVE_ON_PREP] = None
+    pop.data[col.CUMULATIVE_PREP_ORAL] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_CAB] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_LEN] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_VR] = timedelta(months=0)
     # tested explicitly to start prep
     pop.data[col.PREP_ORAL_TESTED] = [True, False, False, False] * (N // 4)
     pop.data[col.PREP_CAB_TESTED] = [False, True, False, False] * (N // 4)
@@ -609,6 +615,13 @@ def test_starting_prep():
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N/4
+    # check continuous and cumulative prep usage
+    assert sum(pop.data[col.CONT_ON_PREP] == time_step) == N
+    assert sum(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) == N
+    assert sum(pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) == N/4
+    assert sum(pop.data[col.CUMULATIVE_PREP_CAB] == time_step) == N/4
+    assert sum(pop.data[col.CUMULATIVE_PREP_LEN] == time_step) == N/4
+    assert sum(pop.data[col.CUMULATIVE_PREP_VR] == time_step) == N/4
 
     pop.data[col.PREP_TYPE] = None
     pop.data[col.EVER_PREP] = [True, False] * (N // 2)
@@ -676,6 +689,12 @@ def test_starting_prep():
 
     pop.data[col.PREP_TYPE] = None
     pop.data[col.EVER_PREP] = False
+    pop.data[col.CONT_ON_PREP] = None
+    pop.data[col.CONT_ACTIVE_ON_PREP] = None
+    pop.data[col.CUMULATIVE_PREP_ORAL] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_CAB] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_LEN] = timedelta(months=0)
+    pop.data[col.CUMULATIVE_PREP_VR] = timedelta(months=0)
     # 100% chance to start prep
     pop.prep.prob_oral_prep_start = 1
     pop.prep.prob_cab_prep_start = 1
@@ -688,6 +707,13 @@ def test_starting_prep():
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == (pop.data[col.PREP_LEN_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == (pop.data[col.PREP_VR_RANK] == 1))
+    # check continuous and cumulative prep usage
+    assert sum(pop.data[col.CONT_ON_PREP] == time_step) == N
+    assert sum(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) == N
+    assert all((pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) == (pop.data[col.PREP_ORAL_RANK] == 1))
+    assert all((pop.data[col.CUMULATIVE_PREP_CAB] == time_step) == (pop.data[col.PREP_CAB_RANK] == 1))
+    assert all((pop.data[col.CUMULATIVE_PREP_LEN] == time_step) == (pop.data[col.PREP_LEN_RANK] == 1))
+    assert all((pop.data[col.CUMULATIVE_PREP_VR] == time_step) == (pop.data[col.PREP_VR_RANK] == 1))
 
     pop.data[col.PREP_TYPE] = None
     pop.data[col.EVER_PREP] = False
