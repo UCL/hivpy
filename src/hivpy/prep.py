@@ -505,7 +505,8 @@ class PrEPModule:
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
 
-    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type, prep_tested_col, first_start_col):
+    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type,
+                          prep_tested_col, first_start_col, time_step):
         """
         Update people starting PrEP for the first time after testing to start PrEP.
         """
@@ -521,6 +522,18 @@ class PrEPModule:
                 pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
                 pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
+                # set continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
+                # increment cumulative use
+                self.set_prep_cumulative_cont(
+                    pop, starting_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, starting_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, starting_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, starting_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
 
     def general_start_prep(self, pop: Population, prep_eligible_pop, time_step):
         """
@@ -618,16 +631,16 @@ class PrEPModule:
 
         # starting oral prep after testing
         self.tested_start_prep(
-            pop, eligible, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
+            pop, eligible, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE, time_step)
         # starting injectable cab prep after testing
         self.tested_start_prep(
-            pop, eligible, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
+            pop, eligible, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE, time_step)
         # starting injectable len prep after testing
         self.tested_start_prep(
-            pop, eligible, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
+            pop, eligible, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE, time_step)
         # starting vr prep after testing
         self.tested_start_prep(
-            pop, eligible, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
+            pop, eligible, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE, time_step)
         # not tested explicitly to start prep
         self.general_start_prep(pop, eligible, time_step)
 
