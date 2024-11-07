@@ -833,3 +833,34 @@ def test_continuing_prep():
                 (pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)) |
                ((pop.data[col.CUMULATIVE_PREP_VR] == time_step) ==
                 (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
+
+
+def test_restarting_prep():
+    N = 100
+    time_step = timedelta(months=1)
+    pop = Population(size=N, start_date=date(5000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.EVER_PREP] = True
+    pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
+    pop.data[col.PREP_JUST_STARTED] = False
+    pop.data[col.CONT_ON_PREP] = timedelta(months=0)
+    pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.PREP_TYPE] = None
+    # everyone is taking their favoured prep type
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                                        PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+    # 50% chance to restart prep
+    pop.prep.prob_prep_restart = 0.5
+
+    pop.prep.restart_prep(pop, time_step)
+    # expecting 90% of people to restart prep
+    no_on_prep = sum(pop.data[col.LAST_PREP_STOP_DATE].isnull())
+    mean = N * pop.prep.prob_prep_restart
+    stdev = sqrt(mean * (1 - pop.prep.prob_prep_restart))
+    assert mean - 3 * stdev <= no_on_prep <= mean + 3 * stdev
+    # check continuous prep usage
+    assert all((pop.data[col.CONT_ON_PREP] == time_step) ==
+               (pop.data[col.LAST_PREP_STOP_DATE].isnull()))
+    assert all((pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) ==
+               (pop.data[col.LAST_PREP_STOP_DATE].isnull()))

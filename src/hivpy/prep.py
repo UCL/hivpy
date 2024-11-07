@@ -648,9 +648,10 @@ class PrEPModule:
         """
         Update PrEP usage for people continuing PrEP.
         """
-        # people who have used prep before but not started this time step
+        # people who have used prep before but not yet started this time step
         eligible = pop.get_sub_pop(AND(COND(col.EVER_PREP, op.eq, True),
                                        COND(col.PREP_JUST_STARTED, op.eq, False),
+                                       COND(col.LAST_PREP_STOP_DATE, op.eq, None),
                                        OR(COND(col.LAST_TEST_DATE, op.ne, pop.date),
                                           AND(COND(col.LAST_TEST_DATE, op.eq, pop.date),
                                               COND(col.HIV_DIAGNOSED, op.eq, False)))))
@@ -728,6 +729,63 @@ class PrEPModule:
 
         return prep
 
+    def restart_prep(self, pop: Population, time_step):
+        """
+        Update PrEP usage for people restarting PrEP.
+        """
+        # people who have used prep before and previously stopped using it
+        eligible = pop.get_sub_pop(AND(COND(col.EVER_PREP, op.eq, True),
+                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),
+                                       COND(col.LAST_TEST_DATE, op.eq, pop.date)))
+
+        if len(eligible) > 0:
+            # starting prep outcomes
+            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_restarting_prep,
+                                             sub_pop=eligible, dropna=True)
+            # people who are restarting prep
+            restarting_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
+
+            if len(restarting_prep_pop) > 0:
+                # set prep types
+                pop.set_present_variable(col.PREP_TYPE, prep_types, restarting_prep_pop)
+                pop.set_present_variable(col.PREP_JUST_STARTED, True, restarting_prep_pop)
+                # set start dates
+                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, restarting_prep_pop)
+                self.set_prep_first_start_date(
+                    pop, restarting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
+                self.set_prep_first_start_date(
+                    pop, restarting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
+                self.set_prep_first_start_date(
+                    pop, restarting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
+                self.set_prep_first_start_date(
+                    pop, restarting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
+                # set continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, restarting_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, restarting_prep_pop)
+                # increment cumulative use
+                self.set_prep_cumulative_cont(
+                    pop, restarting_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, restarting_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, restarting_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
+                self.set_prep_cumulative_cont(
+                    pop, restarting_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+                # unset stop date
+                pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
+
+    def calc_restarting_prep(self, favoured_prep, size):
+        """
+        Returns PrEP types for people restarting PrEP.
+        Individual preferences and availability are taken into account.
+        """
+        # outcomes
+        r = rng.uniform(size=size)
+        restarting = r < self.prob_prep_restart
+        prep = [favoured_prep if r else None for r in restarting]
+
+        return prep
+
     def prep_usage(self, pop: Population, time_step):
         """
         Update PrEP usage for people starting, continuing, switching, restarting, and stopping PrEP.
@@ -736,3 +794,5 @@ class PrEPModule:
         self.start_prep(pop, time_step)
         # continuing prep
         self.continue_prep(pop, time_step)
+        # restarting prep
+        self.restart_prep(pop, time_step)
