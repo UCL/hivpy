@@ -520,20 +520,14 @@ class PrEPModule:
                 pop.set_present_variable(col.PREP_TYPE, prep_type, starting_prep_pop)
                 pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
                 pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+                # set start dates
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
                 pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
                 # set continuous use
                 pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
                 # increment cumulative use
-                self.set_prep_cumulative_cont(
-                    pop, starting_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, starting_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, starting_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, starting_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+                self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
 
     def general_start_prep(self, pop: Population, prep_eligible_pop, time_step):
         """
@@ -553,30 +547,28 @@ class PrEPModule:
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
             pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
-
             # set start dates
-            pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
-            self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
-            self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
-            self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
-            self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
+            self.set_all_prep_start_dates(pop, starting_prep_pop)
             # set continuous use
             pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
             pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
             # increment cumulative use
-            self.set_prep_cumulative_cont(
-                pop, starting_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
-            self.set_prep_cumulative_cont(
-                pop, starting_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
-            self.set_prep_cumulative_cont(
-                pop, starting_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
-            self.set_prep_cumulative_cont(
-                pop, starting_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+            self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
+
+    def set_all_prep_start_dates(self, pop: Population, starting_prep_pop):
+        """
+        Set current PrEP start date and all first PrEP start date columns.
+        """
+        pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
 
     def set_prep_first_start_date(self, pop: Population, starting_prep_pop, prep_type, first_start_date_col):
         """
-        Set a specific start date column for the population starting a
-        corresponding PrEP type for the first time.
+        Set a specific start date column for the population starting a corresponding
+        PrEP type for the first time. Only overwrites if first start date is None.
         """
         pop.set_present_variable(
             first_start_date_col, pop.date,
@@ -584,7 +576,16 @@ class PrEPModule:
                 starting_prep_pop, pop.get_sub_pop(AND(COND(col.PREP_TYPE, op.eq, prep_type),
                                                        COND(first_start_date_col, op.eq, None)))))
 
-    def set_prep_cumulative_cont(self, pop: Population, using_prep_pop, prep_type, cumulative_col, time_step):
+    def set_all_prep_cumulative(self, pop: Population, using_prep_pop, time_step):
+        """
+        Increment all cumulative PrEP usage columns for active PrEP users.
+        """
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+
+    def set_prep_cumulative(self, pop: Population, using_prep_pop, prep_type, cumulative_col, time_step):
         """
         Increment a specific cumulative PrEP usage column for the population using a
         corresponding PrEP type. Applies to those starting, continuing, or switching PrEP.
@@ -683,25 +684,14 @@ class PrEPModule:
                 # set new prep types
                 pop.set_present_variable(col.PREP_TYPE, prep_types, switching_prep_pop)
                 # set start dates
-                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, switching_prep_pop)
-                self.set_prep_first_start_date(pop, switching_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
-                self.set_prep_first_start_date(pop, switching_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
-                self.set_prep_first_start_date(pop, switching_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
-                self.set_prep_first_start_date(pop, switching_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
+                self.set_all_prep_start_dates(pop, switching_prep_pop)
                 # reset continuous use
                 pop.set_present_variable(col.CONT_ON_PREP, time_step, switching_prep_pop)
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, switching_prep_pop)
 
             if len(using_prep_pop) > 0:
                 # increment cumulative use
-                self.set_prep_cumulative_cont(
-                    pop, using_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, using_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, using_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, using_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+                self.set_all_prep_cumulative(pop, using_prep_pop, time_step)
 
             if len(stopping_prep_pop) > 0:
                 # stop continuous use
@@ -750,27 +740,12 @@ class PrEPModule:
                 pop.set_present_variable(col.PREP_TYPE, prep_types, restarting_prep_pop)
                 pop.set_present_variable(col.PREP_JUST_STARTED, True, restarting_prep_pop)
                 # set start dates
-                pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, restarting_prep_pop)
-                self.set_prep_first_start_date(
-                    pop, restarting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
-                self.set_prep_first_start_date(
-                    pop, restarting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
-                self.set_prep_first_start_date(
-                    pop, restarting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
-                self.set_prep_first_start_date(
-                    pop, restarting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
+                self.set_all_prep_start_dates(pop, restarting_prep_pop)
                 # set continuous use
                 pop.set_present_variable(col.CONT_ON_PREP, time_step, restarting_prep_pop)
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, restarting_prep_pop)
                 # increment cumulative use
-                self.set_prep_cumulative_cont(
-                    pop, restarting_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, restarting_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, restarting_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
-                self.set_prep_cumulative_cont(
-                    pop, restarting_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+                self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
                 # unset stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
 
