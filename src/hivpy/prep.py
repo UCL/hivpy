@@ -650,7 +650,8 @@ class PrEPModule:
         Update PrEP usage for people continuing PrEP.
         """
         # people who have used prep before but not yet started this time step
-        eligible = pop.get_sub_pop(AND(COND(col.EVER_PREP, op.eq, True),
+        eligible = pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, True),
+                                       COND(col.EVER_PREP, op.eq, True),
                                        COND(col.PREP_JUST_STARTED, op.eq, False),
                                        COND(col.LAST_PREP_STOP_DATE, op.eq, None),
                                        OR(COND(col.LAST_TEST_DATE, op.ne, pop.date),
@@ -724,8 +725,10 @@ class PrEPModule:
         Update PrEP usage for people restarting PrEP.
         """
         # people who have used prep before and previously stopped using it
-        eligible = pop.get_sub_pop(AND(COND(col.EVER_PREP, op.eq, True),
-                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),
+        eligible = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                       COND(col.PREP_ELIGIBLE, op.eq, True),
+                                       COND(col.EVER_PREP, op.eq, True),
+                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),  # FIXME: is this right?
                                        COND(col.LAST_TEST_DATE, op.eq, pop.date)))
 
         if len(eligible) > 0:

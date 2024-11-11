@@ -746,6 +746,8 @@ def test_continuing_prep():
     time_step = timedelta(months=1)
     pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
     pop.data[col.LAST_PREP_STOP_DATE] = None
     pop.data[col.PREP_JUST_STARTED] = False
@@ -840,6 +842,8 @@ def test_restarting_prep():
     time_step = timedelta(months=1)
     pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
     pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
     pop.data[col.PREP_JUST_STARTED] = False
