@@ -438,7 +438,7 @@ def test_ltp_infected_by_third_party():
     # no transmission if no HIV present
     pop.set_present_variable(col.HIV_STATUS, False)
     HIVM.non_monogamous_ltp_transmission(pop)
-    assert all(pop.get_variable(col.LTP_STATUS) is False)
+    assert not any(pop.get_variable(col.LTP_STATUS))
 
     men = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
     women = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))
