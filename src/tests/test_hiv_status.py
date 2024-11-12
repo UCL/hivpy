@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import COND, SexType, date, rng, timedelta
+from hivpy.common import AND, COND, SexType, date, rng, timedelta
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
@@ -412,161 +412,155 @@ def test_no_infection_in_nonmonogamous_ltp():
     pop.set_present_variable(col.LTP_MONOGAMOUS, False)
     pop.set_present_variable(col.HIV_STATUS, False)
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
-    HIVM = HIVStatusModule()
-    HIVM.ltp_transmission(pop)
+    pop.hiv_status.update_ltp_HIV(pop)
 
     assert len(pop.get_sub_pop([(col.LTP_STATUS, op.eq, True)])) == 0
 
 
-def test_infection_in_nonmonogamous_ltp():
+def test_ltp_infected_by_third_party():
     """
-    Check that for a specific group in the population the estimation is as expected
+    Tests conditions under which non monogamous long term partners are infected
+    by some third party
     """
-    N = 400
+    N = 10000
     pop = Population(size=N, start_date=date(1990, 1, 1))
+    HIVM = pop.hiv_status
 
-    # set people in long-term partnerships
+    pop.set_present_variable(col.AGE, 25)
+    pop.set_present_variable(col.NUM_PARTNERS, 0)
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
-    pop.set_present_variable(col.AGE, 18)
-    pop.set_present_variable(col.AGE_GROUP, 0)
+    # set half ot he population monogamous; these should be unaffected
+    pop.set_present_variable(col.LTP_MONOGAMOUS, [True]*(N//2) + [False]*(N//2))
+    monogamous_partners = pop.get_sub_pop_from_array([True]*(N//2) + [False]*(N//2))
 
-    # set first 100 people as female HIV-
-    women_neg = list(range(100))
-    pop.set_present_variable(col.SEX, SexType.Female, women_neg)
-    pop.set_present_variable(col.HIV_STATUS, False, women_neg)
-    pop.set_present_variable(col.LTP_STATUS, True, women_neg)
-    pop.set_present_variable(col.NUM_PARTNERS, 0, women_neg)
+    # incidence factor depends on numbers of sero-discordant couples
+    pop.set_present_variable(col.SEX, [SexType.Male, SexType.Female]*(N//2))
+    # no transmission if no HIV present
+    pop.set_present_variable(col.HIV_STATUS, False)
+    HIVM.non_monogamous_ltp_transmission(pop)
+    assert all(pop.get_variable(col.LTP_STATUS) is False)
 
-    # set next 100 people as female HIV+
-    hiv_pos_women = list(range(100, 200))
-    pop.set_present_variable(col.SEX, SexType.Female, hiv_pos_women)
-    pop.set_present_variable(col.HIV_STATUS, True, hiv_pos_women)
-    pop.set_present_variable(col.LTP_STATUS, True, hiv_pos_women)
-    pop.set_present_variable(col.NUM_PARTNERS, 1, hiv_pos_women)
-    pop.set_present_variable(col.LTP_MONOGAMOUS, False, hiv_pos_women)
-    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True, list(range(100, 110)))  # 10% in primary
+    men = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
+    women = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))
 
-    # set 200 people as male
-    men = list(range(200, 400))
-    pop.set_present_variable(col.SEX, SexType.Male, men)
-    pop.set_present_variable(col.HIV_STATUS, True, men)
-    pop.set_present_variable(col.LTP_STATUS, False, men)
+    # half of men are HIV+, half of which are in primary infection, and a quarter (1250) are HIV+ with a negative LTP
+    pop.set_present_variable(col.HIV_STATUS, [True, False]*(N//4), men)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, ([True] + [False]*7)*(N//16), men)
+    pop.set_present_variable(col.NUM_PARTNERS, [1, 0] * (N//4), men)  # half of these men are non-monogamous
+    pop.set_present_variable(col.LTP_STATUS, [True, True, False, False]*(N//8), men)
+    # half of women HIV-, and 1150 are HIV- with a positive LTP
+    pop.set_present_variable(col.HIV_STATUS, [True, False]*(N//4), women)
+    pop.set_present_variable(col.LTP_STATUS, [True, True] * 1240 + [False, False] * 1260, women)
 
-    HIVM = HIVStatusModule()
-    HIVM.ltp_transmission(pop)
+    # this creates a difference of -10 out of 10000 => incidence factor of 3.5 for men
+    HIVM.update_LTP_risk_vectors(pop)
+    assert (HIVM.incidence_factor[SexType.Male] == 3.5)
+    # neg men w/pos partners = 1250, pos women w/neg partners = 1350, difference = -10
+    assert (HIVM.incidence_factor[SexType.Female] == 3.5)
 
-    assert np.isclose(HIVM.incidence_factor[SexType.Female], 3.5)
-    assert np.isclose(HIVM.prop_monogamous[SexType.Female][0], 0.5)
-    assert np.isclose(HIVM.incidence[SexType.Male], 0.1)
+    prev_status_of_monogamous_partners = pop.get_variable(col.LTP_STATUS, monogamous_partners)
+    prev_status_ltp_of_women = pop.get_variable(col.LTP_STATUS, women)
+    men_with_non_monog_ltp = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                                 COND(col.LTP_MONOGAMOUS, op.eq, False)))
+    prev_status_non_monog_ltp_of_men = pop.get_variable(col.LTP_STATUS,
+                                                        men_with_non_monog_ltp)
+    num_pos_ltp_of_men = sum(prev_status_non_monog_ltp_of_men)
+    num_neg_ltp_of_men = len(prev_status_non_monog_ltp_of_men) - num_pos_ltp_of_men
+    HIVM.non_monogamous_ltp_transmission(pop)
 
-    # Expect: ~ 50% of men's LTPs to be non monogamous
-    males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male),
-                             (col.AGE_GROUP, op.eq, 0)])
-    men_ltp_monogamous = pop.get_variable(col.LTP_MONOGAMOUS, males)
-    assert 70 < sum(men_ltp_monogamous) < 130
+    # Monogamous long term partners cannot be infected by a third party
+    assert all(pop.get_variable(col.LTP_STATUS, monogamous_partners) == prev_status_of_monogamous_partners)
+    # No women are in primary infection, so LTPs of women (i.e. male partners) should not be infected
+    assert all(pop.get_variable(col.LTP_STATUS, women) == prev_status_ltp_of_women)
 
-    # Expect: ~ 10% of non monogamous LTPs of men to become infected
-    men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
-    assert 5 < np.nansum(men_ltp_status) < 15
+    # Some non-monogamous partners of men should be infected because 1/4 non-monogamous men are in primary infection
+    new_pos_ltp_of_men = sum(pop.get_variable(col.LTP_STATUS, men_with_non_monog_ltp)) - num_pos_ltp_of_men
+    prob_infection = 3.5 / 4
+    expectation = num_neg_ltp_of_men * prob_infection
+    variance = num_neg_ltp_of_men * prob_infection * (1 - prob_infection)
+    assert ((expectation - 3 * variance) < new_pos_ltp_of_men < (expectation + 3 * variance))
 
 
-def test_infection_in_monogamous_ltp():
-    """
-    Check the expected numbers are infected in monogamous ltp transmission.
-    """
-    N = 200
+@pytest.mark.parametrize("vl_group", [0, 1, 2, 3, 4, 5])
+def test_ltp_infection_by_subject(vl_group):
+    N = 10000
     pop = Population(size=N, start_date=date(1990, 1, 1))
 
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_MONOGAMOUS, True)
     pop.set_present_variable(col.HIV_STATUS, True)
-    pop.set_present_variable(col.NUM_PARTNERS, 0)
-    pop.set_present_variable(col.AGE, 18)
-    pop.set_present_variable(col.AGE_GROUP, 0)
+    pop.set_present_variable(col.AGE, 25)
+    pop.set_present_variable(col.SEX, ([SexType.Male] * (N//2)) + ([SexType.Female] * (N//2)))
+    pop.set_present_variable(col.LTP_STATUS, False)
 
-    male_sample = list(range(100))
-    pop.set_present_variable(col.STI, True, male_sample)
-    pop.set_present_variable(col.SEX, SexType.Male, male_sample)
-    pop.set_present_variable(col.VIRAL_LOAD_GROUP, 4, male_sample)
-    # 99.7% of risk_ltp = 0.050- 3.15
+    # 50% of men are monogamous and 75% of women are monogamous
+    pop.set_present_variable(col.NUM_PARTNERS, [1]*(N//4) + [0] * (N//4) + [1] * (N//8) + [0] * (3 * N // 8))
+    pop.set_present_variable(col.VIRAL_LOAD_GROUP, vl_group)
 
-    female_sample = list(range(100, 200))
-    pop.set_present_variable(col.STI, False, female_sample)
-    pop.set_present_variable(col.SEX, SexType.Female, female_sample)
-    pop.set_present_variable(col.VIRAL_LOAD_GROUP, 3, female_sample)
-    # 99.7% of risk_ltp = 0.015-0.105
+    HIVM = pop.hiv_status
+    HIVM.set_ltp_age_groups(pop)
+    HIVM.set_monogamous_ltp(pop)
+    expected_men_monog = N//4
+    expected_women_monog = 3*(N//8)
+    men = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
+    women = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))
+    num_women_monog = sum(pop.get_variable(col.LTP_MONOGAMOUS, men))
+    num_men_monog = sum(pop.get_variable(col.LTP_MONOGAMOUS, women))
+    assert (expected_men_monog * 0.75 < num_men_monog < expected_men_monog * 1.25)
+    assert (expected_women_monog * 0.75 < num_women_monog < expected_women_monog * 1.25)
 
-    HIVM = HIVStatusModule()
-    HIVM.ltp_transmission(pop)
+    expected_women_infected = num_women_monog * HIVM.transmission_rate_means[vl_group] * HIVM.women_transmission_factor
+    sigma_women_infected = num_women_monog * HIVM.transmission_rate_sigmas[vl_group]
+    expected_men_infected = num_men_monog * HIVM.transmission_rate_means[vl_group]
+    sigma_men_infected = num_men_monog * HIVM.transmission_rate_sigmas[vl_group]
 
-    # Expect: ~85% of monogamous ltps to be infected
-    males = pop.get_sub_pop([(col.SEX, op.eq, SexType.Male)])
-    men_ltp_status = pop.get_variable(col.LTP_STATUS, males)
-    assert 75 < sum(men_ltp_status) < 100
-
-    # Expect: ~6% of monogamous ltps to be infected
-    females = pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)])
-    women_ltp_status = pop.get_variable(col.LTP_STATUS, females)
-    assert 1 < sum(women_ltp_status) < 15
+    HIVM.monogamous_ltp_transmission(pop)
+    women_infected = sum(pop.get_variable(col.LTP_STATUS, men))
+    men_infected = sum(pop.get_variable(col.LTP_STATUS, women))
+    assert (expected_men_infected - 4 * sigma_men_infected < men_infected < expected_men_infected + 4 * sigma_men_infected)
+    assert (expected_women_infected - 4 * sigma_women_infected < women_infected < expected_women_infected + 4 * sigma_women_infected)
 
 
-def test_prob_infection_from_infected_ltp():
+@pytest.mark.parametrize("risk_factors", zip([0, 1, 2], [False, True], [False, True]))
+def test_prob_infection_from_infected_ltp(risk_factors):
     """
     Check the expected infection risk is assigned to the subjects.
     """
-    N = 200
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    vl = risk_factors[0]
+    sti = risk_factors[1]
+    circumcised = risk_factors[2]
 
+    N = 10000
+    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop.set_present_variable(col.SEX, [SexType.Male]*(N//2) + [SexType.Female]*(N//2))
+    men = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
+    women = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))
+
+    pop.set_present_variable(col.AGE, 25)
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_STATUS, True)
+    pop.set_present_variable(col.HIV_STATUS, False)
+    pop.set_present_variable(col.STI, sti)
+    if (circumcised):
+        pop.set_present_variable(col.CIRCUMCISED, True, men)
+    if (vl == 0):
+        pop.set_present_variable(col.LTP_VIRAL_SUPPRESSED, True)
+    elif (vl == 2):
+        pop.set_present_variable(col.LTP_INFECTION_DATE, date(1990, 1, 1))
 
-    group1 = list(range(100))  # virally suppressed
-    group2 = list(range(100, 200))  # not virally suppressed and in primary infection
-    pop.set_present_variable(col.VIRAL_SUPPRESSION, True, group1)
-    pop.set_present_variable(col.LTP_INFECTION_DATE, date(1989, 12, 1), group2)
+    HIVM = pop.hiv_status
+    HIVM.set_infection_from_infected_ltp(pop)
+    base_transmission = HIVM.tr_rate_undetectable_vl if vl == 0 else HIVM.tr_rate_primary if vl == 2 else 0.05*HIVM.transmission_factor
+    expected_male_infections = (N//2) * base_transmission
+    if (sti):
+        expected_male_infections *= HIVM.sti_transmission_factor
+    expected_female_infections = expected_male_infections * HIVM.women_transmission_factor
+    sigma_female_infections = np.sqrt(expected_female_infections * (1-base_transmission))
+    if (circumcised):
+        expected_male_infections *= HIVM.circumcision_risk_reduction
+    sigma_male_infections = np.sqrt(expected_male_infections * (1-base_transmission))
 
-    HIVM = HIVStatusModule()
-    HIVM.infection_from_infected_ltp(pop)
-
-    risk_ltp_group1 = pop.get_variable(col.RISK_LTP_INFECTED, group1)
-    vlg_group1 = pop.get_variable(col.VIRAL_LOAD_GROUP, group1)
-    assert max(risk_ltp_group1) < 0.0011  # 99.7%
-    assert np.mean(vlg_group1) == 0
-
-    risk_ltp_group2 = pop.get_variable(col.RISK_LTP_INFECTED, group2)
-    vlg_group2 = pop.get_variable(col.VIRAL_LOAD_GROUP, group2)
-    ltp_in_primary_group2 = pop.get_variable(col.LTP_IN_PRIMARY, group2)
-
-    assert max(risk_ltp_group2) < 0.385  # 99.7%
-    assert np.mean(vlg_group2) == 5
-    assert sum(ltp_in_primary_group2) == 100
-
-
-def test_prob_of_new_ltp_already_infected():
-    """
-    Test that the possibility of a new long-term partner already infected is as expected
-    """
-    N = 200
-    pop = Population(size=N, start_date=date(1990, 1, 1))
-
-    pop.set_present_variable(col.AGE, 18)
-    pop.set_present_variable(col.AGE_GROUP, 0)
-    pop.set_present_variable(col.LTP_NEW, True)
-
-    women = list(range(0, 100))
-    pop.set_present_variable(col.SEX, SexType.Female, women)
-
-    men = list(range(100, 200))
-    pop.set_present_variable(col.SEX, SexType.Male, men)
-    men_with_hiv = list(range(150, 200))
-    pop.set_present_variable(col.HIV_STATUS, True, men_with_hiv)
-
-    HIVM = HIVStatusModule()
-    HIVM.prob_of_new_ltp_already_infected(pop)
-
-    assert HIVM.prevalence[SexType.Female][0] == 0.5
-
-    # Expect: ~80% of womens' LTPs to be infected
-    women_ltp_status = pop.get_variable(col.LTP_STATUS,
-                                        sub_pop=women)
-    assert 65 < sum(women_ltp_status) < 95
+    male_infections = sum(pop.get_variable(col.HIV_STATUS, men))
+    female_infections = sum(pop.get_variable(col.HIV_STATUS, women))
+    assert (expected_male_infections - 3 * sigma_male_infections <= male_infections <= expected_male_infections + 3 * sigma_male_infections)
+    assert (expected_female_infections - 3 * sigma_female_infections <= female_infections <= expected_female_infections + 3 * sigma_female_infections)
