@@ -37,6 +37,7 @@ class PrEPModule:
                                 date(self.p_data.date_prep_cab_intro),
                                 date(self.p_data.date_prep_len_intro),
                                 date(self.p_data.date_prep_vr_intro)]
+        self.cab_available = True
         self.prob_risk_informed_prep = self.p_data.prob_risk_informed_prep
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
@@ -198,7 +199,6 @@ class PrEPModule:
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral],
                                  self.prep_oral_pref_beta, col.PREP_ORAL_PREF)
         # injectable prep pref
-        # FIXME: should Cab be controlled by an availability flag instead of introduction date?
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir],
                                  self.prep_cab_pref_beta, col.PREP_CAB_PREF)
         self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir],
@@ -313,8 +313,9 @@ class PrEPModule:
         for prep_type in sorted_dict:
             willing = sorted_dict[prep_type]
             if self.date >= self.date_prep_intro[prep_type] and willing:
-                favoured_prep = prep_type
-                break
+                if PrEPType(prep_type) is not PrEPType.Cabotegravir or self.cab_available:
+                    favoured_prep = prep_type
+                    break
 
         return favoured_prep
 
@@ -728,7 +729,7 @@ class PrEPModule:
         eligible = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                        COND(col.PREP_ELIGIBLE, op.eq, True),
                                        COND(col.EVER_PREP, op.eq, True),
-                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),  # FIXME: is this right?
+                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),
                                        COND(col.LAST_TEST_DATE, op.eq, pop.date)))
 
         if len(eligible) > 0:
