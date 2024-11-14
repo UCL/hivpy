@@ -300,6 +300,7 @@ class Population:
         # If HIV has been introduced, then run HIV relevant code
         if self.HIV_introduced:
             self.hiv_status.update_HIV_status(self)
+            self.hiv_status.update_ltp_HIV(self)
             HIV_deaths = self.hiv_status.HIV_related_disease_risk(self, time_step)
             self.hiv_testing.update_hiv_testing(self, time_step)
             n_deaths = n_deaths + sum(HIV_deaths)
