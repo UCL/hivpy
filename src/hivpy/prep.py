@@ -37,6 +37,7 @@ class PrEPModule:
                                 date(self.p_data.date_prep_cab_intro),
                                 date(self.p_data.date_prep_len_intro),
                                 date(self.p_data.date_prep_vr_intro)]
+        self.cab_available = True
         self.prob_risk_informed_prep = self.p_data.prob_risk_informed_prep
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
@@ -59,8 +60,12 @@ class PrEPModule:
         self.prob_cab_prep_start = self.prob_base_prep_start
         self.prob_len_prep_start = self.prob_base_prep_start
         self.prob_vr_prep_start = self.prob_base_prep_start
-        # FIXME: values are the same as for prob_base_prep_start, can we just re-sample that?
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
+        # FIXME: stop probabilities dependent on time step length
+        self.prob_oral_prep_stop = self.p_data.prob_base_prep_stop.sample()
+        self.prob_cab_prep_stop = self.p_data.prob_base_prep_stop.sample()
+        self.prob_len_prep_stop = self.prob_cab_prep_stop
+        self.prob_vr_prep_stop = self.p_data.prob_base_prep_stop_nonuniform.sample()
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)
@@ -76,8 +81,13 @@ class PrEPModule:
         pop.init_variable(col.PREP_LEN_WILLING, False)
         pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
+        pop.init_variable(col.FAVOURED_PREP_TYPE, None)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
+        pop.init_variable(col.PREP_ORAL_TESTED, False)
+        pop.init_variable(col.PREP_CAB_TESTED, False)
+        pop.init_variable(col.PREP_LEN_TESTED, False)
+        pop.init_variable(col.PREP_VR_TESTED, False)
         pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.EVER_PREP, False)
         pop.init_variable(col.FIRST_ORAL_START_DATE, None)
@@ -85,14 +95,30 @@ class PrEPModule:
         pop.init_variable(col.FIRST_LEN_START_DATE, None)
         pop.init_variable(col.FIRST_VR_START_DATE, None)
         pop.init_variable(col.LAST_PREP_START_DATE, None)
+        pop.init_variable(col.LAST_PREP_STOP_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
-        pop.init_variable(col.PREP_ORAL_TESTED, False)
-        pop.init_variable(col.PREP_CAB_TESTED, False)
-        pop.init_variable(col.PREP_LEN_TESTED, False)
-        pop.init_variable(col.PREP_VR_TESTED, False)
+        pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
+        pop.init_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_ORAL, timedelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
         pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
+
+    # FIXME: should this function be in another module?
+    def get_vl_prevalence(self, pop: Population):
+        """
+        Return the prevalence of people between 15 and 50 years old with a viral load of over 3.0.
+        Affects willingness to take PrEP.
+        """
+        gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
+        # find prevalence of people with a viral load of over 3.0
+        return (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.ge, 3.0),
+                                     (col.AGE, op.ge, 15),
+                                     (col.AGE, op.lt, 50)])) / gen_pop
+                if gen_pop > 0 else 0)
 
     def reroll_r_prep(self, pop: Population):
         """
@@ -165,9 +191,25 @@ class PrEPModule:
 
         return pop.apply_bool_mask(mask, false_neg_pop)
 
-    def set_prep_preference(self, pop: Population, date_intro, pref_beta, pref_col, willing_col, sub_pop_mod=None):
+    def prep_preference(self, pop: Population):
         """
-        Set preference values for a specific type of PrEP and determine willingness.
+        Determine PrEP preferences for all PrEP types.
+        """
+        # oral prep pref
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral],
+                                 self.prep_oral_pref_beta, col.PREP_ORAL_PREF)
+        # injectable prep pref
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir],
+                                 self.prep_cab_pref_beta, col.PREP_CAB_PREF)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir],
+                                 self.prep_len_pref_beta, col.PREP_LEN_PREF)
+        # vr prep pref (women only)
+        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
+                                 col.PREP_VR_PREF, sub_pop_mod=pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))
+
+    def set_prep_preference(self, pop: Population, date_intro, pref_beta, pref_col, sub_pop_mod=None):
+        """
+        Set preference values for a specific type of PrEP.
         """
         if pop.date >= date_intro:
             # find those who turned 15 this time step
@@ -183,55 +225,12 @@ class PrEPModule:
             # random preference beta distribution
             pref = rng.beta(pref_beta, 5, size=len(sub_pop))
             pop.set_present_variable(pref_col, pref, sub_pop)
-            # determine willingness by comparing to threshold
-            willingness = pref > self.prep_willing_threshold
-            pop.set_present_variable(willing_col, willingness, sub_pop)
-            pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness, sub_pop))
 
     def prep_willingness(self, pop: Population):
         """
-        Determine which individuals are willing to take PrEP, as well as their PrEP preferences.
+        Determine PrEP willingness for all PrEP types.
         """
-        # initial preference values
-        init_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
-        # oral prep pref + willingness
-        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Oral], self.prep_oral_pref_beta,
-                                 col.PREP_ORAL_PREF, col.PREP_ORAL_WILLING)
-        # injectable prep pref + willingness
-        # FIXME: should Cab be controlled by an availability flag instead of introduction date?
-        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Cabotegravir], self.prep_cab_pref_beta,
-                                 col.PREP_CAB_PREF, col.PREP_CAB_WILLING)
-        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.Lenacapavir], self.prep_len_pref_beta,
-                                 col.PREP_LEN_PREF, col.PREP_LEN_WILLING)
-        # vr prep pref + willingness (women only)
-        self.set_prep_preference(pop, self.date_prep_intro[PrEPType.VaginalRing], self.prep_vr_pref_beta,
-                                 col.PREP_VR_PREF, col.PREP_VR_WILLING,
-                                 sub_pop_mod=pop.get_sub_pop([(col.SEX, op.eq, SexType.Female)]))
-
-        # new preference values
-        new_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
-        # find people whose preference has changed this time step
-        changed_pref_pop = new_prefs.compare(init_prefs).index
-
-        if len(changed_pref_pop) > 0:
-            # get ranking outcomes
-            # FIXME: not sure if transform group is the best way to do this, but it works for now
-            pref_ranks = pop.transform_group([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
-                                              col.PREP_LEN_PREF, col.PREP_VR_PREF],
-                                             self.calc_prep_pref_ranks, sub_pop=changed_pref_pop, use_size=False)
-            # set ranks for each prep type
-            pop.set_present_variable(col.PREP_ORAL_RANK, [i[0] for i in pref_ranks], changed_pref_pop)
-            pop.set_present_variable(col.PREP_CAB_RANK, [i[1] for i in pref_ranks], changed_pref_pop)
-            pop.set_present_variable(col.PREP_LEN_RANK, [i[2] for i in pref_ranks], changed_pref_pop)
-            pop.set_present_variable(col.PREP_VR_RANK, [i[3] for i in pref_ranks], changed_pref_pop)
-
-        gen_pop = len(pop.get_sub_pop([(col.AGE, op.ge, 15), (col.AGE, op.lt, 50)]))
-        # find prevalence of people with a viral load of over 1000
-        vl_prevalence = (len(pop.get_sub_pop([(col.VIRAL_LOAD, op.gt, 1000),
-                                              (col.AGE, op.ge, 15),
-                                              (col.AGE, op.lt, 50)])) / gen_pop
-                         if gen_pop > 0 else 0)
-
+        vl_prevalence = self.get_vl_prevalence(pop)
         # there's a chance nobody is willing to take PrEP if unsuppressed viral load prevalence is too low
         if self.vl_prevalence_affects_prep and vl_prevalence < self.vl_prevalence_prep_threshold:
             pop.set_present_variable(col.PREP_ORAL_WILLING, False)
@@ -239,6 +238,35 @@ class PrEPModule:
             pop.set_present_variable(col.PREP_LEN_WILLING, False)
             pop.set_present_variable(col.PREP_VR_WILLING, False)
             pop.set_present_variable(col.PREP_ANY_WILLING, False)
+        # otherwise set willingness as normal
+        else:
+            self.set_prep_willingness(pop, col.PREP_ORAL_PREF, col.PREP_ORAL_WILLING)
+            self.set_prep_willingness(pop, col.PREP_CAB_PREF, col.PREP_CAB_WILLING)
+            self.set_prep_willingness(pop, col.PREP_LEN_PREF, col.PREP_LEN_WILLING)
+            self.set_prep_willingness(pop, col.PREP_VR_PREF, col.PREP_VR_WILLING)
+
+    def set_prep_willingness(self, pop: Population, pref_col, willing_col):
+        """
+        Set willingness values for a specific type of PrEP.
+        """
+        # determine willingness by comparing to threshold
+        willingness = pop.get_variable(pref_col) > self.prep_willing_threshold
+        pop.set_present_variable(willing_col, willingness)
+        pop.set_present_variable(col.PREP_ANY_WILLING, True, pop.apply_bool_mask(willingness))
+
+    def prep_pref_ranks(self, pop: Population, sub_pop=None):
+        """
+        Rank PrEP preferences.
+        """
+        # get ranking outcomes
+        pref_ranks = pop.col_apply([col.PREP_ORAL_PREF, col.PREP_CAB_PREF,
+                                    col.PREP_LEN_PREF, col.PREP_VR_PREF],
+                                   self.calc_prep_pref_ranks, sub_pop=sub_pop)
+        # set ranks for each prep type
+        pop.set_present_variable(col.PREP_ORAL_RANK, [i[0] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_CAB_RANK, [i[1] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_LEN_RANK, [i[2] for i in pref_ranks], sub_pop)
+        pop.set_present_variable(col.PREP_VR_RANK, [i[3] for i in pref_ranks], sub_pop)
 
     def calc_prep_pref_ranks(self, oral_pref, cab_pref, len_pref, vr_pref):
         """
@@ -251,7 +279,65 @@ class PrEPModule:
         # assign rank per prep type (position indicates prep type, value indicates rank)
         for i in range(len(prefs)):
             ranks[sorted_pref_indices[i]] = i+1
-        return [ranks]
+        return ranks
+
+    def favoured_prep(self, pop: Population, sub_pop=None):
+        """
+        Determine favoured PrEP type using preference ranks. Favoured PrEP is the type of PrEP an individual
+        is willing to take with the highest preference value that is also currently available.
+        """
+        # FIXME: can we pass the date to transform_group in a better way?
+        self.date = pop.date
+        # find prep type with highest preference an individual is willing to take that is also currently available
+        favoured_prep = pop.transform_group([col.PREP_ORAL_RANK, col.PREP_CAB_RANK,
+                                             col.PREP_LEN_RANK, col.PREP_VR_RANK,
+                                             col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
+                                             col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
+                                            self.calc_favoured_prep, sub_pop=sub_pop, use_size=False)
+        pop.set_present_variable(col.FAVOURED_PREP_TYPE, favoured_prep, sub_pop)
+
+    def calc_favoured_prep(self, oral_rank, cab_rank, len_rank, vr_rank,
+                           oral_willing, cab_willing, len_willing, vr_willing):
+        """
+        Returns favoured PrEP type based on willingness, preference rank and availability.
+        """
+        # group pref ranks and willingness
+        prefs = [oral_rank, cab_rank, len_rank, vr_rank]
+        willing = [oral_willing, cab_willing, len_willing, vr_willing]
+        # zip prep type and willingness together and sort by pref rank
+        sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
+        sorted_dict = dict(sorted_zipped)
+
+        favoured_prep = None
+        # find prep type someone is willing to take with the highest pref that is currently available
+        for prep_type in sorted_dict:
+            willing = sorted_dict[prep_type]
+            if self.date >= self.date_prep_intro[prep_type] and willing:
+                if PrEPType(prep_type) is not PrEPType.Cabotegravir or self.cab_available:
+                    favoured_prep = prep_type
+                    break
+
+        return favoured_prep
+
+    def prep_propensity(self, pop: Population):
+        """
+        Determine PrEP preference values, willingness to take PrEP, PrEP preference ranks, and favoured PrEP type.
+        """
+        # store initial preference values
+        init_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # set preference values
+        self.prep_preference(pop)
+        # set willingness values
+        self.prep_willingness(pop)
+        # get new preference values
+        new_prefs = pop.data[[col.PREP_ORAL_PREF, col.PREP_CAB_PREF, col.PREP_LEN_PREF, col.PREP_VR_PREF]]
+        # find people whose preference has changed this time step
+        changed_pref_pop = new_prefs.compare(init_prefs).index
+        if len(changed_pref_pop) > 0:
+            # update preference ranks
+            self.prep_pref_ranks(pop, changed_pref_pop)
+        # update favoured prep
+        self.favoured_prep(pop, changed_pref_pop)
 
     def prep_eligibility(self, pop: Population):
         """
@@ -420,7 +506,8 @@ class PrEPModule:
             if len(prep_eligible_pop) > 0:
                 pop.set_present_variable(col.PREP_ELIGIBLE, True, prep_eligible_pop)
 
-    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type, prep_tested_col, first_start_col):
+    def tested_start_prep(self, pop: Population, prep_eligible_pop, prep_type,
+                          prep_tested_col, first_start_col, time_step):
         """
         Update people starting PrEP for the first time after testing to start PrEP.
         """
@@ -433,10 +520,17 @@ class PrEPModule:
             if len(starting_prep_pop) > 0:
                 pop.set_present_variable(col.PREP_TYPE, prep_type, starting_prep_pop)
                 pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
+                pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+                # set start dates
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
                 pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
+                # set continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
+                # increment cumulative use
+                self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
 
-    def general_start_prep(self, pop: Population, prep_eligible_pop):
+    def general_start_prep(self, pop: Population, prep_eligible_pop, time_step):
         """
         Update people starting PrEP for the first time without specifically testing to start PrEP.
         """
@@ -448,103 +542,236 @@ class PrEPModule:
                                                   COND(col.PREP_VR_TESTED, op.eq, False))))
 
         if len(starting_prep_pop) > 0:
-            # FIXME: can we pass the date to transform_group in a better way?
-            self.date = pop.date
             # starting prep outcomes
-            prep_types = pop.transform_group([col.PREP_ORAL_RANK, col.PREP_CAB_RANK,
-                                              col.PREP_LEN_RANK, col.PREP_VR_RANK,
-                                              col.PREP_ORAL_WILLING, col.PREP_CAB_WILLING,
-                                              col.PREP_LEN_WILLING, col.PREP_VR_WILLING],
-                                             self.calc_willing_start_prep, sub_pop=starting_prep_pop)
-
+            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_starting_prep,
+                                             sub_pop=starting_prep_pop, dropna=True)
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
-            pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
+            pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+            # set start dates
+            self.set_all_prep_start_dates(pop, starting_prep_pop)
+            # set continuous use
+            pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
+            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
+            # increment cumulative use
+            self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
 
-            def set_prep_start_date(pop: Population, starting_prep_pop, prep_type, start_date_col):
-                """
-                Set a specific start date column for the population starting a corresponding PrEP type.
-                """
-                pop.set_present_variable(start_date_col, pop.date,
-                                         pop.get_sub_pop_intersection(
-                                             starting_prep_pop,
-                                             pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, prep_type))))
+    def set_all_prep_start_dates(self, pop: Population, starting_prep_pop):
+        """
+        Set current PrEP start date and all first PrEP start date columns.
+        """
+        pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
+        self.set_prep_first_start_date(pop, starting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
 
-            set_prep_start_date(pop, starting_prep_pop, PrEPType.Oral, col.FIRST_ORAL_START_DATE)
-            set_prep_start_date(pop, starting_prep_pop, PrEPType.Cabotegravir, col.FIRST_CAB_START_DATE)
-            set_prep_start_date(pop, starting_prep_pop, PrEPType.Lenacapavir, col.FIRST_LEN_START_DATE)
-            set_prep_start_date(pop, starting_prep_pop, PrEPType.VaginalRing, col.FIRST_VR_START_DATE)
+    def set_prep_first_start_date(self, pop: Population, starting_prep_pop, prep_type, first_start_date_col):
+        """
+        Set a specific start date column for the population starting a corresponding
+        PrEP type for the first time. Only overwrites if first start date is None.
+        """
+        pop.set_present_variable(
+            first_start_date_col, pop.date,
+            pop.get_sub_pop_intersection(
+                starting_prep_pop, pop.get_sub_pop(AND(COND(col.PREP_TYPE, op.eq, prep_type),
+                                                       COND(first_start_date_col, op.eq, None)))))
 
-    def calc_willing_start_prep(self, oral_pref, cab_pref, len_pref, vr_pref,
-                                oral_willing, cab_willing, len_willing, vr_willing, size):
+    def set_all_prep_cumulative(self, pop: Population, using_prep_pop, time_step):
+        """
+        Increment all cumulative PrEP usage columns for active PrEP users.
+        """
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Oral, col.CUMULATIVE_PREP_ORAL, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Cabotegravir, col.CUMULATIVE_PREP_CAB, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.Lenacapavir, col.CUMULATIVE_PREP_LEN, time_step)
+        self.set_prep_cumulative(pop, using_prep_pop, PrEPType.VaginalRing, col.CUMULATIVE_PREP_VR, time_step)
+
+    def set_prep_cumulative(self, pop: Population, using_prep_pop, prep_type, cumulative_col, time_step):
+        """
+        Increment a specific cumulative PrEP usage column for the population using a
+        corresponding PrEP type. Applies to those starting, continuing, or switching PrEP.
+        """
+        prep_cont = pop.get_variable(cumulative_col) + time_step
+        pop.set_present_variable(
+            cumulative_col, prep_cont,
+            pop.get_sub_pop_intersection(
+                using_prep_pop, pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, prep_type))))
+
+    def calc_starting_prep(self, favoured_prep, size):
         """
         Returns PrEP types for people starting PrEP for the first time without explicitly
         testing to start PrEP. Individual preferences and availability are taken into account.
         """
-        # group pref ranks and willingness
-        prefs = [oral_pref, cab_pref, len_pref, vr_pref]
-        willing = [oral_willing, cab_willing, len_willing, vr_willing]
-        # zip prep type and willingness together and sort by pref rank
-        sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
-        sorted_dict = dict(sorted_zipped)
-
-        starting_prep = None
-        # find prep type someone is willing to take with the highest pref that is currently available
-        for prep_type in sorted_dict:
-            willing = sorted_dict[prep_type]
-            if self.date >= self.date_prep_intro[prep_type] and willing:
-                starting_prep = prep_type
-                break
-
         # outcomes
         r = rng.uniform(size=size)
-        if PrEPType(starting_prep) is PrEPType.Oral:
+        if PrEPType(favoured_prep) is PrEPType.Oral:
             starting = r < self.prob_oral_prep_start
-        elif PrEPType(starting_prep) is PrEPType.Cabotegravir:
+        elif PrEPType(favoured_prep) is PrEPType.Cabotegravir:
             starting = r < self.prob_cab_prep_start
-        elif PrEPType(starting_prep) is PrEPType.Lenacapavir:
+        elif PrEPType(favoured_prep) is PrEPType.Lenacapavir:
             starting = r < self.prob_len_prep_start
-        elif PrEPType(starting_prep) is PrEPType.VaginalRing:
+        elif PrEPType(favoured_prep) is PrEPType.VaginalRing:
             starting = r < self.prob_vr_prep_start
-        prep = [starting_prep if s else None for s in starting]
+        prep = [favoured_prep if s else None for s in starting]
 
         return prep
 
-    def start_prep(self, pop: Population):
+    def start_prep(self, pop: Population, time_step):
         """
         Update PrEP usage for people starting PrEP for the first time.
         """
+        # clear just_started flag
+        pop.set_present_variable(col.PREP_JUST_STARTED, False,
+                                 pop.get_sub_pop([(col.LAST_PREP_START_DATE, op.ne, pop.date)]))
+        # find people eligible to start for the first time
         eligible = pop.get_sub_pop([(col.HARD_REACH, op.eq, False),
                                     (col.HIV_DIAGNOSED, op.eq, False),
                                     (col.PREP_ELIGIBLE, op.eq, True),
                                     (col.PREP_ANY_WILLING, op.eq, True),
                                     (col.EVER_PREP, op.eq, False),
                                     (col.LAST_TEST_DATE, op.eq, pop.date)])
-        # factor in both true and false negatives in hiv status
-        starting_prep_pop = pop.get_sub_pop_intersection(
-            eligible, pop.get_sub_pop(OR(COND(col.HIV_STATUS, op.eq, False),
-                                         AND(COND(col.HIV_STATUS, op.eq, True),
-                                             COND(col.HIV_DIAGNOSED, op.eq, False)))))
 
         # starting oral prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE)
+            pop, eligible, PrEPType.Oral, col.PREP_ORAL_TESTED, col.FIRST_ORAL_START_DATE, time_step)
         # starting injectable cab prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE)
+            pop, eligible, PrEPType.Cabotegravir, col.PREP_CAB_TESTED, col.FIRST_CAB_START_DATE, time_step)
         # starting injectable len prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE)
+            pop, eligible, PrEPType.Lenacapavir, col.PREP_LEN_TESTED, col.FIRST_LEN_START_DATE, time_step)
         # starting vr prep after testing
         self.tested_start_prep(
-            pop, starting_prep_pop, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE)
-
+            pop, eligible, PrEPType.VaginalRing, col.PREP_VR_TESTED, col.FIRST_VR_START_DATE, time_step)
         # not tested explicitly to start prep
-        self.general_start_prep(pop, starting_prep_pop)
+        self.general_start_prep(pop, eligible, time_step)
 
-    def prep_usage(self, pop: Population):
+    def continue_prep(self, pop: Population, time_step):
+        """
+        Update PrEP usage for people continuing PrEP.
+        """
+        # people who have used prep before but not yet started this time step
+        eligible = pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, True),
+                                       COND(col.EVER_PREP, op.eq, True),
+                                       COND(col.PREP_JUST_STARTED, op.eq, False),
+                                       COND(col.LAST_PREP_STOP_DATE, op.eq, None),
+                                       OR(COND(col.LAST_TEST_DATE, op.ne, pop.date),
+                                          AND(COND(col.LAST_TEST_DATE, op.eq, pop.date),
+                                              COND(col.HIV_DIAGNOSED, op.eq, False)))))
+
+        if len(eligible) > 0:
+            # continuous prep outcomes
+            prep_types = pop.transform_group([col.PREP_TYPE, col.FAVOURED_PREP_TYPE],
+                                             self.calc_current_prep, sub_pop=eligible, dropna=True)
+            # find various sub-populations
+            # people who are continuing current prep
+            continuing_prep_mask = pop.get_variable(col.PREP_TYPE, eligible) == prep_types
+            continuing_prep_pop = pop.apply_bool_mask(continuing_prep_mask, eligible)
+            # people who are switching prep
+            switching_prep_mask = (pop.get_variable(col.PREP_TYPE, eligible) != prep_types) & prep_types.notnull()
+            switching_prep_pop = pop.apply_bool_mask(switching_prep_mask, eligible)
+            # people who are either continuing or switching prep
+            using_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
+            # people who are stopping prep
+            stopping_prep_pop = pop.apply_bool_mask(prep_types.isnull(), eligible)
+
+            if len(continuing_prep_pop) > 0:
+                prep_cont = pop.get_variable(col.CONT_ON_PREP, eligible) + time_step
+                prep_active_cont = pop.get_variable(col.CONT_ACTIVE_ON_PREP, eligible) + time_step
+                # increment continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, prep_cont, continuing_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, prep_active_cont, continuing_prep_pop)
+
+            if len(switching_prep_pop) > 0:
+                # set new prep types
+                pop.set_present_variable(col.PREP_TYPE, prep_types, switching_prep_pop)
+                # set start dates
+                self.set_all_prep_start_dates(pop, switching_prep_pop)
+                # reset continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, switching_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, switching_prep_pop)
+
+            if len(using_prep_pop) > 0:
+                # increment cumulative use
+                self.set_all_prep_cumulative(pop, using_prep_pop, time_step)
+
+            if len(stopping_prep_pop) > 0:
+                # stop continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0), stopping_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), stopping_prep_pop)
+                # set stop date
+                pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, stopping_prep_pop)
+
+    def calc_current_prep(self, prep_type, favoured_prep, size):
+        """
+        Returns PrEP types for people continuing PrEP.
+        Individual preferences and availability are taken into account.
+        """
+        # outcomes
+        r = rng.uniform(size=size)
+        if PrEPType(prep_type) is PrEPType.Oral:
+            continuing = r < (1 - self.prob_oral_prep_stop)
+        elif PrEPType(prep_type) is PrEPType.Cabotegravir:
+            continuing = r < (1 - self.prob_cab_prep_stop)
+        elif PrEPType(prep_type) is PrEPType.Lenacapavir:
+            continuing = r < (1 - self.prob_len_prep_stop)
+        elif PrEPType(prep_type) is PrEPType.VaginalRing:
+            continuing = r < (1 - self.prob_vr_prep_stop)
+        prep = [favoured_prep if c else None for c in continuing]
+
+        return prep
+
+    def restart_prep(self, pop: Population, time_step):
+        """
+        Update PrEP usage for people restarting PrEP.
+        """
+        # people who have used prep before and previously stopped using it
+        eligible = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
+                                       COND(col.PREP_ELIGIBLE, op.eq, True),
+                                       COND(col.EVER_PREP, op.eq, True),
+                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),
+                                       COND(col.LAST_TEST_DATE, op.eq, pop.date)))
+
+        if len(eligible) > 0:
+            # starting prep outcomes
+            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_restarting_prep,
+                                             sub_pop=eligible, dropna=True)
+            # people who are restarting prep
+            restarting_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
+
+            if len(restarting_prep_pop) > 0:
+                # set prep types
+                pop.set_present_variable(col.PREP_TYPE, prep_types, restarting_prep_pop)
+                pop.set_present_variable(col.PREP_JUST_STARTED, True, restarting_prep_pop)
+                # set start dates
+                self.set_all_prep_start_dates(pop, restarting_prep_pop)
+                # set continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, restarting_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, restarting_prep_pop)
+                # increment cumulative use
+                self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
+                # unset stop date
+                pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
+
+    def calc_restarting_prep(self, favoured_prep, size):
+        """
+        Returns PrEP types for people restarting PrEP.
+        Individual preferences and availability are taken into account.
+        """
+        # outcomes
+        r = rng.uniform(size=size)
+        restarting = r < self.prob_prep_restart
+        prep = [favoured_prep if r else None for r in restarting]
+
+        return prep
+
+    def prep_usage(self, pop: Population, time_step):
         """
         Update PrEP usage for people starting, continuing, switching, restarting, and stopping PrEP.
         """
         # starting prep for the first time
-        self.start_prep(pop)
+        self.start_prep(pop, time_step)
+        # continuing prep
+        self.continue_prep(pop, time_step)
+        # restarting prep
+        self.restart_prep(pop, time_step)
