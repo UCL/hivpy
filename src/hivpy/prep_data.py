@@ -28,9 +28,9 @@ class PrEPData(DataReader):
             self.prep_willing_threshold = self.data["prep_willing_threshold"]
             self.prob_test_prep_start = self._get_discrete_dist("prob_test_prep_start")
             self.prob_base_prep_start = self._get_discrete_dist("prob_base_prep_start")
-            self.prob_prep_restart = self._get_discrete_dist("prob_prep_restart")
             self.prob_base_prep_stop = self._get_discrete_dist("prob_base_prep_stop")
             self.prob_base_prep_stop_nonuniform = self._get_discrete_dist("prob_base_prep_stop_nonuniform")
+            self.prob_prep_restart = self._get_discrete_dist("prob_prep_restart")
 
         except KeyError as ke:
             print(ke.args)

@@ -60,12 +60,12 @@ class PrEPModule:
         self.prob_cab_prep_start = self.prob_base_prep_start
         self.prob_len_prep_start = self.prob_base_prep_start
         self.prob_vr_prep_start = self.prob_base_prep_start
-        self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
         # FIXME: stop probabilities dependent on time step length
         self.prob_oral_prep_stop = self.p_data.prob_base_prep_stop.sample()
         self.prob_cab_prep_stop = self.p_data.prob_base_prep_stop.sample()
         self.prob_len_prep_stop = self.prob_cab_prep_stop
         self.prob_vr_prep_stop = self.p_data.prob_base_prep_stop_nonuniform.sample()
+        self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)
@@ -95,8 +95,9 @@ class PrEPModule:
         pop.init_variable(col.FIRST_LEN_START_DATE, None)
         pop.init_variable(col.FIRST_VR_START_DATE, None)
         pop.init_variable(col.LAST_PREP_START_DATE, None)
-        pop.init_variable(col.LAST_PREP_STOP_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
+        pop.init_variable(col.LAST_PREP_STOP_DATE, None)
+        pop.init_variable(col.PREP_PAUSED, False)
         pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
         pop.init_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
         pop.init_variable(col.CUMULATIVE_PREP_ORAL, timedelta(months=0))
@@ -734,8 +735,8 @@ class PrEPModule:
 
         if len(eligible) > 0:
             # starting prep outcomes
-            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_restarting_prep,
-                                             sub_pop=eligible, dropna=True)
+            prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE, col.PREP_PAUSED],
+                                             self.calc_restarting_prep, sub_pop=eligible, dropna=True)
             # people who are restarting prep
             restarting_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
 
@@ -752,15 +753,21 @@ class PrEPModule:
                 self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
                 # unset stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
+                # unpause prep
+                pop.set_present_variable(col.PREP_PAUSED, False, restarting_prep_pop)
 
-    def calc_restarting_prep(self, favoured_prep, size):
+    def calc_restarting_prep(self, favoured_prep, prep_paused, size):
         """
         Returns PrEP types for people restarting PrEP.
         Individual preferences and availability are taken into account.
         """
         # outcomes
         r = rng.uniform(size=size)
-        restarting = r < self.prob_prep_restart
+        # those who stopped due to ineligibility are guaranteed to restart
+        if prep_paused:
+            restarting = r < 1
+        else:
+            restarting = r < self.prob_prep_restart
         prep = [favoured_prep if r else None for r in restarting]
 
         return prep
