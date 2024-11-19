@@ -846,6 +846,7 @@ def test_restarting_prep():
     pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
     pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
+    pop.data[col.PREP_PAUSED] = False
     pop.data[col.PREP_JUST_STARTED] = False
     pop.data[col.CONT_ON_PREP] = timedelta(months=0)
     pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
@@ -858,7 +859,7 @@ def test_restarting_prep():
     pop.prep.prob_prep_restart = 0.5
 
     pop.prep.restart_prep(pop, time_step)
-    # expecting 90% of people to restart prep
+    # expecting 50% of people to restart prep
     no_on_prep = sum(pop.data[col.LAST_PREP_STOP_DATE].isnull())
     mean = N * pop.prep.prob_prep_restart
     stdev = sqrt(mean * (1 - pop.prep.prob_prep_restart))
@@ -868,3 +869,35 @@ def test_restarting_prep():
                (pop.data[col.LAST_PREP_STOP_DATE].isnull()))
     assert all((pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) ==
                (pop.data[col.LAST_PREP_STOP_DATE].isnull()))
+
+    pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
+    pop.data[col.PREP_PAUSED] = True
+    pop.prep.restart_prep(pop, time_step)
+    # expecting everyone to restart prep
+    assert sum(pop.data[col.LAST_PREP_STOP_DATE].isnull()) == N
+
+
+def test_stopping_prep():
+    N = 100
+    pop = Population(size=N, start_date=date(5000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.EVER_PREP] = True
+    pop.data[col.LAST_PREP_STOP_DATE] = None
+    pop.data[col.PREP_PAUSED] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+
+    pop.prep.stop_prep(pop)
+    # expecting everyone to stop prep due to ineligibility
+    assert sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date) == N
+    assert sum(pop.data[col.PREP_PAUSED]) == N
+
+    pop.data[col.HIV_DIAGNOSED] = True
+    pop.data[col.PREP_ELIGIBLE] = True
+    pop.data[col.LAST_PREP_STOP_DATE] = None
+    pop.data[col.PREP_PAUSED] = False
+    pop.prep.stop_prep(pop)
+    # expecting everyone to stop prep due to positive diagnosis
+    assert sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date) == N
+    assert sum(pop.data[col.PREP_PAUSED]) == N
