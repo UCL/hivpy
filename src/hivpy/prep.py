@@ -772,6 +772,25 @@ class PrEPModule:
 
         return prep
 
+    def stop_prep(self, pop: Population):
+        """
+        Update PrEP usage for people stopping PrEP due to lack of eligibility or positive test.
+        """
+        # people who are using prep and are now ineligible
+        ineligible = pop.get_sub_pop(AND(OR(COND(col.HIV_DIAGNOSED, op.eq, True),
+                                            COND(col.PREP_ELIGIBLE, op.eq, False)),
+                                         COND(col.EVER_PREP, op.eq, True),
+                                         COND(col.LAST_PREP_STOP_DATE, op.eq, None),
+                                         COND(col.LAST_TEST_DATE, op.eq, pop.date)))
+
+        if len(ineligible) > 0:
+            # reset active continuous use
+            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), ineligible)
+            # set stop date
+            pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, ineligible)
+            # pause prep
+            pop.set_present_variable(col.PREP_PAUSED, True, ineligible)
+
     def prep_usage(self, pop: Population, time_step):
         """
         Update PrEP usage for people starting, continuing, switching, restarting, and stopping PrEP.
@@ -782,3 +801,5 @@ class PrEPModule:
         self.continue_prep(pop, time_step)
         # restarting prep
         self.restart_prep(pop, time_step)
+        # stopping prep
+        self.stop_prep(pop)
