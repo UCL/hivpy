@@ -22,11 +22,11 @@ class PrEPData(DataReader):
             self.prob_suspect_risk_prep = self.data["prob_suspect_risk_prep"]
 
             self.prep_oral_pref_beta = self._get_discrete_dist("prep_oral_pref_beta")
-            self.vl_prevalence_prep_threshold = self._get_discrete_dist("vl_prevalence_prep_threshold")
-
-            self.rate_test_onprep_any = self.data["rate_test_onprep_any"]
             self.prep_willing_threshold = self.data["prep_willing_threshold"]
+            self.vl_prevalence_prep_threshold = self._get_discrete_dist("vl_prevalence_prep_threshold")
+            self.rate_test_onprep_any = self.data["rate_test_onprep_any"]
             self.prob_test_prep_start = self._get_discrete_dist("prob_test_prep_start")
+
             self.prob_base_prep_start = self._get_discrete_dist("prob_base_prep_start")
             self.prob_base_prep_stop = self._get_discrete_dist("prob_base_prep_stop")
             self.prob_base_prep_stop_nonuniform = self._get_discrete_dist("prob_base_prep_stop_nonuniform")

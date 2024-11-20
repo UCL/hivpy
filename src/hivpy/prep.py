@@ -46,12 +46,13 @@ class PrEPModule:
         self.prep_cab_pref_beta = self.prep_oral_pref_beta + 0.3
         self.prep_len_pref_beta = self.prep_cab_pref_beta
         self.prep_vr_pref_beta = self.prep_oral_pref_beta - 0.1
+        self.prep_willing_threshold = self.p_data.prep_willing_threshold
+
         self.vl_prevalence_affects_prep = rng.choice([True, False], p=[1/3, 2/3])
         self.vl_prevalence_prep_threshold = self.p_data.vl_prevalence_prep_threshold.sample()
-
         self.rate_test_onprep_any = self.p_data.rate_test_onprep_any
-        self.prep_willing_threshold = self.p_data.prep_willing_threshold
         self.prob_test_prep_start = self.p_data.prob_test_prep_start.sample()
+
         # probability of starting prep in people who are eligible, willing,
         # and tested for HIV according to base rate of testing
         self.prob_base_prep_start = self.p_data.prob_base_prep_start.sample()
