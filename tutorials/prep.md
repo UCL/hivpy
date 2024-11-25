@@ -19,11 +19,50 @@ Finally, PrEP usage is updated for anyone starting, continuing, stopping, or res
 
 Individuals can be specifically tested to start PrEP for the first time, but tested people in the general population can also decide to start PrEP. When people continue PrEP usage, they can either continue with their current PrEP or switch to a different type if their favoured PrEP has changed. PrEP usage can be stopped for two reasons – an individual can choose to stop, or they can become ineligible for PrEP. People who have chosen to stop taking PrEP but are still eligible can also choose to restart, but anyone who stopped taking PrEP due to a break in eligibility automatically restarts.
 
+### PrEP Columns
+
+- *`R_PREP`* - A semi-permanent random float variable that determines whether an individual is risk informed or suspects they are at risk enough to take PrEP. Rerolled only for ineligible people when determining PrEP eligibility each time step.
+- *`PREP_ORAL_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for oral PrEP.
+- *`PREP_CAB_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for cabotegravir PrEP.
+- *`PREP_LEN_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for lenacapavir PrEP.
+- *`PREP_VR_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for vaginal ring PrEP.
+- *`PREP_ORAL_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for oral PrEP.
+- *`PREP_CAB_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for cabotegravir PrEP.
+- *`PREP_LEN_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for lenacapavir PrEP.
+- *`PREP_VR_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for vaginal ring PrEP.
+- *`PREP_ORAL_WILLING`* - A boolean flag signifying whether an individual is willing to use oral PrEP. True if their oral preference value clears a willingness threshold.
+- *`PREP_CAB_WILLING`* - A boolean flag signifying whether an individual is willing to use cabotegravir PrEP. True if their cab preference value clears a willingness threshold.
+- *`PREP_LEN_WILLING`* - A boolean flag signifying whether an individual is willing to use lenacapavir PrEP. True if their len preference value clears a willingness threshold.
+- *`PREP_VR_WILLING`* - A boolean flag signifying whether an individual is willing to use vaginal ring PrEP. True if their vr preference value clears a willingness threshold.
+- *`FAVOURED_PREP_TYPE`* - The `PrEPType` with the highest preference value an individual is willing to take that is also currently available. If there is no PrEP available that they are willing to take, this value is set to None.
+- *`PREP_ELIGIBLE`* - A boolean flag signifying whether an individual is eligible for PrEP this time step.
+- *`PREP_ORAL_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting oral PrEP. `Note`: Currently dummied.
+- *`PREP_CAB_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting cabotegravir PrEP. `Note`: Currently dummied.
+- *`PREP_LEN_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting lenacapavir PrEP. `Note`: Currently dummied.
+- *`PREP_VR_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting vaginal ring PrEP. `Note`: Currently dummied.
+- *`PREP_TYPE`* - The most recent `PrEPType` an individual has used, otherwise None if they have never used PrEP. This column is kept intact upon stopping PrEP usage.
+- *`EVER_PREP`* - A boolean flag signifying whether an individual has ever been on PrEP.
+- *`FIRST_ORAL_START_DATE`* - The start date of an individual's first ever usage of oral PrEP, otherwise None if they have never used oral PrEP.
+- *`FIRST_CAB_START_DATE`* - The start date of an individual's first ever usage of cabotegravir PrEP, otherwise None if they have never used cab PrEP.
+- *`FIRST_LEN_START_DATE`* - The start date of an individual's first ever usage of lenacapavir PrEP, otherwise None if they have never used len PrEP.
+- *`FIRST_VR_START_DATE`* - The start date of an individual's first ever usage of vaginal ring PrEP, otherwise None if they have never used vr PrEP.
+- *`LAST_PREP_START_DATE`* - The start date of an individual's most recent period of PrEP usage.
+- *`PREP_JUST_STARTED`* - A boolean flag signifying whether an individual started using PrEP this time step.
+- *`LAST_PREP_USE_DATE`* - The date of an individual's most recent PrEP usage (at a time step granularity).
+- *`LAST_PREP_STOP_DATE`* - The stop date of an individual's most recent period of PrEP usage. Reset to None if they restart PrEP.
+- *`PREP_PAUSED`* - A boolean flag signifying whether an individual has paused their PrEP usage this time step due to ineligibility.
+- *`CONT_ON_PREP`* - A timedelta tracking the total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP based on user intention. Breaks due to ineligibility do not count against continuity, but choosing to stop using PrEP does.
+- *`CONT_ACTIVE_ON_PREP`* - A timedelta tracking the actual total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP. Both choosing to stop using PrEP and dropping out due to ineligibility will reset continuity.
+- *`CUMULATIVE_PREP_ORAL`* - A timedelta tracking the total length of cumulative oral PrEP usage.
+- *`CUMULATIVE_PREP_CAB`* - A timedelta tracking the total length of cumulative cabotegravir PrEP usage
+- *`CUMULATIVE_PREP_LEN`* - A timedelta tracking the total length of cumulative lenacapavir PrEP usage
+- *`CUMULATIVE_PREP_VR`* - A timedelta tracking the total length of cumulative vaginal ring PrEP usage
+
 ### PrEP Data Variables
 
 - *`prep_strategy`* - An integer that determines which sub-population of people is marked as eligible for PrEP.
 - *`date_prep_intro`* - An array containing the introduction dates for each type of PrEP. Intended to be accessed through the use of `PrEPType`s as indices (e.g. `date_prep_intro[PrEPType.Oral]`).
-- *`cab_available`* - The boolean flag that determines the availability of `Cabotegravir` PrEP. Cab is only available if the current date has reached the cab introduction date and this flag is True.
+- *`cab_available`* - The boolean flag that determines the availability of cabotegravir PrEP. Cab is only available if the current date has reached the cab introduction date and this flag is True.
 - *`prob_risk_informed_prep`* - The probability of an individual with an *uninfected* long-term partner who is not on ART to meet the risk-informed PrEP eligibility criteria.
 - *`prob_greater_risk_informed_prep`* - As `prob_risk_informed_prep`, but with a higher probability value. Used with certain `prep_strategy` values.
 - *`prob_suspect_risk_prep`* - The probability of an individual with an *infected* long-term partner who is not on ART to meet the risk-informed PrEP eligibility criteria.
