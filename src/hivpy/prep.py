@@ -97,6 +97,7 @@ class PrEPModule:
         pop.init_variable(col.FIRST_VR_START_DATE, None)
         pop.init_variable(col.LAST_PREP_START_DATE, None)
         pop.init_variable(col.PREP_JUST_STARTED, False)
+        pop.init_variable(col.LAST_PREP_USE_DATE, None)
         pop.init_variable(col.LAST_PREP_STOP_DATE, None)
         pop.init_variable(col.PREP_PAUSED, False)
         pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
@@ -192,6 +193,20 @@ class PrEPModule:
         mask = r > eff_test_sens
 
         return pop.apply_bool_mask(mask, false_neg_pop)
+
+    def get_prep_cont_choice_pop(self, pop: Population):
+        """
+        Return the sub-population that have reached a point in their PrEP usage
+        where they can choose whether to stop or switch. For people on oral
+        or vaginal ring PrEP this happens every time step, but injectable PrEP
+        takes some time to wear off (~3 months for cab and ~6 months for len).
+        """
+        return pop.get_sub_pop(OR(COND(col.PREP_TYPE, op.eq, PrEPType.Oral),
+                                  COND(col.PREP_TYPE, op.eq, PrEPType.VaginalRing),
+                                  AND(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir),
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=3))),
+                                  AND(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir),
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=6)))))
 
     def prep_preference(self, pop: Population):
         """
@@ -531,6 +546,7 @@ class PrEPModule:
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
+                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, starting_prep_pop)
 
     def general_start_prep(self, pop: Population, prep_eligible_pop, time_step):
         """
@@ -557,6 +573,7 @@ class PrEPModule:
             pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
             # increment cumulative use
             self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
+            pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, starting_prep_pop)
 
     def set_all_prep_start_dates(self, pop: Population, starting_prep_pop):
         """
@@ -660,11 +677,15 @@ class PrEPModule:
                                        OR(COND(col.LAST_TEST_DATE, op.ne, pop.date),
                                           AND(COND(col.LAST_TEST_DATE, op.eq, pop.date),
                                               COND(col.HIV_DIAGNOSED, op.eq, False)))))
+        # people who can choose to stop or switch this time step
+        prep_choice_pop = pop.get_sub_pop_intersection(eligible, self.get_prep_cont_choice_pop(pop))
 
         if len(eligible) > 0:
             # continuous prep outcomes
             prep_types = pop.transform_group([col.PREP_TYPE, col.FAVOURED_PREP_TYPE],
-                                             self.calc_current_prep, sub_pop=eligible, dropna=True)
+                                             self.calc_current_prep, sub_pop=prep_choice_pop, dropna=True)
+            # get all current prep types and replace with new outcomes where necessary
+            prep_types = pop.get_variable(col.PREP_TYPE, eligible).combine(prep_types, lambda _, y: y)
             # find various sub-populations
             # people who are continuing current prep
             continuing_prep_mask = pop.get_variable(col.PREP_TYPE, eligible) == prep_types
@@ -696,6 +717,7 @@ class PrEPModule:
             if len(using_prep_pop) > 0:
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, using_prep_pop, time_step)
+                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, using_prep_pop)
 
             if len(stopping_prep_pop) > 0:
                 # stop continuous use
@@ -752,6 +774,7 @@ class PrEPModule:
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, restarting_prep_pop)
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
+                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, restarting_prep_pop)
                 # unset stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
                 # unpause prep
