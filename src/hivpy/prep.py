@@ -90,7 +90,6 @@ class PrEPModule:
         pop.init_variable(col.PREP_CAB_TESTED, False)
         pop.init_variable(col.PREP_LEN_TESTED, False)
         pop.init_variable(col.PREP_VR_TESTED, False)
-        pop.init_variable(col.LTP_HIV_STATUS, False)
         pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
 
@@ -117,7 +116,7 @@ class PrEPModule:
         """
         return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                    COND(col.LTP_ON_ART, op.eq, False),
-                                   COND(col.LTP_HIV_STATUS, op.eq, False),
+                                   COND(col.LTP_STATUS, op.eq, False),
                                    COND(col.R_PREP, op.lt, prob_risk_informed_prep)))
 
     def get_suspect_risk_pop(self, pop: Population):
@@ -127,7 +126,7 @@ class PrEPModule:
         """
         return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                    COND(col.LTP_ON_ART, op.eq, False),
-                                   COND(col.LTP_HIV_STATUS, op.eq, True),
+                                   COND(col.LTP_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
 
     # FIXME: this function may be removed if there are no issues with
@@ -398,7 +397,7 @@ class PrEPModule:
                                                   COND(col.AGE, op.lt, 50),
                                                   OR(COND(col.R_PREP, op.lt, 0.01),  # (alt) risk informed
                                                      AND(COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep),
-                                                         COND(col.LTP_HIV_STATUS, op.eq, True)))))  # (alt) suspect risk
+                                                         COND(col.LTP_STATUS, op.eq, True)))))  # (alt) suspect risk
                 at_risk_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                       COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
                                                       COND(col.LTP_ON_ART, op.eq, False)))
