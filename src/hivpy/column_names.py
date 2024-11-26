@@ -30,7 +30,6 @@ SEX_BEHAVIOUR_CLASS = "sex_class"               # sexual_behaviour.SexBehaviourC
 LONG_TERM_PARTNER = "long_term_partner"         # bool: True if the subject has a long term condomless partner
 LTP_NEW = "ltp_new"                             # bool: True if condomless sex with ltp is new this timestep
 LTP_LONGEVITY = "ltp_longevity"                 # int: categorises longevity of long term partnerships (higher => more stable)
-LTP_HIV_DIAGNOSED = "ltp_HIV_diagnosed"         # bool: True if an individual's long term partner is diagnosed with HIV (DUMMY)
 LTP_ON_ART = "ltp_on_art"                       # bool: True if an individual's long term partner is on ART (DUMMY)
 LTP_MONOGAMOUS = "ltp_monogamous"               # bool: True if a person's long term partner has no short term partners o/w False
 LTP_INFECTION_DATE = "ltp_infection_date"       # date: date at which the long term partner gets infected o/w None if not infected

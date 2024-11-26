@@ -90,7 +90,6 @@ class PrEPModule:
         pop.init_variable(col.PREP_CAB_TESTED, False)
         pop.init_variable(col.PREP_LEN_TESTED, False)
         pop.init_variable(col.PREP_VR_TESTED, False)
-        pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
 
     def reroll_r_prep(self, pop: Population):
@@ -106,7 +105,7 @@ class PrEPModule:
         has a diagnosed long-term partner who is not on ART.
         """
         return pop.get_sub_pop(OR(COND(col.NUM_PARTNERS, op.ge, 1),
-                                  AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                  AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                       COND(col.LTP_ON_ART, op.eq, False))))
 
     def get_risk_informed_pop(self, pop: Population, prob_risk_informed_prep):
@@ -381,7 +380,7 @@ class PrEPModule:
                 active_at_risk_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                          OR(COND(col.LAST_STP_DATE, op.gt,
                                                                  pop.date - timedelta(months=6)),
-                                                            AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                            AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                                 COND(col.LTP_ON_ART, op.eq, False)))))
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
                 prep_eligible_pop = pop.get_sub_pop_union(
@@ -392,14 +391,14 @@ class PrEPModule:
             elif self.prep_strategy == 15:
                 gen_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                   COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                  COND(col.LTP_HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.LTP_DIAGNOSED, op.eq, False),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50),
                                                   OR(COND(col.R_PREP, op.lt, 0.01),  # (alt) risk informed
                                                      AND(COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep),
                                                          COND(col.LTP_STATUS, op.eq, True)))))  # (alt) suspect risk
                 at_risk_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
-                                                      COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                      COND(col.LTP_DIAGNOSED, op.eq, True),
                                                       COND(col.LTP_ON_ART, op.eq, False)))
                 # at_risk_ltp OR gen_ltp
                 prep_eligible_pop = pop.get_sub_pop_union(at_risk_ltp_pop, gen_ltp_pop)

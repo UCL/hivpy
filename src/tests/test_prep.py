@@ -167,7 +167,7 @@ def test_at_risk_pop():
     pop = Population(size=N, start_date=date(2020, 1, 1))
     # at_risk = num_stp >= 1 OR (ltp_diag AND not ltp_on_art)
     pop.data[col.NUM_PARTNERS] = [0, 1] * (N // 2)
-    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, False] * (N // 4)
+    pop.data[col.LTP_DIAGNOSED] = [True, False, False, False] * (N // 4)
     pop.data[col.LTP_ON_ART] = False
     # 3/4 of people fulfill one of the conditions for being at risk
     assert len(pop.prep.get_at_risk_pop(pop)) == N//4 * 3
@@ -450,7 +450,7 @@ def test_prep_eligibility_all():
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
     pop.data[col.LTP_HIV_STATUS] = False
-    pop.data[col.LTP_HIV_DIAGNOSED] = False
+    pop.data[col.LTP_DIAGNOSED] = False
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
 
@@ -572,7 +572,7 @@ def test_prep_eligibility_all():
 
     pop.data[col.PREP_ELIGIBLE] = False
     pop.data[col.LONG_TERM_PARTNER] = True
-    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, True] * (N // 4)  # half of the population inherently at risk
+    pop.data[col.LTP_DIAGNOSED] = [True, False, False, True] * (N // 4)  # half of the population inherently at risk
     # at_risk_ltp OR gen_ltp
     pop.prep.prep_strategy = 15
     pop.prep.prep_eligibility(pop)
