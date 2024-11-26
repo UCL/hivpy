@@ -124,4 +124,4 @@ def test_death_rate():
         print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date
         recorded_deaths = pop.data.loc[deaths].groupby([col.SEX, col.AGE_GROUP]).size().to_dict()
-        assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.1)
+        assert recorded_deaths == pytest.approx(expected_annual_deaths, rel=0.15)

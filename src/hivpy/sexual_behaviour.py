@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.resources
-import logging
 import operator
 from enum import IntEnum
 from typing import TYPE_CHECKING
@@ -158,8 +157,10 @@ class SexualBehaviourModule:
 
     def init_sex_behaviour(self, population: Population):
         population.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
+        population.init_variable(col.LAST_STP_DATE, None)
         population.init_variable(col.RISK, 1)
         population.init_variable(col.LONG_TERM_PARTNER, False)
+        population.init_variable(col.LTP_NEW, False)
         population.init_variable(col.LTP_AGE_GROUP, 0)
         population.init_variable(col.LTP_LONGEVITY, 0)
         population.init_variable(col.SEX_MIX_AGE_GROUP, 0)
@@ -181,6 +182,7 @@ class SexualBehaviourModule:
         self.num_short_term_partners(population)
 
     def update_sex_behaviour(self, population: Population):
+        population.set_present_variable(col.LTP_NEW, False)
         self.update_sex_worker_status(population)
         self.update_sex_behaviour_class(population)
         self.update_risk(population)
@@ -515,12 +517,12 @@ class SexualBehaviourModule:
         yearly_change_90s = self.yearly_risk_change["1990s"]
         yearly_change_10s = self.yearly_risk_change["2010s"]
         if (date1995 < date <= date2000):
-            dt = diff_years(date1995, date)
+            dt = diff_years(date, date1995)
             self.risk_population = yearly_change_90s**dt
         elif (date2000 < date < date2010):
             self.risk_population = yearly_change_90s**5
         elif (date2010 < date < date2021):
-            dt = diff_years(date2010, date)
+            dt = diff_years(date, date2010)
             self.risk_population = yearly_change_90s**5 * yearly_change_10s**dt
         elif (date2021 < date):
             self.risk_population = yearly_change_90s**5 * yearly_change_10s**11
@@ -601,7 +603,7 @@ class SexualBehaviourModule:
         def get_ratio(sex, age):
             if (self.num_stp_of_age_sex_group[age][sex] > 0):
                 ratio = self.num_stp_in_age_sex_group[age][sex] / self.num_stp_of_age_sex_group[age][sex]
-                logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
+                # logging.info(f"Ratio (sex, age): {sex}, {age} = {ratio}\n")
                 return ratio
             else:
                 return 1
@@ -613,7 +615,7 @@ class SexualBehaviourModule:
 
     def update_ltp_rate_change(self, date):
         if date1995 < date < date2000:
-            dt = diff_years(date1995, date)
+            dt = diff_years(date, date1995)
             self.ltp_rate_change = self.annual_ltp_rate_change**(dt)
         elif date >= date2000:
             self.ltp_rate_change = self.annual_ltp_rate_change**5
@@ -713,6 +715,8 @@ class SexualBehaviourModule:
             population.get_sub_pop([(col.LONG_TERM_PARTNER, operator.eq, True)])
         )
 
+        population.set_present_variable(col.LTP_NEW, True, new_ltp_subpop)
+
         population.set_variable_by_group(
             col.LTP_LONGEVITY,
             [col.LTP_AGE_GROUP],
@@ -728,3 +732,8 @@ class SexualBehaviourModule:
             self.continue_ltp,
             sub_pop=start_partnered
         )
+
+        # end ltp for over 65
+        over65 = population.get_sub_pop(COND(col.AGE, operator.ge, 65))
+        population.set_present_variable(col.LONG_TERM_PARTNER, False, over65)
+        population.set_present_variable(col.LTP_STATUS, False, over65)

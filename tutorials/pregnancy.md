@@ -1,6 +1,6 @@
 ## Pregnancy Tutorial
 
-Welcome to the pregnancy module. This code deals with fertility, pregnancy, antenatal care (ANC), prevention of mother to child transmission care (PMTCT), birth, and number of children. The most relevant files are listed below:
+The pregnancy module tracks fertility, pregnancy, antenatal care (ANC), prevention of mother to child transmission care (PMTCT), birth, and number of children. The most relevant files are listed below:
 
 - `src/hivpy/pregnancy.py` - The pregnancy module.
 - `src/tests/test_pregnancy.py` - Tests for the pregnancy module.

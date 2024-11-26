@@ -1,6 +1,6 @@
 ## Circumcision Tutorial
 
-Welcome to the circumcision module. This code deals with circumcision at birth and voluntary medical male circumcision (VMMC) intervention. The most relevant files are listed below:
+The circumcision module tracks circumcision at birth and voluntary medical male circumcision (VMMC) intervention. The most relevant files are listed below:
 
 - `src/hivpy/circumcision.py` - The circumcision module.
 - `src/tests/test_circumcision.py` - Tests for the circumcision module.

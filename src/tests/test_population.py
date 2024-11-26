@@ -99,3 +99,39 @@ def test_compound_expression():
     sexes = pop.get_variable(col.SEX, female_over_25_or_male_under_25)
     assert all((ages < 25) | (sexes == SexType.Female))
     assert all((ages > 25) | (sexes == SexType.Male))
+
+
+def test_unions():
+    pop = Population(size=1000, start_date=date(1989, 1, 1))
+
+    # males
+    males = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
+    # over 25
+    over25 = pop.get_sub_pop(COND(col.AGE, op.ge, 25))
+    # under 10
+    under10 = pop.get_sub_pop(COND(col.AGE, op.lt, 10))
+    # all of the above
+    expectation = pop.get_sub_pop(OR(COND(col.SEX, op.eq, SexType.Male),
+                                     COND(col.AGE, op.ge, 25),
+                                     COND(col.AGE, op.lt, 10)))
+    # union
+    union = pop.get_sub_pop_union(males, over25, under10)
+    assert all(expectation == union)
+
+
+def test_population_deep_copy():
+    """
+    Assert that a deep copy of the population is generated for the intervention
+    """
+    from copy import deepcopy
+
+    size = 1000
+    pop = Population(size=size, start_date=date(1989, 1, 1))
+    pop_intervention = deepcopy(pop)
+    pop_intervention.set_present_variable(col.TEST_MARK, True)
+    pop_for_testing = pop.get_variable(col.TEST_MARK)
+    modified_pop_for_testing = pop_intervention.get_variable(col.TEST_MARK)
+
+    # assert pop_intervention is not a shallow copy
+    assert sum(pop_for_testing) == 0
+    assert sum(modified_pop_for_testing) == 1000
