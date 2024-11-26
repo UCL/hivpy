@@ -4,6 +4,10 @@
 .vscode/*
 log/
 output/
+SAS_OUTPUTS/
+SASGRAPHS/
+HIVPY_OUTPUTS/
+GRAPHS/
 
 # Compiled and packaged files
 *.egg-info/
