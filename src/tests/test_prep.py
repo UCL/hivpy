@@ -624,7 +624,7 @@ def test_starting_prep():
     assert all((pop.data[col.PREP_TYPE] != PrEPType.Cabotegravir) == (pop.data[col.FIRST_CAB_START_DATE].isnull()))
     assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
     assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
-    assert all((pop.data[col.PREP_TYPE]!= PrEPType.NoPrep) == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.NoPrep) == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
 
     pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = False
