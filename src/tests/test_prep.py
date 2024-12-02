@@ -179,7 +179,7 @@ def test_risk_informed_pop():
     # risk_informed = ltp AND not ltp_on_art AND r < prob_risk_informed_prep
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_STATUS] = False
     pop.prep.reroll_r_prep(pop)
     pop.prep.prob_risk_informed_prep = 0.1
 
@@ -201,7 +201,7 @@ def test_suspect_risk_pop():
     # suspect_risk = ltp AND not ltp_on_art AND ltp_infected AND r < prob_suspect_risk_prep
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = [True, False] * (N//2)
-    pop.data[col.LTP_HIV_STATUS] = True
+    pop.data[col.LTP_STATUS] = True
     pop.prep.reroll_r_prep(pop)
     pop.prep.prob_suspect_risk_prep = 0.5
 
@@ -273,7 +273,7 @@ def test_prep_eligibility_continuity():
     pop.data[col.AGE] = 30
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = [True, False] * (N // 2)
+    pop.data[col.LTP_STATUS] = [True, False] * (N // 2)
     pop.data[col.R_PREP] = 1.0
 
     pop.prep.prep_strategy = 9
@@ -342,7 +342,7 @@ def test_prep_eligibility_women_only():
     pop.data[col.NUM_PARTNERS] = 0  # nobody is inherently at risk
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_STATUS] = False
     # inflate probabilities to make test more sensitive with small test population
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
@@ -449,7 +449,7 @@ def test_prep_eligibility_all():
     pop.data[col.NUM_PARTNERS] = [0, 0, 0, 1] * (N // 4)  # half of all men are inherently at risk
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_STATUS] = False
     pop.data[col.LTP_DIAGNOSED] = False
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
