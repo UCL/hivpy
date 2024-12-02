@@ -680,23 +680,25 @@ class PrEPModule:
         # people who can choose to stop or switch this time step
         prep_choice_pop = pop.get_sub_pop_intersection(eligible, self.get_prep_cont_choice_pop(pop))
 
-        if len(eligible) > 0:
+        if len(prep_choice_pop) > 0:
             # continuous prep outcomes
             prep_types = pop.transform_group([col.PREP_TYPE, col.FAVOURED_PREP_TYPE],
                                              self.calc_current_prep, sub_pop=prep_choice_pop, dropna=True)
-            # get all current prep types and replace with new outcomes where necessary
-            prep_types = pop.get_variable(col.PREP_TYPE, eligible).combine(prep_types, lambda _, y: y)
             # find various sub-populations
             # people who are continuing current prep
-            continuing_prep_mask = pop.get_variable(col.PREP_TYPE, eligible) == prep_types
-            continuing_prep_pop = pop.apply_bool_mask(continuing_prep_mask, eligible)
+            continuing_prep_mask = pop.get_variable(col.PREP_TYPE, prep_choice_pop) == prep_types
+            continuing_prep_choice_pop = pop.apply_bool_mask(continuing_prep_mask, prep_choice_pop)
+            continuing_prep_no_choice_pop = pop.get_variable(col.PREP_TYPE, eligible).index.difference(prep_types.index)
+            continuing_prep_pop = pop.get_sub_pop_union(continuing_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are switching prep
-            switching_prep_mask = (pop.get_variable(col.PREP_TYPE, eligible) != prep_types) & prep_types.notnull()
-            switching_prep_pop = pop.apply_bool_mask(switching_prep_mask, eligible)
+            switching_prep_mask = ((pop.get_variable(col.PREP_TYPE, prep_choice_pop) != prep_types) &
+                                   prep_types.notnull())
+            switching_prep_pop = pop.apply_bool_mask(switching_prep_mask, prep_choice_pop)
             # people who are either continuing or switching prep
-            using_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
+            using_prep_choice_pop = pop.apply_bool_mask(prep_types.notnull(), prep_choice_pop)
+            using_prep_pop = pop.get_sub_pop_union(using_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are stopping prep
-            stopping_prep_pop = pop.apply_bool_mask(prep_types.isnull(), eligible)
+            stopping_prep_pop = pop.apply_bool_mask(prep_types.isnull(), prep_choice_pop)
 
             if len(continuing_prep_pop) > 0:
                 prep_cont = pop.get_variable(col.CONT_ON_PREP, eligible) + time_step
@@ -714,10 +716,13 @@ class PrEPModule:
                 pop.set_present_variable(col.CONT_ON_PREP, time_step, switching_prep_pop)
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, switching_prep_pop)
 
+            if len(using_prep_choice_pop) > 0:
+                # set last use date only for people who made a choice this time step
+                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, using_prep_choice_pop)
+
             if len(using_prep_pop) > 0:
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, using_prep_pop, time_step)
-                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, using_prep_pop)
 
             if len(stopping_prep_pop) > 0:
                 # stop continuous use
