@@ -688,6 +688,10 @@ class PrEPModule:
             # people who are continuing current prep
             continuing_prep_mask = pop.get_variable(col.PREP_TYPE, prep_choice_pop) == prep_types
             continuing_prep_choice_pop = pop.apply_bool_mask(continuing_prep_mask, prep_choice_pop)
+            # need to differentiate between people who had the choice to stop but continued instead and
+            # people on injectable prep that continued automatically without making a choice this time step
+            # (all prep users need to have cumulative prep use updated but only people who chose to
+            # continue/switch should have their last prep use date updated)
             continuing_prep_no_choice_pop = pop.get_variable(col.PREP_TYPE, eligible).index.difference(prep_types.index)
             continuing_prep_pop = pop.get_sub_pop_union(continuing_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are switching prep
