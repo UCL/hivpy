@@ -848,19 +848,43 @@ def test_continuing_prep():
     pop.data[col.FAVOURED_PREP_TYPE] = PrEPType.Oral
     # nobody stops prep
     prob_base_prep_stop = 0
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
     pop.prep.prob_cab_prep_stop = prob_base_prep_stop
     pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
 
     pop.prep.continue_prep(pop, time_step)
     # len prep not updated because last prep usage is too recent
-    print(pop.data[col.LAST_PREP_USE_DATE].array)
-    print(pop.data[col.PREP_TYPE].array)
-    print(((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) ==
-          (pop.data[col.LAST_PREP_USE_DATE] == pop.date - timedelta(months=3))).array)
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) ==
                (pop.data[col.LAST_PREP_USE_DATE] == pop.date - timedelta(months=3)))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) ==
                (pop.data[col.LAST_PREP_USE_DATE] == pop.date))
+    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
+
+    pop.data[col.LAST_PREP_USE_DATE] = pop.date - time_step
+    pop.data[col.PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                               PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+
+    pop.prep.continue_prep(pop, time_step)
+    # no injectable prep updated because last prep usage is too recent
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.Oral) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == pop.date - time_step))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == pop.date))
+    assert sum(pop.data[col.PREP_TYPE] == PrEPType.Oral) == N/2
+    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
+
+    pop.data[col.LAST_PREP_USE_DATE] = pop.date - time_step
+    pop.data[col.PREP_TYPE] = PrEPType.Lenacapavir
+    pop.data[col.CONT_ON_PREP] = time_step
+    pop.data[col.CUMULATIVE_PREP_LEN] = timedelta(months=2)
+
+    pop.prep.continue_prep(pop, time_step)
+    # everyone continues prep without choice
+    assert all(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)
+    assert all(pop.data[col.LAST_PREP_USE_DATE] == pop.date - time_step)
+    assert all((pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
+    assert all((pop.data[col.CUMULATIVE_PREP_LEN] == timedelta(months=3)))
 
 
 def test_restarting_prep():

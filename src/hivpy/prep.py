@@ -680,7 +680,7 @@ class PrEPModule:
         # people who can choose to stop or switch this time step
         prep_choice_pop = pop.get_sub_pop_intersection(eligible, self.get_prep_cont_choice_pop(pop))
 
-        if len(prep_choice_pop) > 0:
+        if len(eligible) > 0:
             # continuous prep outcomes
             prep_types = pop.transform_group([col.PREP_TYPE, col.FAVOURED_PREP_TYPE],
                                              self.calc_current_prep, sub_pop=prep_choice_pop, dropna=True)
