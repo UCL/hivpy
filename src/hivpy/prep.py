@@ -20,8 +20,9 @@ from .prep_data import PrEPData
 class PrEPType(IntEnum):
     Oral = 0
     Cabotegravir = 1  # injectable
-    Lenacapavir = 2  # injectable
+    Lenacapavir = 2   # injectable
     VaginalRing = 3
+    NoPrep = 5
 
 
 class PrEPModule:
@@ -78,7 +79,7 @@ class PrEPModule:
         pop.init_variable(col.PREP_ANY_WILLING, False)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
-        pop.init_variable(col.PREP_TYPE, None)
+        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrep)
         pop.init_variable(col.EVER_PREP, False)
         pop.init_variable(col.FIRST_ORAL_START_DATE, None)
         pop.init_variable(col.FIRST_CAB_START_DATE, None)

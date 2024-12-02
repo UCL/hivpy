@@ -15,7 +15,7 @@ def test_primary_infection_diagnosis():
     pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     # test sensitivities
     pop.hiv_diagnosis.test_sens_primary_ab = 0.50
     test_sens_primary_na = 0.86
@@ -119,7 +119,7 @@ def test_general_population_diagnosis():
     pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
 
     # general outcomes
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -206,7 +206,7 @@ def test_primary_loss_at_diagnosis():
     pop.data[col.DATE_HIV_INFECTION] = pop.date
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.SEX_WORKER] = False
     # adjust probabilities
     pop.hiv_diagnosis.test_sens_primary_ab = 1  # diagnose everyone
@@ -247,7 +247,7 @@ def test_general_loss_at_diagnosis():
     pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.SEX_WORKER] = False
     pop.data[col.ADC] = False
     pop.data[col.TB] = False
