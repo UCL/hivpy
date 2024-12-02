@@ -9,7 +9,7 @@ The most relevant files are listed below:
 - `src/hivpy/hivpy_intervention.yaml` - Sample file for running with intervention-related variables
 - `src/tests/test_population.py` - Test for understanding how the population class is modified
 
-If there are any testing-related variables you would like to change before running your simulation, please change them in `hivpy_intervention.yaml` and `simulation.py`.
+If there are any intervention-related variables you would like to change before running your simulation, please change them in `hivpy_intervention.yaml` and `simulation.py`.
 
 To make use of the intervention-related option there are two steps that need to be followed:
 

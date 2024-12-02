@@ -7,7 +7,7 @@ The PrEP module tracks PrEP preferences, willingness, eligibility, and use, incl
 - `src/hivpy/data/prep.yaml` - PrEP data and variables.
 - `src/hivpy/prep_data.py` - A class for storing data loaded from `prep.yaml`.
 
-If there are any testing-related variables you would like to change before running your simulation, please change them in `prep.yaml`.
+If there are any PrEP-related variables you would like to change before running your simulation, please change them in `prep.yaml`.
 
 ### Module Overview
 
@@ -22,10 +22,10 @@ Individuals can be specifically tested to start PrEP for the first time, but tes
 ### PrEP Columns
 
 - *`R_PREP`* - A semi-permanent random float variable that determines whether an individual is risk informed or suspects they are at risk enough to take PrEP. Rerolled only for ineligible people when determining PrEP eligibility each time step.
-- *`PREP_ORAL_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for oral PrEP.
-- *`PREP_CAB_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for cabotegravir PrEP.
-- *`PREP_LEN_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for lenacapavir PrEP.
-- *`PREP_VR_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines and individual's preference for vaginal ring PrEP.
+- *`PREP_ORAL_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines an individual's preference for oral PrEP.
+- *`PREP_CAB_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines an individual's preference for cabotegravir PrEP.
+- *`PREP_LEN_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines an individual's preference for lenacapavir PrEP.
+- *`PREP_VR_PREF`* - A float value between [0, 1] drawn from a beta distribution that determines an individual's preference for vaginal ring PrEP.
 - *`PREP_ORAL_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for oral PrEP.
 - *`PREP_CAB_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for cabotegravir PrEP.
 - *`PREP_LEN_RANK`* - An integer value between [1, 4] representing an individual's ranked PrEP preference for lenacapavir PrEP.
@@ -54,9 +54,9 @@ Individuals can be specifically tested to start PrEP for the first time, but tes
 - *`CONT_ON_PREP`* - A timedelta tracking the total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP based on user intention. Breaks due to ineligibility do not count against continuity, but choosing to stop using PrEP does.
 - *`CONT_ACTIVE_ON_PREP`* - A timedelta tracking the actual total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP. Both choosing to stop using PrEP and dropping out due to ineligibility will reset continuity.
 - *`CUMULATIVE_PREP_ORAL`* - A timedelta tracking the total length of cumulative oral PrEP usage.
-- *`CUMULATIVE_PREP_CAB`* - A timedelta tracking the total length of cumulative cabotegravir PrEP usage
-- *`CUMULATIVE_PREP_LEN`* - A timedelta tracking the total length of cumulative lenacapavir PrEP usage
-- *`CUMULATIVE_PREP_VR`* - A timedelta tracking the total length of cumulative vaginal ring PrEP usage
+- *`CUMULATIVE_PREP_CAB`* - A timedelta tracking the total length of cumulative cabotegravir PrEP usage.
+- *`CUMULATIVE_PREP_LEN`* - A timedelta tracking the total length of cumulative lenacapavir PrEP usage.
+- *`CUMULATIVE_PREP_VR`* - A timedelta tracking the total length of cumulative vaginal ring PrEP usage.
 
 ### PrEP Data Variables
 
