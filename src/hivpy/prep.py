@@ -786,8 +786,10 @@ class PrEPModule:
                 # set start dates
                 self.set_all_prep_start_dates(pop, restarting_prep_pop)
                 # set continuous use
-                pop.set_present_variable(col.CONT_ON_PREP, time_step, restarting_prep_pop)
-                pop.set_present_variable(col.CONT_INTENT_ON_PREP, time_step, restarting_prep_pop)
+                prep_cont = pop.get_variable(col.CONT_ON_PREP, restarting_prep_pop) + time_step
+                prep_intent_cont = pop.get_variable(col.CONT_INTENT_ON_PREP, restarting_prep_pop) + time_step
+                pop.set_present_variable(col.CONT_ON_PREP, prep_cont, restarting_prep_pop)
+                pop.set_present_variable(col.CONT_INTENT_ON_PREP, prep_intent_cont, restarting_prep_pop)
                 pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, restarting_prep_pop)
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
