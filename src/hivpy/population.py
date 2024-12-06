@@ -120,13 +120,12 @@ class Population:
            to be stored (default 0).
         """
         self.variable_history[name] = n_prev_steps + 1
-        if (n_prev_steps == 0):
-            if data_type is not None:
-                self.data[name] = pd.Series([init_val]*self.size, dtype=data_type)
-            else:
-                self.data[name] = init_val
+        if data_type is not None:
+            self.data[name] = pd.Series([init_val]*self.size, dtype=data_type)
         else:
-            for i in range(0, n_prev_steps + 1):
+            self.data[name] = init_val
+        if (n_prev_steps > 0):
+            for i in range(1, n_prev_steps + 1):
                 if data_type is not None:
                     self.data[self.constructParamColumn(name, i)] = pd.Series([init_val]*self.size, dtype=data_type)
                 else:
@@ -223,7 +222,7 @@ class Population:
 
     def get_correct_column(self, param, dt=0):
         """Gets the correct column for a parameter and a given time delay."""
-        if (self.variable_history[param] == 1):
+        if (self.variable_history[param] == 1 or dt == 0):
             return param
         else:
             col_index = (self.step + dt) % self.variable_history[param]
