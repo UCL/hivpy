@@ -110,8 +110,6 @@ class HIVStatusModule:
         population.init_variable(col.WHO4_OTHER, False)
         population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
 
-        self.init_resistance_mutations(population)
-
     def initial_HIV_status(self, population: pd.DataFrame):
         """
         Initialise HIV status at the start of the simulation to no infections.
@@ -185,35 +183,6 @@ class HIVStatusModule:
                                         np.digitize(population.get_variable(col.VIRAL_LOAD, HIV_positive_pop),
                                                     np.array([2.7, 3.7, 4.7, 5.7])),
                                         HIV_positive_pop)
-
-    def init_resistance_mutations(self, population: Population):
-        """
-        Initialise drug resistance mutations at the start of the simulation to False.
-        """
-        population.init_variable(col.TA_MUTATION, False)
-        population.init_variable(col.M184_MUTATION, False)
-        population.init_variable(col.K65_MUTATION, False)
-        population.init_variable(col.Q151_MUTATION, False)
-        population.init_variable(col.K103_MUTATION, False)
-        population.init_variable(col.Y181_MUTATION, False)
-        population.init_variable(col.G190_MUTATION, False)
-        population.init_variable(col.P32_MUTATION, False)
-        population.init_variable(col.P33_MUTATION, False)
-        population.init_variable(col.P46_MUTATION, False)
-        population.init_variable(col.P47_MUTATION, False)
-        population.init_variable(col.P50L_MUTATION, False)
-        population.init_variable(col.P50V_MUTATION, False)
-        population.init_variable(col.P54_MUTATION, False)
-        population.init_variable(col.P76_MUTATION, False)
-        population.init_variable(col.P82_MUTATION, False)
-        population.init_variable(col.P84_MUTATION, False)
-        population.init_variable(col.P88_MUTATION, False)
-        population.init_variable(col.P90_MUTATION, False)
-        population.init_variable(col.IN118_MUTATION, False)
-        population.init_variable(col.IN140_MUTATION, False)
-        population.init_variable(col.IN148_MUTATION, False)
-        population.init_variable(col.IN155_MUTATION, False)
-        population.init_variable(col.IN263_MUTATION, False)
 
     def stp_HIV_transmission(self, person):
         """
