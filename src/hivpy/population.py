@@ -271,6 +271,17 @@ class Population:
         # Use Dummy column to in order to enable transform method and avoid any risks to data
         return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
 
+    def col_apply(self, param_list, func, sub_pop=None):
+        """
+        Applies a function to specific columns in the dataframe.
+        """
+        if sub_pop is not None:
+            df = self.data.loc[sub_pop]
+        else:
+            df = self.data
+        # Lambda function used to extract param column contents
+        return df.apply(lambda x: func(*[x[p] for p in param_list]), axis=1)
+
     def evolve(self, time_step: timedelta):
         """
         Advance the population by one time step.
@@ -287,7 +298,7 @@ class Population:
         if self.HIV_introduced:
             self.hiv_status.set_primary_infection(self)
             self.hiv_status.set_viral_load_groups(self)
-            self.prep.prep_willingness(self)
+            self.prep.prep_propensity(self)
             self.prep.prep_eligibility(self)
 
         if self.circumcision.vmmc_disrup_covid:
@@ -307,7 +318,7 @@ class Population:
             if (n_deaths and self.apply_death):
                 self.drop_from_population(HIV_deaths)
             self.hiv_diagnosis.update_HIV_diagnosis(self)
-            self.prep.prep_usage(self)
+            self.prep.prep_usage(self, time_step)
 
         # Some population cleanup
         self.pregnancy.reset_anc_at_birth(self)
