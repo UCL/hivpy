@@ -120,6 +120,7 @@ PREP_JUST_STARTED = "prep_just_started"         # Bool: True if PrEP usage began
 LAST_PREP_USE_DATE = "last_prep_use_date"       # None | date: most recent date of PrEP usage
 LAST_PREP_STOP_DATE = "last_prep_stop_date"     # None | date: stop date of most recent PrEP usage
 PREP_PAUSED = "prep_paused"                     # Bool: True if PrEP usage is paused this time step due to ineligibility
+ON_PREP = "on_prep"                             # Bool: True if an individual is currently on PrEP this time step
 CONT_ON_PREP = "cont_on_prep"                   # None | timedelta: total length of continuous usage of current PrEP based on user intention (breaks due to ineligibility do not count against continuity - this value will not be reset during an ineligibility break)
 CONT_INTENT_ON_PREP = "cont_intent_on_prep"     # None | timedelta: total length of continuous usage of current PrEP based on user intention, including pauses (will continue to increment even during ineligibility breaks)
 CONT_ACTIVE_ON_PREP = "cont_active_on_prep"     # None | timedelta: actual total length of continuous usage of current PrEP

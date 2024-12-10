@@ -100,6 +100,7 @@ class PrEPModule:
         pop.init_variable(col.LAST_PREP_USE_DATE, None)
         pop.init_variable(col.LAST_PREP_STOP_DATE, None)
         pop.init_variable(col.PREP_PAUSED, False)
+        pop.init_variable(col.ON_PREP, False)
         pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
         pop.init_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0))
         pop.init_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
@@ -539,6 +540,7 @@ class PrEPModule:
                 pop.set_present_variable(col.PREP_TYPE, prep_type, starting_prep_pop)
                 pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
                 pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+                pop.set_present_variable(col.ON_PREP, True, starting_prep_pop)
                 # set start dates
                 pop.set_present_variable(col.LAST_PREP_START_DATE, pop.date, starting_prep_pop)
                 pop.set_present_variable(first_start_col, pop.date, starting_prep_pop)
@@ -568,6 +570,7 @@ class PrEPModule:
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
             pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+            pop.set_present_variable(col.ON_PREP, True, starting_prep_pop)
             # set start dates
             self.set_all_prep_start_dates(pop, starting_prep_pop)
             # set continuous use
@@ -672,11 +675,10 @@ class PrEPModule:
         """
         Update PrEP usage for people continuing PrEP.
         """
-        # people who have used prep before but not yet started this time step
+        # people who are currently using prep but have not just started this time step
         eligible = pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, True),
-                                       COND(col.EVER_PREP, op.eq, True),
                                        COND(col.PREP_JUST_STARTED, op.eq, False),
-                                       COND(col.LAST_PREP_STOP_DATE, op.eq, None),
+                                       COND(col.ON_PREP, op.eq, True),
                                        OR(COND(col.LAST_TEST_DATE, op.ne, pop.date),
                                           AND(COND(col.LAST_TEST_DATE, op.eq, pop.date),
                                               COND(col.HIV_DIAGNOSED, op.eq, False)))))
@@ -735,6 +737,7 @@ class PrEPModule:
                 self.set_all_prep_cumulative(pop, using_prep_pop, time_step)
 
             if len(stopping_prep_pop) > 0:
+                pop.set_present_variable(col.ON_PREP, False, stopping_prep_pop)
                 # stop continuous use
                 pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0), stopping_prep_pop)
                 pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0), stopping_prep_pop)
@@ -769,7 +772,7 @@ class PrEPModule:
         eligible = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                        COND(col.PREP_ELIGIBLE, op.eq, True),
                                        COND(col.EVER_PREP, op.eq, True),
-                                       COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date),
+                                       COND(col.ON_PREP, op.eq, False),
                                        COND(col.LAST_TEST_DATE, op.eq, pop.date)))
 
         if len(eligible) > 0:
@@ -783,6 +786,7 @@ class PrEPModule:
                 # set prep types
                 pop.set_present_variable(col.PREP_TYPE, prep_types, restarting_prep_pop)
                 pop.set_present_variable(col.PREP_JUST_STARTED, True, restarting_prep_pop)
+                pop.set_present_variable(col.ON_PREP, True, restarting_prep_pop)
                 # set start dates
                 self.set_all_prep_start_dates(pop, restarting_prep_pop)
                 # set continuous use
@@ -822,10 +826,10 @@ class PrEPModule:
         """
         # people who are using prep and are now ineligible
         ineligible = pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, False),
-                                         COND(col.EVER_PREP, op.eq, True),
-                                         COND(col.LAST_PREP_STOP_DATE, op.eq, None)))
+                                         COND(col.ON_PREP, op.eq, True)))
 
         if len(ineligible) > 0:
+            pop.set_present_variable(col.ON_PREP, False, ineligible)
             # reset active continuous use
             pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), ineligible)
             # set stop date
@@ -844,11 +848,11 @@ class PrEPModule:
         # people who are paused or using prep and are now permanently ineligible
         perm_ineligible = pop.get_sub_pop(AND(OR(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                  COND(col.AGE, op.ge, 65)),
-                                              COND(col.EVER_PREP, op.eq, True),
-                                              OR(COND(col.LAST_PREP_STOP_DATE, op.eq, None),
+                                              OR(COND(col.ON_PREP, op.eq, True),
                                                  COND(col.PREP_PAUSED, op.eq, True))))
 
         if len(perm_ineligible) > 0:
+            pop.set_present_variable(col.ON_PREP, False, perm_ineligible)
             # stop continuous use
             pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0), perm_ineligible)
             pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0), perm_ineligible)
