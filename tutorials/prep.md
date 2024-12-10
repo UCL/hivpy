@@ -17,7 +17,11 @@ Next, PrEP eligibility is determined. Based on the current PrEP strategy, a sub-
 
 Finally, PrEP usage is updated for anyone starting, continuing, stopping, or restarting PrEP. (`Note`: PrEP usage relies on the assumption that HIV diagnosis has already taken place in order to identify people that are HIV positive but have falsely not been diagnosed.)
 
-Individuals can be specifically tested to start PrEP for the first time, but tested people in the general population can also decide to start PrEP. When people continue PrEP usage, they can either continue with their current PrEP or switch to a different type if their favoured PrEP has changed. PrEP usage can be stopped for two reasons – an individual can choose to stop, or they can become ineligible for PrEP. People who have chosen to stop taking PrEP but are still eligible can also choose to restart, but anyone who stopped taking PrEP due to a break in eligibility automatically restarts.
+Individuals can be specifically tested to start PrEP for the first time, but tested people in the general population can also decide to start PrEP. When people continue PrEP usage, they can either continue with their current PrEP or switch to a different type if their favoured PrEP has changed.
+
+PrEP usage can be stopped for two reasons – an individual can choose to stop, or they can become ineligible for PrEP. Temporary ineligibility, where PrEP usage is considered paused rather than stopped outright, can occur due to lack of risk or a change in partnership, but permanent ineligibility is reached when an individual is diagnosed with HIV or when they reach age 65+.
+
+People who have chosen to stop taking PrEP but are still eligible can also choose to restart, but anyone who paused PrEP usage due to a break in eligibility automatically restarts.
 
 ### PrEP Columns
 
