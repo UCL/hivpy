@@ -841,11 +841,12 @@ class PrEPModule:
             prep_intent_cont = pop.get_variable(col.CONT_INTENT_ON_PREP, paused) + time_step
             pop.set_present_variable(col.CONT_INTENT_ON_PREP, prep_intent_cont, paused)
 
-        # people who are using prep and are now permanently ineligible
+        # people who are paused or using prep and are now permanently ineligible
         perm_ineligible = pop.get_sub_pop(AND(OR(COND(col.HIV_DIAGNOSED, op.eq, True),
                                                  COND(col.AGE, op.ge, 65)),
                                               COND(col.EVER_PREP, op.eq, True),
-                                              COND(col.LAST_PREP_STOP_DATE, op.eq, None)))
+                                              OR(COND(col.LAST_PREP_STOP_DATE, op.eq, None),
+                                                 COND(col.PREP_PAUSED, op.eq, True))))
 
         if len(perm_ineligible) > 0:
             # stop continuous use
@@ -854,15 +855,8 @@ class PrEPModule:
             pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), perm_ineligible)
             # set stop date
             pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, perm_ineligible)
-
-        # people who have paused prep usage and are now permanently ineligible
-        paused_perm_ineligible = pop.get_sub_pop(AND(OR(COND(col.HIV_DIAGNOSED, op.eq, True),
-                                                        COND(col.AGE, op.ge, 65)),
-                                                     COND(col.PREP_PAUSED, op.eq, True)))
-
-        if len(paused_perm_ineligible):
             # unpause prep
-            pop.set_present_variable(col.PREP_PAUSED, False, paused_perm_ineligible)
+            pop.set_present_variable(col.PREP_PAUSED, False, perm_ineligible)
 
     def prep_usage(self, pop: Population, time_step):
         """
