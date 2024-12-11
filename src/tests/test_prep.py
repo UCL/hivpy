@@ -943,7 +943,9 @@ def test_stopping_prep():
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_ELIGIBLE] = False
+    pop.data.loc[N*0.9:N-1, col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
+    pop.data.loc[N*0.9:N-1, col.EVER_PREP] = False
     pop.data[col.ON_PREP] = True
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.LAST_PREP_STOP_DATE] = None
@@ -955,36 +957,46 @@ def test_stopping_prep():
     pop.data[col.PREP_TYPE] = PrEPType.Oral
     pop.data[col.FAVOURED_PREP_TYPE] = PrEPType.Oral
 
+    # nobody stops prep by choice
+    prob_base_prep_stop = 0
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+
     pop.prep.prep_usage(pop, time_step)
-    # expecting everyone to stop prep due to ineligibility
-    assert sum(pop.data[col.ON_PREP]) == 0
-    assert all(pop.data[col.LAST_PREP_STOP_DATE] == pop.date)
-    assert sum(pop.data[col.PREP_PAUSED]) == N
+    # expecting the ineligible to pause prep
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
     # check continuous prep usage
-    assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=2))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=3))
-    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
 
     pop.date += time_step
     pop.data[col.LAST_TEST_DATE] += time_step
     pop.prep.prep_usage(pop, time_step)
-    # everyone is still ineligible
-    assert sum(pop.data[col.ON_PREP]) == 0
-    assert all(pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step)
-    assert sum(pop.data[col.PREP_PAUSED]) == N
+    # the ineligible can't restart
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
     # check continuous prep usage
-    assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=2))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=4))
-    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
 
     pop.date += time_step
     pop.data[col.LAST_TEST_DATE] += time_step
     pop.data[col.PREP_ELIGIBLE] = True
+    pop.data[col.CONT_ON_PREP] = timedelta(months=2)
+    pop.data[col.CONT_INTENT_ON_PREP] = timedelta(months=4)
+    pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
     pop.prep.prep_usage(pop, time_step)
     # expecting everyone to automatically restart from pause
     assert all(pop.data[col.ON_PREP])
-    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
     assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
     # check continuous prep usage
     assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=3))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=5))
@@ -992,19 +1004,21 @@ def test_stopping_prep():
 
     pop.date += time_step
     pop.data[col.HIV_DIAGNOSED] = True
+    pop.data.loc[N*0.9:N-1, col.HIV_DIAGNOSED] = False
     pop.prep.prep_usage(pop, time_step)
-    # expecting everyone to stop prep due to positive diagnosis
-    assert sum(pop.data[col.ON_PREP]) == 0
-    assert all(pop.data[col.LAST_PREP_STOP_DATE] == pop.date)
+    # expecting the diagnosed to stop prep
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert all(~pop.data[col.ON_PREP] == pop.data[col.HIV_DIAGNOSED])
     assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
     # check continuous prep usage
-    assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=0))
-    assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=0))
-    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0))
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ON_PREP] == timedelta(months=0)))
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=0)))
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
 
     pop.date += time_step
     pop.prep.prep_usage(pop, time_step)
-    # expecting nobody to restart (prep no longer paused)
-    assert sum(pop.data[col.ON_PREP]) == 0
-    assert all(pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step)
+    # expecting those who stopped will not restart because prep is not paused
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
     assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
