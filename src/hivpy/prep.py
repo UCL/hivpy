@@ -20,8 +20,9 @@ from .prep_data import PrEPData
 class PrEPType(IntEnum):
     Oral = 0
     Cabotegravir = 1  # injectable
-    Lenacapavir = 2  # injectable
+    Lenacapavir = 2   # injectable
     VaginalRing = 3
+    NoPrep = 5
 
 
 class PrEPModule:
@@ -82,14 +83,14 @@ class PrEPModule:
         pop.init_variable(col.PREP_LEN_WILLING, False)
         pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
-        pop.init_variable(col.FAVOURED_PREP_TYPE, None)
+        pop.init_variable(col.FAVOURED_PREP_TYPE, PrEPType.NoPrep)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
+        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrep)
         pop.init_variable(col.PREP_ORAL_TESTED, False)
         pop.init_variable(col.PREP_CAB_TESTED, False)
         pop.init_variable(col.PREP_LEN_TESTED, False)
         pop.init_variable(col.PREP_VR_TESTED, False)
-        pop.init_variable(col.PREP_TYPE, None)
         pop.init_variable(col.EVER_PREP, False)
         pop.init_variable(col.FIRST_ORAL_START_DATE, None)
         pop.init_variable(col.FIRST_CAB_START_DATE, None)
@@ -108,8 +109,6 @@ class PrEPModule:
         pop.init_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
         pop.init_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
         pop.init_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
-        pop.init_variable(col.LTP_HIV_STATUS, False)
-        pop.init_variable(col.LTP_HIV_DIAGNOSED, False)
         pop.init_variable(col.LTP_ON_ART, False)
 
     # FIXME: should this function be in another module?
@@ -138,7 +137,7 @@ class PrEPModule:
         has a diagnosed long-term partner who is not on ART.
         """
         return pop.get_sub_pop(OR(COND(col.NUM_PARTNERS, op.ge, 1),
-                                  AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                  AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                       COND(col.LTP_ON_ART, op.eq, False))))
 
     def get_risk_informed_pop(self, pop: Population, prob_risk_informed_prep):
@@ -148,7 +147,7 @@ class PrEPModule:
         """
         return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                    COND(col.LTP_ON_ART, op.eq, False),
-                                   COND(col.LTP_HIV_STATUS, op.eq, False),
+                                   COND(col.LTP_STATUS, op.eq, False),
                                    COND(col.R_PREP, op.lt, prob_risk_informed_prep)))
 
     def get_suspect_risk_pop(self, pop: Population):
@@ -158,7 +157,7 @@ class PrEPModule:
         """
         return pop.get_sub_pop(AND(COND(col.LONG_TERM_PARTNER, op.eq, True),
                                    COND(col.LTP_ON_ART, op.eq, False),
-                                   COND(col.LTP_HIV_STATUS, op.eq, True),
+                                   COND(col.LTP_STATUS, op.eq, True),
                                    COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep)))
 
     # FIXME: this function may be removed if there are no issues with
@@ -327,7 +326,7 @@ class PrEPModule:
         sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
         sorted_dict = dict(sorted_zipped)
 
-        favoured_prep = None
+        favoured_prep = PrEPType.NoPrep
         # find prep type someone is willing to take with the highest pref that is currently available
         for prep_type in sorted_dict:
             willing = sorted_dict[prep_type]
@@ -487,7 +486,7 @@ class PrEPModule:
                 active_at_risk_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                          OR(COND(col.LAST_STP_DATE, op.gt,
                                                                  pop.date - timedelta(months=6)),
-                                                            AND(COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                            AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                                 COND(col.LTP_ON_ART, op.eq, False)))))
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
                 prep_eligible_pop = pop.get_sub_pop_union(
@@ -498,14 +497,14 @@ class PrEPModule:
             elif self.prep_strategy == 15:
                 gen_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                   COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                  COND(col.LTP_HIV_DIAGNOSED, op.eq, False),
+                                                  COND(col.LTP_DIAGNOSED, op.eq, False),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50),
                                                   OR(COND(col.R_PREP, op.lt, 0.01),  # (alt) risk informed
                                                      AND(COND(col.R_PREP, op.lt, self.prob_suspect_risk_prep),
-                                                         COND(col.LTP_HIV_STATUS, op.eq, True)))))  # (alt) suspect risk
+                                                         COND(col.LTP_STATUS, op.eq, True)))))  # (alt) suspect risk
                 at_risk_ltp_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
-                                                      COND(col.LTP_HIV_DIAGNOSED, op.eq, True),
+                                                      COND(col.LTP_DIAGNOSED, op.eq, True),
                                                       COND(col.LTP_ON_ART, op.eq, False)))
                 # at_risk_ltp OR gen_ltp
                 prep_eligible_pop = pop.get_sub_pop_union(at_risk_ltp_pop, gen_ltp_pop)
@@ -566,7 +565,7 @@ class PrEPModule:
         if len(starting_prep_pop) > 0:
             # starting prep outcomes
             prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_starting_prep,
-                                             sub_pop=starting_prep_pop, dropna=True)
+                                             sub_pop=starting_prep_pop)
             pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
             pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
             pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
@@ -637,7 +636,9 @@ class PrEPModule:
             starting = r < self.prob_len_prep_start
         elif PrEPType(favoured_prep) is PrEPType.VaginalRing:
             starting = r < self.prob_vr_prep_start
-        prep = [favoured_prep if s else None for s in starting]
+        else:
+            starting = [False] * size
+        prep = [favoured_prep if s else PrEPType.NoPrep for s in starting]
 
         return prep
 
@@ -688,7 +689,7 @@ class PrEPModule:
         if len(eligible) > 0:
             # continuous prep outcomes
             prep_types = pop.transform_group([col.PREP_TYPE, col.FAVOURED_PREP_TYPE],
-                                             self.calc_current_prep, sub_pop=prep_choice_pop, dropna=True)
+                                             self.calc_current_prep, sub_pop=prep_choice_pop)
             # find various sub-populations
             # people who are continuing current prep
             continuing_prep_mask = pop.get_variable(col.PREP_TYPE, prep_choice_pop) == prep_types
@@ -701,13 +702,13 @@ class PrEPModule:
             continuing_prep_pop = pop.get_sub_pop_union(continuing_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are switching prep
             switching_prep_mask = ((pop.get_variable(col.PREP_TYPE, prep_choice_pop) != prep_types) &
-                                   prep_types.notnull())
+                                   (prep_types != PrEPType.NoPrep))
             switching_prep_pop = pop.apply_bool_mask(switching_prep_mask, prep_choice_pop)
             # people who are either continuing or switching prep
-            using_prep_choice_pop = pop.apply_bool_mask(prep_types.notnull(), prep_choice_pop)
+            using_prep_choice_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrep, prep_choice_pop)
             using_prep_pop = pop.get_sub_pop_union(using_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are stopping prep
-            stopping_prep_pop = pop.apply_bool_mask(prep_types.isnull(), prep_choice_pop)
+            stopping_prep_pop = pop.apply_bool_mask(prep_types == PrEPType.NoPrep, prep_choice_pop)
 
             if len(continuing_prep_pop) > 0:
                 prep_cont = pop.get_variable(col.CONT_ON_PREP, eligible) + time_step
@@ -760,7 +761,9 @@ class PrEPModule:
             continuing = r < (1 - self.prob_len_prep_stop)
         elif PrEPType(prep_type) is PrEPType.VaginalRing:
             continuing = r < (1 - self.prob_vr_prep_stop)
-        prep = [favoured_prep if c else None for c in continuing]
+        else:
+            continuing = [False] * size
+        prep = [favoured_prep if c else PrEPType.NoPrep for c in continuing]
 
         return prep
 
@@ -778,9 +781,9 @@ class PrEPModule:
         if len(eligible) > 0:
             # starting prep outcomes
             prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE, col.PREP_PAUSED],
-                                             self.calc_restarting_prep, sub_pop=eligible, dropna=True)
+                                             self.calc_restarting_prep, sub_pop=eligible)
             # people who are restarting prep
-            restarting_prep_pop = pop.apply_bool_mask(prep_types.notnull(), eligible)
+            restarting_prep_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrep, eligible)
 
             if len(restarting_prep_pop) > 0:
                 # set prep types
@@ -815,7 +818,7 @@ class PrEPModule:
             restarting = r < 1
         else:
             restarting = r < self.prob_prep_restart
-        prep = [favoured_prep if r else None for r in restarting]
+        prep = [favoured_prep if r else PrEPType.NoPrep for r in restarting]
 
         return prep
 
