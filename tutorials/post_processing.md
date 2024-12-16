@@ -5,7 +5,7 @@ Each time a HIVpy model run is completed, some basic post-processing is run at t
 ### Usage
 
 ```bash
-python src/hivpy/post_processing.py <config> <output_dir> [-hi hipvy_input] [-si sas_input] [-eec]
+python src/hivpy/post_processing.py <config> <output_dir> [-hi hipvy_input] [-si sas_input] [-eec early_epidemic_comparison]
 ```
 
 - `config` - Path to configuration file containing names of expected graph output columns.
