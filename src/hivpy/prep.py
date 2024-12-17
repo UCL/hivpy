@@ -22,7 +22,7 @@ class PrEPType(IntEnum):
     Cabotegravir = 1  # injectable
     Lenacapavir = 2   # injectable
     VaginalRing = 3
-    NoPrep = 5
+    NoPrEP = 5
 
 
 class PrEPModule:
@@ -83,10 +83,10 @@ class PrEPModule:
         pop.init_variable(col.PREP_LEN_WILLING, False)
         pop.init_variable(col.PREP_VR_WILLING, False)
         pop.init_variable(col.PREP_ANY_WILLING, False)
-        pop.init_variable(col.FAVOURED_PREP_TYPE, PrEPType.NoPrep)
+        pop.init_variable(col.FAVOURED_PREP_TYPE, PrEPType.NoPrEP)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
-        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrep)
+        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrEP)
         pop.init_variable(col.PREP_ORAL_TESTED, False)
         pop.init_variable(col.PREP_CAB_TESTED, False)
         pop.init_variable(col.PREP_LEN_TESTED, False)
@@ -326,7 +326,7 @@ class PrEPModule:
         sorted_zipped = sorted(enumerate(willing), key=lambda x: prefs[x[0]])
         sorted_dict = dict(sorted_zipped)
 
-        favoured_prep = PrEPType.NoPrep
+        favoured_prep = PrEPType.NoPrEP
         # find prep type someone is willing to take with the highest pref that is currently available
         for prep_type in sorted_dict:
             willing = sorted_dict[prep_type]
@@ -638,7 +638,7 @@ class PrEPModule:
             starting = r < self.prob_vr_prep_start
         else:
             starting = [False] * size
-        prep = [favoured_prep if s else PrEPType.NoPrep for s in starting]
+        prep = [favoured_prep if s else PrEPType.NoPrEP for s in starting]
 
         return prep
 
@@ -702,13 +702,13 @@ class PrEPModule:
             continuing_prep_pop = pop.get_sub_pop_union(continuing_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are switching prep
             switching_prep_mask = ((pop.get_variable(col.PREP_TYPE, prep_choice_pop) != prep_types) &
-                                   (prep_types != PrEPType.NoPrep))
+                                   (prep_types != PrEPType.NoPrEP))
             switching_prep_pop = pop.apply_bool_mask(switching_prep_mask, prep_choice_pop)
             # people who are either continuing or switching prep
-            using_prep_choice_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrep, prep_choice_pop)
+            using_prep_choice_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrEP, prep_choice_pop)
             using_prep_pop = pop.get_sub_pop_union(using_prep_choice_pop, continuing_prep_no_choice_pop)
             # people who are stopping prep
-            stopping_prep_pop = pop.apply_bool_mask(prep_types == PrEPType.NoPrep, prep_choice_pop)
+            stopping_prep_pop = pop.apply_bool_mask(prep_types == PrEPType.NoPrEP, prep_choice_pop)
 
             if len(continuing_prep_pop) > 0:
                 prep_cont = pop.get_variable(col.CONT_ON_PREP, eligible) + time_step
@@ -763,7 +763,7 @@ class PrEPModule:
             continuing = r < (1 - self.prob_vr_prep_stop)
         else:
             continuing = [False] * size
-        prep = [favoured_prep if c else PrEPType.NoPrep for c in continuing]
+        prep = [favoured_prep if c else PrEPType.NoPrEP for c in continuing]
 
         return prep
 
@@ -783,7 +783,7 @@ class PrEPModule:
             prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE, col.PREP_PAUSED],
                                              self.calc_restarting_prep, sub_pop=eligible)
             # people who are restarting prep
-            restarting_prep_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrep, eligible)
+            restarting_prep_pop = pop.apply_bool_mask(prep_types != PrEPType.NoPrEP, eligible)
 
             if len(restarting_prep_pop) > 0:
                 # set prep types
@@ -818,7 +818,7 @@ class PrEPModule:
             restarting = r < 1
         else:
             restarting = r < self.prob_prep_restart
-        prep = [favoured_prep if r else PrEPType.NoPrep for r in restarting]
+        prep = [favoured_prep if r else PrEPType.NoPrEP for r in restarting]
 
         return prep
 

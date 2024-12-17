@@ -38,13 +38,13 @@ People who have chosen to stop taking PrEP but are still eligible can also choos
 - *`PREP_CAB_WILLING`* - A boolean flag signifying whether an individual is willing to use cabotegravir PrEP. True if their cab preference value clears a willingness threshold.
 - *`PREP_LEN_WILLING`* - A boolean flag signifying whether an individual is willing to use lenacapavir PrEP. True if their len preference value clears a willingness threshold.
 - *`PREP_VR_WILLING`* - A boolean flag signifying whether an individual is willing to use vaginal ring PrEP. True if their vr preference value clears a willingness threshold.
-- *`FAVOURED_PREP_TYPE`* - The `PrEPType` with the highest preference value an individual is willing to take that is also currently available. If there is no PrEP available that they are willing to take, this value is set to None.
+- *`FAVOURED_PREP_TYPE`* - The `PrEPType` with the highest preference value an individual is willing to take that is also currently available. If there is no PrEP available that they are willing to take, this value is set to NoPrEP.
 - *`PREP_ELIGIBLE`* - A boolean flag signifying whether an individual is eligible for PrEP this time step.
 - *`PREP_ORAL_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting oral PrEP. `Note`: Currently dummied.
 - *`PREP_CAB_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting cabotegravir PrEP. `Note`: Currently dummied.
 - *`PREP_LEN_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting lenacapavir PrEP. `Note`: Currently dummied.
 - *`PREP_VR_TESTED`* - A boolean flag signifying whether an individual has tested for HIV specifically for the purpose of starting vaginal ring PrEP. `Note`: Currently dummied.
-- *`PREP_TYPE`* - The most recent `PrEPType` an individual has used, otherwise None if they have never used PrEP. This column is kept intact upon stopping PrEP usage.
+- *`PREP_TYPE`* - The most recent `PrEPType` an individual has used, otherwise NoPrEP if they have never used PrEP. This column is kept intact upon stopping PrEP usage.
 - *`EVER_PREP`* - A boolean flag signifying whether an individual has ever been on PrEP.
 - *`FIRST_ORAL_START_DATE`* - The start date of an individual's first ever usage of oral PrEP, otherwise None if they have never used oral PrEP.
 - *`FIRST_CAB_START_DATE`* - The start date of an individual's first ever usage of cabotegravir PrEP, otherwise None if they have never used cab PrEP.
