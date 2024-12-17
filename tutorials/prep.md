@@ -17,7 +17,11 @@ Next, PrEP eligibility is determined. Based on the current PrEP strategy, a sub-
 
 Finally, PrEP usage is updated for anyone starting, continuing, stopping, or restarting PrEP. (`Note`: PrEP usage relies on the assumption that HIV diagnosis has already taken place in order to identify people that are HIV positive but have falsely not been diagnosed.)
 
-Individuals can be specifically tested to start PrEP for the first time, but tested people in the general population can also decide to start PrEP. When people continue PrEP usage, they can either continue with their current PrEP or switch to a different type if their favoured PrEP has changed. PrEP usage can be stopped for two reasons – an individual can choose to stop, or they can become ineligible for PrEP. People who have chosen to stop taking PrEP but are still eligible can also choose to restart, but anyone who stopped taking PrEP due to a break in eligibility automatically restarts.
+Individuals can be specifically tested to start PrEP for the first time, but tested people in the general population can also decide to start PrEP. When people continue PrEP usage, they can either continue with their current PrEP or switch to a different type if their favoured PrEP has changed.
+
+PrEP usage can be stopped for two reasons – an individual can choose to stop, or they can become ineligible for PrEP. Temporary ineligibility, where PrEP usage is considered paused rather than stopped outright, can occur due to lack of risk or a change in partnership, but permanent ineligibility is reached when an individual is diagnosed with HIV or when they reach age 65+.
+
+People who have chosen to stop taking PrEP but are still eligible can also choose to restart, but anyone who paused PrEP usage due to a break in eligibility automatically restarts.
 
 ### PrEP Columns
 
@@ -50,9 +54,11 @@ Individuals can be specifically tested to start PrEP for the first time, but tes
 - *`PREP_JUST_STARTED`* - A boolean flag signifying whether an individual started using PrEP this time step.
 - *`LAST_PREP_USE_DATE`* - The date of an individual's most recent PrEP usage (at a time step granularity).
 - *`LAST_PREP_STOP_DATE`* - The stop date of an individual's most recent period of PrEP usage. Reset to None if they restart PrEP.
-- *`PREP_PAUSED`* - A boolean flag signifying whether an individual has paused their PrEP usage this time step due to ineligibility.
-- *`CONT_ON_PREP`* - A timedelta tracking the total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP based on user intention. Breaks due to ineligibility do not count against continuity, but choosing to stop using PrEP does.
-- *`CONT_ACTIVE_ON_PREP`* - A timedelta tracking the actual total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP. Both choosing to stop using PrEP and dropping out due to ineligibility will reset continuity.
+- *`PREP_PAUSED`* - A boolean flag signifying whether an individual has paused their PrEP usage this time step due to temporary ineligibility or lack of risk.
+- *`ON_PREP`* - A boolean flag signifying whether an individual is currently taking PrEP this time step.
+- *`CONT_ON_PREP`* - A timedelta tracking the total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP based on user intention. Choosing to stop using PrEP or becoming permanently ineligible resets continuity, but pausing PrEP usage will simply freeze this count until PrEP is being actively taken again.
+- *`CONT_INTENT_ON_PREP`* - As `CONT_ON_PREP`, but this count will continue to increment even when an individual has paused PrEP usage. Choosing to stop using PrEP or becoming permanently ineligible will reset continuity.
+- *`CONT_ACTIVE_ON_PREP`* - A timedelta tracking the actual total length of continuous PrEP usage (at a time step granularity) of the current type of PrEP. Choosing to stop using PrEP and dropping out due to ineligibility (temporary or otherwise) will reset continuity.
 - *`CUMULATIVE_PREP_ORAL`* - A timedelta tracking the total length of cumulative oral PrEP usage.
 - *`CUMULATIVE_PREP_CAB`* - A timedelta tracking the total length of cumulative cabotegravir PrEP usage.
 - *`CUMULATIVE_PREP_LEN`* - A timedelta tracking the total length of cumulative lenacapavir PrEP usage.

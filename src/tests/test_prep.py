@@ -31,7 +31,7 @@ def test_at_risk_pop():
     pop = Population(size=N, start_date=date(2020, 1, 1))
     # at_risk = num_stp >= 1 OR (ltp_diag AND not ltp_on_art)
     pop.data[col.NUM_PARTNERS] = [0, 1] * (N // 2)
-    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, False] * (N // 4)
+    pop.data[col.LTP_DIAGNOSED] = [True, False, False, False] * (N // 4)
     pop.data[col.LTP_ON_ART] = False
     # 3/4 of people fulfill one of the conditions for being at risk
     assert len(pop.prep.get_at_risk_pop(pop)) == N//4 * 3
@@ -43,7 +43,7 @@ def test_risk_informed_pop():
     # risk_informed = ltp AND not ltp_on_art AND r < prob_risk_informed_prep
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_STATUS] = False
     pop.prep.reroll_r_prep(pop)
     pop.prep.prob_risk_informed_prep = 0.1
 
@@ -65,7 +65,7 @@ def test_suspect_risk_pop():
     # suspect_risk = ltp AND not ltp_on_art AND ltp_infected AND r < prob_suspect_risk_prep
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = [True, False] * (N//2)
-    pop.data[col.LTP_HIV_STATUS] = True
+    pop.data[col.LTP_STATUS] = True
     pop.prep.reroll_r_prep(pop)
     pop.prep.prob_suspect_risk_prep = 0.5
 
@@ -274,7 +274,7 @@ def test_prep_eligibility_continuity():
     pop.data[col.AGE] = 30
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = [True, False] * (N // 2)
+    pop.data[col.LTP_STATUS] = [True, False] * (N // 2)
     pop.data[col.R_PREP] = 1.0
 
     pop.prep.prep_strategy = 9
@@ -343,7 +343,7 @@ def test_prep_eligibility_women_only():
     pop.data[col.NUM_PARTNERS] = 0  # nobody is inherently at risk
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
+    pop.data[col.LTP_STATUS] = False
     # inflate probabilities to make test more sensitive with small test population
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
@@ -450,8 +450,8 @@ def test_prep_eligibility_all():
     pop.data[col.NUM_PARTNERS] = [0, 0, 0, 1] * (N // 4)  # half of all men are inherently at risk
     pop.data[col.LONG_TERM_PARTNER] = True
     pop.data[col.LTP_ON_ART] = False
-    pop.data[col.LTP_HIV_STATUS] = False
-    pop.data[col.LTP_HIV_DIAGNOSED] = False
+    pop.data[col.LTP_STATUS] = False
+    pop.data[col.LTP_DIAGNOSED] = False
     pop.prep.prob_risk_informed_prep = 0.3
     pop.prep.prob_greater_risk_informed_prep = 0.6
 
@@ -573,7 +573,7 @@ def test_prep_eligibility_all():
 
     pop.data[col.PREP_ELIGIBLE] = False
     pop.data[col.LONG_TERM_PARTNER] = True
-    pop.data[col.LTP_HIV_DIAGNOSED] = [True, False, False, True] * (N // 4)  # half of the population inherently at risk
+    pop.data[col.LTP_DIAGNOSED] = [True, False, False, True] * (N // 4)  # half of the population inherently at risk
     # at_risk_ltp OR gen_ltp
     pop.prep.prep_strategy = 15
     pop.prep.prep_eligibility(pop)
@@ -596,6 +596,7 @@ def test_starting_prep():
     pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.PREP_ANY_WILLING] = True
     pop.data[col.EVER_PREP] = False
+    pop.data[col.ON_PREP] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.CONT_ON_PREP] = None
     pop.data[col.CONT_ACTIVE_ON_PREP] = None
@@ -610,20 +611,21 @@ def test_starting_prep():
     pop.data[col.PREP_VR_TESTED] = [False, False, False, True] * (N // 4)
 
     pop.prep.start_prep(pop, time_step)
+    assert all(pop.data[col.ON_PREP])
     # prep types spread evenly among population
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Oral) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == N/4
     assert sum(pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == N/4
     # check continuous and cumulative prep usage
-    assert sum(pop.data[col.CONT_ON_PREP] == time_step) == N
-    assert sum(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) == N
+    assert all(pop.data[col.CONT_ON_PREP] == time_step)
+    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step)
     assert sum(pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) == N/4
     assert sum(pop.data[col.CUMULATIVE_PREP_CAB] == time_step) == N/4
     assert sum(pop.data[col.CUMULATIVE_PREP_LEN] == time_step) == N/4
     assert sum(pop.data[col.CUMULATIVE_PREP_VR] == time_step) == N/4
 
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = [True, False] * (N // 2)
     pop.data[col.FIRST_ORAL_START_DATE] = None
     pop.data[col.FIRST_CAB_START_DATE] = None
@@ -633,15 +635,15 @@ def test_starting_prep():
     pop.prep.start_prep(pop, time_step)
 
     # only 50% eligible to start prep for the first time
-    assert sum(pop.data[col.PREP_TYPE].isnull()) == N/2
+    assert (sum(pop.data[col.PREP_TYPE] == PrEPType.NoPrep) == N//2)
     # check that people who aren't on a specific type of prep don't have start dates
     assert all((pop.data[col.PREP_TYPE] != PrEPType.Oral) == (pop.data[col.FIRST_ORAL_START_DATE].isnull()))
     assert all((pop.data[col.PREP_TYPE] != PrEPType.Cabotegravir) == (pop.data[col.FIRST_CAB_START_DATE].isnull()))
     assert all((pop.data[col.PREP_TYPE] != PrEPType.Lenacapavir) == (pop.data[col.FIRST_LEN_START_DATE].isnull()))
     assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
-    assert all(pop.data[col.PREP_TYPE].notnull() == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
+    assert all((pop.data[col.PREP_TYPE] != PrEPType.NoPrep) == (pop.data[col.LAST_PREP_START_DATE] == pop.date))
 
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = False
     # introduce different preference ranking distributions
     pop.data[col.PREP_ORAL_RANK] = [1, 2, 3, 4] * (N // 4)
@@ -687,8 +689,9 @@ def test_starting_prep():
     stdev = sqrt(mean * (1 - pop.prep.prob_vr_prep_start))
     assert mean - 3 * stdev <= no_on_vr <= mean + 3 * stdev
 
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = False
+    pop.data[col.ON_PREP] = False
     pop.data[col.CONT_ON_PREP] = None
     pop.data[col.CONT_ACTIVE_ON_PREP] = None
     pop.data[col.CUMULATIVE_PREP_ORAL] = timedelta(months=0)
@@ -703,19 +706,20 @@ def test_starting_prep():
     pop.prep.start_prep(pop, time_step)
 
     # everyone starts their most preferred prep type
+    assert all(pop.data[col.ON_PREP])
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Oral) == (pop.data[col.PREP_ORAL_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == (pop.data[col.PREP_CAB_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == (pop.data[col.PREP_LEN_RANK] == 1))
     assert all((pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) == (pop.data[col.PREP_VR_RANK] == 1))
     # check continuous and cumulative prep usage
-    assert sum(pop.data[col.CONT_ON_PREP] == time_step) == N
-    assert sum(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) == N
+    assert all(pop.data[col.CONT_ON_PREP] == time_step)
+    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == time_step)
     assert all((pop.data[col.CUMULATIVE_PREP_ORAL] == time_step) == (pop.data[col.PREP_ORAL_RANK] == 1))
     assert all((pop.data[col.CUMULATIVE_PREP_CAB] == time_step) == (pop.data[col.PREP_CAB_RANK] == 1))
     assert all((pop.data[col.CUMULATIVE_PREP_LEN] == time_step) == (pop.data[col.PREP_LEN_RANK] == 1))
     assert all((pop.data[col.CUMULATIVE_PREP_VR] == time_step) == (pop.data[col.PREP_VR_RANK] == 1))
 
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = False
     # nobody is willing to take oral or cab
     pop.data[col.PREP_ORAL_WILLING] = False
@@ -731,7 +735,7 @@ def test_starting_prep():
     assert all((pop.data[col.PREP_TYPE] != PrEPType.VaginalRing) == (pop.data[col.FIRST_VR_START_DATE].isnull()))
     assert all(pop.data[col.LAST_PREP_START_DATE] == pop.date)
 
-    pop.data[col.PREP_TYPE] = None
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrep
     pop.data[col.EVER_PREP] = False
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(6000)]
     pop.prep.favoured_prep(pop, None)
@@ -749,6 +753,7 @@ def test_continuing_prep():
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
+    pop.data[col.ON_PREP] = True
     pop.data[col.LAST_PREP_STOP_DATE] = None
     pop.data[col.PREP_JUST_STARTED] = False
     pop.data[col.CONT_ON_PREP] = timedelta(months=3)
@@ -803,6 +808,7 @@ def test_continuing_prep():
                ((pop.data[col.CUMULATIVE_PREP_VR] == time_step) ==
                 (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
 
+    pop.data[col.ON_PREP] = True
     pop.data[col.CONT_ON_PREP] = timedelta(months=3)
     pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=2)
     pop.data[col.LAST_PREP_STOP_DATE] = None
@@ -842,6 +848,7 @@ def test_continuing_prep():
                ((pop.data[col.CUMULATIVE_PREP_VR] == time_step) ==
                 (pop.data[col.LAST_PREP_STOP_DATE] == pop.date)))
 
+    pop.data[col.ON_PREP] = True
     pop.data[col.LAST_PREP_STOP_DATE] = None
     pop.data[col.LAST_PREP_USE_DATE] = pop.date - timedelta(months=3)
     pop.data[col.PREP_TYPE] = [PrEPType.Cabotegravir, PrEPType.Lenacapavir] * (N // 2)
@@ -895,14 +902,14 @@ def test_restarting_prep():
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
+    pop.data[col.ON_PREP] = False
     pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
     pop.data[col.PREP_PAUSED] = False
     pop.data[col.PREP_JUST_STARTED] = False
     pop.data[col.CONT_ON_PREP] = timedelta(months=0)
     pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
     pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.PREP_TYPE] = None
-    # everyone is taking their favoured prep type
+    pop.data[col.PREP_TYPE] = PrEPType.Oral
     pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
                                         PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
     # 50% chance to restart prep
@@ -920,39 +927,98 @@ def test_restarting_prep():
     assert all((pop.data[col.CONT_ACTIVE_ON_PREP] == time_step) ==
                (pop.data[col.LAST_PREP_STOP_DATE].isnull()))
 
+    pop.data[col.ON_PREP] = False
     pop.data[col.LAST_PREP_STOP_DATE] = pop.date - time_step
     pop.data[col.PREP_PAUSED] = True
     pop.prep.restart_prep(pop, time_step)
     # expecting everyone to restart prep
-    assert sum(pop.data[col.LAST_PREP_STOP_DATE].isnull()) == N
+    assert all(pop.data[col.ON_PREP])
+    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
 
 
 def test_stopping_prep():
     N = 100
+    time_step = timedelta(months=1)
     pop = Population(size=N, start_date=date(5000, 1, 1))
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     pop.data[col.HIV_DIAGNOSED] = False
     pop.data[col.PREP_ELIGIBLE] = False
+    pop.data.loc[N*0.9:N-1, col.PREP_ELIGIBLE] = True
     pop.data[col.EVER_PREP] = True
+    pop.data.loc[N*0.9:N-1, col.EVER_PREP] = False
+    pop.data[col.ON_PREP] = True
+    pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.LAST_PREP_STOP_DATE] = None
     pop.data[col.PREP_PAUSED] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
     pop.data[col.CONT_ON_PREP] = timedelta(months=2)
+    pop.data[col.CONT_INTENT_ON_PREP] = timedelta(months=2)
     pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=2)
+    pop.data[col.PREP_TYPE] = PrEPType.Oral
+    pop.data[col.FAVOURED_PREP_TYPE] = PrEPType.Oral
 
-    pop.prep.stop_prep(pop)
-    # expecting everyone to stop prep due to ineligibility
-    assert sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date) == N
-    assert sum(pop.data[col.PREP_PAUSED]) == N
+    # nobody stops prep by choice
+    prob_base_prep_stop = 0
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+
+    pop.prep.prep_usage(pop, time_step)
+    # expecting the ineligible to pause prep
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
     # check continuous prep usage
-    assert sum(pop.data[col.CONT_ON_PREP] == timedelta(months=2)) == N
-    assert sum(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)) == N
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
+    assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=3))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
 
-    pop.data[col.HIV_DIAGNOSED] = True
+    pop.date += time_step
+    pop.data[col.LAST_TEST_DATE] += time_step
+    pop.prep.prep_usage(pop, time_step)
+    # the ineligible can't restart
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
+    # check continuous prep usage
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
+    assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=4))
+    assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
+
+    pop.date += time_step
+    pop.data[col.LAST_TEST_DATE] += time_step
     pop.data[col.PREP_ELIGIBLE] = True
-    pop.data[col.LAST_PREP_STOP_DATE] = None
-    pop.data[col.PREP_PAUSED] = False
-    pop.prep.stop_prep(pop)
-    # expecting everyone to stop prep due to positive diagnosis
-    assert sum(pop.data[col.LAST_PREP_STOP_DATE] == pop.date) == N
-    assert sum(pop.data[col.PREP_PAUSED]) == N
+    pop.data[col.CONT_ON_PREP] = timedelta(months=2)
+    pop.data[col.CONT_INTENT_ON_PREP] = timedelta(months=4)
+    pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
+    pop.prep.prep_usage(pop, time_step)
+    # expecting everyone to automatically restart from pause
+    assert all(pop.data[col.ON_PREP])
+    assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
+    # check continuous prep usage
+    assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=3))
+    assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=5))
+    assert all(pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=1))
+
+    pop.date += time_step
+    pop.data[col.HIV_DIAGNOSED] = True
+    pop.data.loc[N*0.9:N-1, col.HIV_DIAGNOSED] = False
+    pop.prep.prep_usage(pop, time_step)
+    # expecting the diagnosed to stop prep
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert all(~pop.data[col.ON_PREP] == pop.data[col.HIV_DIAGNOSED])
+    assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
+    # check continuous prep usage
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ON_PREP] == timedelta(months=0)))
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=0)))
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ACTIVE_ON_PREP] == timedelta(months=0)))
+
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+    # expecting those who stopped will not restart because prep is not paused
+    assert sum(pop.data[col.ON_PREP]) == N*0.1
+    assert sum(pop.data[col.PREP_PAUSED]) == 0
+    assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
