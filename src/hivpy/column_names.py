@@ -127,7 +127,13 @@ CUMULATIVE_PREP_CAB = "cumulative_prep_cab"     # None | timedelta: total length
 CUMULATIVE_PREP_LEN = "cumulative_prep_len"     # None | timedelta: total length of cumulative injectable Len PrEP usage
 CUMULATIVE_PREP_VR = "cumulative_prep_vr"       # None | timedelta: total length of cumulative injectable vaginal ring PrEP usage
 
-ART_ADHERENCE = "art_adherence"                 # None | Float: percentage of ART intake that is adhered to
+ART_ADHERENCE = "art_adherence"                 # None | float: percentage of ART intake that is adhered to
+CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
+NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in an individual's regimen
+
+ON_NEV = "on_nev"                               # ON_X: True if individual is on a particular ART drug (TODO: all currently DUMMIED)
+ON_EFA = "on_efa"
+
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
 M184_MUTATION = "m184m"
 K65_MUTATION = "k65m"
