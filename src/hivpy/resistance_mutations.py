@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import numpy as np
+
 import hivpy.column_names as col
 
 from .common import timedelta
@@ -20,19 +22,19 @@ class ResistanceMutationsModule:
         self.adherence_bins = [0.5, 0.8]
 
         # new_mutation_matrix[active_drugs][cont_on_art][adherence]
-        self.new_mutation_matrix = [[[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50]],  [0.05, 0.50, 0.50]],
-                                    [[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50]],  [0.05, 0.50, 0.50]],
-                                    [[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50]],  [0.05, 0.50, 0.50]],
-                                    [[0.05, 0.45, 0.45],  [0.05, 0.45, [0.45, 0.45]],  [0.05, 0.45, 0.45]],
-                                    [[0.05, 0.40, 0.40],  [0.05, 0.40, [0.40, 0.40]],  [0.05, 0.40, 0.40]],
-                                    [[0.05, 0.35, 0.30],  [0.05, 0.35, [0.30, 0.30]],  [0.05, 0.35, 0.30]],
-                                    [[0.05, 0.30, 0.20],  [0.05, 0.30, [0.20, 0.20]],  [0.05, 0.30, 0.20]],
-                                    [[0.05, 0.30, 0.15],  [0.05, 0.30, [0.10, 0.10]],  [0.05, 0.30, 0.15]],
-                                    [[0.05, 0.30, 0.10],  [0.05, 0.30, [0.05, 0.05]],  [0.05, 0.30, 0.10]],
-                                    [[0.05, 0.25, 0.05],  [0.05, 0.20, [0.05, 0.05]],  [0.05, 0.25, 0.08]],
-                                    [[0.05, 0.20, 0.03],  [0.05, 0.20, [0.03, 0.03]],  [0.05, 0.20, 0.03]],
-                                    [[0.05, 0.15, 0.01],  [0.05, 0.15, [0.05, 0.01]],  [0.05, 0.18, 0.01]],
-                                    [[0.05, 0.15, 0.002], [0.05, 0.10, [0.05, 0.002]], [0.05, 0.15, 0.002]]]
+        self.new_mutation_matrix = [[[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50, 0.50]],   [0.05, 0.50, 0.50]],   # active drugs == 0.00
+                                    [[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50, 0.50]],   [0.05, 0.50, 0.50]],   # active drugs == 0.25
+                                    [[0.05, 0.50, 0.50],  [0.05, 0.50, [0.50, 0.50, 0.50]],   [0.05, 0.50, 0.50]],   # active drugs == 0.50
+                                    [[0.05, 0.45, 0.45],  [0.05, 0.45, [0.45, 0.45, 0.45]],   [0.05, 0.45, 0.45]],   # active drugs == 0.75
+                                    [[0.05, 0.40, 0.40],  [0.05, 0.40, [0.40, 0.40, 0.40]],   [0.05, 0.40, 0.40]],   # active drugs == 1.00
+                                    [[0.05, 0.35, 0.30],  [0.05, 0.35, [0.30, 0.30, 0.30]],   [0.05, 0.35, 0.30]],   # active drugs == 1.25
+                                    [[0.05, 0.30, 0.20],  [0.05, 0.30, [0.20, 0.20, 0.20]],   [0.05, 0.30, 0.20]],   # active drugs == 1.50
+                                    [[0.05, 0.30, 0.15],  [0.05, 0.30, [0.10, 0.10, 0.10]],   [0.05, 0.30, 0.15]],   # active drugs == 1.75
+                                    [[0.05, 0.30, 0.10],  [0.05, 0.30, [0.05, 0.05, 0.05]],   [0.05, 0.30, 0.10]],   # active drugs == 2.00
+                                    [[0.05, 0.25, 0.05],  [0.05, 0.20, [0.05, 0.05, 0.05]],   [0.05, 0.25, 0.08]],   # active drugs == 2.25
+                                    [[0.05, 0.20, 0.03],  [0.05, 0.20, [0.03, 0.03, 0.03]],   [0.05, 0.20, 0.03]],   # active drugs == 2.50
+                                    [[0.05, 0.15, 0.01],  [0.05, 0.15, [0.05, 0.01, 0.01]],   [0.05, 0.18, 0.01]],   # active drugs == 2.27
+                                    [[0.05, 0.15, 0.002], [0.05, 0.10, [0.05, 0.002, 0.002]], [0.05, 0.15, 0.002]]]  # active drugs >= 3.00
 
     def init_resistance_variables(self, pop: Population):
         # FIXME: move drugs to ART module
@@ -71,3 +73,30 @@ class ResistanceMutationsModule:
         pop.init_variable(col.IN148_MUTATION, False)
         pop.init_variable(col.IN155_MUTATION, False)
         pop.init_variable(col.IN263_MUTATION, False)
+
+    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
+                               viral_load, viral_load_tm1, on_nev, on_efa):
+        """
+        Returns the probability of acquiring a new HIV mutation this time step.
+        Affected by number of active ART drugs, how long an individual has been on ART,
+        as well as their ART adherence and viral load.
+        """
+        # find matrix indices
+        active_drug_index = np.digitize(active_drugs, self.active_drug_bins)
+        cont_on_art_index = np.digitize(cont_on_art, self.cont_on_art_bins)
+        adherence_index = np.digitize(adherence, self.adherence_bins)
+        # adjust adherence index if taking specific ART drugs
+        if adherence_index == 0 and (on_nev or on_efa):
+            adherence_index += 1
+
+        # lookup new mutation probability multiplier
+        x = self.new_mutation_matrix[active_drug_index][cont_on_art_index][adherence_index]
+        # account for adherence last time step when on ART for 3-6 months
+        # FIXME: the way this is done should change once CD4 and viral load calculations are added
+        if cont_on_art_index == 1 and adherence_index == 2:
+            adherence_tm1_index = np.digitize(adherence_tm1, self.adherence_bins)
+            x = x[adherence_tm1_index]
+
+        prob_new_mutation = x * (viral_load + viral_load_tm1)/2
+
+        return prob_new_mutation
