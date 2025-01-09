@@ -83,6 +83,7 @@ VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ per
 VIRAL_SUPPRESSION = "viral suppression"         # bool: True if person is virally suppressed
 CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter; set to None for people w/o HIV
 MAX_CD4 = "max_cd4"                             # float: maximum CD4 count to which a person can return when on ART
+CD4_RECOVERY_ON_ART = "cd4_recovery_on_art"     # float: individual propensity for immune recovery given viral suppression
 X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, False otherwise
 
 WHO3_EVENT = "who3_event"                       # bool: True if who3 disease occurs this timestep in HIV positive person
@@ -147,6 +148,10 @@ NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in
 
 ON_NEV = "on_nev"                               # ON_X: True if individual is on a particular ART drug (TODO: all currently DUMMIED)
 ON_EFA = "on_efa"
+ON_DOL = "on_dol"
+ON_LPR = "on_lpr"
+ON_TAZ = "on_taz"
+ON_DAR = "on_dar"
 
 RESISTANCE_MUTATIONS = "resistance_mutations"   # int: total proportion of (people in?) resistance mutations
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)

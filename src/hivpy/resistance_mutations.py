@@ -108,9 +108,19 @@ class ResistanceMutationsModule:
         pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
         pop.init_variable(col.CONT_ON_ART, timedelta(months=0))
         pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
+        self.init_art_drugs(pop)
+        self.init_resistance_mutations(pop)
+
+    def init_art_drugs(self, pop: Population):
+        """
+        Initialise ART drugs at the start of the simulation to False.
+        """
         pop.init_variable(col.ON_NEV, False)
         pop.init_variable(col.ON_EFA, False)
-        self.init_resistance_mutations(pop)
+        pop.init_variable(col.ON_DOL, False)
+        pop.init_variable(col.ON_LPR, False)
+        pop.init_variable(col.ON_TAZ, False)
+        pop.init_variable(col.ON_DAR, False)
 
     def init_resistance_mutations(self, pop: Population):
         """
@@ -174,6 +184,7 @@ class ResistanceMutationsModule:
         # lookup new mutation probability multiplier
         x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
                                 adherence_tm1, on_nev, on_efa)
+        # calculate new mutation probability
         prob_new_mutation = x * (viral_load + viral_load_tm1)/2
 
         return prob_new_mutation
