@@ -141,29 +141,39 @@ class ResistanceMutationsModule:
         pop.init_variable(col.IN155_MUTATION, False)
         pop.init_variable(col.IN263_MUTATION, False)
 
-    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
-                               viral_load, viral_load_tm1, on_nev, on_efa):
+    def get_matrix_val(self, matrix, active_drugs, cont_on_art, adherence, adherence_tm1,
+                       on_nev=None, on_efa=None):
         """
-        Returns the probability of acquiring a new HIV mutation this time step.
-        Affected by number of active ART drugs, how long an individual has been on ART,
-        as well as their ART adherence and viral load.
+        Returns a value from either the new mutation matrix or the CD4 delta matrix given the input parameters.
         """
         # find matrix indices
         active_drug_index = np.digitize(active_drugs, self.active_drug_bins)
         cont_on_art_index = np.digitize(cont_on_art, self.cont_on_art_bins)
         adherence_index = np.digitize(adherence, self.adherence_bins)
-        # adjust adherence index if taking specific ART drugs
+
+        # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
         if adherence_index == 0 and (on_nev or on_efa):
             adherence_index += 1
 
-        # lookup new mutation probability multiplier
-        x = self.new_mutation_matrix[active_drug_index][cont_on_art_index][adherence_index]
-        # account for adherence last time step when on ART for 3-6 months
-        # FIXME: the way this is done should change once CD4 and viral load calculations are added
-        if cont_on_art_index == 1 and adherence_index == 2:
+        # lookup matrix value
+        x = matrix[active_drug_index][cont_on_art_index][adherence_index]
+        # account for adherence last time step when on ART for 3+ months
+        if cont_on_art_index == 1 and adherence_index > 0:
             adherence_tm1_index = np.digitize(adherence_tm1, self.adherence_bins)
             x = x[adherence_tm1_index]
 
+        return x
+
+    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
+                               on_nev, on_efa, viral_load, viral_load_tm1):
+        """
+        Returns the probability of acquiring a new HIV mutation this time step.
+        Affected by number of active ART drugs, how long an individual has been on ART,
+        their ART adherence, as well as use of specific ART drugs and viral load.
+        """
+        # lookup new mutation probability multiplier
+        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
+                                adherence_tm1, on_nev, on_efa)
         prob_new_mutation = x * (viral_load + viral_load_tm1)/2
 
         return prob_new_mutation
