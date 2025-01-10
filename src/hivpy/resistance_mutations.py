@@ -15,52 +15,9 @@ from .common import SexType, rng, timedelta
 class ResistanceMutationsModule:
 
     def __init__(self):
-        # factors affecting acquisition of new mutations
-        self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
-        self.cont_on_art_bins = [timedelta(months=3).years(),
-                                 timedelta(months=6).years()]
-        self.adherence_bins = [0.5, 0.8]
-
-        # new_mutation_matrix[active_drugs][cont_on_art][adherence]
-        self.new_mutation_matrix = [[[0.05, 0.50, 0.50],
-                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
-                                     [0.05, 0.50, 0.50]],   # active drugs == 0.00
-                                    [[0.05, 0.50, 0.50],
-                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
-                                     [0.05, 0.50, 0.50]],   # active drugs == 0.25
-                                    [[0.05, 0.50, 0.50],
-                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
-                                     [0.05, 0.50, 0.50]],   # active drugs == 0.50
-                                    [[0.05, 0.45, 0.45],
-                                     [[0.05, 0.05, 0.05], [0.45, 0.45, 0.45], [0.45, 0.45, 0.45]],
-                                     [0.05, 0.45, 0.45]],   # active drugs == 0.75
-                                    [[0.05, 0.40, 0.40],
-                                     [[0.05, 0.05, 0.05], [0.40, 0.40, 0.40], [0.40, 0.40, 0.40]],
-                                     [0.05, 0.40, 0.40]],   # active drugs == 1.00
-                                    [[0.05, 0.35, 0.30],
-                                     [[0.05, 0.05, 0.05], [0.35, 0.35, 0.35], [0.30, 0.30, 0.30]],
-                                     [0.05, 0.35, 0.30]],   # active drugs == 1.25
-                                    [[0.05, 0.30, 0.20],
-                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.20, 0.20, 0.20]],
-                                     [0.05, 0.30, 0.20]],   # active drugs == 1.50
-                                    [[0.05, 0.30, 0.15],
-                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.10, 0.10, 0.10]],
-                                     [0.05, 0.30, 0.15]],   # active drugs == 1.75
-                                    [[0.05, 0.30, 0.10],
-                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.05, 0.05, 0.05]],
-                                     [0.05, 0.30, 0.10]],   # active drugs == 2.00
-                                    [[0.05, 0.25, 0.05],
-                                     [[0.05, 0.05, 0.05], [0.20, 0.20, 0.20], [0.05, 0.05, 0.05]],
-                                     [0.05, 0.25, 0.08]],   # active drugs == 2.25
-                                    [[0.05, 0.20, 0.03],
-                                     [[0.05, 0.05, 0.05], [0.20, 0.20, 0.20], [0.03, 0.03, 0.03]],
-                                     [0.05, 0.20, 0.03]],   # active drugs == 2.50
-                                    [[0.05, 0.15, 0.01],
-                                     [[0.05, 0.05, 0.05], [0.15, 0.15, 0.15], [0.05, 0.01, 0.01]],
-                                     [0.05, 0.18, 0.01]],   # active drugs == 2.75
-                                    [[0.05, 0.15, 0.002],
-                                     [[0.05, 0.05, 0.05], [0.10, 0.10, 0.10], [0.05, 0.002, 0.002]],
-                                     [0.05, 0.15, 0.002]]]  # active drugs >= 3.00
+        # factors affecting change in viral load
+        self.min_vl_on_art = 1.0
+        self.vl_stdev_on_art = 0.5
 
         # factors affecting change in cd4 count
         self.hindered_cd4_recovery = round(-6 + (3 * rng.normal()))
@@ -109,9 +66,52 @@ class ResistanceMutationsModule:
                                   [[-13, -13, -13], [7.5, 15, 15], [30, 30, 30]],
                                   [-13, 15, 30]]]       # active drugs >= 3.00
 
-        # factors affecting change in viral load
-        self.min_vl_on_art = 1.0
-        self.vl_stdev_on_art = 0.5
+        # factors affecting acquisition of new mutations
+        self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
+        self.cont_on_art_bins = [timedelta(months=3).years(),
+                                 timedelta(months=6).years()]
+        self.adherence_bins = [0.5, 0.8]
+
+        # new_mutation_matrix[active_drugs][cont_on_art][adherence]
+        self.new_mutation_matrix = [[[0.05, 0.50, 0.50],
+                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
+                                     [0.05, 0.50, 0.50]],   # active drugs == 0.00
+                                    [[0.05, 0.50, 0.50],
+                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
+                                     [0.05, 0.50, 0.50]],   # active drugs == 0.25
+                                    [[0.05, 0.50, 0.50],
+                                     [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
+                                     [0.05, 0.50, 0.50]],   # active drugs == 0.50
+                                    [[0.05, 0.45, 0.45],
+                                     [[0.05, 0.05, 0.05], [0.45, 0.45, 0.45], [0.45, 0.45, 0.45]],
+                                     [0.05, 0.45, 0.45]],   # active drugs == 0.75
+                                    [[0.05, 0.40, 0.40],
+                                     [[0.05, 0.05, 0.05], [0.40, 0.40, 0.40], [0.40, 0.40, 0.40]],
+                                     [0.05, 0.40, 0.40]],   # active drugs == 1.00
+                                    [[0.05, 0.35, 0.30],
+                                     [[0.05, 0.05, 0.05], [0.35, 0.35, 0.35], [0.30, 0.30, 0.30]],
+                                     [0.05, 0.35, 0.30]],   # active drugs == 1.25
+                                    [[0.05, 0.30, 0.20],
+                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.20, 0.20, 0.20]],
+                                     [0.05, 0.30, 0.20]],   # active drugs == 1.50
+                                    [[0.05, 0.30, 0.15],
+                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.10, 0.10, 0.10]],
+                                     [0.05, 0.30, 0.15]],   # active drugs == 1.75
+                                    [[0.05, 0.30, 0.10],
+                                     [[0.05, 0.05, 0.05], [0.30, 0.30, 0.30], [0.05, 0.05, 0.05]],
+                                     [0.05, 0.30, 0.10]],   # active drugs == 2.00
+                                    [[0.05, 0.25, 0.05],
+                                     [[0.05, 0.05, 0.05], [0.20, 0.20, 0.20], [0.05, 0.05, 0.05]],
+                                     [0.05, 0.25, 0.08]],   # active drugs == 2.25
+                                    [[0.05, 0.20, 0.03],
+                                     [[0.05, 0.05, 0.05], [0.20, 0.20, 0.20], [0.03, 0.03, 0.03]],
+                                     [0.05, 0.20, 0.03]],   # active drugs == 2.50
+                                    [[0.05, 0.15, 0.01],
+                                     [[0.05, 0.05, 0.05], [0.15, 0.15, 0.15], [0.05, 0.01, 0.01]],
+                                     [0.05, 0.18, 0.01]],   # active drugs == 2.75
+                                    [[0.05, 0.15, 0.002],
+                                     [[0.05, 0.05, 0.05], [0.10, 0.10, 0.10], [0.05, 0.002, 0.002]],
+                                     [0.05, 0.15, 0.002]]]  # active drugs >= 3.00
 
     def init_resistance_variables(self, pop: Population):
         # FIXME: move drugs to ART module
@@ -183,51 +183,6 @@ class ResistanceMutationsModule:
             x = x[adherence_tm1_index]
 
         return x
-
-    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
-                               on_nev, on_efa, viral_load, viral_load_tm1):
-        """
-        Returns the probability of acquiring a new HIV mutation this time step.
-        Affected by number of active ART drugs, how long an individual has been on ART,
-        their ART adherence, as well as use of specific ART drugs and viral load.
-        """
-        # lookup new mutation probability multiplier
-        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
-                                adherence_tm1, on_nev, on_efa)
-        # calculate new mutation probability
-        prob_new_mutation = x * (viral_load + viral_load_tm1)/2
-
-        return prob_new_mutation
-
-    def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
-                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar, cd4_recovery_on_art):
-        """
-        Returns an individual's change in CD4 levels this time step.
-        Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
-        their ART adherence, use of specific ART drugs, as well as individual rate of CD4 recovery on ART.
-        """
-        # lookup cd4 delta multiplier
-        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
-
-        # find base cd4 recovery
-        base_cd4_recovery_on_art = 0  # FIXME: dependent on time step length?
-        # recovery is hindered by a failing nnrti (or possibly insti) regimen
-        if (((on_nev or on_efa) or (self.failed_insti_hinders_cd4_recovery and on_dol))
-                and not (on_lpr or on_taz or on_dar) and active_drugs <= 2):
-            base_cd4_recovery_on_art = self.hindered_cd4_recovery
-        # recovery increases on pi
-        if on_lpr or on_dar or on_taz:
-            base_cd4_recovery_on_art += self.cd4_recovery_pi_factor
-        # recovery decreases with age
-        base_cd4_recovery_on_art += (age - 40) * - 0.3
-        # faster recovery in women
-        if sex is SexType.Female:
-            base_cd4_recovery_on_art += self.cd4_recovery_female_factor
-
-        # calculate change in cd4
-        cd4_delta = base_cd4_recovery_on_art + (cd4_recovery_on_art * x)
-
-        return cd4_delta
 
     def get_viral_load_matrix(self, max_viral_load):
         # viral_load_matrix[active_drugs][cont_on_art][adherence]
@@ -311,3 +266,48 @@ class ResistanceMutationsModule:
         viral_load_delta = viral_load - viral_load_tm1
 
         return viral_load, viral_load_delta
+
+    def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
+                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar, cd4_recovery_on_art):
+        """
+        Returns an individual's change in CD4 levels this time step.
+        Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
+        their ART adherence, use of specific ART drugs, as well as individual rate of CD4 recovery on ART.
+        """
+        # lookup cd4 delta multiplier
+        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
+
+        # find base cd4 recovery
+        base_cd4_recovery_on_art = 0  # FIXME: dependent on time step length?
+        # recovery is hindered by a failing nnrti (or possibly insti) regimen
+        if (((on_nev or on_efa) or (self.failed_insti_hinders_cd4_recovery and on_dol))
+                and not (on_lpr or on_taz or on_dar) and active_drugs <= 2):
+            base_cd4_recovery_on_art = self.hindered_cd4_recovery
+        # recovery increases on pi
+        if on_lpr or on_dar or on_taz:
+            base_cd4_recovery_on_art += self.cd4_recovery_pi_factor
+        # recovery decreases with age
+        base_cd4_recovery_on_art += (age - 40) * - 0.3
+        # faster recovery in women
+        if sex is SexType.Female:
+            base_cd4_recovery_on_art += self.cd4_recovery_female_factor
+
+        # calculate change in cd4
+        cd4_delta = base_cd4_recovery_on_art + (cd4_recovery_on_art * x)
+
+        return cd4_delta
+
+    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
+                               on_nev, on_efa, viral_load, viral_load_tm1):
+        """
+        Returns the probability of acquiring a new HIV mutation this time step.
+        Affected by number of active ART drugs, how long an individual has been on ART,
+        their ART adherence, as well as use of specific ART drugs and viral load.
+        """
+        # lookup new mutation probability multiplier
+        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
+                                adherence_tm1, on_nev, on_efa)
+        # calculate new mutation probability
+        prob_new_mutation = x * (viral_load + viral_load_tm1)/2
+
+        return prob_new_mutation
