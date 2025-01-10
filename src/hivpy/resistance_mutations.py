@@ -297,3 +297,17 @@ class ResistanceMutationsModule:
                   [max_viral_load - 2.0, 2.5, 1.2],
                   [1.2, 1.2, self.min_vl_on_art]],
                  [max_viral_load - 0.5, 1.2, self.min_vl_on_art]]]                      # active drugs >= 3.00
+
+    def calc_viral_load_delta(self, active_drugs, cont_on_art, adherence, adherence_tm1, max_viral_load, viral_load_tm1):
+        """
+        Returns an individual's viral load and change in viral load this time step.
+        Affected by number of active ART drugs, how long an individual has been on ART,
+        their ART adherence, as well as their viral load last time step.
+        """
+        # lookup base viral load value
+        x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art, adherence, adherence_tm1)
+        # calculate viral load changes
+        viral_load = x + (self.vl_stdev_on_art * rng.normal())
+        viral_load_delta = viral_load - viral_load_tm1
+
+        return viral_load, viral_load_delta
