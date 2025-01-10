@@ -109,6 +109,10 @@ class ResistanceMutationsModule:
                                   [-13, [7.5, 15, 15], [30, 30, 30]],
                                   [-13, 15, 30]]]       # active drugs >= 3.00
 
+        # factors affecting change in viral load
+        self.min_vl_on_art = 1.0
+        self.vl_stdev_on_art = 0.5
+
     def init_resistance_variables(self, pop: Population):
         # FIXME: move drugs to ART module
         pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
@@ -224,3 +228,72 @@ class ResistanceMutationsModule:
         cd4_delta = base_cd4_recovery_on_art + (cd4_recovery_on_art * x)
 
         return cd4_delta
+
+    def get_viral_load_matrix(self, max_viral_load):
+        # viral_load_matrix[active_drugs][cont_on_art][adherence]
+        # FIXME: is there a better way to do this?
+        return [[[max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
+                 [[max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
+                  [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
+                  [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],
+                 [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],        # active drugs == 0.00
+                [[max_viral_load + 0.1, max_viral_load - 0.05, max_viral_load - 0.3],
+                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                  [max_viral_load - 0.05, max_viral_load - 0.05, max_viral_load - 0.3],
+                  [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.4]],
+                 [max_viral_load, max_viral_load - 0.1, max_viral_load - 0.3]],         # active drugs == 0.25
+                [[max_viral_load + 0.1, max_viral_load - 0.1, max_viral_load - 0.4],
+                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                  [max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.4],
+                  [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.6]],
+                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]]    # active drugs == 0.50
+                [[max_viral_load + 0.1, max_viral_load - 0.25, max_viral_load - 0.55],
+                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                  [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.55],
+                  [max_viral_load - 0.7, max_viral_load - 0.7, max_viral_load - 0.75]],
+                 [max_viral_load - 0.1, max_viral_load - 0.4, max_viral_load - 0.75]],  # active drugs == 0.75
+                [[max_viral_load + 0.1, max_viral_load - 0.4, max_viral_load - 0.7],
+                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                  [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.7],
+                  [max_viral_load - 0.9, max_viral_load - 0.9, max_viral_load - 0.9]],
+                 [max_viral_load - 0.1, max_viral_load - 0.5, max_viral_load - 0.9]],   # active drugs == 1.00
+                [[max_viral_load - 0.05, max_viral_load - 0.5, max_viral_load - 0.8],
+                 [[max_viral_load - 0.05, max_viral_load - 0.05, max_viral_load - 0.05],
+                  [max_viral_load - 0.65, max_viral_load - 0.65, max_viral_load - 0.9],
+                  [max_viral_load - 1.0, max_viral_load - 1.05, max_viral_load - 1.15]],
+                 [max_viral_load - 0.1, max_viral_load - 0.6, max_viral_load - 1.15]],  # active drugs == 1.25
+                [[max_viral_load - 0.1, max_viral_load - 0.6, max_viral_load - 0.9],    # FIXME: -0.0 in SAS instead of -0.1 >> typo?
+                 [[max_viral_load - 0.1, max_viral_load - 0.1, max_viral_load - 0.1],
+                  [max_viral_load - 0.8, max_viral_load - 0.8, max_viral_load - 1.5],
+                  [max_viral_load - 1.2, max_viral_load - 1.2, max_viral_load - 1.7]],
+                 [max_viral_load - 0.1, max_viral_load - 0.7, max_viral_load - 1.4]],   # active drugs == 1.50
+                [[max_viral_load - 0.15, max_viral_load - 0.8, max_viral_load - 1.25],
+                 [[max_viral_load - 0.15, max_viral_load - 0.15, max_viral_load - 0.15],
+                  [max_viral_load - 1.1, max_viral_load - 1.1, max_viral_load - 2.4],
+                  [max_viral_load - 1.6, max_viral_load - 1.6, 2.7]],
+                 [max_viral_load - 0.2, max_viral_load - 1.0, max_viral_load - 2.0]],   # active drugs == 1.75
+                [[max_viral_load - 0.2, max_viral_load - 0.9, max_viral_load - 1.5],
+                 [[max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.2],
+                  [max_viral_load - 1.2, max_viral_load - 1.2, 2.4],
+                  [max_viral_load - 2.0, max_viral_load - 2.0, 2.0]],
+                 [max_viral_load - 0.2, max_viral_load - 1.2, max_viral_load - 2.5]],   # active drugs == 2.00
+                [[max_viral_load - 0.25, max_viral_load - 1.1, max_viral_load - 1.8],
+                 [[max_viral_load - 0.25, max_viral_load - 0.25, max_viral_load - 0.25],
+                  [max_viral_load - 1.35, 2.5, 2.2],
+                  [1.4, 1.4, 1.4]],
+                 [max_viral_load - 0.25, 1.6, 1.4]],                                    # active drugs == 2.25
+                [[max_viral_load - 0.3, max_viral_load - 1.2, max_viral_load - 2.2],
+                 [[max_viral_load - 0.3, max_viral_load - 0.3, max_viral_load - 0.3],
+                  [max_viral_load - 1.5, 2.5, 1.8],
+                  [1.2, 1.2, 1.2]],
+                 [max_viral_load - 0.3, 1.2, self.min_vl_on_art]],                      # active drugs == 2.50
+                [[max_viral_load - 0.4, max_viral_load - 1.6, max_viral_load - 2.6],
+                 [[max_viral_load - 0.4, max_viral_load - 0.4, max_viral_load - 0.4],
+                  [max_viral_load - 1.8, 2.5, 1.6],
+                  [1.2, 1.2, self.min_vl_on_art]],
+                 [max_viral_load - 0.4, 1.2, self.min_vl_on_art]],                     # active drugs == 2.75
+                [[max_viral_load - 0.5, max_viral_load - 2.0, max_viral_load - 3.0],
+                 [[max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.5],
+                  [max_viral_load - 2.0, 2.5, 1.2],
+                  [1.2, 1.2, self.min_vl_on_art]],
+                 [max_viral_load - 0.5, 1.2, self.min_vl_on_art]]]                      # active drugs >= 3.00
