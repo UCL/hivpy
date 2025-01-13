@@ -26,6 +26,7 @@ class ResistanceMutationsModule:
         self.failed_insti_hinders_cd4_recovery = rng.choice([True, False])  # FIXME: dependent on time step length?
         self.cd4_recovery_pi_factor = 3
         self.cd4_recovery_female_factor = 2
+        self.cd4_stdev = 1.2  # on a sqrt scale
 
         # cd4_delta_matrix[active_drugs][cont_on_art][adherence]
         self.cd4_delta_matrix = [[[-18, -17, -15],
@@ -283,12 +284,27 @@ class ResistanceMutationsModule:
 
         return viral_load, viral_load_delta
 
+    def cd4_change(self, pop: Population, sub_pop):
+        """
+        Update CD4 count for HIV+ individuals.
+        """
+        # get viral load outcomes
+        cd4, cd4_delta = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
+                                        pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.ON_NEV, col.ON_EFA,
+                                        col.ON_DOL, col.ON_LPR, col.ON_TAZ, col.ON_DAR, pop.get_correct_column(col.CD4, dt=1),
+                                        col.MAX_CD4, col.CD4_RECOVERY_ON_ART],
+                                       self.calc_cd4_delta, sub_pop=sub_pop)
+
+        pop.set_present_variable(col.CD4, cd4, sub_pop)
+        pop.set_present_variable(col.CD4_DELTA, cd4_delta, sub_pop)
+
     def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
-                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar, cd4_recovery_on_art):
+                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar, cd4_tm1, max_cd4, cd4_recovery_on_art):
         """
         Returns an individual's change in CD4 levels this time step.
         Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
-        their ART adherence, use of specific ART drugs, as well as individual rate of CD4 recovery on ART.
+        their ART adherence, use of specific ART drugs, as well as CD4 levels last time step,
+        maximum CD4 levels, and individual rate of CD4 recovery on ART.
         """
         # lookup cd4 delta multiplier
         x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
@@ -310,8 +326,23 @@ class ResistanceMutationsModule:
 
         # calculate change in cd4
         cd4_delta = base_cd4_recovery_on_art + (cd4_recovery_on_art * x)
+        cd4 = max(0, cd4_tm1 + cd4_delta)
 
-        return cd4_delta
+        # FIXME: isn't this always true? should everyone be on ART?
+        if active_drugs >= 0:
+            # adjust cd4 delta for higher cd4 levels when on ART
+            if 100 < cd4_tm1 <= 200:
+                cd4_delta *= 0.85
+            elif cd4_tm1 > 200:
+                cd4_delta *= 0.7
+            # add cd4 variability when on ART
+            cd4 = np.sqrt(cd4) + self.cd4_stdev * rng.normal() ** 2
+
+        if cont_on_art >= timedelta(months=0).years() and cd4 > max_cd4:
+            # adjust cd4 according to max value when on ART
+            cd4 = max_cd4 + rng.normal() * 50
+
+        return cd4, cd4_delta
 
     def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
                                on_nev, on_efa, viral_load, viral_load_tm1):
@@ -335,3 +366,4 @@ class ResistanceMutationsModule:
         infected_pop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
         if len(infected_pop) > 0:
             self.viral_load_change(pop, infected_pop)
+            self.cd4_change(pop, infected_pop)
