@@ -5,11 +5,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import operator as op
+
 import numpy as np
 
 import hivpy.column_names as col
 
-from .common import SexType, rng, timedelta
+from .common import COND, SexType, rng, timedelta
 
 
 class ResistanceMutationsModule:
@@ -184,6 +186,19 @@ class ResistanceMutationsModule:
 
         return x
 
+    def viral_load_change(self, pop: Population, sub_pop):
+        """
+        Update viral load for HIV+ individuals.
+        """
+        # get viral load outcomes
+        viral_load, viral_load_delta = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
+                                                      pop.get_correct_column(col.ART_ADHERENCE, dt=1),
+                                                      col.MAX_VIRAL_LOAD, pop.get_correct_column(col.VIRAL_LOAD, dt=1)],
+                                                     self.calc_viral_load_delta, sub_pop=sub_pop)
+
+        pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
+        pop.set_present_variable(col.VIRAL_LOAD_DELTA, viral_load_delta, sub_pop)
+
     def get_viral_load_matrix(self, max_viral_load):
         # viral_load_matrix[active_drugs][cont_on_art][adherence]
         # FIXME: is there a better way to do this?
@@ -201,7 +216,7 @@ class ResistanceMutationsModule:
                  [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
                   [max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.4],
                   [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.6]],
-                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]]    # active drugs == 0.50
+                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]],    # active drugs == 0.50
                 [[max_viral_load + 0.1, max_viral_load - 0.25, max_viral_load - 0.55],
                  [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
                   [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.55],
@@ -262,7 +277,8 @@ class ResistanceMutationsModule:
         # lookup base viral load value
         x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art, adherence, adherence_tm1)
         # calculate viral load changes
-        viral_load = x + (self.vl_stdev_on_art * rng.normal())
+        # FIXME: in SAS the vl clamp to 6.5 happens after the delta is calculated; should this be the case here as well?
+        viral_load = max(x + (self.vl_stdev_on_art * rng.normal()), 6.5)
         viral_load_delta = viral_load - viral_load_tm1
 
         return viral_load, viral_load_delta
@@ -311,3 +327,11 @@ class ResistanceMutationsModule:
         prob_new_mutation = x * (viral_load + viral_load_tm1)/2
 
         return prob_new_mutation
+
+    def update_resistance(self, pop: Population):
+        """
+        Update the viral load, CD4 count, and resistance mutations of HIV+ individuals.
+        """
+        infected_pop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+        if len(infected_pop) > 0:
+            self.viral_load_change(pop, infected_pop)
