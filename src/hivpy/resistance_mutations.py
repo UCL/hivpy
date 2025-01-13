@@ -288,7 +288,7 @@ class ResistanceMutationsModule:
         """
         Update CD4 count for HIV+ individuals.
         """
-        # get viral load outcomes
+        # get cd4 outcomes
         cd4, cd4_delta = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
                                         pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.ON_NEV, col.ON_EFA,
                                         col.ON_DOL, col.ON_LPR, col.ON_TAZ, col.ON_DAR, pop.get_correct_column(col.CD4, dt=1),
@@ -355,7 +355,7 @@ class ResistanceMutationsModule:
         x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
                                 adherence_tm1, on_nev, on_efa)
         # calculate new mutation probability
-        prob_new_mutation = x * (viral_load + viral_load_tm1)/2
+        prob_new_mutation = min(x * (viral_load + viral_load_tm1)/2, 1)
 
         return prob_new_mutation
 
