@@ -277,8 +277,8 @@ class ResistanceMutationsModule:
         # lookup base viral load value
         x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art, adherence, adherence_tm1)
         # calculate viral load changes
-        # FIXME: in SAS the vl clamp to 6.5 happens after the delta is calculated; should this be the case here as well?
-        viral_load = max(x + (self.vl_stdev_on_art * rng.normal()), 6.5)
+        # FIXME: in SAS the 0-6.5 vl clamp happens after the delta is calculated; should this be the case here as well?
+        viral_load = max(0, min(x + (self.vl_stdev_on_art * rng.normal()), 6.5))
         viral_load_delta = viral_load - viral_load_tm1
 
         return viral_load, viral_load_delta
