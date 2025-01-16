@@ -17,6 +17,11 @@ from .common import COND, SexType, rng, timedelta
 class ResistanceMutationsModule:
 
     def __init__(self):
+        # matrix indexing boundaries
+        self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
+        self.cont_on_art_bins = [timedelta(months=3).years(), timedelta(months=6).years()]
+        self.adherence_bins = [0.5, 0.8]
+
         # factors affecting change in viral load
         self.min_vl_on_art = 1.0
         self.vl_stdev_on_art = 0.5
@@ -27,6 +32,9 @@ class ResistanceMutationsModule:
         self.cd4_recovery_pi_factor = 3
         self.cd4_recovery_female_factor = 2
         self.cd4_stdev = 1.2  # on a sqrt scale
+
+        # factors affecting acquisition of new mutations
+        self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
 
         # cd4_delta_matrix[active_drugs][cont_on_art][adherence]
         self.cd4_delta_matrix = [[[-18, -17, -15],
@@ -68,12 +76,6 @@ class ResistanceMutationsModule:
                                  [[5, 30, 180],
                                   [[-13, -13, -13], [7.5, 15, 15], [30, 30, 30]],
                                   [-13, 15, 30]]]       # active drugs >= 3.00
-
-        # factors affecting acquisition of new mutations
-        self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
-        self.cont_on_art_bins = [timedelta(months=3).years(),
-                                 timedelta(months=6).years()]
-        self.adherence_bins = [0.5, 0.8]
 
         # new_mutation_matrix[active_drugs][cont_on_art][adherence]
         self.new_mutation_matrix = [[[0.05, 0.50, 0.50],
@@ -355,7 +357,7 @@ class ResistanceMutationsModule:
         x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
                                 adherence_tm1, on_nev, on_efa)
         # calculate new mutation probability
-        prob_new_mutation = min(x * (viral_load + viral_load_tm1)/2, 1)
+        prob_new_mutation = min(x * (viral_load + viral_load_tm1)/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
 
