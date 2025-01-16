@@ -194,13 +194,11 @@ class ResistanceMutationsModule:
         Update viral load for HIV+ individuals.
         """
         # get viral load outcomes
-        viral_load, viral_load_delta = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
-                                                      pop.get_correct_column(col.ART_ADHERENCE, dt=1),
-                                                      col.MAX_VIRAL_LOAD, pop.get_correct_column(col.VIRAL_LOAD, dt=1)],
-                                                     self.calc_viral_load_delta, sub_pop=sub_pop)
+        viral_load = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
+                                    pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.MAX_VIRAL_LOAD],
+                                   self.calc_viral_load, sub_pop=sub_pop)
 
         pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
-        pop.set_present_variable(col.VIRAL_LOAD_DELTA, viral_load_delta, sub_pop)
 
     def get_viral_load_matrix(self, max_viral_load):
         # viral_load_matrix[active_drugs][cont_on_art][adherence]
@@ -271,20 +269,18 @@ class ResistanceMutationsModule:
                   [1.2, 1.2, self.min_vl_on_art]],
                  [max_viral_load - 0.5, 1.2, self.min_vl_on_art]]]                      # active drugs >= 3.00
 
-    def calc_viral_load_delta(self, active_drugs, cont_on_art, adherence, adherence_tm1, max_viral_load, viral_load_tm1):
+    def calc_viral_load(self, active_drugs, cont_on_art, adherence, adherence_tm1, max_viral_load):
         """
-        Returns an individual's viral load and change in viral load this time step.
+        Returns an individual's viral load this time step.
         Affected by number of active ART drugs, how long an individual has been on ART,
         their ART adherence, as well as their viral load last time step.
         """
         # lookup base viral load value
         x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art, adherence, adherence_tm1)
         # calculate viral load changes
-        # FIXME: in SAS the 0-6.5 vl clamp happens after the delta is calculated; should this be the case here as well?
-        viral_load = max(0, min(x + (self.vl_stdev_on_art * rng.normal()), 6.5))
-        viral_load_delta = viral_load - viral_load_tm1
+        viral_load = max(0, min(x + self.vl_stdev_on_art * rng.normal(), 6.5))
 
-        return viral_load, viral_load_delta
+        return viral_load
 
     def cd4_change(self, pop: Population, sub_pop):
         """

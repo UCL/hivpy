@@ -80,7 +80,6 @@ HIV_DIAGNOSIS_DATE = "HIV_Diagnosis_Date"       # None | datetime.date: date of 
 VIRAL_LOAD_GROUP = "viral_load_group"           # int: value 0-5 placing bounds on viral load for an HIV positive person. [(0, 2.7), (2.7, 3.7), (3.7, 4.7), (4.7, 5.7), > 5.7, primary infection]
 UNDER_CARE = "under_care"                       # bool: True if under care after a positive HIV diagnosis
 VIRAL_LOAD = "viral_load"                       # float: viral load for HIV+ person
-VIRAL_LOAD_DELTA = "viral_load_delta"           # float: change in viral load since the last time step
 MAX_VIRAL_LOAD = "max_viral_load"               # float: maximum viral load for a given time step? (DUMMY)
 VIRAL_SUPPRESSION = "viral suppression"         # bool: True if person is virally suppressed
 CD4 = "cd4"                                     # None | float: CD4 count per cubic millimeter; set to None for people w/o HIV
