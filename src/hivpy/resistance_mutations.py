@@ -122,6 +122,7 @@ class ResistanceMutationsModule:
         # FIXME: move drugs to ART module
         pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
         pop.init_variable(col.CONT_ON_ART, timedelta(months=0))
+        pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
         pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
         self.init_art_drugs(pop)
         self.init_resistance_mutations(pop)
