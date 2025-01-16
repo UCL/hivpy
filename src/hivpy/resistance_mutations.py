@@ -27,11 +27,11 @@ class ResistanceMutationsModule:
         self.vl_stdev_on_art = 0.5
 
         # factors affecting change in cd4 count
-        self.hindered_cd4_recovery = round(-6 + (3 * rng.normal()))
-        self.failed_insti_hinders_cd4_recovery = rng.choice([True, False])  # FIXME: dependent on time step length?
+        self.hindered_cd4_recovery = round(-6 + (3 * rng.normal()))  # FIXME: dependent on time step length
+        self.failed_insti_hinders_cd4_recovery = rng.choice([True, False])
         self.cd4_recovery_pi_factor = 3
         self.cd4_recovery_female_factor = 2
-        self.cd4_stdev = 1.2  # on a sqrt scale
+        self.cd4_stdev_on_art = 1.2  # on a sqrt scale
 
         # factors affecting acquisition of new mutations
         self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
@@ -294,14 +294,15 @@ class ResistanceMutationsModule:
         cd4, cd4_delta = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
                                         pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.ON_NEV, col.ON_EFA,
                                         col.ON_DOL, col.ON_LPR, col.ON_TAZ, col.ON_DAR, pop.get_correct_column(col.CD4, dt=1),
-                                        col.MAX_CD4, col.CD4_RECOVERY_ON_ART],
+                                        col.CD4_RECOVERY_ON_ART, col.MAX_CD4, col.ON_PREP, col.ON_ART],
                                        self.calc_cd4_delta, sub_pop=sub_pop)
 
         pop.set_present_variable(col.CD4, cd4, sub_pop)
         pop.set_present_variable(col.CD4_DELTA, cd4_delta, sub_pop)
 
     def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
-                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar, cd4_tm1, max_cd4, cd4_recovery_on_art):
+                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar,
+                       cd4_tm1, cd4_recovery_on_art, max_cd4, on_prep, on_art):
         """
         Returns an individual's change in CD4 levels this time step.
         Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
@@ -312,7 +313,7 @@ class ResistanceMutationsModule:
         x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
 
         # find base cd4 recovery
-        base_cd4_recovery_on_art = 0  # FIXME: dependent on time step length?
+        base_cd4_recovery_on_art = 0
         # recovery is hindered by a failing nnrti (or possibly insti) regimen
         if (((on_nev or on_efa) or (self.failed_insti_hinders_cd4_recovery and on_dol))
                 and not (on_lpr or on_taz or on_dar) and active_drugs <= 2):
@@ -327,22 +328,21 @@ class ResistanceMutationsModule:
             base_cd4_recovery_on_art += self.cd4_recovery_female_factor
 
         # calculate change in cd4
-        cd4_delta = base_cd4_recovery_on_art + (cd4_recovery_on_art * x)
+        cd4_delta = base_cd4_recovery_on_art + cd4_recovery_on_art * x
         cd4 = max(0, cd4_tm1 + cd4_delta)
 
-        # FIXME: isn't this always true? should everyone be on ART?
-        if active_drugs >= 0:
-            # adjust cd4 delta for higher cd4 levels when on ART
+        # changes for people on PrEP/ART
+        if on_prep or on_art:
+            # adjust cd4 delta for higher cd4 levels
             if 100 < cd4_tm1 <= 200:
                 cd4_delta *= 0.85
             elif cd4_tm1 > 200:
                 cd4_delta *= 0.7
-            # add cd4 variability when on ART
-            cd4 = np.sqrt(cd4) + self.cd4_stdev * rng.normal() ** 2
-
-        if cont_on_art >= timedelta(months=0).years() and cd4 > max_cd4:
-            # adjust cd4 according to max value when on ART
-            cd4 = max_cd4 + rng.normal() * 50
+            # add cd4 variability
+            cd4 = np.sqrt(cd4) + self.cd4_stdev_on_art * rng.normal() ** 2
+            # adjust cd4 according to max value
+            if cd4 > max_cd4:
+                cd4 = max_cd4 + rng.normal() * 50
 
         return cd4, cd4_delta
 
