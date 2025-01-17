@@ -149,12 +149,19 @@ CONT_ON_ARV = "cont_on_arv"                     # None | timedelta: total length
 ART_ADHERENCE = "art_adherence"                 # None | float: percentage of ART intake that is adhered to
 NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in an individual's regimen
 
-ON_NEV = "on_nev"                               # ON_X: True if individual is on a particular ART drug (TODO: all currently DUMMIED)
+ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug (TODO: all currently DUMMIED)
+ON_3TC = "on_3tc"
+ON_TEN = "on_ten"
+ON_NEV = "on_nev"
+ON_DAR = "on_dar"
 ON_EFA = "on_efa"
-ON_DOL = "on_dol"
 ON_LPR = "on_lpr"
 ON_TAZ = "on_taz"
-ON_DAR = "on_dar"
+ON_DOL = "on_dol"
+ON_CAB = "on_cab"
+ON_LEN = "on_len"
+ON_OLE = "on_ole"
+ON_ISL = "on_isl"
 
 RESISTANCE_MUTATIONS = "resistance_mutations"   # int: total proportion of (people in?) resistance mutations
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)

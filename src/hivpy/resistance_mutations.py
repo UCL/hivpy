@@ -119,24 +119,31 @@ class ResistanceMutationsModule:
                                      [0.05, 0.15, 0.002]]]  # active drugs >= 3.00
 
     def init_resistance_variables(self, pop: Population):
-        # FIXME: move drugs to ART module
+        # FIXME: move drugs and other ART-related columns to ART module
         pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
         pop.init_variable(col.CONT_ON_ART, timedelta(months=0))
         pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
         pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
-        self.init_art_drugs(pop)
+        self.init_arv_drugs(pop)
         self.init_resistance_mutations(pop)
 
-    def init_art_drugs(self, pop: Population):
+    def init_arv_drugs(self, pop: Population):
         """
-        Initialise ART drugs at the start of the simulation to False.
+        Initialise antiretroviral drugs at the start of the simulation to False.
         """
+        pop.init_variable(col.ON_ZDV, False)
+        pop.init_variable(col.ON_3TC, False)
+        pop.init_variable(col.ON_TEN, False)
         pop.init_variable(col.ON_NEV, False)
+        pop.init_variable(col.ON_DAR, False)
         pop.init_variable(col.ON_EFA, False)
-        pop.init_variable(col.ON_DOL, False)
         pop.init_variable(col.ON_LPR, False)
         pop.init_variable(col.ON_TAZ, False)
-        pop.init_variable(col.ON_DAR, False)
+        pop.init_variable(col.ON_DOL, False)
+        pop.init_variable(col.ON_CAB, False)
+        pop.init_variable(col.ON_LEN, False)
+        pop.init_variable(col.ON_OLE, False)
+        pop.init_variable(col.ON_ISL, False)
 
     def init_resistance_mutations(self, pop: Population):
         """
