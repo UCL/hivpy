@@ -190,7 +190,7 @@ class ResistanceMutationsModule:
 
         return x
 
-    def viral_load_change(self, pop: Population, sub_pop):
+    def viral_load(self, pop: Population, sub_pop):
         """
         Update viral load for HIV+ individuals.
         """
@@ -210,22 +210,22 @@ class ResistanceMutationsModule:
                   [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],
                  [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],        # active drugs == 0.00
                 [[max_viral_load + 0.1, max_viral_load - 0.05, max_viral_load - 0.3],
-                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
                   [max_viral_load - 0.05, max_viral_load - 0.05, max_viral_load - 0.3],
                   [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.4]],
                  [max_viral_load, max_viral_load - 0.1, max_viral_load - 0.3]],         # active drugs == 0.25
                 [[max_viral_load + 0.1, max_viral_load - 0.1, max_viral_load - 0.4],
-                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
                   [max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.4],
                   [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.6]],
-                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]],    # active drugs == 0.50
+                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]],   # active drugs == 0.50
                 [[max_viral_load + 0.1, max_viral_load - 0.25, max_viral_load - 0.55],
-                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
                   [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.55],
                   [max_viral_load - 0.7, max_viral_load - 0.7, max_viral_load - 0.75]],
                  [max_viral_load - 0.1, max_viral_load - 0.4, max_viral_load - 0.75]],  # active drugs == 0.75
                 [[max_viral_load + 0.1, max_viral_load - 0.4, max_viral_load - 0.7],
-                 [[max_viral_load + 0.1, max_viral_load + 0.1, max_viral_load + 0.1],   # FIXME: +0.0 in SAS instead of +0.1 >> typo?
+                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
                   [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.7],
                   [max_viral_load - 0.9, max_viral_load - 0.9, max_viral_load - 0.9]],
                  [max_viral_load - 0.1, max_viral_load - 0.5, max_viral_load - 0.9]],   # active drugs == 1.00
@@ -234,7 +234,7 @@ class ResistanceMutationsModule:
                   [max_viral_load - 0.65, max_viral_load - 0.65, max_viral_load - 0.9],
                   [max_viral_load - 1.0, max_viral_load - 1.05, max_viral_load - 1.15]],
                  [max_viral_load - 0.1, max_viral_load - 0.6, max_viral_load - 1.15]],  # active drugs == 1.25
-                [[max_viral_load - 0.1, max_viral_load - 0.6, max_viral_load - 0.9],    # FIXME: -0.0 in SAS instead of -0.1 >> typo?
+                [[max_viral_load, max_viral_load - 0.6, max_viral_load - 0.9],
                  [[max_viral_load - 0.1, max_viral_load - 0.1, max_viral_load - 0.1],
                   [max_viral_load - 0.8, max_viral_load - 0.8, max_viral_load - 1.5],
                   [max_viral_load - 1.2, max_viral_load - 1.2, max_viral_load - 1.7]],
@@ -263,7 +263,7 @@ class ResistanceMutationsModule:
                  [[max_viral_load - 0.4, max_viral_load - 0.4, max_viral_load - 0.4],
                   [max_viral_load - 1.8, 2.5, 1.6],
                   [1.2, 1.2, self.min_vl_on_art]],
-                 [max_viral_load - 0.4, 1.2, self.min_vl_on_art]],                     # active drugs == 2.75
+                 [max_viral_load - 0.4, 1.2, self.min_vl_on_art]],                      # active drugs == 2.75
                 [[max_viral_load - 0.5, max_viral_load - 2.0, max_viral_load - 3.0],
                  [[max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.5],
                   [max_viral_load - 2.0, 2.5, 1.2],
@@ -364,5 +364,5 @@ class ResistanceMutationsModule:
         """
         infected_pop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
         if len(infected_pop) > 0:
-            self.viral_load_change(pop, infected_pop)
+            self.viral_load(pop, infected_pop)
             self.cd4_change(pop, infected_pop)
