@@ -114,7 +114,6 @@ class HIVStatusModule:
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
-        population.init_variable(col.RESISTANCE_MUTATIONS, 0)
         population.init_variable(col.CD4, 0.0)
         population.init_variable(col.CD4_DELTA, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
@@ -126,9 +125,6 @@ class HIVStatusModule:
         population.init_variable(col.MAX_VIRAL_LOAD, 0)
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
-
-        # TODO: move to ART module
-        population.init_variable(col.ON_ART, False)
 
         # Long term partners
         population.init_variable(col.LTP_STATUS, False)
