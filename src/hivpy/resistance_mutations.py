@@ -184,7 +184,7 @@ class ResistanceMutationsModule:
         """
         # find matrix indices
         active_drug_index = np.digitize(active_drugs, self.active_drug_bins)
-        cont_on_art_index = np.digitize(cont_on_art, self.cont_on_art_bins)
+        cont_on_art_index = np.digitize(cont_on_art.years(), self.cont_on_art_bins)
         adherence_index = np.digitize(adherence, self.adherence_bins)
 
         # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
@@ -205,8 +205,10 @@ class ResistanceMutationsModule:
         Update viral load for HIV+ individuals.
         """
         # get viral load outcomes
-        viral_load = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
-                                    pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.MAX_VIRAL_LOAD],
+        viral_load = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART,
+                                    pop.get_correct_column(col.ART_ADHERENCE, dt=0),
+                                    pop.get_correct_column(col.ART_ADHERENCE, dt=1),
+                                    col.MAX_VIRAL_LOAD],
                                    self.calc_viral_load, sub_pop=sub_pop)
 
         pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
@@ -298,14 +300,18 @@ class ResistanceMutationsModule:
         Update CD4 count for HIV+ individuals.
         """
         # get cd4 outcomes
-        cd4, cd4_delta = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART, col.ART_ADHERENCE,
-                                        pop.get_correct_column(col.ART_ADHERENCE, dt=1), col.ON_NEV, col.ON_EFA,
-                                        col.ON_DOL, col.ON_LPR, col.ON_TAZ, col.ON_DAR, pop.get_correct_column(col.CD4, dt=1),
-                                        col.CD4_RECOVERY_ON_ART, col.MAX_CD4, col.ON_PREP, col.ON_ART],
-                                       self.calc_cd4_delta, sub_pop=sub_pop)
+        cd4_outcomes = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART,
+                                      pop.get_correct_column(col.ART_ADHERENCE, dt=0),
+                                      pop.get_correct_column(col.ART_ADHERENCE, dt=1),
+                                      col.ON_NEV, col.ON_EFA, col.ON_DOL,
+                                      col.ON_LPR, col.ON_TAZ, col.ON_DAR,
+                                      pop.get_correct_column(col.CD4, dt=1),
+                                      col.CD4_RECOVERY_ON_ART, col.MAX_CD4,
+                                      col.ON_PREP, col.ON_ART],
+                                     self.calc_cd4_delta, sub_pop=sub_pop)
 
-        pop.set_present_variable(col.CD4, cd4, sub_pop)
-        pop.set_present_variable(col.CD4_DELTA, cd4_delta, sub_pop)
+        pop.set_present_variable(col.CD4, [i[0] for i in cd4_outcomes], sub_pop)
+        pop.set_present_variable(col.CD4_DELTA, [i[1] for i in cd4_outcomes], sub_pop)
 
     def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
                        on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar,
@@ -317,7 +323,7 @@ class ResistanceMutationsModule:
         maximum CD4 levels, and individual rate of CD4 recovery on ART.
         """
         # lookup cd4 delta multiplier
-        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
+        x = self.get_matrix_val(self.cd4_delta_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
 
         # find base cd4 recovery
         base_cd4_recovery_on_art = 0
@@ -326,7 +332,7 @@ class ResistanceMutationsModule:
                 and not (on_lpr or on_taz or on_dar) and active_drugs <= 2):
             base_cd4_recovery_on_art = self.hindered_cd4_recovery
         # recovery increases on pi
-        if on_lpr or on_dar or on_taz:
+        if on_lpr or on_taz or on_dar:
             base_cd4_recovery_on_art += self.cd4_recovery_pi_factor
         # recovery decreases with age
         base_cd4_recovery_on_art += (age - 40) * - 0.3
