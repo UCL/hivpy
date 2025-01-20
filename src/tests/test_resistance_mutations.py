@@ -42,6 +42,7 @@ def test_matrix_val_retrieval():
     # get nm_matrix[12][2][2] -> 0.002
     assert res.get_matrix_val(res.new_mutation_matrix, 3, timedelta(months=6), 0.8, 0.8) == 0.002
 
+
 def test_calc_viral_load():
     pop = Population(size=1, start_date=date(2000, 1, 1))
     res = pop.resistance
@@ -55,6 +56,7 @@ def test_calc_viral_load():
     assert (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
             res.calc_viral_load(3, timedelta(months=6), 0.8, 0.8, max_viral_load)
             <= res.min_vl_on_art + res.vl_stdev_on_art * 3)
+
 
 def test_calc_cd4_delta():
     pop = Population(size=1, start_date=date(2000, 1, 1))
@@ -114,6 +116,7 @@ def test_calc_cd4_delta():
                                     False, False, False, False, False, False, 10000, 0.2, 100, False, True)
     assert 100 - 50 * 3 <= cd4 <= 100 + 50 * 3
     assert isclose(delta, 8.4)
+
 
 def test_calc_prob_new_mutation():
     pop = Population(size=1, start_date=date(2000, 1, 1))

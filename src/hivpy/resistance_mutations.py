@@ -289,7 +289,8 @@ class ResistanceMutationsModule:
         their ART adherence, as well as their viral load last time step.
         """
         # lookup base viral load value
-        x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art, adherence, adherence_tm1)
+        x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art,
+                                adherence, adherence_tm1)
         # calculate viral load changes
         viral_load = max(0, min(x + self.vl_stdev_on_art * rng.normal(), 6.5))
 
