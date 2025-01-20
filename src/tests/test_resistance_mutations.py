@@ -1,3 +1,5 @@
+from math import isclose
+
 from hivpy.common import date, timedelta
 from hivpy.population import Population
 
@@ -39,3 +41,29 @@ def test_matrix_val_retrieval():
     assert res.get_matrix_val(res.new_mutation_matrix, 2.25, timedelta(months=5), 0.8, 1.2) == 0.05
     # get nm_matrix[12][2][2] -> 0.002
     assert res.get_matrix_val(res.new_mutation_matrix, 3, timedelta(months=6), 0.8, 0.8) == 0.002
+
+def test_calc_viral_load():
+    pop = Population(size=1, start_date=date(2000, 1, 1))
+    res = pop.resistance
+    max_viral_load = 4
+
+    # max_viral_load + vl_stdev_on_art * rng.normal()
+    assert (max_viral_load - res.vl_stdev_on_art * 3 <=
+            res.calc_viral_load(0, timedelta(months=0), 0, 0, max_viral_load)
+            <= max_viral_load + res.vl_stdev_on_art * 3)
+    # min_vl_on_art + vl_stdev_on_art * rng.normal()
+    assert (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
+            res.calc_viral_load(3, timedelta(months=6), 0.8, 0.8, max_viral_load)
+            <= res.min_vl_on_art + res.vl_stdev_on_art * 3)
+
+def test_calc_prob_new_mutation():
+    pop = Population(size=1, start_date=date(2000, 1, 1))
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+
+    # 0.05 * (50 + 20) / 2 * 0.5 = 0.875
+    assert isclose(res.calc_prob_new_mutation(0, timedelta(months=0), 0, 0, False, False, 50, 20), 0.875)
+    # 0.30 * (50 + 20) / 2 * 0.5 = 5.25 >> min(5.25, 1) = 1
+    assert isclose(res.calc_prob_new_mutation(1.25, timedelta(months=2), 1, 0.6, False, True, 50, 20), 1)
+    # 0.002 * (50 + 20) / 2 * 0.5 = 0.035
+    assert isclose(res.calc_prob_new_mutation(3, timedelta(months=6), 0.8, 0.8, False, False, 50, 20), 0.035)
