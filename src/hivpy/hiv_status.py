@@ -114,9 +114,10 @@ class HIVStatusModule:
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
-        population.init_variable(col.CD4, 0.0)
+        population.init_variable(col.CD4, 0.0, n_prev_steps=1)
         population.init_variable(col.CD4_DELTA, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
+        population.init_variable(col.CD4_RECOVERY_ON_ART, 0)
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         population.init_variable(col.UNDER_CARE, False)
@@ -823,8 +824,8 @@ class HIVStatusModule:
                                         sub_pop=newly_infected)
 
         def set_initial_CD4(person):
-            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + rng.normal(0, 2) \
-                - (person[col.AGE] - 35)*0.05
+            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[population.get_correct_column(col.VIRAL_LOAD, dt=0)]) \
+                + rng.normal(0, 2) - (person[col.AGE] - 35)*0.05
             upper_sqrt_cd4 = np.sqrt(1500)
             lower_sqrt_cd4 = 18
             sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits

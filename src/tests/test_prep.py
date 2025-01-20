@@ -112,7 +112,7 @@ def test_prep_propensity():
     N = 100
     pop = Population(size=N, start_date=date(1999, 1, 1))
     pop.data[col.AGE] = [10, 20] * (N // 2)
-    pop.data[col.VIRAL_LOAD] = 5.0
+    pop.set_present_variable(col.VIRAL_LOAD, 5.0)
     # all prep types have different intro dates
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     # adjust chances of higher preference
@@ -239,7 +239,7 @@ def test_prep_propensity():
     assert sum(pop.data[col.PREP_VR_WILLING]) > 0
 
     # reset willingness with low viral load prevalence
-    pop.data[col.VIRAL_LOAD] = 2.0
+    pop.set_present_variable(col.VIRAL_LOAD, 2.0)
     pop.prep.prep_propensity(pop)
     # no willingness remains
     assert sum(pop.data[col.PREP_ANY_WILLING]) == 0
