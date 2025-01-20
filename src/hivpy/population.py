@@ -80,6 +80,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
+        self.resistance.init_resistance_variables(self)
         self.prep.init_prep_variables(self)
         self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
@@ -320,6 +321,7 @@ class Population:
                 self.drop_from_population(HIV_deaths)
             self.hiv_diagnosis.update_HIV_diagnosis(self)
             self.prep.prep_usage(self, time_step)
+            self.resistance.update_resistance(self)
 
         # Some population cleanup
         self.pregnancy.reset_anc_at_birth(self)
