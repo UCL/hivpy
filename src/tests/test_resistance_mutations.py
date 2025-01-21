@@ -103,10 +103,10 @@ def test_calc_cd4_delta():
 
     # check adjustments on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.85 = 10.2
-    # 150 + 12 = 162 >> sqrt(162) + cd4_stdev_on_art * rng.normal() ** 2
+    # 150 + 10.2 = 160.2 >> sqrt(160.2) + cd4_stdev_on_art * rng.normal() ** 2
     cd4, delta = res.calc_cd4_delta(20, SexType.Male, 3, timedelta(months=6), 0.8, 0.8,
                                     False, False, False, False, False, False, 150, 0.2, 200, True, False)
-    assert sqrt(162) - res.cd4_stdev_on_art * 3 <= cd4 <= sqrt(162) + res.cd4_stdev_on_art * 3
+    assert sqrt(160.2) - res.cd4_stdev_on_art * 3 <= cd4 <= sqrt(160.2) + res.cd4_stdev_on_art * 3
     assert isclose(delta, 10.2)
 
     # check max cd4 cap on ARV
