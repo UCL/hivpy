@@ -461,18 +461,35 @@ class ResistanceMutationsModule:
 
         return cd4, cd4_delta
 
-    def calc_prob_new_mutation(self, active_drugs, cont_on_art, adherence, adherence_tm1,
-                               on_nev, on_efa, viral_load, viral_load_tm1):
+    def new_mutations(self, pop: Population, sub_pop):
+        """
+        Update resistance mutations for HIV+ individuals.
+        """
+        # FIXME: is there a better way to pass the the viral_load column strings to calc_prob_new_mutation?
+        self.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
+        self.viral_load_tm1_col = pop.get_correct_column(col.VIRAL_LOAD, dt=1)
+        # get new mutation probabilities
+        new_mutation_probs = pop.apply_function(self.calc_prob_new_mutation, 1, sub_pop)
+        # outcomes
+        r = rng.uniform(size=len(sub_pop))
+        possible_mutations = r < new_mutation_probs
+
+        # people who may develop a new mutation
+        possible_mutation_pop = pop.apply_bool_mask(possible_mutations, sub_pop)
+        if len(possible_mutation_pop) > 0:
+            # FIXME: add individual mutations here
+            ...
+
+    def calc_prob_new_mutation(self, person):
         """
         Returns the probability of acquiring a new HIV mutation this time step.
         Affected by number of active ART drugs, how long an individual has been on ART,
         their ART adherence, as well as use of specific ART drugs and viral load.
         """
-        # lookup new mutation probability multiplier
-        x = self.get_matrix_val(self.new_mutation_matrix, active_drugs, cont_on_art, adherence,
-                                adherence_tm1, on_nev, on_efa)
+        # use person (row) index to lookup new mutation probability multiplier
+        x = self.get_matrix_value(self.new_mutation_matrix, person.name, on_nev=person[col.ON_NEV], on_efa=person[col.ON_EFA])
         # calculate new mutation probability
-        prob_new_mutation = min(x * (viral_load + viral_load_tm1)/2 * self.mutation_risk_change, 1)
+        prob_new_mutation = min(x * (person[self.viral_load_col] + person[self.viral_load_tm1_col])/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
 
@@ -488,3 +505,4 @@ class ResistanceMutationsModule:
             # update values
             self.viral_load(pop, infected_pop)
             self.cd4_change(pop, infected_pop)
+            self.new_mutations(pop, infected_pop)
