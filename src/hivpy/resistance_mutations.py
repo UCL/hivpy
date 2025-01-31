@@ -406,66 +406,58 @@ class ResistanceMutationsModule:
         """
         Update CD4 count for HIV+ individuals.
         """
+        # FIXME: is there a better way to pass the the cd4_tm1 column string to calc_cd4_delta?
+        self.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
         # get cd4 outcomes
-        cd4_outcomes = pop.col_apply([col.AGE, col.SEX, col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART,
-                                      pop.get_correct_column(col.ART_ADHERENCE, dt=0),
-                                      pop.get_correct_column(col.ART_ADHERENCE, dt=1),
-                                      col.ON_NEV, col.ON_EFA, col.ON_DOL,
-                                      col.ON_LPR, col.ON_TAZ, col.ON_DAR,
-                                      pop.get_correct_column(col.CD4, dt=1),
-                                      col.CD4_RECOVERY_ON_ART, col.MAX_CD4,
-                                      col.ON_PREP, col.ON_ART],
-                                     self.calc_cd4_delta, sub_pop=sub_pop)
-
+        cd4_outcomes = pop.apply_function(self.calc_cd4_delta, 1, sub_pop)
         pop.set_present_variable(col.CD4, [i[0] for i in cd4_outcomes], sub_pop)
         pop.set_present_variable(col.CD4_DELTA, [i[1] for i in cd4_outcomes], sub_pop)
 
-    def calc_cd4_delta(self, age, sex, active_drugs, cont_on_art, adherence, adherence_tm1,
-                       on_nev, on_efa, on_dol, on_lpr, on_taz, on_dar,
-                       cd4_tm1, cd4_recovery_on_art, max_cd4, on_prep, on_art):
+    def calc_cd4_delta(self, person):
         """
         Returns an individual's change in CD4 levels this time step.
         Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
         their ART adherence, use of specific ART drugs, as well as CD4 levels last time step,
         maximum CD4 levels, and individual rate of CD4 recovery on ART.
         """
-        # lookup cd4 delta multiplier
-        x = self.get_matrix_val(self.cd4_delta_matrix, active_drugs, cont_on_art, adherence, adherence_tm1)
+        # use person (row) index to lookup cd4 delta multiplier
+        x = self.get_matrix_value(self.cd4_delta_matrix, person.name)
 
         # find base cd4 recovery
         base_cd4_recovery_on_art = 0
         # recovery is hindered by a failing nnrti (or possibly insti) regimen
-        if (((on_nev or on_efa) or (self.failed_insti_hinders_cd4_recovery and on_dol))
-                and not (on_lpr or on_taz or on_dar) and active_drugs <= 2):
+        if (((person[col.ON_NEV] or person[col.ON_EFA]) or (self.failed_insti_hinders_cd4_recovery and person[col.ON_DOL]))
+                and not (person[col.ON_LPR] or person[col.ON_TAZ] or person[col.ON_DAR])
+                and person[col.NUM_ACTIVE_DRUGS] <= 2):
             base_cd4_recovery_on_art = self.hindered_cd4_recovery
         # recovery increases on pi
-        if on_lpr or on_taz or on_dar:
+        if person[col.ON_LPR] or person[col.ON_TAZ] or person[col.ON_DAR]:
             base_cd4_recovery_on_art += self.cd4_recovery_pi_factor
         # recovery decreases with age
-        base_cd4_recovery_on_art += (age - 40) * - 0.3
+        base_cd4_recovery_on_art += (person[col.AGE] - 40) * - 0.3
         # faster recovery in women
-        if sex is SexType.Female:
+        if person[col.SEX] == SexType.Female:
             base_cd4_recovery_on_art += self.cd4_recovery_female_factor
 
         # calculate change in cd4
-        cd4_delta = base_cd4_recovery_on_art + cd4_recovery_on_art * x
+        cd4_delta = base_cd4_recovery_on_art + person[col.CD4_RECOVERY_ON_ART] * x
         # changes for people on antiretroviral drugs
-        if on_prep or on_art:
+        if person[col.ON_PREP] or person[col.ON_ART]:
             # adjust cd4 delta for higher previous cd4 levels
-            if 100 < cd4_tm1 <= 200:
+            if 100 < person[self.cd4_tm1_col] <= 200:
                 cd4_delta *= 0.85
-            elif cd4_tm1 > 200:
+            elif person[self.cd4_tm1_col] > 200:
                 cd4_delta *= 0.7
 
         # calculate current cd4 levels
-        cd4 = max(0, cd4_tm1 + cd4_delta)
+        cd4 = max(0, person[self.cd4_tm1_col] + cd4_delta)
         # changes for people on antiretroviral drugs
-        if on_prep or on_art:
+        if person[col.ON_PREP] or person[col.ON_ART]:
             # add cd4 variability
             cd4 = np.sqrt(cd4) + self.cd4_stdev_on_art * rng.normal() ** 2
             # adjust cd4 according to max value
-            if cd4 > max_cd4:
-                cd4 = max_cd4 + rng.normal() * 50
+            if cd4 > person[col.MAX_CD4]:
+                cd4 = person[col.MAX_CD4] + rng.normal() * 50
 
         return cd4, cd4_delta
 
