@@ -177,6 +177,44 @@ class ResistanceMutationsModule:
         pop.init_variable(col.IN155_MUTATION, False)
         pop.init_variable(col.IN263_MUTATION, False)
 
+    def get_all_matrix_indices(self, pop, sub_pop):
+        """
+        Returns all active drug, continuous ART usage, and adherence indices for the HIV+ sub-population.
+        These indices are used to look up values in the viral load, CD4 delta, and new mutation matrices.
+        """
+        # find matrix indices
+        active_drug_indices = np.digitize(pop.get_variable(col.NUM_ACTIVE_DRUGS, sub_pop), self.active_drug_bins)
+        cont_on_art_indices = np.digitize([x.years() for x in pop.get_variable(col.CONT_ON_ART, sub_pop)], self.cont_on_art_bins)
+        adherence_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop), self.adherence_bins)
+        adherence_tm1_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop, dt=1), self.adherence_bins)
+        # discount adherence last time step when not on ART for 3-6 months
+        adherence_tm1_indices = np.where(cont_on_art_indices != 1, -1, adherence_tm1_indices)
+        return active_drug_indices, cont_on_art_indices, adherence_indices, adherence_tm1_indices
+
+    def get_individual_matrix_indices(self, i, on_nev=None, on_efa=None):
+        """
+        Returns the active drug, continuous ART usage, and adherence indices for a specific HIV+ individual.
+        """
+        # use row index to find matrix indices
+        active_drug_index = self.active_drug_indices[i]
+        cont_on_art_index = self.cont_on_art_indices[i]
+        adherence_index = self.adherence_indices[i]
+        adherence_tm1_index = self.adherence_tm1_indices[i]
+        # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
+        if adherence_index == 0 and (on_nev or on_efa):
+            adherence_index += 1
+        return active_drug_index, cont_on_art_index, adherence_index, adherence_tm1_index
+
+    def get_matrix_value(self, matrix, i, on_nev=None, on_efa=None):
+        """
+        Returns a value from a given matrix (expecting one of the viral load, CD4 delta, or new mutation matrices)
+        for a specific individual.
+        """
+        active_drug_index, cont_on_art_index, \
+            adherence_index, adherence_tm1_index = self.get_individual_matrix_indices(i, on_nev, on_efa)
+        return (matrix[active_drug_index][cont_on_art_index][adherence_index][adherence_tm1_index]
+                if adherence_tm1_index > -1 else matrix[active_drug_index][cont_on_art_index][adherence_index])
+
     def get_matrix_val(self, matrix, active_drugs, cont_on_art, adherence, adherence_tm1,
                        on_nev=None, on_efa=None):
         """
@@ -384,5 +422,9 @@ class ResistanceMutationsModule:
         """
         infected_pop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
         if len(infected_pop) > 0:
+            # find matrix indices
+            self.active_drug_indices, self.cont_on_art_indices, \
+                self.adherence_indices, self.adherence_tm1_indices = self.get_all_matrix_indices(pop, infected_pop)
+            # update values
             self.viral_load(pop, infected_pop)
             self.cd4_change(pop, infected_pop)
