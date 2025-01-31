@@ -257,6 +257,7 @@ class ResistanceMutationsModule:
         adherence_tm1_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop, dt=1), self.adherence_bins)
         # discount adherence last time step when not on ART for 3-6 months
         adherence_tm1_indices = np.where(cont_on_art_indices != 1, -1, adherence_tm1_indices)
+
         return active_drug_indices, cont_on_art_indices, adherence_indices, adherence_tm1_indices
 
     def get_individual_matrix_indices(self, i, on_nev=None, on_efa=None):
@@ -271,6 +272,7 @@ class ResistanceMutationsModule:
         # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
         if adherence_index == 0 and (on_nev or on_efa):
             adherence_index += 1
+
         return active_drug_index, cont_on_art_index, adherence_index, adherence_tm1_index
 
     def get_matrix_value(self, matrix, i, on_nev=None, on_efa=None):
@@ -280,6 +282,7 @@ class ResistanceMutationsModule:
         """
         active_drug_index, cont_on_art_index, \
             adherence_index, adherence_tm1_index = self.get_individual_matrix_indices(i, on_nev, on_efa)
+
         return (matrix[active_drug_index][cont_on_art_index][adherence_index][adherence_tm1_index]
                 if adherence_tm1_index > -1 else matrix[active_drug_index][cont_on_art_index][adherence_index])
 
@@ -311,12 +314,7 @@ class ResistanceMutationsModule:
         Update viral load for HIV+ individuals.
         """
         # get viral load outcomes
-        viral_load = pop.col_apply([col.NUM_ACTIVE_DRUGS, col.CONT_ON_ART,
-                                    pop.get_correct_column(col.ART_ADHERENCE, dt=0),
-                                    pop.get_correct_column(col.ART_ADHERENCE, dt=1),
-                                    col.MAX_VIRAL_LOAD],
-                                   self.calc_viral_load, sub_pop=sub_pop)
-
+        viral_load = pop.apply_function(self.calc_viral_load, 1, sub_pop)
         pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
 
     def get_viral_load_matrix(self, max_viral_load):
@@ -388,15 +386,17 @@ class ResistanceMutationsModule:
                   [1.2, 1.2, self.min_vl_on_art]],
                  [max_viral_load - 0.5, 1.2, self.min_vl_on_art]]]                      # active drugs >= 3.00
 
-    def calc_viral_load(self, active_drugs, cont_on_art, adherence, adherence_tm1, max_viral_load):
+    def calc_viral_load(self, person):
         """
         Returns an individual's viral load this time step.
         Affected by number of active ART drugs, how long an individual has been on ART,
         their ART adherence, as well as their viral load last time step.
         """
-        # lookup base viral load value
-        x = self.get_matrix_val(self.get_viral_load_matrix(max_viral_load), active_drugs, cont_on_art,
-                                adherence, adherence_tm1)
+        # use person (row) index to find the right (a, b, c) tuple
+        a, b, c = self.get_matrix_value(self.viral_load_matrix, person.name)
+        # calculate base viral load value
+        # a * max_viral_load + b + c * min_vl_on_art
+        x = a * person[col.MAX_VIRAL_LOAD] + b + c * self.min_vl_on_art
         # calculate viral load changes
         viral_load = max(0, min(x + self.vl_stdev_on_art * rng.normal(), 6.5))
 
