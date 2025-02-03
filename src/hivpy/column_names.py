@@ -146,8 +146,9 @@ ART_NAIVE = "art_naive"                         # bool: True if person has never
 ON_ART = "on_art"                               # bool: True if a person is currently on ART
 CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
 CONT_ON_ARV = "cont_on_arv"                     # None | timedelta: total length of continuous time on antiretroviral drugs (PrEP or ART)
-ART_ADHERENCE = "art_adherence"                 # None | float: percentage of ART intake that is adhered to
 NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in an individual's regimen
+ART_ADHERENCE = "art_adherence"                 # float: percentage of ART intake that is adhered to
+RESISTANCE_INDEX = "resistance_index"           # float: an index used to identify an individual's resistance profile for various calculations
 
 ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug (TODO: all currently DUMMIED)
 ON_3TC = "on_3tc"
