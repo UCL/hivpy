@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import importlib.resources
 import operator as op
+from enum import Enum, IntEnum
 
 import numpy as np
 import pandas as pd
@@ -13,8 +15,9 @@ import pandas as pd
 import hivpy.column_names as col
 
 from . import output
-from .common import COND, SexType, opposite_sex, rng, timedelta, date
-from enum import Enum, IntEnum
+from .art_data import ARTData
+from .common import COND, SexType, date, opposite_sex, rng, timedelta
+
 
 class HivMonitoringStrategy(Enum):
     # strategy for monitoring HIV positive people naive to ART 1: presence of tb or who4
@@ -72,7 +75,19 @@ class VmFormat(Enum):
     # vm_format=3  plasma  poc
     plasma_poc = 3 
     # vm_format=4  whb     poc
-    whb_poc = 4 
+    whb_poc = 4
+
+class ARV(Enum):
+    lamivudine = 1
+    zidovudine = 2
+    tenofovir = 3
+    nevirapine = 4
+    efavirenz = 5
+    atazanavir = 6
+    lopinavir = 7
+    darunavir = 8
+    dolutegravir = 9
+    cabotegravir = 10  # long acting PrEP
 
 class ARTModule:
     hiv_monitoring_strategy = HivMonitoringStrategy.presence_tb_who4
@@ -84,7 +99,6 @@ class ARTModule:
     min_time_repeat_vm = 0.25  # 3 months?
     poc_vl_monitoring = False
     cd4_monitoring = False
-    year_intervention = 2024  # based on current date? 
 
     ## ART coverage changes
     lower_future_art_coverage = False
@@ -98,9 +112,30 @@ class ARTModule:
     }
 
     def __init__(self):
-        # set cd4_monitoring and prob_vl_meas_done
-        pass
+        # set cd4_monitoring
+        with importlib.resources.path("hivpy.data", "art.yaml") as data_path:
+            self.art_data = ARTData(data_path)
 
+        self.prob_base_init_ART = self.art_data.base_prob_init_ART.sample()
+        self.prob_base_switch_line = self.art_data.base_prob_switch_line.sample()
+        self.prob_vl_measurement_done = self.art_data.prob_vl_measurement_done.sample()
+
+        # reduced interruption risk with point-of-care viral load monitoring
+        self.reduced_interrupt_poc_vl = self.art_data.reduced_interrupt_poc_vl.sample()
+
+        # additional "effective" adherence based on use of NNRTI due to long half-life
+        self.effect_adherence_nnrti = 0.1 * np.exp(rng.normal(0.0, 0.3))
+
+        self.base_rate_interruption = self.art_data.base_rate_interruption.sample()
+        self.prob_lost_ART = self.art_data.prob_lost_ART.sample()
+        self.base_rate_restart_ART = self.art_data.base_rate_restart_ART.sample()
+        self.prob_supply_interrupted = self.art_data.prob_supply_interrupted
+        self.prob_supply_resumed = self.art_data.prob_supply_resumed
+
+        # rate that people are lost to follow up if average adherence is >=0.8
+        self.base_rate_lost = self.art_data.base_rate_lost.sample()
+        self.base_rate_return = self.art_data.base_rate_return.sample()
+        self.base_rate_return_lencab = self.art_data.base_rate_return_lencab.sample()
 
     def update_strategies(self, current_date: date):
         if current_date < date(2005, 6, 1):

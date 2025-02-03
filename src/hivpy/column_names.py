@@ -133,7 +133,10 @@ PREP_CAB_TESTED = "prep_cab_tested"             # Bool: True if an individual ha
 PREP_LEN_TESTED = "prep_len_tested"             # Bool: True if an individual has tested explicitly to start injectable Len PrEP (DUMMY)
 PREP_VR_TESTED = "prep_vr_tested"               # Bool: True if an individual has tested explicitly to start vaginal ring PrEP (DUMMY)
 
-ART_ADHERENCE = "art_adherence"                 # DUMMY
+ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence
+ART_ADHERENCE_STDEV = "art_adherence_stdev"         # float: variation (i.e. standard deviation) in art adherence (timestep to timestep)
+PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in current timestep ~ N(art_adherence_mean, art_adherence_stdev**2) clamped to interval [0,1]
+ART_ADHERENCE = "art_adherence"                     # float, 2 timesteps: effective adherence for mutations etc.
 
 TA_MUTATION = "tam"                             # X_MUTATION: drug resistance cols (TODO: all 24 currently DUMMIED)
 M184_MUTATION = "m184m"
