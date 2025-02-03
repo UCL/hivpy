@@ -121,61 +121,117 @@ def test_calc_viral_load():
 
 
 def test_calc_cd4_delta():
+    time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.set_present_variable(col.CD4, 50)
+    pop.date += time_step
+    pop.step += 1
+    pop.set_present_variable(col.AGE, 20)
+    pop.set_present_variable(col.SEX, SexType.Male)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.set_present_variable(col.ON_NEV, False)
+    pop.set_present_variable(col.ON_EFA, False)
+    pop.set_present_variable(col.ON_DOL, False)
+    pop.set_present_variable(col.ON_LPR, False)
+    pop.set_present_variable(col.ON_TAZ, False)
+    pop.set_present_variable(col.ON_DAR, False)
+    pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 0.1)
+    pop.set_present_variable(col.MAX_CD4, 100)
+    pop.set_present_variable(col.ON_PREP, False)
+    pop.set_present_variable(col.ON_ART, False)
+
     res = pop.resistance
     res.hindered_cd4_recovery = -3
+    res.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check basic case at age 20
     # 6 + 0.1 * -18 = 4.2
     # 50 + 4.2 = 54.2
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 0, timedelta(months=0), 0, 0,
-                                    False, False, False, False, False, False, 50, 0.1, 100, False, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert isclose(cd4, 54.2)
     assert isclose(delta, 4.2)
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
     # 6 + 0.1 * 30 = 9
     # 50 + 9 = 59
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 3, timedelta(months=6), 0.8, 0.8,
-                                    False, False, False, False, False, False, 50, 0.1, 100, False, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert isclose(cd4, 59)
     assert isclose(delta, 9)
+
+    pop.set_present_variable(col.SEX, SexType.Female)
 
     # check basic case with female recovery factor
     # 6 + 2 + 0.1 * 30 = 11
     # 50 + 11 = 61
-    cd4, delta = res.calc_cd4_delta(20, SexType.Female, 3, timedelta(months=6), 0.8, 0.8,
-                                    False, False, False, False, False, False, 50, 0.1, 100, False, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert isclose(cd4, 61)
     assert isclose(delta, 11)
+
+    pop.set_present_variable(col.SEX, SexType.Male)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0
+    pop.set_present_variable(col.ON_NEV, True)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check hindered cd4 recovery
     # 3 + 0.1 * -18 = 1.2
     # 50 + 1.2 = 51.2
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 0, timedelta(months=0), 0, 0,
-                                    True, False, False, False, False, False, 50, 0.1, 100, False, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert isclose(cd4, 51.2)
     assert isclose(delta, 1.2)
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
+    pop.set_present_variable(col.ON_NEV, False)
+    pop.set_present_variable(col.ON_DAR, True)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check improved cd4 recovery with pi recovery factor
     # 9 + 0.1 * 30 = 12
     # 50 + 12 = 62
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 3, timedelta(months=6), 0.8, 0.8,
-                                    False, False, False, False, False, True, 50, 0.1, 100, False, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert isclose(cd4, 62)
     assert isclose(delta, 12)
+
+    pop.data[res.cd4_tm1_col] = 150
+    pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 0.2)
+    pop.set_present_variable(col.MAX_CD4, 200)
+    pop.set_present_variable(col.ON_DAR, False)
+    pop.set_present_variable(col.ON_PREP, True)
 
     # check adjustments on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.85 = 10.2
     # 150 + 10.2 = 160.2 >> sqrt(160.2) + cd4_stdev_on_art * rng.normal() ** 2
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 3, timedelta(months=6), 0.8, 0.8,
-                                    False, False, False, False, False, False, 150, 0.2, 200, True, False)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert sqrt(160.2) - res.cd4_stdev_on_art * 3 <= cd4 <= sqrt(160.2) + res.cd4_stdev_on_art * 3
     assert isclose(delta, 10.2)
+
+    pop.data[res.cd4_tm1_col] = 10000
+    pop.set_present_variable(col.MAX_CD4, 100)
+    pop.set_present_variable(col.ON_PREP, False)
+    pop.set_present_variable(col.ON_ART, True)
 
     # check max cd4 cap on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.7 = 8.4
     # 100 + rng.normal() * 50
-    cd4, delta = res.calc_cd4_delta(20, SexType.Male, 3, timedelta(months=6), 0.8, 0.8,
-                                    False, False, False, False, False, False, 10000, 0.2, 100, False, True)
+    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
     assert 100 - 50 * 3 <= cd4 <= 100 + 50 * 3
     assert isclose(delta, 8.4)
 
