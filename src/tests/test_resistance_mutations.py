@@ -1,46 +1,89 @@
 from math import isclose, sqrt
 
+import hivpy.column_names as col
 from hivpy.common import SexType, date, timedelta
 from hivpy.population import Population
 
 
-def test_matrix_val_retrieval():
+def test_matrix_value_retrieval():
+    time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.date += time_step
+    pop.step += 1
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.set_present_variable(col.ON_NEV, False)
+    pop.set_present_variable(col.ON_EFA, False)
+
     res = pop.resistance
-    max_viral_load = 4
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
-    # get vl_matrix[0][0][0] -> max_viral_load
-    assert res.get_matrix_val(res.get_viral_load_matrix(max_viral_load),
-                              0, timedelta(months=0), 0, 0) == max_viral_load
-    # get vl_matrix[5][1][2][1] -> max_viral_load - 1.05
-    assert res.get_matrix_val(res.get_viral_load_matrix(max_viral_load),
-                              1.25, timedelta(months=4), 1, 0.6) == max_viral_load - 1.05
-    # get vl_matrix[9][1][2][2] -> 1.4
-    assert res.get_matrix_val(res.get_viral_load_matrix(max_viral_load),
-                              2.25, timedelta(months=5), 0.8, 1.2) == 1.4
-    # get vl_matrix[12][2][2] -> min_vl_on_art
-    assert res.get_matrix_val(res.get_viral_load_matrix(max_viral_load),
-                              3, timedelta(months=6), 0.8, 0.8) == res.min_vl_on_art
-
+    # get vl_matrix[0][0][0] -> (1, 0, 0) -> max_viral_load
+    assert res.get_matrix_value(res.viral_load_matrix, 0) == (1, 0, 0)
     # get cd4_matrix[0][0][0] -> -18
-    assert res.get_matrix_val(res.cd4_delta_matrix, 0, timedelta(months=0), 0, 0) == -18
-    # get cd4_matrix[5][1][2][1] -> -7
-    assert res.get_matrix_val(res.cd4_delta_matrix, 1.25, timedelta(months=4), 1, 0.6) == -7
-    # get cd4_matrix[9][1][2][2] -> 23
-    assert res.get_matrix_val(res.cd4_delta_matrix, 2.25, timedelta(months=5), 0.8, 1.2) == 23
-    # get cd4_matrix[12][2][2] -> 30
-    assert res.get_matrix_val(res.cd4_delta_matrix, 3, timedelta(months=6), 0.8, 0.8) == 30
-
+    assert res.get_matrix_value(res.cd4_delta_matrix, 0) == -18
     # get nm_matrix[0][0][0] -> 0.05
-    assert res.get_matrix_val(res.new_mutation_matrix, 0, timedelta(months=0), 0, 0) == 0.05
-    # get nm_matrix[5][0->1][2][1] -> 0.3
-    assert res.get_matrix_val(res.new_mutation_matrix, 1.25, timedelta(months=2), 1, 0.6, on_nev=True) == 0.3
-    # get nm_matrix[5][2][1] -> 0.35
-    assert res.get_matrix_val(res.new_mutation_matrix, 1.25, timedelta(months=7), 0.6, 0.6) == 0.35
+    assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
+                                on_efa=pop.data.loc[0, col.ON_EFA]) == 0.05
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=4))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.2
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
+    pop.set_present_variable(col.ON_NEV, True)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
+    # get vl_matrix[5][1][0][1] -> (1, -0.05, 0) -> max_viral_load - 0.05
+    assert res.get_matrix_value(res.viral_load_matrix, 0) == (1, -0.05, 0)
+    # get cd4_matrix[5][1][0][1] -> -17.5
+    assert res.get_matrix_value(res.cd4_delta_matrix, 0) == -17.5
+    # get nm_matrix[5][1][0->1][1] -> 0.35
+    assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
+                                on_efa=pop.data.loc[0, col.ON_EFA]) == 0.35
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=7))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
+    # get nm_matrix[5][2][2] -> 0.3
+    assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
+                                on_efa=pop.data.loc[0, col.ON_EFA]) == 0.3
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 2.25)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=5))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 1.2
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
+    # get vl_matrix[9][1][2][2] -> (0, 1.4, 0) -> 1.4
+    assert res.get_matrix_value(res.viral_load_matrix, 0) == (0, 1.4, 0)
+    # get cd4_matrix[9][1][2][2] -> 23
+    assert res.get_matrix_value(res.cd4_delta_matrix, 0) == 23
     # get nm_matrix[9][1][2][2] -> 0.05
-    assert res.get_matrix_val(res.new_mutation_matrix, 2.25, timedelta(months=5), 0.8, 1.2) == 0.05
+    assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
+                                on_efa=pop.data.loc[0, col.ON_EFA]) == 0.05
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
+    # get vl_matrix[12][2][2] -> (0, 0, 1) -> min_vl_on_art
+    assert res.get_matrix_value(res.viral_load_matrix, 0) == (0, 0, 1)
+    # get cd4_matrix[12][2][2] -> 30
+    assert res.get_matrix_value(res.cd4_delta_matrix, 0) == 30
     # get nm_matrix[12][2][2] -> 0.002
-    assert res.get_matrix_val(res.new_mutation_matrix, 3, timedelta(months=6), 0.8, 0.8) == 0.002
+    assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
+                                on_efa=pop.data.loc[0, col.ON_EFA]) == 0.002
 
 
 def test_calc_viral_load():
