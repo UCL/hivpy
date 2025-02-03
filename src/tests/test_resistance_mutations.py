@@ -237,13 +237,47 @@ def test_calc_cd4_delta():
 
 
 def test_calc_prob_new_mutation():
+    time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.set_present_variable(col.VIRAL_LOAD, 20)
+    pop.date += time_step
+    pop.step += 1
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.ART_ADHERENCE, 0)
+    pop.set_present_variable(col.ON_NEV, False)
+    pop.set_present_variable(col.ON_EFA, False)
+    pop.set_present_variable(col.VIRAL_LOAD, 50)
+
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    res.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
+    res.viral_load_tm1_col = pop.get_correct_column(col.VIRAL_LOAD, dt=1)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # 0.05 * (50 + 20) / 2 * 0.5 = 0.875
-    assert isclose(res.calc_prob_new_mutation(0, timedelta(months=0), 0, 0, False, False, 50, 20), 0.875)
+    assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.875)
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=2))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
+    pop.set_present_variable(col.ON_EFA, True)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
     # 0.30 * (50 + 20) / 2 * 0.5 = 5.25 >> min(5.25, 1) = 1
-    assert isclose(res.calc_prob_new_mutation(1.25, timedelta(months=2), 1, 0.6, False, True, 50, 20), 1)
+    assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 1)
+
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
+    pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
+    pop.set_present_variable(col.ON_EFA, False)
+    res.active_drug_indices, res.cont_on_art_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+
     # 0.002 * (50 + 20) / 2 * 0.5 = 0.035
-    assert isclose(res.calc_prob_new_mutation(3, timedelta(months=6), 0.8, 0.8, False, False, 50, 20), 0.035)
+    assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.035)
