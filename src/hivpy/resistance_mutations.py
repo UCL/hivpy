@@ -286,29 +286,6 @@ class ResistanceMutationsModule:
         return (matrix[active_drug_index][cont_on_art_index][adherence_index][adherence_tm1_index]
                 if adherence_tm1_index > -1 else matrix[active_drug_index][cont_on_art_index][adherence_index])
 
-    def get_matrix_val(self, matrix, active_drugs, cont_on_art, adherence, adherence_tm1,
-                       on_nev=None, on_efa=None):
-        """
-        Returns a value from either the new mutation matrix or the CD4 delta matrix given the input parameters.
-        """
-        # find matrix indices
-        active_drug_index = np.digitize(active_drugs, self.active_drug_bins)
-        cont_on_art_index = np.digitize(cont_on_art.years(), self.cont_on_art_bins)
-        adherence_index = np.digitize(adherence, self.adherence_bins)
-
-        # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
-        if adherence_index == 0 and (on_nev or on_efa):
-            adherence_index += 1
-
-        # lookup matrix value
-        x = matrix[active_drug_index][cont_on_art_index][adherence_index]
-        # account for adherence last time step when on ART for 3-6 months
-        if cont_on_art_index == 1:
-            adherence_tm1_index = np.digitize(adherence_tm1, self.adherence_bins)
-            x = x[adherence_tm1_index]
-
-        return x
-
     def viral_load(self, pop: Population, sub_pop):
         """
         Update viral load for HIV+ individuals.
@@ -316,75 +293,6 @@ class ResistanceMutationsModule:
         # get viral load outcomes
         viral_load = pop.apply_function(self.calc_viral_load, 1, sub_pop)
         pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
-
-    def get_viral_load_matrix(self, max_viral_load):
-        # viral_load_matrix[active_drugs][cont_on_art][adherence]
-        # FIXME: is there a better way to do this?
-        return [[[max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
-                 [[max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
-                  [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2],
-                  [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],
-                 [max_viral_load, max_viral_load - 0.05, max_viral_load - 0.2]],        # active drugs == 0.00
-                [[max_viral_load + 0.1, max_viral_load - 0.05, max_viral_load - 0.3],
-                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
-                  [max_viral_load - 0.05, max_viral_load - 0.05, max_viral_load - 0.3],
-                  [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.4]],
-                 [max_viral_load, max_viral_load - 0.1, max_viral_load - 0.3]],         # active drugs == 0.25
-                [[max_viral_load + 0.1, max_viral_load - 0.1, max_viral_load - 0.4],
-                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
-                  [max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.4],
-                  [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.6]],
-                 [max_viral_load - 0.1, max_viral_load - 0.3, max_viral_load - 0.6]],   # active drugs == 0.50
-                [[max_viral_load + 0.1, max_viral_load - 0.25, max_viral_load - 0.55],
-                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
-                  [max_viral_load - 0.2, max_viral_load - 0.35, max_viral_load - 0.55],
-                  [max_viral_load - 0.7, max_viral_load - 0.7, max_viral_load - 0.75]],
-                 [max_viral_load - 0.1, max_viral_load - 0.4, max_viral_load - 0.75]],  # active drugs == 0.75
-                [[max_viral_load + 0.1, max_viral_load - 0.4, max_viral_load - 0.7],
-                 [[max_viral_load, max_viral_load + 0.1, max_viral_load + 0.1],
-                  [max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.7],
-                  [max_viral_load - 0.9, max_viral_load - 0.9, max_viral_load - 0.9]],
-                 [max_viral_load - 0.1, max_viral_load - 0.5, max_viral_load - 0.9]],   # active drugs == 1.00
-                [[max_viral_load - 0.05, max_viral_load - 0.5, max_viral_load - 0.8],
-                 [[max_viral_load - 0.05, max_viral_load - 0.05, max_viral_load - 0.05],
-                  [max_viral_load - 0.65, max_viral_load - 0.65, max_viral_load - 0.9],
-                  [max_viral_load - 1.0, max_viral_load - 1.05, max_viral_load - 1.15]],
-                 [max_viral_load - 0.1, max_viral_load - 0.6, max_viral_load - 1.15]],  # active drugs == 1.25
-                [[max_viral_load, max_viral_load - 0.6, max_viral_load - 0.9],
-                 [[max_viral_load - 0.1, max_viral_load - 0.1, max_viral_load - 0.1],
-                  [max_viral_load - 0.8, max_viral_load - 0.8, max_viral_load - 1.5],
-                  [max_viral_load - 1.2, max_viral_load - 1.2, max_viral_load - 1.7]],
-                 [max_viral_load - 0.1, max_viral_load - 0.7, max_viral_load - 1.4]],   # active drugs == 1.50
-                [[max_viral_load - 0.15, max_viral_load - 0.8, max_viral_load - 1.25],
-                 [[max_viral_load - 0.15, max_viral_load - 0.15, max_viral_load - 0.15],
-                  [max_viral_load - 1.1, max_viral_load - 1.1, max_viral_load - 2.4],
-                  [max_viral_load - 1.6, max_viral_load - 1.6, 2.7]],
-                 [max_viral_load - 0.2, max_viral_load - 1.0, max_viral_load - 2.0]],   # active drugs == 1.75
-                [[max_viral_load - 0.2, max_viral_load - 0.9, max_viral_load - 1.5],
-                 [[max_viral_load - 0.2, max_viral_load - 0.2, max_viral_load - 0.2],
-                  [max_viral_load - 1.2, max_viral_load - 1.2, 2.4],
-                  [max_viral_load - 2.0, max_viral_load - 2.0, 2.0]],
-                 [max_viral_load - 0.2, max_viral_load - 1.2, max_viral_load - 2.5]],   # active drugs == 2.00
-                [[max_viral_load - 0.25, max_viral_load - 1.1, max_viral_load - 1.8],
-                 [[max_viral_load - 0.25, max_viral_load - 0.25, max_viral_load - 0.25],
-                  [max_viral_load - 1.35, 2.5, 2.2],
-                  [1.4, 1.4, 1.4]],
-                 [max_viral_load - 0.25, 1.6, 1.4]],                                    # active drugs == 2.25
-                [[max_viral_load - 0.3, max_viral_load - 1.2, max_viral_load - 2.2],
-                 [[max_viral_load - 0.3, max_viral_load - 0.3, max_viral_load - 0.3],
-                  [max_viral_load - 1.5, 2.5, 1.8],
-                  [1.2, 1.2, 1.2]],
-                 [max_viral_load - 0.3, 1.2, self.min_vl_on_art]],                      # active drugs == 2.50
-                [[max_viral_load - 0.4, max_viral_load - 1.6, max_viral_load - 2.6],
-                 [[max_viral_load - 0.4, max_viral_load - 0.4, max_viral_load - 0.4],
-                  [max_viral_load - 1.8, 2.5, 1.6],
-                  [1.2, 1.2, self.min_vl_on_art]],
-                 [max_viral_load - 0.4, 1.2, self.min_vl_on_art]],                      # active drugs == 2.75
-                [[max_viral_load - 0.5, max_viral_load - 2.0, max_viral_load - 3.0],
-                 [[max_viral_load - 0.5, max_viral_load - 0.5, max_viral_load - 0.5],
-                  [max_viral_load - 2.0, 2.5, 1.2],
-                  [1.2, 1.2, self.min_vl_on_art]],
-                 [max_viral_load - 0.5, 1.2, self.min_vl_on_art]]]                      # active drugs >= 3.00
 
     def calc_viral_load(self, person):
         """
