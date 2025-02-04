@@ -1,7 +1,8 @@
+import operator as op
 from math import isclose, sqrt
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, timedelta
+from hivpy.common import AND, COND, SexType, date, timedelta
 from hivpy.population import Population
 
 
@@ -281,3 +282,45 @@ def test_calc_prob_new_mutation():
 
     # 0.002 * (50 + 20) / 2 * 0.5 = 0.035
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.035)
+
+
+def test_update_resistance():
+    N = 100
+    time_step = timedelta(months=1)
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, [True, True, True, False] * (N // 4))
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, [0.5, 1.5, 2.5, 3.5] * (N // 4))
+    pop.set_present_variable(col.CONT_ON_ART, [timedelta(months=0), timedelta(months=3),
+                                               timedelta(months=6), timedelta(months=9)] * (N // 4))
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    pop.set_present_variable(col.MAX_VIRAL_LOAD, 100)
+    pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 5)
+    pop.set_present_variable(col.ON_NEV, [True, False, True, False] * (N // 4))
+    pop.set_present_variable(col.ON_EFA, [True, True, False, False] * (N // 4))
+    pop.set_present_variable(col.ON_PREP, False)
+    pop.set_present_variable(col.ON_ART, False)
+    pop.date += time_step
+    pop.step += 1
+    pop.set_present_variable(col.ART_ADHERENCE, 0.8)
+
+    pop.resistance.update_resistance(pop)
+
+    # check changes for HIV+ people
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                   COND(col.VIRAL_LOAD, op.ge, 0))))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                   COND(col.CD4, op.ge, 0))))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==
+               pop.get_sub_pop(COND(col.CD4_DELTA, op.ne, 0)))
+
+    # check that nothing changes for people without HIV
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, False),
+                                   COND(col.VIRAL_LOAD, op.eq, 0))))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, False),
+                                   COND(col.CD4, op.eq, 0))))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
+               pop.get_sub_pop(COND(col.CD4_DELTA, op.eq, 0)))
