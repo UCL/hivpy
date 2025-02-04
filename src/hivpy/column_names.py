@@ -165,7 +165,7 @@ ON_OLE = "on_ole"
 ON_ISL = "on_isl"
 
 RESISTANCE_MUTATIONS = "resistance_mutations"   # int: total number of resistance mutations in an individual
-RTTA_MUTATIONS = "rttams"                       # int: number of RT (reverse transcriptase) gene TA mutations
+RTTA_MUTATIONS = "rttams"                       # int: number of RT (reverse transcriptase) gene thymidine analog mutations (TAMs)
 RT184_MUTATION = "rt184m"                       # bool: True if an individual has the RT gene M184 mutation
 RT65_MUTATION = "rt65m"                         # bool: True if an individual has the RT gene K65 mutation
 RT151_MUTATION = "rt151m"                       # bool: True if an individual has the RT gene Q151 mutation

@@ -37,7 +37,7 @@ class ResistanceMutationsModule:
         self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
 
         # viral_load_matrix[active_drugs][cont_on_art][adherence]
-        # (a, b, c) tuples used to calculate a * max_viral_load + b + c * min_vl_on_art
+        # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
         self.viral_load_matrix = [[[(1, 0, 0), (1, -0.05, 0), (1, -0.2, 0)],
                                    [[(1, 0, 0), (1, -0.05, 0), (1, -0.2, 0)],
                                     [(1, 0, 0), (1, -0.05, 0), (1, -0.2, 0)],
@@ -221,7 +221,7 @@ class ResistanceMutationsModule:
         """
         Initialise drug resistance mutations at the start of the simulation to False.
         """
-        pop.init_variable(col.RTTA_MUTATIONS, 0)
+        pop.init_variable(col.RTTA_MUTATIONS, 0)        # only TAMs are tracked with integers
         pop.init_variable(col.RT184_MUTATION, False)
         pop.init_variable(col.RT65_MUTATION, False)
         pop.init_variable(col.RT151_MUTATION, False)
@@ -276,7 +276,7 @@ class ResistanceMutationsModule:
         """
         Returns the active drug, continuous ART usage, and adherence indices for a specific HIV+ individual.
         """
-        # use row index to find matrix indices
+        # use resistance index to find matrix indices
         active_drug_index = self.active_drug_indices[i]
         cont_on_art_index = self.cont_on_art_indices[i]
         adherence_index = self.adherence_indices[i]
