@@ -14,6 +14,11 @@ from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
 
 
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
+
+
 @pytest.fixture(scope="module")
 def yaml_data():
     with importlib.resources.open_text("hivpy.data", "sex_behaviour.yaml") as file:

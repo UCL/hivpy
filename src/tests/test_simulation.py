@@ -1,8 +1,13 @@
 import pytest
 
 from hivpy import SimulationConfig, SimulationException
-from hivpy.common import date, timedelta
+from hivpy.common import date, rng, timedelta
 from hivpy.simulation import SimulationHandler
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 # from hivpy.population import Population
 

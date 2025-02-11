@@ -3,7 +3,12 @@ import math
 import pandas as pd
 import pytest
 
-from hivpy.common import between
+from hivpy.common import between, rng
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 @pytest.mark.parametrize(("limits", "expected"), [

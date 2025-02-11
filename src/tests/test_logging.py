@@ -1,7 +1,15 @@
 import logging
 import os.path as path
 
+import pytest
+
+from hivpy.common import rng
 from hivpy.config import LoggingConfig
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_logging_levels(tmp_path, capsys):

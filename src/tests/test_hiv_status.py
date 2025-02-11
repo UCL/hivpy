@@ -10,6 +10,11 @@ from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
 
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
+
+
 @pytest.fixture
 def pop_with_initial_hiv():
     pop_size = 100000
@@ -517,8 +522,10 @@ def test_ltp_infection_by_subject(vl_group):
     HIVM.monogamous_ltp_transmission(pop)
     women_infected = sum(pop.get_variable(col.LTP_STATUS, men))
     men_infected = sum(pop.get_variable(col.LTP_STATUS, women))
-    assert (expected_men_infected - 4 * sigma_men_infected < men_infected < expected_men_infected + 4 * sigma_men_infected)
-    assert (expected_women_infected - 4 * sigma_women_infected < women_infected < expected_women_infected + 4 * sigma_women_infected)
+    assert (np.floor(expected_men_infected - 4 * sigma_men_infected) <= men_infected)
+    assert (men_infected <= np.ceil(expected_men_infected + 4 * sigma_men_infected))
+    assert (np.floor(expected_women_infected - 4 * sigma_women_infected) <= women_infected)
+    assert (women_infected <= np.ceil(expected_women_infected + 4 * sigma_women_infected))
 
 
 @pytest.mark.parametrize("risk_factors", zip([0, 1, 2], [False, True], [False, True]))

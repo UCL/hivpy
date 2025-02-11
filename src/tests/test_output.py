@@ -1,9 +1,17 @@
 from math import isclose
 
+import pytest
+
 import hivpy.column_names as col
-from hivpy.common import SexType, date, timedelta
+from hivpy.common import SexType, date, rng, timedelta
 from hivpy.output import SimulationOutput
 from hivpy.population import Population
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
+
 
 # age boundaries
 age_min = 15

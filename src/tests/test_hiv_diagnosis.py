@@ -1,11 +1,18 @@
 import operator as op
 from math import sqrt
 
+import pytest
+
 import hivpy.column_names as col
-from hivpy.common import date
+from hivpy.common import date, rng
 from hivpy.hiv_diagnosis import HIVTestType
 from hivpy.population import Population
 from hivpy.prep import PrEPType
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_primary_infection_diagnosis():

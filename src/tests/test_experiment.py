@@ -3,7 +3,13 @@ import os.path
 import pytest
 import yaml
 
+from hivpy.common import rng
 from hivpy.experiment import create_experiment, run_experiment
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 @pytest.fixture

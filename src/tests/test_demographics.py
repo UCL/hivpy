@@ -6,11 +6,16 @@ import pytest
 import scipy.integrate
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, timedelta
+from hivpy.common import SexType, date, rng, timedelta
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
 from hivpy.population import Population
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 @pytest.fixture(scope="module")
