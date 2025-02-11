@@ -4,9 +4,14 @@ from math import sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, timedelta
+from hivpy.common import SexType, date, rng, timedelta
 from hivpy.population import Population
 from hivpy.prep import PrEPType
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def reset_prep_propensity_cols(pop: Population):

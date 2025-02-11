@@ -1,9 +1,16 @@
 import operator as op
 from math import isclose, sqrt
 
+import pytest
+
 import hivpy.column_names as col
 from hivpy.common import date, float_to_date, rng, timedelta
 from hivpy.population import Population
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_hiv_testing_covid():

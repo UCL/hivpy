@@ -10,6 +10,11 @@ from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
 
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
+
+
 @pytest.fixture
 def pop_with_initial_hiv():
     pop_size = 100000
