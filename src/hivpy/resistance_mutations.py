@@ -36,7 +36,7 @@ class ResistanceMutationsModule:
         # factors affecting acquisition of new mutations
         self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
 
-        # viral_load_matrix[active_drugs][cont_on_art][adherence]
+        # viral_load_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
         self.viral_load_matrix = [[[(1, 0, 0), (1, -0.05, 0), (1, -0.2, 0)],
                                    [[(1, 0, 0), (1, -0.05, 0), (1, -0.2, 0)],
@@ -104,7 +104,7 @@ class ResistanceMutationsModule:
                                     [(0, 1.2, 0), (0, 1.2, 0), (0, 0, 1)]],
                                    [(1, -0.5, 0), (0, 1.2, 0), (0, 0, 1)]]]        # active drugs >= 3.00
 
-        # cd4_delta_matrix[active_drugs][cont_on_art][adherence]
+        # cd4_delta_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         self.cd4_delta_matrix = [[[-18, -17, -15],
                                   [[-18, -18, -18], [-17, -17, -17], [-15, -15, -15]],
                                   [-18, -17, -15]],     # active drugs == 0.00
@@ -145,7 +145,7 @@ class ResistanceMutationsModule:
                                   [[-13, -13, -13], [7.5, 15, 15], [30, 30, 30]],
                                   [-13, 15, 30]]]       # active drugs >= 3.00
 
-        # new_mutation_matrix[active_drugs][cont_on_art][adherence]
+        # new_mutation_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         self.new_mutation_matrix = [[[0.05, 0.50, 0.50],
                                      [[0.05, 0.05, 0.05], [0.50, 0.50, 0.50], [0.50, 0.50, 0.50]],
                                      [0.05, 0.50, 0.50]],   # active drugs == 0.00
@@ -190,7 +190,7 @@ class ResistanceMutationsModule:
         # FIXME: move drugs and other ART-related columns to ART module
         pop.init_variable(col.ART_NAIVE, True)
         pop.init_variable(col.ON_ART, False)
-        pop.init_variable(col.CONT_ON_ART, timedelta(months=0))
+        pop.init_variable(col.CONT_ON_ART, timedelta(months=0), n_prev_steps=1)
         pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
         pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
         pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
@@ -221,7 +221,7 @@ class ResistanceMutationsModule:
         """
         Initialise drug resistance mutations at the start of the simulation to False.
         """
-        pop.init_variable(col.RTTA_MUTATIONS, 0)        # only TAMs are tracked with integers
+        pop.init_variable(col.RTTA_MUTATIONS, 0)        # only tams are tracked with integers
         pop.init_variable(col.RT184_MUTATION, False)
         pop.init_variable(col.RT65_MUTATION, False)
         pop.init_variable(col.RT151_MUTATION, False)
@@ -253,24 +253,25 @@ class ResistanceMutationsModule:
         """
         # find matrix indices
         active_drug_indices = np.digitize(pop.get_variable(col.NUM_ACTIVE_DRUGS, sub_pop), self.active_drug_bins)
-        cont_on_art_indices = np.digitize([x.years() for x in pop.get_variable(col.CONT_ON_ART, sub_pop)], self.cont_on_art_bins)
+        cont_on_art_tm1_indices = np.digitize([x.years() for x in pop.get_variable(col.CONT_ON_ART, sub_pop, dt=1)],
+                                              self.cont_on_art_bins)
         adherence_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop), self.adherence_bins)
         adherence_tm1_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop, dt=1), self.adherence_bins)
         # discount adherence last time step when not on ART for 3-6 months
-        adherence_tm1_indices = np.where(cont_on_art_indices != 1, -1, adherence_tm1_indices)
+        adherence_tm1_indices = np.where(cont_on_art_tm1_indices != 1, -1, adherence_tm1_indices)
 
-        return active_drug_indices, cont_on_art_indices, adherence_indices, adherence_tm1_indices
+        return active_drug_indices, cont_on_art_tm1_indices, adherence_indices, adherence_tm1_indices
 
     def get_matrix_value(self, matrix, i, on_nev=None, on_efa=None):
         """
         Returns a value from a given matrix (expecting one of the viral load, CD4 delta, or new mutation matrices)
         for a specific individual.
         """
-        active_drug_index, cont_on_art_index, \
+        active_drug_index, cont_on_art_tm1_index, \
             adherence_index, adherence_tm1_index = self.get_individual_matrix_indices(i, on_nev, on_efa)
 
-        return (matrix[active_drug_index][cont_on_art_index][adherence_index][adherence_tm1_index]
-                if adherence_tm1_index > -1 else matrix[active_drug_index][cont_on_art_index][adherence_index])
+        return (matrix[active_drug_index][cont_on_art_tm1_index][adherence_index][adherence_tm1_index]
+                if adherence_tm1_index > -1 else matrix[active_drug_index][cont_on_art_tm1_index][adherence_index])
 
     def get_individual_matrix_indices(self, i, on_nev=None, on_efa=None):
         """
@@ -278,14 +279,14 @@ class ResistanceMutationsModule:
         """
         # use resistance index to find matrix indices
         active_drug_index = self.active_drug_indices[i]
-        cont_on_art_index = self.cont_on_art_indices[i]
+        cont_on_art_tm1_index = self.cont_on_art_tm1_indices[i]
         adherence_index = self.adherence_indices[i]
         adherence_tm1_index = self.adherence_tm1_indices[i]
         # adjust adherence index if taking specific ART drugs (only relevant to new mutation probability)
         if adherence_index == 0 and (on_nev or on_efa):
             adherence_index += 1
 
-        return active_drug_index, cont_on_art_index, adherence_index, adherence_tm1_index
+        return active_drug_index, cont_on_art_tm1_index, adherence_index, adherence_tm1_index
 
     def viral_load(self, pop: Population, sub_pop):
         """
@@ -411,7 +412,7 @@ class ResistanceMutationsModule:
         if len(infected_pop) > 0:
 
             # find matrix indices
-            self.active_drug_indices, self.cont_on_art_indices, \
+            self.active_drug_indices, self.cont_on_art_tm1_indices, \
                 self.adherence_indices, self.adherence_tm1_indices = self.get_all_matrix_indices(pop, infected_pop)
             pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
 

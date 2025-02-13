@@ -16,6 +16,7 @@ def resetRandomState():
 def test_matrix_value_retrieval():
     time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
@@ -26,7 +27,7 @@ def test_matrix_value_retrieval():
     pop.set_present_variable(col.ON_EFA, False)
 
     res = pop.resistance
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # get vl_matrix[0][0][0] -> (1, 0, 0) -> max_viral_load
@@ -38,11 +39,11 @@ def test_matrix_value_retrieval():
                                 on_efa=pop.data.loc[0, col.ON_EFA]) == 0.05
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=4))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=4)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.2
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
     pop.set_present_variable(col.ON_NEV, True)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # get vl_matrix[5][1][0][1] -> (1, -0.05, 0) -> max_viral_load - 0.05
@@ -54,9 +55,9 @@ def test_matrix_value_retrieval():
                                 on_efa=pop.data.loc[0, col.ON_EFA]) == 0.35
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=7))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=7)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # get nm_matrix[5][2][2] -> 0.3
@@ -64,10 +65,10 @@ def test_matrix_value_retrieval():
                                 on_efa=pop.data.loc[0, col.ON_EFA]) == 0.3
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 2.25)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=5))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=5)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 1.2
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # get vl_matrix[9][1][2][2] -> (0, 1.4, 0) -> 1.4
@@ -79,10 +80,10 @@ def test_matrix_value_retrieval():
                                 on_efa=pop.data.loc[0, col.ON_EFA]) == 0.05
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # get vl_matrix[12][2][2] -> (0, 0, 1) -> min_vl_on_art
@@ -97,6 +98,7 @@ def test_matrix_value_retrieval():
 def test_calc_viral_load():
     time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
@@ -107,7 +109,7 @@ def test_calc_viral_load():
     pop.set_present_variable(col.MAX_VIRAL_LOAD, max_viral_load)
 
     res = pop.resistance
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # max_viral_load + vl_stdev_on_art * rng.normal()
@@ -116,10 +118,10 @@ def test_calc_viral_load():
             <= max_viral_load + res.vl_stdev_on_art * 3)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # min_vl_on_art + vl_stdev_on_art * rng.normal()
@@ -131,6 +133,7 @@ def test_calc_viral_load():
 def test_calc_cd4_delta():
     time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.CD4, 50)
     pop.date += time_step
@@ -154,7 +157,7 @@ def test_calc_cd4_delta():
     res = pop.resistance
     res.hindered_cd4_recovery = -3
     res.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check basic case at age 20
@@ -165,10 +168,10 @@ def test_calc_cd4_delta():
     assert isclose(delta, 4.2)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # 6 + 0.1 * 30 = 9
@@ -188,11 +191,11 @@ def test_calc_cd4_delta():
 
     pop.set_present_variable(col.SEX, SexType.Male)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0
     pop.set_present_variable(col.ON_NEV, True)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check hindered cd4 recovery
@@ -203,12 +206,12 @@ def test_calc_cd4_delta():
     assert isclose(delta, 1.2)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     pop.set_present_variable(col.ON_NEV, False)
     pop.set_present_variable(col.ON_DAR, True)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # check improved cd4 recovery with pi recovery factor
@@ -247,6 +250,7 @@ def test_calc_cd4_delta():
 def test_calc_prob_new_mutation():
     time_step = timedelta(months=1)
     pop = Population(size=1, start_date=date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.VIRAL_LOAD, 20)
     pop.date += time_step
@@ -262,29 +266,29 @@ def test_calc_prob_new_mutation():
     res.mutation_risk_change = 0.5
     res.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
     res.viral_load_tm1_col = pop.get_correct_column(col.VIRAL_LOAD, dt=1)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # 0.05 * (50 + 20) / 2 * 0.5 = 0.875
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.875)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=2))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=2)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
     pop.set_present_variable(col.ON_EFA, True)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # 0.30 * (50 + 20) / 2 * 0.5 = 5.25 >> min(5.25, 1) = 1
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 1)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=6))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     pop.set_present_variable(col.ON_EFA, False)
-    res.active_drug_indices, res.cont_on_art_indices, \
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # 0.002 * (50 + 20) / 2 * 0.5 = 0.035
@@ -297,8 +301,8 @@ def test_update_resistance():
     pop = Population(size=N, start_date=date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, [True, True, True, False] * (N // 4))
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, [0.5, 1.5, 2.5, 3.5] * (N // 4))
-    pop.set_present_variable(col.CONT_ON_ART, [timedelta(months=0), timedelta(months=3),
-                                               timedelta(months=6), timedelta(months=9)] * (N // 4))
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = [timedelta(months=0), timedelta(months=3),
+                                                               timedelta(months=6), timedelta(months=9)] * (N // 4)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     pop.set_present_variable(col.MAX_VIRAL_LOAD, 100)
     pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 5)
