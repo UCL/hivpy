@@ -405,7 +405,7 @@ class ResistanceMutationsModule:
         if len(possible_mutation_pop) > 0:
             # tams
             tams = pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
-                                         self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
+                                       self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
             # tally up all mutations

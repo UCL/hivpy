@@ -332,7 +332,7 @@ def test_rttams():
     res.mutation_risk_change = 0.5
     res.risk_change_tams_resist = 1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-                res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
