@@ -35,6 +35,14 @@ class ResistanceMutationsModule:
 
         # factors affecting acquisition of new mutations
         self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
+        self.risk_change_tams = 1
+        self.risk_change_151 = 1
+        self.ten_resist_rate = rng.choice([0.1, 0.2, 0.3])  # FIXME: dependent on time step length
+        self.dol_resist_rate = rng.choice([0.005, 0.010, 0.015])  # FIXME: dependent on time step length
+        self.len_resist_rate = rng.choice([0.005, 0.010, 0.020, 0.050])  # FIXME: dependent on time step length
+        self.incr_len_resist = 10
+        self.cab_resist_factor = rng.choice([1.0, 1.5, 2.0])
+        self.risk_change_cab_resist = rng.choice([1, 3, 5, 10, 20, 50])
 
         # viral_load_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
