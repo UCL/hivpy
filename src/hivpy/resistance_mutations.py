@@ -288,7 +288,7 @@ class ResistanceMutationsModule:
 
         return active_drug_index, cont_on_art_tm1_index, adherence_index, adherence_tm1_index
 
-    def viral_load(self, pop: Population, sub_pop):
+    def update_viral_load_ART(self, pop: Population, sub_pop):
         """
         Update viral load for HIV+ individuals.
         """
@@ -312,7 +312,7 @@ class ResistanceMutationsModule:
 
         return viral_load
 
-    def cd4_change(self, pop: Population, sub_pop):
+    def update_cd4_ART(self, pop: Population, sub_pop):
         """
         Update CD4 count for HIV+ individuals.
         """
@@ -371,7 +371,7 @@ class ResistanceMutationsModule:
 
         return cd4, cd4_delta
 
-    def new_mutations(self, pop: Population, sub_pop):
+    def calculate_new_mutations(self, pop: Population, sub_pop):
         """
         Update resistance mutations for HIV+ individuals.
         """
@@ -417,6 +417,6 @@ class ResistanceMutationsModule:
             pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
 
             # update values
-            self.viral_load(pop, infected_pop)
-            self.cd4_change(pop, infected_pop)
-            self.new_mutations(pop, infected_pop)
+            self.update_viral_load_ART(pop, infected_pop)
+            self.update_cd4_ART(pop, infected_pop)
+            self.calculate_new_mutations(pop, infected_pop)
