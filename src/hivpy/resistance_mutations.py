@@ -406,6 +406,10 @@ class ResistanceMutationsModule:
             # FIXME: add individual mutations here
             ...
 
+            # tally up all mutations
+            resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
+            pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
+
     def calc_prob_new_mutation(self, person):
         """
         Returns the probability of acquiring a new HIV mutation this time step.
@@ -419,6 +423,19 @@ class ResistanceMutationsModule:
         prob_new_mutation = min(x * (person[self.viral_load_col] + person[self.viral_load_tm1_col])/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
+
+    def calc_total_mutations(self, person):
+        """
+        Returns the total number of resistance mutations in a given individual.
+        """
+        return (person[col.RTTA_MUTATIONS] + person[col.RT184_MUTATION] + person[col.RT151_MUTATION] +
+                person[col.RT65_MUTATION] + person[col.RT103_MUTATION] + person[col.RT181_MUTATION] +
+                person[col.RT190_MUTATION] + person[col.PR32_MUTATION] + person[col.PR46_MUTATION] +
+                person[col.PR47_MUTATION] + person[col.PR50L_MUTATION] + person[col.PR50V_MUTATION] +
+                person[col.PR54_MUTATION] + person[col.PR76_MUTATION] + person[col.PR82_MUTATION] +
+                person[col.PR84_MUTATION] + person[col.PR88_MUTATION] + person[col.PR90_MUTATION] +
+                person[col.IN118_MUTATION] + person[col.IN140_MUTATION] + person[col.IN148_MUTATION] +
+                person[col.IN155_MUTATION] + person[col.IN263_MUTATION] + person[col.CA66_MUTATION])
 
     def update_resistance(self, pop: Population):
         """
