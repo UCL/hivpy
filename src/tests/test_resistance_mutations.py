@@ -225,19 +225,19 @@ def test_calc_cd4_delta():
     assert isclose(cd4, 62)
     assert isclose(delta, 12)
 
-    pop.data[res.cd4_tm1_col] = 100
+    pop.data[res.cd4_tm1_col] = 110
     pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 0.2)
     pop.set_present_variable(col.MAX_CD4, 200)
     pop.set_present_variable(col.ON_DAR, False)
     pop.set_present_variable(col.ON_PREP, True)
 
     # check adjustments on ARV
-    # 6 + 0.2 * 6 = 12 >> 12
-    # 100 + 12 = 112 >> new cd4 = (sqrt(112) + cd4_stdev_on_art * rng.normal()) ** 2
+    # 6 + 0.2 * 6 = 12 >> 12 * 0.85 = 10.2
+    # 110 + 10.2 = 120.2 >> (sqrt(120.2) + cd4_stdev_on_art * rng.normal()) ** 2
     for i in range(N):
         cd4, delta = res.calc_cd4_delta(pop.data.loc[i])
-        assert isclose(delta, 12)
-        assert sqrt(112) - res.cd4_stdev_on_art * 3 <= sqrt(cd4) <= sqrt(112) + res.cd4_stdev_on_art * 3
+        assert sqrt(120.2) - res.cd4_stdev_on_art * 3 <= sqrt(cd4) <= sqrt(120.2) + res.cd4_stdev_on_art * 3
+        assert isclose(delta, 10.2)
 
     pop.data[res.cd4_tm1_col] = 10000
     pop.set_present_variable(col.MAX_CD4, 100)
