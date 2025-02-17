@@ -344,7 +344,7 @@ class ResistanceMutationsModule:
         if person[col.ON_LPR] or person[col.ON_TAZ] or person[col.ON_DAR]:
             base_cd4_recovery_on_art += self.cd4_recovery_pi_factor
         # recovery decreases with age
-        base_cd4_recovery_on_art -= (person[col.AGE] - 40) *  0.3
+        base_cd4_recovery_on_art -= (person[col.AGE] - 40) * 0.3
         # faster recovery in women
         if person[col.SEX] == SexType.Female:
             base_cd4_recovery_on_art += self.cd4_recovery_female_factor
