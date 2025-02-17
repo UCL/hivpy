@@ -403,8 +403,10 @@ class ResistanceMutationsModule:
         # people who may develop a new mutation
         possible_mutation_pop = pop.apply_bool_mask(possible_mutations, sub_pop)
         if len(possible_mutation_pop) > 0:
-            # FIXME: add individual mutations here
-            ...
+            # tams
+            tams = pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
+                                         self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
@@ -423,6 +425,30 @@ class ResistanceMutationsModule:
         prob_new_mutation = min(x * (person[self.viral_load_col] + person[self.viral_load_tm1_col])/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
+
+    def calc_rttams_outcomes(self, on_zdv, on_3tc, rttams, size):
+        """
+        Returns RT gene TAMs outcomes.
+        """
+        # outcomes
+        r = rng.uniform(size=size) / self.risk_change_tams_resist
+        prob_mutation = 0
+        if on_zdv:
+            if on_3tc:
+                prob_mutation = 0.12
+            else:
+                prob_mutation = 0.20
+        ta_mutations = r < prob_mutation
+        extra_ta_mutations = (prob_mutation <= r) & (r < prob_mutation + 0.01)
+
+        # increment tams
+        tams = np.array([rttams] * size)
+        tams[ta_mutations] += 1
+        tams[extra_ta_mutations] += 2
+        # cap number of mutations at 6
+        tams[tams > 6] = 6
+
+        return tams
 
     def calc_total_mutations(self, person):
         """
