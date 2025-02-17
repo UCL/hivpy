@@ -114,19 +114,18 @@ class HIVStatusModule:
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
-        population.init_variable(col.RESISTANCE_MUTATIONS, 0)
-        population.init_variable(col.CD4, 0.0)
+        population.init_variable(col.CD4, 0.0, n_prev_steps=1)
+        population.init_variable(col.CD4_DELTA, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
+        population.init_variable(col.CD4_RECOVERY_ON_ART, 0)
         population.init_variable(col.HIV_DIAGNOSED, False)
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         population.init_variable(col.UNDER_CARE, False)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
-        population.init_variable(col.VIRAL_LOAD, 0.0)
+        population.init_variable(col.VIRAL_LOAD, 0.0, n_prev_steps=1)
+        population.init_variable(col.MAX_VIRAL_LOAD, 0)
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
-
-        # TODO: move to ART module
-        population.init_variable(col.ON_ART, False)
 
         # Long term partners
         population.init_variable(col.LTP_STATUS, False)
@@ -154,8 +153,6 @@ class HIVStatusModule:
         population.init_variable(col.SBI_DIAGNOSED, False)
         population.init_variable(col.WHO4_OTHER, False)
         population.init_variable(col.WHO4_OTHER_DIAGNOSED, False)
-
-        self.init_resistance_mutations(population)
 
     def initial_HIV_status(self, population: pd.DataFrame):
         """
@@ -741,8 +738,7 @@ class HIVStatusModule:
             [(col.DATE_HIV_INFECTION, op.le, population.date - timedelta(months=3))])
         population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
         ltp_past_primary_infection = population.get_sub_pop(
-            [(col.LTP_INFECTION_DATE, op.le, population.date - timedelta(months=3))]
-        )
+            [(col.LTP_INFECTION_DATE, op.le, population.date - timedelta(months=3))])
         population.set_present_variable(col.LTP_IN_PRIMARY, False, ltp_past_primary_infection)
 
     def set_viral_load_groups(self, population: Population):
@@ -753,35 +749,6 @@ class HIVStatusModule:
                                         HIV_positive_pop)
         primary_infection_pop = population.get_sub_pop(COND(col.IN_PRIMARY_INFECTION, op.eq, True))
         population.set_present_variable(col.VIRAL_LOAD_GROUP, 5, primary_infection_pop)
-
-    def init_resistance_mutations(self, population: Population):
-        """
-        Initialise drug resistance mutations at the start of the simulation to False.
-        """
-        population.init_variable(col.TA_MUTATION, False)
-        population.init_variable(col.M184_MUTATION, False)
-        population.init_variable(col.K65_MUTATION, False)
-        population.init_variable(col.Q151_MUTATION, False)
-        population.init_variable(col.K103_MUTATION, False)
-        population.init_variable(col.Y181_MUTATION, False)
-        population.init_variable(col.G190_MUTATION, False)
-        population.init_variable(col.P32_MUTATION, False)
-        population.init_variable(col.P33_MUTATION, False)
-        population.init_variable(col.P46_MUTATION, False)
-        population.init_variable(col.P47_MUTATION, False)
-        population.init_variable(col.P50L_MUTATION, False)
-        population.init_variable(col.P50V_MUTATION, False)
-        population.init_variable(col.P54_MUTATION, False)
-        population.init_variable(col.P76_MUTATION, False)
-        population.init_variable(col.P82_MUTATION, False)
-        population.init_variable(col.P84_MUTATION, False)
-        population.init_variable(col.P88_MUTATION, False)
-        population.init_variable(col.P90_MUTATION, False)
-        population.init_variable(col.IN118_MUTATION, False)
-        population.init_variable(col.IN140_MUTATION, False)
-        population.init_variable(col.IN148_MUTATION, False)
-        population.init_variable(col.IN155_MUTATION, False)
-        population.init_variable(col.IN263_MUTATION, False)
 
     def get_hiv_status_difference(self, sex, population: Population):
         """
@@ -857,8 +824,8 @@ class HIVStatusModule:
                                         sub_pop=newly_infected)
 
         def set_initial_CD4(person):
-            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[col.VIRAL_LOAD]) + rng.normal(0, 2) \
-                - (person[col.AGE] - 35)*0.05
+            sqrt_cd4 = self.initial_mean_sqrt_cd4 - (1.5 * person[population.get_correct_column(col.VIRAL_LOAD, dt=0)]) \
+                + rng.normal(0, 2) - (person[col.AGE] - 35)*0.05
             upper_sqrt_cd4 = np.sqrt(1500)
             lower_sqrt_cd4 = 18
             sqrt_cd4 = min(upper_sqrt_cd4, max(sqrt_cd4, lower_sqrt_cd4))  # clamp sqrt_cd4 to be in limits

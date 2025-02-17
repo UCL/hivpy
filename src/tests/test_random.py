@@ -1,7 +1,13 @@
 import numpy as np
+import pytest
 
 from hivpy.common import date, rng
 from hivpy.population import Population
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_seed_reproduce():

@@ -13,6 +13,7 @@ from .hiv_status import HIVStatusModule
 from .hiv_testing import HIVTestingModule
 from .pregnancy import PregnancyModule
 from .prep import PrEPModule
+from .resistance_mutations import ResistanceMutationsModule
 from .sexual_behaviour import SexualBehaviourModule
 
 HIV_APPEARANCE = date(1989, 1, 1)
@@ -43,6 +44,7 @@ class Population:
         self.sexual_behaviour = SexualBehaviourModule()
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
+        self.resistance = ResistanceMutationsModule()
         self.hiv_testing = HIVTestingModule()
         self.hiv_diagnosis = HIVDiagnosisModule()
         self.prep = PrEPModule()
@@ -78,6 +80,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
+        self.resistance.init_resistance_variables(self)
         self.prep.init_prep_variables(self)
         self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
@@ -319,6 +322,7 @@ class Population:
                 self.drop_from_population(HIV_deaths)
             self.hiv_diagnosis.update_HIV_diagnosis(self)
             self.prep.prep_usage(self, time_step)
+            self.resistance.update_resistance(self)
 
         # Some population cleanup
         self.pregnancy.reset_anc_at_birth(self)

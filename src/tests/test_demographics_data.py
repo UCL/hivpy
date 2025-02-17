@@ -2,8 +2,13 @@ import importlib.resources
 
 import pytest
 
-from hivpy.common import SexType
+from hivpy.common import SexType, rng
 from hivpy.demographics_data import DemographicsData
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 @pytest.fixture(scope="module")

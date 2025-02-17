@@ -1,6 +1,14 @@
 from pathlib import Path
 
+import pytest
+
+from hivpy.common import rng
 from hivpy.sex_behaviour_data import SexualBehaviourData
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_probability_loading():

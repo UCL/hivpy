@@ -13,21 +13,19 @@ If there are any circumcision-related variables you would like to change before 
 
 At the start of the simulation, all men have a chance to be circumcised at birth due to traditional circumcision practices. This is not part of VMMC intervention.
 
-When circumcision is updated, the eligible population is grouped by age, and VMMC outcomes are probabilistically determined. The outcomes are then assigned to the newly circumcised sub-population and their circumcision date is set to the date of the current time step.
-
-Then, newly circumcised men get tested for HIV, so long as they weren't tested last time step.
+When circumcision is updated, the eligible population is grouped by age, and VMMC outcomes are probabilistically determined. There is also a chance for VMMC to occur for individuals that tested HIV negative last time step. The outcomes are then assigned to the newly circumcised sub-population and their circumcision date is set to the date of the current time step.
 
 ### Circumcision Data Variables
 
-- *`vmmc_start_year`* - The year during which VMMC intervention begins (2008 by default).
-- *`circ_rate_change_year`* - The year after which VMMC rates change and *`circ_rate_change_post_2013`* becomes included in VMMC probability calculations (2013 by default).
-- *`prob_circ_calc_cutoff_year`* - The year which caps the current time step date used in VMMC probability calculations (2019 by default).
+- *`vmmc_start_year`* - The year during which VMMC intervention begins.
+- *`circ_rate_change_year`* - The year after which VMMC rates change and *`circ_rate_change_post_2013`* becomes included in VMMC probability calculations.
+- *`prob_circ_calc_cutoff_year`* - The year which caps the current time step date used in VMMC probability calculations.
 - *`circ_after_test`* - A boolean that determines whether a negative HIV test can lead to VMMC.
 - *`prob_circ_after_test`* - The probability that a negative HIV test leads to VMMC.
 - *`covid_disrup_affected`* - A boolean that determines whether disruption due to COVID is factored into the model.
 - *`vmmc_disrup_covid`* - A boolean that determines whether COVID disruption affects VMMC intervention.
-- *`policy_intervention_year`* - The year after which policy intervention options are modelled (2022 by default).
-- *`circ_policy_scenario`* - An integer that represents the simulation of the enactment of a specific policy intervantion option after *`policy_intervention_year`*.
+- *`policy_intervention_year`* - The year after which policy intervention options are modelled.
+- *`circ_policy_scenario`* - An integer that represents the simulation of the enactment of a specific policy intervention option after *`policy_intervention_year`*.
     - **Scenario 0** - Default behaviour.
     - **Scenario 1** - VMMC stops in 10-14 year olds and increases in 15-19 year olds.
     - **Scenario 2** - No further VMMC is carried out.
@@ -44,7 +42,7 @@ Then, newly circumcised men get tested for HIV, so long as they weren't tested l
 
 Birth circumcision is initialised when population data is first created. There are currently two methods for initialising birth circumcision:
 
-- `init_birth_circumcision_all` - Initialises circumcision at birth for the entire male population, both born and unborn. Circumcision dates for all born individuals are recorded as the date of the start of the simulation, but cirucmcision dates for unborn individuals are calculated by finding the dates at which each individual's age would be 0.25.
+- `init_birth_circumcision_all` - Initialises circumcision at birth for the entire male population, both born and unborn. Circumcision dates for all born individuals are recorded as the date of the start of the simulation, but circumcision dates for unborn individuals are calculated by finding the dates at which each individual's age would be 0.25.
 - `init_birth_circumcision_born` - Initialises circumcision at birth for all born males of *age >= 0.25*. All circumcised individuals get assigned a circumcision date of the start of the simulation. This method requires the use of `update_birth_circumcision` during a population's evolve step, which updates birth circumcision for newly born males of *age >= 0.25* and *age - `time_step` < 0.25* during each time step (assuming ages have already been incremented this time step). During the update, newly circumcised males have the date of the current time step set as their circumcision date.
 
 The method that initialises birth circumcision all at once is much faster at determining birth circumcision outcomes for the entire population than the second due to the high cumulative time taken by the update method, however it does not factor in COVID disruption. On the other hand, the second method's updates can take new information into account during a simulation, and is thus capable of factoring in COVID disruption. As such, a birth circumcision update only goes ahead if *`covid_disrup_affected`* and *`vmmc_disrup_covid`* are both False, otherwise the circumcision probability is 0.
@@ -81,8 +79,8 @@ Otherwise, VMMC occurs only if the current *year > `vmmc_start_year`*. Typically
 The probability of VMMC is the probability of someone putting themselves forward for circumcision. In the code, individuals are chosen for VMMC by first finding all eligible males that have not yet been circumcised. If uncircumcised males are present during a given time step, then males are grouped by age [10-19 (or 15-19), 20-29, 30-49] and VMMC outcomes are assigned according to the different VMMC probabilities for each age group.
 
 VMMC probabilities are calculated in the following way:
-- An age modifier is determined based on age group and the year used in calculations is capped at *`prob_circ_calc_cutoff_year`* (2019 by default) if the current year exceeds this date.
-- If the current date is *`circ_rate_change_year`* (2013 by default) or earlier, the following calculation is used:
+- An age modifier is determined based on age group and the year used in calculations is capped at *`prob_circ_calc_cutoff_year`* if the current year exceeds this date.
+- If the current date is *`circ_rate_change_year`* or earlier, the following calculation is used:
 ```python
 prob_circ = (year - vmmc_start_year) * circ_increase_rate * age_mod
 ```

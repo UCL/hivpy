@@ -59,7 +59,6 @@ class PregnancyModule:
         pop.init_variable(col.BREASTFEEDING, False)
         pop.init_variable(col.ANC, False)
         pop.init_variable(col.PMTCT, False)
-        pop.init_variable(col.ART_NAIVE, True)
         self.init_num_children(pop)
         pop.init_variable(col.NUM_HIV_CHILDREN, 0)
         pop.init_variable(col.WANT_NO_CHILDREN, False)
