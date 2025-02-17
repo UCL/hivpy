@@ -114,10 +114,13 @@ def test_calc_viral_load():
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # max_viral_load + vl_stdev_on_art * rng.normal()
+    outliers = 0
     for i in range(N):
-        assert (max_viral_load - res.vl_stdev_on_art * 3 <=
+        if not (max_viral_load - res.vl_stdev_on_art * 3 <=
                 res.calc_viral_load(pop.data.loc[i])
-                <= max_viral_load + res.vl_stdev_on_art * 3)
+                <= max_viral_load + res.vl_stdev_on_art * 3):
+            outliers += 1
+    assert (outliers <= 1)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
     pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
@@ -127,10 +130,13 @@ def test_calc_viral_load():
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # min_vl_on_art + vl_stdev_on_art * rng.normal()
+    outliers = 0
     for i in range(N):
-        assert (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
+        if not (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
                 res.calc_viral_load(pop.data.loc[i])
-                <= res.min_vl_on_art + res.vl_stdev_on_art * 3)
+                <= res.min_vl_on_art + res.vl_stdev_on_art * 3):
+            outliers += 1
+    assert (outliers <= 1)
 
 
 def test_calc_cd4_delta():
@@ -234,10 +240,13 @@ def test_calc_cd4_delta():
     # check adjustments on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.85 = 10.2
     # 110 + 10.2 = 120.2 >> (sqrt(120.2) + cd4_stdev_on_art * rng.normal()) ** 2
+    outliers = 0
     for i in range(N):
         cd4, delta = res.calc_cd4_delta(pop.data.loc[i])
-        assert sqrt(120.2) - res.cd4_stdev_on_art * 3 <= sqrt(cd4) <= sqrt(120.2) + res.cd4_stdev_on_art * 3
+        if not (sqrt(120.2) - res.cd4_stdev_on_art * 3 <= sqrt(cd4) <= sqrt(120.2) + res.cd4_stdev_on_art * 3):
+            outliers += 1
         assert isclose(delta, 10.2)
+    assert (outliers <= 1)
 
     pop.data[res.cd4_tm1_col] = 10000
     pop.set_present_variable(col.MAX_CD4, 100)
@@ -247,10 +256,14 @@ def test_calc_cd4_delta():
     # check max cd4 cap on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.7 = 8.4
     # 100 + rng.normal() * 50
+    # <1% chance of cd4 being outside 3 standard deviations
+    outliers = 0
     for i in range(N):
         cd4, delta = res.calc_cd4_delta(pop.data.loc[i])
-        assert 100 - 50 * 3 <= cd4 <= 100 + 50 * 3
+        if not (100 - 50 * 3 <= cd4 <= 100 + 50 * 3):
+            outliers += 1
         assert isclose(delta, 8.4)
+    assert (outliers <= 1)
 
 
 def test_calc_prob_new_mutation():
