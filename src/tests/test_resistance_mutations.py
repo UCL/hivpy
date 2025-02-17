@@ -97,7 +97,8 @@ def test_matrix_value_retrieval():
 
 def test_calc_viral_load():
     time_step = timedelta(months=1)
-    pop = Population(size=1, start_date=date(2000, 1, 1))
+    N = 100
+    pop = Population(size=N, start_date=date(2000, 1, 1))
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
@@ -113,9 +114,10 @@ def test_calc_viral_load():
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # max_viral_load + vl_stdev_on_art * rng.normal()
-    assert (max_viral_load - res.vl_stdev_on_art * 3 <=
-            res.calc_viral_load(pop.data.loc[0])
-            <= max_viral_load + res.vl_stdev_on_art * 3)
+    for i in range(N):
+        assert (max_viral_load - res.vl_stdev_on_art * 3 <=
+                res.calc_viral_load(pop.data.loc[i])
+                <= max_viral_load + res.vl_stdev_on_art * 3)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
     pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
@@ -125,14 +127,16 @@ def test_calc_viral_load():
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
 
     # min_vl_on_art + vl_stdev_on_art * rng.normal()
-    assert (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
-            res.calc_viral_load(pop.data.loc[0])
-            <= res.min_vl_on_art + res.vl_stdev_on_art * 3)
+    for i in range(N):
+        assert (res.min_vl_on_art - res.vl_stdev_on_art * 3 <=
+                res.calc_viral_load(pop.data.loc[i])
+                <= res.min_vl_on_art + res.vl_stdev_on_art * 3)
 
 
 def test_calc_cd4_delta():
     time_step = timedelta(months=1)
-    pop = Population(size=1, start_date=date(2000, 1, 1))
+    N = 100
+    pop = Population(size=N, start_date=date(2000, 1, 1))
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.CD4, 50)
@@ -221,18 +225,19 @@ def test_calc_cd4_delta():
     assert isclose(cd4, 62)
     assert isclose(delta, 12)
 
-    pop.data[res.cd4_tm1_col] = 150
+    pop.data[res.cd4_tm1_col] = 100
     pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 0.2)
     pop.set_present_variable(col.MAX_CD4, 200)
     pop.set_present_variable(col.ON_DAR, False)
     pop.set_present_variable(col.ON_PREP, True)
 
     # check adjustments on ARV
-    # 6 + 0.2 * 6 = 12 >> 12 * 0.85 = 10.2
-    # 150 + 10.2 = 160.2 >> sqrt(160.2) + cd4_stdev_on_art * rng.normal() ** 2
-    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
-    assert sqrt(160.2) - res.cd4_stdev_on_art * 3 <= cd4 <= sqrt(160.2) + res.cd4_stdev_on_art * 3
-    assert isclose(delta, 10.2)
+    # 6 + 0.2 * 6 = 12 >> 12
+    # 100 + 12 = 112 >> new cd4 = (sqrt(112) + cd4_stdev_on_art * rng.normal()) ** 2
+    for i in range(N):
+        cd4, delta = res.calc_cd4_delta(pop.data.loc[i])
+        assert isclose(delta, 12)
+        assert sqrt(112) - res.cd4_stdev_on_art * 3 <= sqrt(cd4) <= sqrt(112) + res.cd4_stdev_on_art * 3
 
     pop.data[res.cd4_tm1_col] = 10000
     pop.set_present_variable(col.MAX_CD4, 100)
@@ -242,9 +247,10 @@ def test_calc_cd4_delta():
     # check max cd4 cap on ARV
     # 6 + 0.2 * 6 = 12 >> 12 * 0.7 = 8.4
     # 100 + rng.normal() * 50
-    cd4, delta = res.calc_cd4_delta(pop.data.loc[0])
-    assert 100 - 50 * 3 <= cd4 <= 100 + 50 * 3
-    assert isclose(delta, 8.4)
+    for i in range(N):
+        cd4, delta = res.calc_cd4_delta(pop.data.loc[i])
+        assert 100 - 50 * 3 <= cd4 <= 100 + 50 * 3
+        assert isclose(delta, 8.4)
 
 
 def test_calc_prob_new_mutation():

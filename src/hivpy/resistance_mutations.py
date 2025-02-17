@@ -364,7 +364,7 @@ class ResistanceMutationsModule:
         # changes for people on antiretroviral drugs
         if person[col.ON_PREP] or person[col.ON_ART]:
             # add cd4 variability
-            cd4 = np.sqrt(cd4) + self.cd4_stdev_on_art * rng.normal() ** 2
+            cd4 = (np.sqrt(cd4) + self.cd4_stdev_on_art * rng.normal()) ** 2
             # adjust cd4 according to max value
             if cd4 > person[col.MAX_CD4]:
                 cd4 = person[col.MAX_CD4] + rng.normal() * 50
