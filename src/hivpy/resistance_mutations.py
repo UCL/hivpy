@@ -223,13 +223,12 @@ class ResistanceMutationsModule:
         """
         pop.init_variable(col.RTTA_MUTATIONS, 0)        # only tams are tracked with integers
         pop.init_variable(col.RT184_MUTATION, False)
-        pop.init_variable(col.RT65_MUTATION, False)
         pop.init_variable(col.RT151_MUTATION, False)
+        pop.init_variable(col.RT65_MUTATION, False)
         pop.init_variable(col.RT103_MUTATION, False)
         pop.init_variable(col.RT181_MUTATION, False)
         pop.init_variable(col.RT190_MUTATION, False)
         pop.init_variable(col.PR32_MUTATION, False)
-        pop.init_variable(col.PR33_MUTATION, False)
         pop.init_variable(col.PR46_MUTATION, False)
         pop.init_variable(col.PR47_MUTATION, False)
         pop.init_variable(col.PR50L_MUTATION, False)
@@ -245,6 +244,7 @@ class ResistanceMutationsModule:
         pop.init_variable(col.IN148_MUTATION, False)
         pop.init_variable(col.IN155_MUTATION, False)
         pop.init_variable(col.IN263_MUTATION, False)
+        pop.init_variable(col.CA66_MUTATION, False)
 
     def get_all_matrix_indices(self, pop, sub_pop):
         """
