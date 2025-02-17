@@ -373,6 +373,102 @@ def test_rttams():
     assert all(pop.get_variable(col.RTTA_MUTATIONS) <= 6)
 
 
+def test_rt184m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 80% chance of rt184m
+    pop.set_present_variable(col.ON_3TC, True)
+    pop.set_present_variable(col.ON_ISL, False)
+    pop.set_present_variable(col.RT184_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT184_MUTATION, op.eq, True)]))
+    mean = N * 0.80
+    stdev = sqrt(mean * (1 - 0.80))
+    # expecting ~80% of the population to gain rt184m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_rt151m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 2% chance of rt151m
+    pop.set_present_variable(col.ON_ZDV, True)
+    pop.set_present_variable(col.RT151_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.risk_change_151_resist = 1
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT151_MUTATION, op.eq, True)]))
+    mean = N * 0.02
+    stdev = sqrt(mean * (1 - 0.02))
+    # expecting ~2% of the population to gain rt151m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_rt65m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 2% chance of rt65m
+    pop.set_present_variable(col.ON_TEN, True)
+    pop.set_present_variable(col.ON_ZDV, True)
+    pop.set_present_variable(col.RT65_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, True)]))
+    mean = N * 0.02
+    stdev = sqrt(mean * (1 - 0.02))
+    # expecting ~2% of the population to gain rt65m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    # 30% chance of rt65m
+    res.ten_resist_rate = 0.3
+    pop.set_present_variable(col.ON_ZDV, False)
+    pop.set_present_variable(col.RT65_MUTATION, False)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, True)]))
+    mean = N * 0.30
+    stdev = sqrt(mean * (1 - 0.30))
+    # expecting ~30% of the population to gain rt65m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
 def test_update_resistance():
     N = 100
     time_step = timedelta(months=1)
