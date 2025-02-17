@@ -158,6 +158,11 @@ class timedelta:
         month = (self.month + x.month) % 12
         return timedelta(years=year, months=month)
 
+    def __sub__(self, x):
+        year = self.year - x.year + (self.month - x.month) // 12
+        month = (self.month - x.month) % 12
+        return timedelta(years=year, months=month)
+
     def __repr__(self) -> str:
         return f"dt({self.year, self.month, 0})"
 
