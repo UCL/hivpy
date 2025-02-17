@@ -314,6 +314,65 @@ def test_calc_prob_new_mutation():
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.035)
 
 
+def test_rttams():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 21% chance of new tams
+    pop.set_present_variable(col.ON_ZDV, True)
+    pop.set_present_variable(col.ON_3TC, False)
+    pop.set_present_variable(col.RTTA_MUTATIONS, 0)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.risk_change_tams_resist = 1
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+                res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 1)]))
+    mean = N * 0.20
+    stdev = sqrt(mean * (1 - 0.20))
+    # expecting ~20% of the population to gain one mutation
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 2)]))
+    mean = N * 0.01
+    stdev = sqrt(mean * (1 - 0.01))
+    # expecting ~1% of the population to gain two mutations
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    # 13% chance of new tams
+    pop.set_present_variable(col.ON_ZDV, True)
+    pop.set_present_variable(col.ON_3TC, True)
+    pop.set_present_variable(col.RTTA_MUTATIONS, 0)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 1)]))
+    mean = N * 0.12
+    stdev = sqrt(mean * (1 - 0.12))
+    # expecting ~12% of the population to gain one mutation
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 2)]))
+    mean = N * 0.01
+    stdev = sqrt(mean * (1 - 0.01))
+    # expecting ~1% of the population to gain two mutations
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    pop.set_present_variable(col.RTTA_MUTATIONS, [5, 6] * (N // 2))
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    # check that the tams cap is not exceeded
+    assert all(pop.get_variable(col.RTTA_MUTATIONS) <= 6)
+
+
 def test_update_resistance():
     N = 100
     time_step = timedelta(months=1)
