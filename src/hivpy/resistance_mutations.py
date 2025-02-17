@@ -288,9 +288,9 @@ class ResistanceMutationsModule:
 
         return active_drug_index, cont_on_art_tm1_index, adherence_index, adherence_tm1_index
 
-    def update_viral_load_ART(self, pop: Population, sub_pop):
+    def update_viral_load_art(self, pop: Population, sub_pop):
         """
-        Update viral load for HIV+ individuals.
+        Update viral load in HIV+ individuals.
         """
         # get viral load outcomes
         viral_load = pop.apply_function(self.calc_viral_load, 1, sub_pop)
@@ -312,9 +312,9 @@ class ResistanceMutationsModule:
 
         return viral_load
 
-    def update_cd4_ART(self, pop: Population, sub_pop):
+    def update_cd4_art(self, pop: Population, sub_pop):
         """
-        Update CD4 count for HIV+ individuals.
+        Update CD4 count in HIV+ individuals.
         """
         # FIXME: is there a better way to pass the the cd4_tm1 column string to calc_cd4_delta?
         self.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
@@ -371,9 +371,9 @@ class ResistanceMutationsModule:
 
         return cd4, cd4_delta
 
-    def calculate_new_mutations(self, pop: Population, sub_pop):
+    def update_new_mutations_arising_art(self, pop: Population, sub_pop):
         """
-        Update resistance mutations for HIV+ individuals.
+        Update new resistance mutations arising in HIV+ individuals.
         """
         # FIXME: is there a better way to pass the the viral_load column strings to calc_prob_new_mutation?
         self.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
@@ -417,6 +417,6 @@ class ResistanceMutationsModule:
             pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
 
             # update values
-            self.update_viral_load_ART(pop, infected_pop)
-            self.update_cd4_ART(pop, infected_pop)
-            self.calculate_new_mutations(pop, infected_pop)
+            self.update_viral_load_art(pop, infected_pop)
+            self.update_cd4_art(pop, infected_pop)
+            self.update_new_mutations_arising_art(pop, infected_pop)
