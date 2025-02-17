@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import importlib.resources
 import operator as op
 
 import numpy as np
@@ -12,37 +13,44 @@ import numpy as np
 import hivpy.column_names as col
 
 from .common import COND, SexType, rng, timedelta
+from .resistance_mutations_data import ResistanceMutationsData
 
 
 class ResistanceMutationsModule:
 
     def __init__(self):
+
+        # init resistance data
+        with importlib.resources.path("hivpy.data", "resistance_mutations.yaml") as data_path:
+            self.rm_data = ResistanceMutationsData(data_path)
+
         # matrix indexing boundaries
         self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
         self.cont_on_art_bins = [timedelta(months=3).years(), timedelta(months=6).years()]
         self.adherence_bins = [0.5, 0.8]
 
         # factors affecting change in viral load
-        self.min_vl_on_art = 1.0
-        self.vl_stdev_on_art = 0.5
+        self.min_vl_on_art = self.rm_data.min_vl_on_art
+        self.vl_stdev_on_art = self.rm_data.vl_stdev_on_art
 
         # factors affecting change in cd4 count
         self.hindered_cd4_recovery = round(-6 + (3 * rng.normal()))  # FIXME: dependent on time step length
         self.failed_insti_hinders_cd4_recovery = rng.choice([True, False])
-        self.cd4_recovery_pi_factor = 3
-        self.cd4_recovery_female_factor = 2
-        self.cd4_stdev_on_art = 1.2  # on a sqrt scale
+        self.cd4_recovery_pi_factor = self.rm_data.cd4_recovery_pi_factor
+        self.cd4_recovery_female_factor = self.rm_data.cd4_recovery_female_factor
+        self.cd4_stdev_on_art = self.rm_data.cd4_stdev_on_art
 
         # factors affecting acquisition of new mutations
-        self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
-        self.risk_change_tams = 1
-        self.risk_change_151 = 1
-        self.ten_resist_rate = rng.choice([0.1, 0.2, 0.3])  # FIXME: dependent on time step length
-        self.dol_resist_rate = rng.choice([0.005, 0.010, 0.015])  # FIXME: dependent on time step length
-        self.len_resist_rate = rng.choice([0.005, 0.010, 0.020, 0.050])  # FIXME: dependent on time step length
-        self.incr_len_resist = 10
-        self.cab_resist_factor = rng.choice([1.0, 1.5, 2.0])
-        self.risk_change_cab_resist = rng.choice([1, 3, 5, 10, 20, 50])
+        self.mutation_risk_change = self.rm_data.mutation_risk_change.sample()
+        self.risk_change_tams_resist = self.rm_data.risk_change_tams_resist
+        self.risk_change_151_resist = self.rm_data.risk_change_151_resist
+        # FIXME: resistance rates dependent on time step length
+        self.ten_resist_rate = self.rm_data.ten_resist_rate.sample()
+        self.dol_resist_rate = self.rm_data.dol_resist_rate.sample()
+        self.len_resist_rate = self.rm_data.len_resist_rate.sample()
+        self.incr_len_resist = self.rm_data.incr_len_resist
+        self.cab_resist_factor = self.rm_data.cab_resist_factor.sample()
+        self.risk_change_cab_resist = self.rm_data.risk_change_cab_resist.sample()
 
         # viral_load_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
