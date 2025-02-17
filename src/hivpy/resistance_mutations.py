@@ -420,7 +420,7 @@ class ResistanceMutationsModule:
 
             # rt65m
             k65 = pop.transform_group([col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
-                                       self.calc_rt65m_outcomes, sub_pop=possible_mutation_pop)
+                                      self.calc_rt65m_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.RT65_MUTATION, k65, possible_mutation_pop)
 
             # tally up all mutations
