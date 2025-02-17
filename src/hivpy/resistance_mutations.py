@@ -408,6 +408,21 @@ class ResistanceMutationsModule:
                                        self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
+            # rt184m
+            m184 = pop.transform_group([col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
+                                       self.calc_rt184m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.RT184_MUTATION, m184, possible_mutation_pop)
+
+            # rt151m
+            q151 = pop.transform_group([col.ON_ZDV, col.RT151_MUTATION],
+                                       self.calc_rt151m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.RT151_MUTATION, q151, possible_mutation_pop)
+
+            # rt65m
+            k65 = pop.transform_group([col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
+                                       self.calc_rt65m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.RT65_MUTATION, k65, possible_mutation_pop)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -449,6 +464,37 @@ class ResistanceMutationsModule:
         tams[tams > 6] = 6
 
         return tams
+
+    def calc_rt184m_outcomes(self, on_3tc, on_isl, rt184m, size):
+        """
+        Returns RT gene M184 mutation outcomes.
+        """
+        prob_mutation = 0.8 if on_3tc and not rt184m else 0
+        m184_mutations = rng.uniform(size=size) < prob_mutation
+
+        prob_mutation = 0.1 if on_isl and not rt184m else 0
+        m184_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return m184_mutations
+
+    def calc_rt151m_outcomes(self, on_zdv, rt151m, size):
+        """
+        Returns RT gene Q151 mutation outcomes.
+        """
+        prob_mutation = 0.02 if on_zdv and not rt151m else 0
+        q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
+
+        return q151_mutations
+
+    def calc_rt65m_outcomes(self, on_ten, on_zdv, rt65m, size):
+        """
+        Returns RT gene K65 mutation outcomes.
+        """
+        r = rng.uniform(size=size)
+        prob_mutation = 0.02 if on_ten and not rt65m else 0
+        k65_mutations = r < prob_mutation if on_zdv else r < self.ten_resist_rate
+
+        return k65_mutations
 
     def calc_total_mutations(self, person):
         """
