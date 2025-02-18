@@ -423,6 +423,21 @@ class ResistanceMutationsModule:
                                       self.calc_rt65m_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.RT65_MUTATION, k65, possible_mutation_pop)
 
+            # rt103m, rt181m, and rt190m (nnrti mutations)
+            k103 = pop.transform_group([col.ON_NEV, col.ON_EFA,
+                                        col.RT181_MUTATION, col.RT190_MUTATION],
+                                       self.calc_rt103m_outcomes, sub_pop=possible_mutation_pop)
+            y181 = pop.transform_group([col.ON_NEV, col.ON_EFA,
+                                        col.RT103_MUTATION, col.RT190_MUTATION],
+                                       self.calc_rt181m_outcomes, sub_pop=possible_mutation_pop)
+            g190 = pop.transform_group([col.ON_NEV, col.ON_EFA,
+                                        col.RT103_MUTATION, col.RT181_MUTATION],
+                                       self.calc_rt190m_outcomes, sub_pop=possible_mutation_pop)
+
+            pop.set_present_variable(col.RT103_MUTATION, k103, possible_mutation_pop)
+            pop.set_present_variable(col.RT181_MUTATION, y181, possible_mutation_pop)
+            pop.set_present_variable(col.RT190_MUTATION, g190, possible_mutation_pop)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -495,6 +510,48 @@ class ResistanceMutationsModule:
         k65_mutations = r < prob_mutation if on_zdv else r < self.ten_resist_rate
 
         return k65_mutations
+
+    def calc_rt103m_outcomes(self, on_nev, on_efa, rt181m, rt190m, size):
+        """
+        Returns RT gene K103 mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = 0.2 if on_nev and not rt181m and not rt190m else 0
+        k103_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = 0.6 if on_efa and not rt181m and not rt190m else 0
+        k103_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return k103_mutations
+
+    def calc_rt181m_outcomes(self, on_nev, on_efa, rt103m, rt190m, size):
+        """
+        Returns RT gene Y181 mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = 0.4 if on_nev and not rt103m and not rt190m else 0
+        y181_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = 0.1 if on_efa and not rt103m and not rt190m else 0
+        y181_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return y181_mutations
+
+    def calc_rt190m_outcomes(self, on_nev, on_efa, rt103m, rt181m, size):
+        """
+        Returns RT gene G190 mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = 0.2 if on_nev and not rt103m and not rt181m else 0
+        g190_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = 0.1 if on_efa and not rt103m and not rt181m else 0
+        g190_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return g190_mutations
 
     def calc_total_mutations(self, person):
         """
