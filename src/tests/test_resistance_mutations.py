@@ -469,6 +469,93 @@ def test_rt65m():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
 
+def test_rt103m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 68% chance of rt103m
+    pop.set_present_variable(col.ON_NEV, True)
+    pop.set_present_variable(col.ON_EFA, True)
+    pop.set_present_variable(col.RT181_MUTATION, False)
+    pop.set_present_variable(col.RT190_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT103_MUTATION, op.eq, True)]))
+    mean = N * 0.68
+    stdev = sqrt(mean * (1 - 0.68))
+    # expecting ~68% of the population to gain rt103m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_rt181m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 46% chance of rt181m
+    pop.set_present_variable(col.ON_NEV, True)
+    pop.set_present_variable(col.ON_EFA, True)
+    pop.set_present_variable(col.RT103_MUTATION, False)
+    pop.set_present_variable(col.RT190_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT181_MUTATION, op.eq, True)]))
+    mean = N * 0.46
+    stdev = sqrt(mean * (1 - 0.46))
+    # expecting ~46% of the population to gain rt181m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_rt190m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # 28% chance of rt190m
+    pop.set_present_variable(col.ON_NEV, True)
+    pop.set_present_variable(col.ON_EFA, True)
+    pop.set_present_variable(col.RT103_MUTATION, False)
+    pop.set_present_variable(col.RT181_MUTATION, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.RT190_MUTATION, op.eq, True)]))
+    mean = N * 0.28
+    stdev = sqrt(mean * (1 - 0.28))
+    # expecting ~28% of the population to gain rt190m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
 def test_update_resistance():
     N = 100
     time_step = timedelta(months=1)
