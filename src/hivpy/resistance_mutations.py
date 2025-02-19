@@ -464,6 +464,16 @@ class ResistanceMutationsModule:
                                        self.calc_pr50vm_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.PR50V_MUTATION, p50v, possible_mutation_pop)
 
+            # pr54m
+            p54 = pop.transform_group([col.ON_LPR, col.ON_DAR],
+                                      self.calc_pr54m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR54_MUTATION, p54, possible_mutation_pop)
+
+            # pr76m
+            p76 = pop.transform_group([col.ON_LPR, col.ON_DAR],
+                                      self.calc_pr76m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR76_MUTATION, p76, possible_mutation_pop)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -623,6 +633,34 @@ class ResistanceMutationsModule:
         p50v_mutations = rng.uniform(size=size) < prob_mutation
 
         return p50v_mutations
+
+    def calc_pr54m_outcomes(self, on_lpr, on_dar, size):
+        """
+        Returns PR gene P54 mutation outcomes.
+        """
+        # outcomes on lpr
+        prob_mutation = 0.02 if on_lpr else 0
+        p54_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on dar
+        prob_mutation = 0.01 if on_dar else 0
+        p54_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p54_mutations
+
+    def calc_pr76m_outcomes(self, on_lpr, on_dar, size):
+        """
+        Returns PR gene P76 mutation outcomes.
+        """
+        # outcomes on lpr
+        prob_mutation = 0.02 if on_lpr else 0
+        p76_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on dar
+        prob_mutation = 0.01 if on_dar else 0
+        p76_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p76_mutations
 
     def calc_total_mutations(self, person):
         """
