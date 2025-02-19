@@ -631,6 +631,56 @@ def test_pr47m():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
 
+def test_pr50lm():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    pop.set_present_variable(col.ON_TAZ, True)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.PR50L_MUTATION, op.eq, True)]))
+    mean = N * 0.03
+    stdev = sqrt(mean * (1 - 0.03))
+    # expecting ~3% of the population to gain pr50lm
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_pr50vm():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    pop.set_present_variable(col.ON_DAR, True)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.PR50V_MUTATION, op.eq, True)]))
+    mean = N * 0.01
+    stdev = sqrt(mean * (1 - 0.01))
+    # expecting ~1% of the population to gain pr50vm
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
 def test_update_resistance():
     N = 100
     time_step = timedelta(months=1)
