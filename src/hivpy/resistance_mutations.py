@@ -403,6 +403,7 @@ class ResistanceMutationsModule:
         # people who may develop a new mutation
         possible_mutation_pop = pop.apply_bool_mask(possible_mutations, sub_pop)
         if len(possible_mutation_pop) > 0:
+
             # tams
             tams = pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
                                        self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
@@ -437,6 +438,21 @@ class ResistanceMutationsModule:
             pop.set_present_variable(col.RT103_MUTATION, k103, possible_mutation_pop)
             pop.set_present_variable(col.RT181_MUTATION, y181, possible_mutation_pop)
             pop.set_present_variable(col.RT190_MUTATION, g190, possible_mutation_pop)
+
+            # pr32m
+            p32 = pop.transform_group([col.ON_LPR],
+                                      self.calc_pr32m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR32_MUTATION, p32, possible_mutation_pop)
+
+            # pr46m
+            p46 = pop.transform_group([col.ON_LPR],
+                                      self.calc_pr46m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR46_MUTATION, p46, possible_mutation_pop)
+
+            # pr47m
+            p47 = pop.transform_group([col.ON_LPR],
+                                      self.calc_pr47m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR47_MUTATION, p47, possible_mutation_pop)
 
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
@@ -552,6 +568,33 @@ class ResistanceMutationsModule:
         g190_mutations |= rng.uniform(size=size) < prob_mutation
 
         return g190_mutations
+
+    def calc_pr32m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P32 mutation outcomes.
+        """
+        prob_mutation = 0.01 if on_lpr else 0
+        p32_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p32_mutations
+
+    def calc_pr46m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P46 mutation outcomes.
+        """
+        prob_mutation = 0.02 if on_lpr else 0
+        p46_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p46_mutations
+
+    def calc_pr47m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P47 mutation outcomes.
+        """
+        prob_mutation = 0.01 if on_lpr else 0
+        p47_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p47_mutations
 
     def calc_total_mutations(self, person):
         """
