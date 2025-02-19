@@ -474,6 +474,21 @@ class ResistanceMutationsModule:
                                       self.calc_pr76m_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.PR76_MUTATION, p76, possible_mutation_pop)
 
+            # pr82m
+            p82 = pop.transform_group([col.ON_LPR],
+                                      self.calc_pr82m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR82_MUTATION, p82, possible_mutation_pop)
+
+            # pr84m
+            p84 = pop.transform_group([col.ON_DAR, col.ON_TAZ],
+                                      self.calc_pr84m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR84_MUTATION, p84, possible_mutation_pop)
+
+            # pr88m
+            p88 = pop.transform_group([col.ON_TAZ],
+                                      self.calc_pr88m_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR88_MUTATION, p88, possible_mutation_pop)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -661,6 +676,38 @@ class ResistanceMutationsModule:
         p76_mutations |= rng.uniform(size=size) < prob_mutation
 
         return p76_mutations
+
+    def calc_pr82m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P82 mutation outcomes.
+        """
+        prob_mutation = 0.02 if on_lpr else 0
+        p82_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p82_mutations
+
+    def calc_pr84m_outcomes(self, on_dar, on_taz, size):
+        """
+        Returns PR gene P84 mutation outcomes.
+        """
+        # outcomes on dar
+        prob_mutation = 0.01 if on_dar else 0
+        p84_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on taz
+        prob_mutation = 0.03 if on_taz else 0
+        p84_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p84_mutations
+
+    def calc_pr88m_outcomes(self, on_taz, size):
+        """
+        Returns PR gene P88 mutation outcomes.
+        """
+        prob_mutation = 0.03 if on_taz else 0
+        p88_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p88_mutations
 
     def calc_total_mutations(self, person):
         """
