@@ -454,6 +454,16 @@ class ResistanceMutationsModule:
                                       self.calc_pr47m_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.PR47_MUTATION, p47, possible_mutation_pop)
 
+            # pr50lm
+            p50l = pop.transform_group([col.ON_TAZ],
+                                       self.calc_pr50lm_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR50L_MUTATION, p50l, possible_mutation_pop)
+
+            # pr50vm
+            p50v = pop.transform_group([col.ON_DAR],
+                                       self.calc_pr50vm_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.PR50V_MUTATION, p50v, possible_mutation_pop)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -595,6 +605,24 @@ class ResistanceMutationsModule:
         p47_mutations = rng.uniform(size=size) < prob_mutation
 
         return p47_mutations
+
+    def calc_pr50lm_outcomes(self, on_taz, size):
+        """
+        Returns PR gene P50L mutation outcomes.
+        """
+        prob_mutation = 0.03 if on_taz else 0
+        p50l_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p50l_mutations
+
+    def calc_pr50vm_outcomes(self, on_dar, size):
+        """
+        Returns PR gene P50V mutation outcomes.
+        """
+        prob_mutation = 0.01 if on_dar else 0
+        p50v_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p50v_mutations
 
     def calc_total_mutations(self, person):
         """
