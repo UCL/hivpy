@@ -6,6 +6,7 @@ import pytest
 import hivpy.column_names as col
 from hivpy.common import AND, COND, SexType, date, rng, timedelta
 from hivpy.population import Population
+from hivpy.resistance_mutations import MutationStatus
 
 
 @pytest.fixture(autouse=True)
@@ -385,7 +386,7 @@ def test_rt184m():
     # 80% chance of rt184m
     pop.set_present_variable(col.ON_3TC, True)
     pop.set_present_variable(col.ON_ISL, False)
-    pop.set_present_variable(col.RT184_MUTATION, False)
+    pop.set_present_variable(col.RT184_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -394,7 +395,7 @@ def test_rt184m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT184_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT184_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.80
     stdev = sqrt(mean * (1 - 0.80))
     # expecting ~80% of the population to gain rt184m
@@ -412,7 +413,7 @@ def test_rt151m():
     pop.set_present_variable(col.VIRAL_LOAD, 10)
     # 2% chance of rt151m
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT151_MUTATION, False)
+    pop.set_present_variable(col.RT151_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -422,7 +423,7 @@ def test_rt151m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT151_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT151_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
     stdev = sqrt(mean * (1 - 0.02))
     # expecting ~2% of the population to gain rt151m
@@ -441,7 +442,7 @@ def test_rt65m():
     # 2% chance of rt65m
     pop.set_present_variable(col.ON_TEN, True)
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT65_MUTATION, False)
+    pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -450,7 +451,7 @@ def test_rt65m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
     stdev = sqrt(mean * (1 - 0.02))
     # expecting ~2% of the population to gain rt65m
@@ -459,10 +460,10 @@ def test_rt65m():
     # 30% chance of rt65m
     res.ten_resist_rate = 0.3
     pop.set_present_variable(col.ON_ZDV, False)
-    pop.set_present_variable(col.RT65_MUTATION, False)
+    pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.30
     stdev = sqrt(mean * (1 - 0.30))
     # expecting ~30% of the population to gain rt65m
@@ -481,8 +482,8 @@ def test_rt103m():
     # 68% chance of rt103m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
-    pop.set_present_variable(col.RT181_MUTATION, False)
-    pop.set_present_variable(col.RT190_MUTATION, False)
+    pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
+    pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -491,7 +492,7 @@ def test_rt103m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT103_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT103_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.68
     stdev = sqrt(mean * (1 - 0.68))
     # expecting ~68% of the population to gain rt103m
@@ -510,8 +511,8 @@ def test_rt181m():
     # 46% chance of rt181m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
-    pop.set_present_variable(col.RT103_MUTATION, False)
-    pop.set_present_variable(col.RT190_MUTATION, False)
+    pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
+    pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -520,7 +521,7 @@ def test_rt181m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT181_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT181_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.46
     stdev = sqrt(mean * (1 - 0.46))
     # expecting ~46% of the population to gain rt181m
@@ -539,8 +540,8 @@ def test_rt190m():
     # 28% chance of rt190m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
-    pop.set_present_variable(col.RT103_MUTATION, False)
-    pop.set_present_variable(col.RT181_MUTATION, False)
+    pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
+    pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -549,7 +550,7 @@ def test_rt190m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.RT190_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.RT190_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.28
     stdev = sqrt(mean * (1 - 0.28))
     # expecting ~28% of the population to gain rt190m
@@ -574,7 +575,7 @@ def test_pr32m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR32_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR32_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
     stdev = sqrt(mean * (1 - 0.01))
     # expecting ~1% of the population to gain pr32m
@@ -599,7 +600,7 @@ def test_pr46m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR46_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR46_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
     stdev = sqrt(mean * (1 - 0.02))
     # expecting ~2% of the population to gain pr46m
@@ -624,7 +625,7 @@ def test_pr47m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR47_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR47_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
     stdev = sqrt(mean * (1 - 0.01))
     # expecting ~1% of the population to gain pr47m
@@ -649,7 +650,7 @@ def test_pr50lm():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR50L_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR50L_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
     stdev = sqrt(mean * (1 - 0.03))
     # expecting ~3% of the population to gain pr50lm
@@ -674,7 +675,7 @@ def test_pr50vm():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR50V_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR50V_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
     stdev = sqrt(mean * (1 - 0.01))
     # expecting ~1% of the population to gain pr50vm
@@ -700,7 +701,7 @@ def test_pr54m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR54_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR54_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
     stdev = sqrt(mean * (1 - 0.03))
     # expecting ~3% of the population to gain pr54m
@@ -726,7 +727,7 @@ def test_pr76m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR76_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR76_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
     stdev = sqrt(mean * (1 - 0.03))
     # expecting ~3% of the population to gain pr76m
@@ -751,7 +752,7 @@ def test_pr82m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR82_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR82_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
     stdev = sqrt(mean * (1 - 0.02))
     # expecting ~2% of the population to gain pr82m
@@ -777,7 +778,7 @@ def test_pr84m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR84_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR84_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.04
     stdev = sqrt(mean * (1 - 0.04))
     # expecting ~4% of the population to gain pr84m
@@ -802,7 +803,7 @@ def test_pr88m():
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    mutated = len(pop.get_sub_pop([(col.PR88_MUTATION, op.eq, True)]))
+    mutated = len(pop.get_sub_pop([(col.PR88_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
     stdev = sqrt(mean * (1 - 0.03))
     # expecting ~3% of the population to gain pr88m
@@ -839,6 +840,9 @@ def test_update_resistance():
                                    COND(col.CD4, op.ge, 0))))
     assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==
                pop.get_sub_pop(COND(col.CD4_DELTA, op.ne, 0)))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                   COND(col.RESISTANCE_MUTATIONS, op.ge, 0))))
 
     # check that nothing changes for people without HIV
     assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
@@ -849,3 +853,6 @@ def test_update_resistance():
                                    COND(col.CD4, op.eq, 0))))
     assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
                pop.get_sub_pop(COND(col.CD4_DELTA, op.eq, 0)))
+    assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False)) ==
+               pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, False),
+                                   COND(col.RESISTANCE_MUTATIONS, op.eq, 0))))
