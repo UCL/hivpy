@@ -423,7 +423,7 @@ class ResistanceMutationsModule:
             pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
             # calculate and set a new majority mutation
-            def set_new_majority_mutation(mutation_col: str, drug_cols: list[str], calc_func: function):
+            def set_new_majority_mutation(mutation_col: str, drug_cols: list[str], calc_func):
                 # find people undergoing a given mutation this time step
                 mutation_mask = pop.transform_group(drug_cols, calc_func, sub_pop=possible_mutation_pop)
                 mutation_pop = pop.apply_bool_mask(mutation_mask, possible_mutation_pop)
