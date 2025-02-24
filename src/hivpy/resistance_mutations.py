@@ -422,38 +422,34 @@ class ResistanceMutationsModule:
                                        self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
             pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
-            # rt184m
-            m184 = pop.transform_group([col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
-                                       self.calc_rt184m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(m184, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT184_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(m184, possible_mutation_pop))
+            # calculate and set a new majority mutation
+            def set_new_majority_mutation(mutation_col: str, drug_cols: list[str], calc_func: function):
+                # find people undergoing a given mutation this time step
+                mutation_mask = pop.transform_group(drug_cols, calc_func, sub_pop=possible_mutation_pop)
+                mutation_pop = pop.apply_bool_mask(mutation_mask, possible_mutation_pop)
+                # set outcomes
+                if len(mutation_pop) > 0:
+                    pop.set_present_variable(mutation_col, MutationStatus.Majority, mutation_pop)
 
-            # rt151m
-            q151 = pop.transform_group([col.ON_ZDV, col.RT151_MUTATION],
-                                       self.calc_rt151m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(q151, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT151_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(q151, possible_mutation_pop))
+            # m184
+            set_new_majority_mutation(col.RT184_MUTATION, [col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
+                                      self.calc_rt184m_outcomes)
+            # q151
+            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV, col.RT151_MUTATION],
+                                      self.calc_rt151m_outcomes)
+            # k65
+            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
+                                      self.calc_rt65m_outcomes)
 
-            # rt65m
-            k65 = pop.transform_group([col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
-                                      self.calc_rt65m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(k65, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(k65, possible_mutation_pop))
-
-            # rt103m, rt181m, and rt190m (nnrti mutations)
-            k103 = pop.transform_group([col.ON_NEV, col.ON_EFA,
-                                        col.RT181_MUTATION, col.RT190_MUTATION],
+            # k103, y181, and g190 (nnrti mutations)
+            k103 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
                                        self.calc_rt103m_outcomes, sub_pop=possible_mutation_pop)
-            y181 = pop.transform_group([col.ON_NEV, col.ON_EFA,
-                                        col.RT103_MUTATION, col.RT190_MUTATION],
+            y181 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT190_MUTATION],
                                        self.calc_rt181m_outcomes, sub_pop=possible_mutation_pop)
-            g190 = pop.transform_group([col.ON_NEV, col.ON_EFA,
-                                        col.RT103_MUTATION, col.RT181_MUTATION],
+            g190 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT181_MUTATION],
                                        self.calc_rt190m_outcomes, sub_pop=possible_mutation_pop)
-
+            # make all calculations before setting outcomes to prevent changes
+            # this time step from affecting each other
             if len(pop.apply_bool_mask(k103, possible_mutation_pop)) > 0:
                 pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority,
                                          pop.apply_bool_mask(k103, possible_mutation_pop))
@@ -464,75 +460,26 @@ class ResistanceMutationsModule:
                 pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority,
                                          pop.apply_bool_mask(g190, possible_mutation_pop))
 
-            # pr32m
-            p32 = pop.transform_group([col.ON_LPR],
-                                      self.calc_pr32m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p32, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR32_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p32, possible_mutation_pop))
-
-            # pr46m
-            p46 = pop.transform_group([col.ON_LPR],
-                                      self.calc_pr46m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p46, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR46_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p46, possible_mutation_pop))
-
-            # pr47m
-            p47 = pop.transform_group([col.ON_LPR],
-                                      self.calc_pr47m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p47, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR47_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p47, possible_mutation_pop))
-
-            # pr50lm
-            p50l = pop.transform_group([col.ON_TAZ],
-                                       self.calc_pr50lm_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p50l, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR50L_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p50l, possible_mutation_pop))
-
-            # pr50vm
-            p50v = pop.transform_group([col.ON_DAR],
-                                       self.calc_pr50vm_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p50v, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR50V_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p50v, possible_mutation_pop))
-
-            # pr54m
-            p54 = pop.transform_group([col.ON_LPR, col.ON_DAR],
-                                      self.calc_pr54m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p54, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR54_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p54, possible_mutation_pop))
-
-            # pr76m
-            p76 = pop.transform_group([col.ON_LPR, col.ON_DAR],
-                                      self.calc_pr76m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p76, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR76_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p76, possible_mutation_pop))
-
-            # pr82m
-            p82 = pop.transform_group([col.ON_LPR],
-                                      self.calc_pr82m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p82, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR82_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p82, possible_mutation_pop))
-
-            # pr84m
-            p84 = pop.transform_group([col.ON_DAR, col.ON_TAZ],
-                                      self.calc_pr84m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p84, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR84_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p84, possible_mutation_pop))
-
-            # pr88m
-            p88 = pop.transform_group([col.ON_TAZ],
-                                      self.calc_pr88m_outcomes, sub_pop=possible_mutation_pop)
-            if len(pop.apply_bool_mask(p88, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.PR88_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(p88, possible_mutation_pop))
+            # p32
+            set_new_majority_mutation(col.PR32_MUTATION, [col.ON_LPR], self.calc_pr32m_outcomes)
+            # p46
+            set_new_majority_mutation(col.PR46_MUTATION, [col.ON_LPR], self.calc_pr46m_outcomes)
+            # p47
+            set_new_majority_mutation(col.PR47_MUTATION, [col.ON_LPR], self.calc_pr47m_outcomes)
+            # p50l
+            set_new_majority_mutation(col.PR50L_MUTATION, [col.ON_TAZ], self.calc_pr50lm_outcomes)
+            # p50v
+            set_new_majority_mutation(col.PR50V_MUTATION, [col.ON_DAR], self.calc_pr50vm_outcomes)
+            # p54
+            set_new_majority_mutation(col.PR54_MUTATION, [col.ON_LPR, col.ON_DAR], self.calc_pr54m_outcomes)
+            # p76
+            set_new_majority_mutation(col.PR76_MUTATION, [col.ON_LPR, col.ON_DAR], self.calc_pr76m_outcomes)
+            # p82
+            set_new_majority_mutation(col.PR82_MUTATION, [col.ON_LPR], self.calc_pr82m_outcomes)
+            # p84
+            set_new_majority_mutation(col.PR84_MUTATION, [col.ON_DAR, col.ON_TAZ], self.calc_pr84m_outcomes)
+            # p88
+            set_new_majority_mutation(col.PR88_MUTATION, [col.ON_TAZ], self.calc_pr88m_outcomes)
 
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
