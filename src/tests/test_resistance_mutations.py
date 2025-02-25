@@ -615,7 +615,7 @@ def test_nnrtim():
             else:
                 assert all(pop.get_variable(col.RT181_MUTATION) == MutationStatus.Absent)
 
-    # 0% chance of rt190m
+    # 0% chance of rt190m if rt103m or rt181m are present in majority
     for RT103_status in MutationStatus:
         for RT181_status in MutationStatus:
             pop.set_present_variable(col.RT103_MUTATION, RT103_status)
