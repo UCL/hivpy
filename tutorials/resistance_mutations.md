@@ -4,6 +4,10 @@ The resistance mutations module tracks viral load, CD4 count, and HIV resistance
 
 - `src/hivpy/resistance_mutations.py` - The resistance mutations module.
 - `src/tests/test_resistance_mutations.py` - Tests for the resistance mutations module.
+- `src/hivpy/data/resistance_mutations.yaml` - Resistance mutations data and variables.
+- `src/hivpy/resistance_mutations_data.py` - A class for storing data loaded from `resistance_mutations.yaml`.
+
+If there are any mutation-related variables you would like to change before running your simulation, please change them in `resistance_mutations.yaml`.
 
 ### Module Overview
 

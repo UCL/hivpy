@@ -5,36 +5,75 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .population import Population
 
+import importlib.resources
 import operator as op
+from enum import IntEnum
 
 import numpy as np
 
 import hivpy.column_names as col
 
 from .common import COND, SexType, rng, timedelta
+from .resistance_mutations_data import ResistanceMutationsData
+
+
+class MutationStatus(IntEnum):
+    Majority = 0
+    Minority = 1    # once a mutation is present,
+    Absent = 2      # it can never be absent again
 
 
 class ResistanceMutationsModule:
 
     def __init__(self):
+
+        # init resistance data
+        with importlib.resources.path("hivpy.data", "resistance_mutations.yaml") as data_path:
+            self.rm_data = ResistanceMutationsData(data_path)
+
         # matrix indexing boundaries
         self.active_drug_bins = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3]
         self.cont_on_art_bins = [timedelta(months=3).years(), timedelta(months=6).years()]
         self.adherence_bins = [0.5, 0.8]
 
         # factors affecting change in viral load
-        self.min_vl_on_art = 1.0
-        self.vl_stdev_on_art = 0.5
+        self.min_vl_on_art = self.rm_data.min_vl_on_art
+        self.vl_stdev_on_art = self.rm_data.vl_stdev_on_art
 
         # factors affecting change in cd4 count
         self.hindered_cd4_recovery = round(-6 + (3 * rng.normal()))  # FIXME: dependent on time step length
         self.failed_insti_hinders_cd4_recovery = rng.choice([True, False])
-        self.cd4_recovery_pi_factor = 3
-        self.cd4_recovery_female_factor = 2
-        self.cd4_stdev_on_art = 1.2  # on a sqrt scale
+        self.cd4_recovery_pi_factor = self.rm_data.cd4_recovery_pi_factor
+        self.cd4_recovery_female_factor = self.rm_data.cd4_recovery_female_factor
+        self.cd4_stdev_on_art = self.rm_data.cd4_stdev_on_art
 
         # factors affecting acquisition of new mutations
-        self.mutation_risk_change = rng.choice([0.5, 1, 2], p=[0.1, 0.8, 0.1])
+        self.mutation_risk_change = self.rm_data.mutation_risk_change.sample()
+        self.risk_change_tams_resist = self.rm_data.risk_change_tams_resist
+        self.risk_change_151_resist = self.rm_data.risk_change_151_resist
+        self.risk_change_cab_resist = self.rm_data.risk_change_cab_resist.sample()
+
+        # FIXME: resistance rates dependent on time step length
+        self.resist_rate_tams_higher = self.rm_data.resist_rate_tams_higher
+        self.resist_rate_tams_lower = self.rm_data.resist_rate_tams_lower
+        self.resist_rate_nev_higher = self.rm_data.resist_rate_nev_higher
+        self.resist_rate_nev_lower = self.rm_data.resist_rate_nev_lower
+        self.resist_rate_efa_higher = self.rm_data.resist_rate_efa_higher
+        self.resist_rate_efa_lower = self.rm_data.resist_rate_efa_lower
+        self.resist_rate_lpr_higher = self.rm_data.resist_rate_lpr_higher
+        self.resist_rate_lpr_lower = self.rm_data.resist_rate_lpr_lower
+
+        self.resist_rate_zdv = self.rm_data.resist_rate_zdv
+        self.resist_rate_3tc = self.rm_data.resist_rate_3tc
+        self.resist_rate_dar = self.rm_data.resist_rate_dar
+        self.resist_rate_taz = self.rm_data.resist_rate_taz
+        self.resist_rate_isl = self.rm_data.resist_rate_isl
+        self.resist_rate_ten = self.rm_data.resist_rate_ten.sample()
+        self.resist_rate_dol = self.rm_data.resist_rate_dol.sample()
+        self.resist_rate_len = self.rm_data.resist_rate_len.sample()
+
+        self.incr_len_resist = self.rm_data.incr_len_resist
+        self.cab_resist_factor = self.rm_data.cab_resist_factor.sample()
 
         # viral_load_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
@@ -221,30 +260,36 @@ class ResistanceMutationsModule:
         """
         Initialise drug resistance mutations at the start of the simulation to False.
         """
-        pop.init_variable(col.RTTA_MUTATIONS, 0)        # only tams are tracked with integers
-        pop.init_variable(col.RT184_MUTATION, False)
-        pop.init_variable(col.RT65_MUTATION, False)
-        pop.init_variable(col.RT151_MUTATION, False)
-        pop.init_variable(col.RT103_MUTATION, False)
-        pop.init_variable(col.RT181_MUTATION, False)
-        pop.init_variable(col.RT190_MUTATION, False)
-        pop.init_variable(col.PR32_MUTATION, False)
-        pop.init_variable(col.PR33_MUTATION, False)
-        pop.init_variable(col.PR46_MUTATION, False)
-        pop.init_variable(col.PR47_MUTATION, False)
-        pop.init_variable(col.PR50L_MUTATION, False)
-        pop.init_variable(col.PR50V_MUTATION, False)
-        pop.init_variable(col.PR54_MUTATION, False)
-        pop.init_variable(col.PR76_MUTATION, False)
-        pop.init_variable(col.PR82_MUTATION, False)
-        pop.init_variable(col.PR84_MUTATION, False)
-        pop.init_variable(col.PR88_MUTATION, False)
-        pop.init_variable(col.PR90_MUTATION, False)
-        pop.init_variable(col.IN118_MUTATION, False)
-        pop.init_variable(col.IN140_MUTATION, False)
-        pop.init_variable(col.IN148_MUTATION, False)
-        pop.init_variable(col.IN155_MUTATION, False)
-        pop.init_variable(col.IN263_MUTATION, False)
+        pop.init_variable(col.RTTA_MUTATIONS, 0)  # only tams are tracked with integers
+        pop.init_variable(col.RT184_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.RT151_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.RT65_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.RT103_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.RT181_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.RT190_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR32_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR46_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR47_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR50L_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR50V_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR54_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR76_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR82_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR84_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR88_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.PR90_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.IN118_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.IN140_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.IN148_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.IN155_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.IN263_MUTATION, MutationStatus.Absent)
+        pop.init_variable(col.CA66_MUTATION, MutationStatus.Absent)
+
+    def get_mutation_presence(self, mutation: MutationStatus):
+        """
+        Helper function for simplifying MutationStatus presence and absence into a boolean.
+        """
+        return True if mutation != MutationStatus.Absent else False
 
     def get_all_matrix_indices(self, pop, sub_pop):
         """
@@ -288,9 +333,9 @@ class ResistanceMutationsModule:
 
         return active_drug_index, cont_on_art_tm1_index, adherence_index, adherence_tm1_index
 
-    def update_viral_load_ART(self, pop: Population, sub_pop):
+    def update_viral_load_art(self, pop: Population, sub_pop):
         """
-        Update viral load for HIV+ individuals.
+        Update viral load in HIV+ individuals.
         """
         # get viral load outcomes
         viral_load = pop.apply_function(self.calc_viral_load, 1, sub_pop)
@@ -312,9 +357,9 @@ class ResistanceMutationsModule:
 
         return viral_load
 
-    def update_cd4_ART(self, pop: Population, sub_pop):
+    def update_cd4_art(self, pop: Population, sub_pop):
         """
-        Update CD4 count for HIV+ individuals.
+        Update CD4 count in HIV+ individuals.
         """
         # FIXME: is there a better way to pass the the cd4_tm1 column string to calc_cd4_delta?
         self.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
@@ -371,9 +416,9 @@ class ResistanceMutationsModule:
 
         return cd4, cd4_delta
 
-    def calculate_new_mutations(self, pop: Population, sub_pop):
+    def update_new_mutations_arising_art(self, pop: Population, sub_pop):
         """
-        Update resistance mutations for HIV+ individuals.
+        Update new resistance mutations arising in HIV+ individuals.
         """
         # FIXME: is there a better way to pass the the viral_load column strings to calc_prob_new_mutation?
         self.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
@@ -387,8 +432,74 @@ class ResistanceMutationsModule:
         # people who may develop a new mutation
         possible_mutation_pop = pop.apply_bool_mask(possible_mutations, sub_pop)
         if len(possible_mutation_pop) > 0:
-            # FIXME: add individual mutations here
-            ...
+
+            # tams
+            tams = pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
+                                       self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
+            pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
+
+            # calculate and set a new majority mutation
+            def set_new_majority_mutation(mutation_col: str, drug_cols: list[str], calc_func):
+                # find people undergoing a given mutation this time step
+                mutation_mask = pop.transform_group(drug_cols, calc_func, sub_pop=possible_mutation_pop)
+                mutation_pop = pop.apply_bool_mask(mutation_mask, possible_mutation_pop)
+                # set outcomes
+                if len(mutation_pop) > 0:
+                    pop.set_present_variable(mutation_col, MutationStatus.Majority, mutation_pop)
+
+            # m184
+            set_new_majority_mutation(col.RT184_MUTATION, [col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
+                                      self.calc_rt184m_outcomes)
+            # q151
+            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV, col.RT151_MUTATION],
+                                      self.calc_rt151m_outcomes)
+            # k65
+            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
+                                      self.calc_rt65m_outcomes)
+
+            # k103, y181, and g190 (nnrti mutations)
+            k103 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
+                                       self.calc_rt103m_outcomes, sub_pop=possible_mutation_pop)
+            y181 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT190_MUTATION],
+                                       self.calc_rt181m_outcomes, sub_pop=possible_mutation_pop)
+            g190 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT181_MUTATION],
+                                       self.calc_rt190m_outcomes, sub_pop=possible_mutation_pop)
+            # make all calculations before setting outcomes to prevent changes
+            # this time step from affecting each other
+            if len(pop.apply_bool_mask(k103, possible_mutation_pop)) > 0:
+                pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority,
+                                         pop.apply_bool_mask(k103, possible_mutation_pop))
+            if len(pop.apply_bool_mask(y181, possible_mutation_pop)) > 0:
+                pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Majority,
+                                         pop.apply_bool_mask(y181, possible_mutation_pop))
+            if len(pop.apply_bool_mask(g190, possible_mutation_pop)) > 0:
+                pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority,
+                                         pop.apply_bool_mask(g190, possible_mutation_pop))
+
+            # p32
+            set_new_majority_mutation(col.PR32_MUTATION, [col.ON_LPR], self.calc_pr32m_outcomes)
+            # p46
+            set_new_majority_mutation(col.PR46_MUTATION, [col.ON_LPR], self.calc_pr46m_outcomes)
+            # p47
+            set_new_majority_mutation(col.PR47_MUTATION, [col.ON_LPR], self.calc_pr47m_outcomes)
+            # p50l
+            set_new_majority_mutation(col.PR50L_MUTATION, [col.ON_TAZ], self.calc_pr50lm_outcomes)
+            # p50v
+            set_new_majority_mutation(col.PR50V_MUTATION, [col.ON_DAR], self.calc_pr50vm_outcomes)
+            # p54
+            set_new_majority_mutation(col.PR54_MUTATION, [col.ON_LPR, col.ON_DAR], self.calc_pr54m_outcomes)
+            # p76
+            set_new_majority_mutation(col.PR76_MUTATION, [col.ON_LPR, col.ON_DAR], self.calc_pr76m_outcomes)
+            # p82
+            set_new_majority_mutation(col.PR82_MUTATION, [col.ON_LPR], self.calc_pr82m_outcomes)
+            # p84
+            set_new_majority_mutation(col.PR84_MUTATION, [col.ON_DAR, col.ON_TAZ], self.calc_pr84m_outcomes)
+            # p88
+            set_new_majority_mutation(col.PR88_MUTATION, [col.ON_TAZ], self.calc_pr88m_outcomes)
+
+            # tally up all mutations
+            resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
+            pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
 
     def calc_prob_new_mutation(self, person):
         """
@@ -404,6 +515,247 @@ class ResistanceMutationsModule:
 
         return prob_new_mutation
 
+    def calc_rttams_outcomes(self, on_zdv, on_3tc, rttams, size):
+        """
+        Returns RT gene TAMs outcomes.
+        """
+        # outcomes
+        r = rng.uniform(size=size) / self.risk_change_tams_resist
+        prob_mutation = 0
+        if on_zdv:
+            if on_3tc:
+                prob_mutation = self.resist_rate_tams_lower
+            else:
+                prob_mutation = self.resist_rate_tams_higher
+        ta_mutations = r < prob_mutation
+        extra_ta_mutations = (prob_mutation <= r) & (r < prob_mutation + 0.01) if prob_mutation > 0 else r < prob_mutation
+
+        # increment tams
+        tams = np.array([rttams] * size)
+        tams[ta_mutations] += 1
+        tams[extra_ta_mutations] += 2
+        # cap number of mutations at 6
+        tams[tams > 6] = 6
+
+        return tams
+
+    def calc_rt184m_outcomes(self, on_3tc, on_isl, rt184m, size):
+        """
+        Returns RT gene M184 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_3tc if on_3tc and rt184m != MutationStatus.Majority else 0
+        m184_mutations = rng.uniform(size=size) < prob_mutation
+
+        prob_mutation = self.resist_rate_isl if on_isl and rt184m != MutationStatus.Majority else 0
+        m184_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return m184_mutations
+
+    def calc_rt151m_outcomes(self, on_zdv, rt151m, size):
+        """
+        Returns RT gene Q151 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_zdv if on_zdv and rt151m != MutationStatus.Majority else 0
+        q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
+
+        return q151_mutations
+
+    def calc_rt65m_outcomes(self, on_ten, on_zdv, rt65m, size):
+        """
+        Returns RT gene K65 majority mutation outcomes.
+        """
+        prob_mutation = 0
+        if on_ten and rt65m != MutationStatus.Majority:
+            if on_zdv:
+                prob_mutation = self.resist_rate_zdv
+            else:
+                prob_mutation = self.resist_rate_ten
+        k65_mutations = rng.uniform(size=size) < prob_mutation
+
+        return k65_mutations
+
+    def calc_rt103m_outcomes(self, on_nev, on_efa, rt181m, rt190m, size):
+        """
+        Returns RT gene K103 majority mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = self.resist_rate_nev_lower if on_nev \
+            and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        k103_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = self.resist_rate_efa_higher if on_efa \
+            and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        k103_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return k103_mutations
+
+    def calc_rt181m_outcomes(self, on_nev, on_efa, rt103m, rt190m, size):
+        """
+        Returns RT gene Y181 majority mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = self.resist_rate_nev_higher if on_nev \
+            and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        y181_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = self.resist_rate_efa_lower if on_efa \
+            and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        y181_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return y181_mutations
+
+    def calc_rt190m_outcomes(self, on_nev, on_efa, rt103m, rt181m, size):
+        """
+        Returns RT gene G190 majority mutation outcomes.
+        """
+        # outcomes on nev
+        prob_mutation = self.resist_rate_nev_lower if on_nev \
+            and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
+        g190_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on efa
+        prob_mutation = self.resist_rate_efa_lower if on_efa \
+            and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
+        g190_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return g190_mutations
+
+    def calc_pr32m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P32 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_lpr_lower if on_lpr else 0
+        p32_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p32_mutations
+
+    def calc_pr46m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P46 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
+        p46_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p46_mutations
+
+    def calc_pr47m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P47 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_lpr_lower if on_lpr else 0
+        p47_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p47_mutations
+
+    def calc_pr50lm_outcomes(self, on_taz, size):
+        """
+        Returns PR gene P50L majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_taz if on_taz else 0
+        p50l_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p50l_mutations
+
+    def calc_pr50vm_outcomes(self, on_dar, size):
+        """
+        Returns PR gene P50V majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_dar if on_dar else 0
+        p50v_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p50v_mutations
+
+    def calc_pr54m_outcomes(self, on_lpr, on_dar, size):
+        """
+        Returns PR gene P54 majority mutation outcomes.
+        """
+        # outcomes on lpr
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
+        p54_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on dar
+        prob_mutation = self.resist_rate_dar if on_dar else 0
+        p54_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p54_mutations
+
+    def calc_pr76m_outcomes(self, on_lpr, on_dar, size):
+        """
+        Returns PR gene P76 majority mutation outcomes.
+        """
+        # outcomes on lpr
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
+        p76_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on dar
+        prob_mutation = self.resist_rate_dar if on_dar else 0
+        p76_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p76_mutations
+
+    def calc_pr82m_outcomes(self, on_lpr, size):
+        """
+        Returns PR gene P82 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
+        p82_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p82_mutations
+
+    def calc_pr84m_outcomes(self, on_dar, on_taz, size):
+        """
+        Returns PR gene P84 majority mutation outcomes.
+        """
+        # outcomes on dar
+        prob_mutation = self.resist_rate_dar if on_dar else 0
+        p84_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on taz
+        prob_mutation = self.resist_rate_taz if on_taz else 0
+        p84_mutations |= rng.uniform(size=size) < prob_mutation
+
+        return p84_mutations
+
+    def calc_pr88m_outcomes(self, on_taz, size):
+        """
+        Returns PR gene P88 majority mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_taz if on_taz else 0
+        p88_mutations = rng.uniform(size=size) < prob_mutation
+
+        return p88_mutations
+
+    def calc_total_mutations(self, person):
+        """
+        Returns the total number of resistance mutations present in a given individual.
+        """
+        return (person[col.RTTA_MUTATIONS] +
+                self.get_mutation_presence(MutationStatus(person[col.RT184_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.RT151_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.RT65_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.RT103_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.RT181_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.RT190_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR32_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR46_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR47_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR50L_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR50V_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR54_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR76_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR82_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR84_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR88_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.PR90_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.IN118_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.IN140_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.IN148_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.IN155_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.IN263_MUTATION])) +
+                self.get_mutation_presence(MutationStatus(person[col.CA66_MUTATION])))
+
     def update_resistance(self, pop: Population):
         """
         Update the viral load, CD4 count, and resistance mutations of HIV+ individuals.
@@ -417,6 +769,6 @@ class ResistanceMutationsModule:
             pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
 
             # update values
-            self.update_viral_load_ART(pop, infected_pop)
-            self.update_cd4_ART(pop, infected_pop)
-            self.calculate_new_mutations(pop, infected_pop)
+            self.update_viral_load_art(pop, infected_pop)
+            self.update_cd4_art(pop, infected_pop)
+            self.update_new_mutations_arising_art(pop, infected_pop)
