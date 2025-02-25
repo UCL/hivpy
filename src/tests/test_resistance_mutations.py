@@ -569,7 +569,7 @@ def test_rt190m():
 
 
 def test_nnrtim():
-    N = 100
+    N = 1000
     pop = Population(size=N, start_date=date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
@@ -580,38 +580,54 @@ def test_nnrtim():
     # rt103m, rt181m, and rt190m all have a chance of mutating
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
-    # 0% chance of rt103m
-    pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
-    pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Majority)
-    pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority)
 
-    res = pop.resistance
-    res.mutation_risk_change = 0.5
-    res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
-    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    # 0% chance of rt103m if either rt181m or rt190m present in majority
+    for RT181_status in MutationStatus:
+        for RT190_status in MutationStatus:
+            pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)  # reset
+            pop.set_present_variable(col.RT181_MUTATION, RT181_status)
+            pop.set_present_variable(col.RT190_MUTATION, RT190_status)
 
-    # expecting no rt103m since rt181m and rt190m are present in majority
-    assert all(pop.get_variable(col.RT103_MUTATION) == MutationStatus.Absent)
+            res = pop.resistance
+            res.mutation_risk_change = 0.5
+            res.active_drug_indices, res.cont_on_art_tm1_indices, \
+                res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+            pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+            res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    # 0% chance of rt181m
-    pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority)
-    pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
-    pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+            # expecting no rt103m if either rt181m or rt190m are present in majority
+            if (RT181_status != MutationStatus.Majority and RT190_status != MutationStatus.Majority):
+                assert any(pop.get_variable(col.RT103_MUTATION) == MutationStatus.Majority)
+            else:
+                assert all(pop.get_variable(col.RT103_MUTATION) == MutationStatus.Absent)
 
-    # expecting no rt181m since rt103m and rt190m are present in majority
-    assert all(pop.get_variable(col.RT181_MUTATION) == MutationStatus.Absent)
+    # 0% chance of rt181m if rt103m or rt190m are present in majority
+    for RT103_status in MutationStatus:
+        for RT190_status in MutationStatus:
+            pop.set_present_variable(col.RT103_MUTATION, RT103_status)
+            pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
+            pop.set_present_variable(col.RT190_MUTATION, RT190_status)
+            res.update_new_mutations_arising_art(pop, pop.data.index)
+
+            # expecting no rt181m if rt103m or rt190m are present in majority
+            if (RT103_status != MutationStatus.Majority and RT190_status != MutationStatus.Majority):
+                assert any(pop.get_variable(col.RT181_MUTATION) == MutationStatus.Majority)
+            else:
+                assert all(pop.get_variable(col.RT181_MUTATION) == MutationStatus.Absent)
 
     # 0% chance of rt190m
-    pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority)
-    pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Majority)
-    pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Absent)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    for RT103_status in MutationStatus:
+        for RT181_status in MutationStatus:
+            pop.set_present_variable(col.RT103_MUTATION, RT103_status)
+            pop.set_present_variable(col.RT181_MUTATION, RT181_status)
+            pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Absent)
+            res.update_new_mutations_arising_art(pop, pop.data.index)
 
-    # expecting no rt190m since rt103m and rt181m are present in majority
-    assert all(pop.get_variable(col.RT190_MUTATION) == MutationStatus.Absent)
+            # expecting no rt190m if rt103m or rt181m are present in majority
+            if (RT103_status != MutationStatus.Majority and RT181_status != MutationStatus.Majority):
+                assert any(pop.get_variable(col.RT190_MUTATION) == MutationStatus.Majority)
+            else:
+                assert all(pop.get_variable(col.RT190_MUTATION) == MutationStatus.Absent)
 
 
 def test_pr32m():
