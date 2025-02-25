@@ -273,7 +273,7 @@ class ResistanceMutationsModule:
         """
         Helper function for simplifying MutationStatus presence and absence into a boolean.
         """
-        return True if mutation is not MutationStatus.Absent else False
+        return True if mutation != MutationStatus.Absent else False
 
     def get_all_matrix_indices(self, pop, sub_pop):
         """
@@ -527,10 +527,10 @@ class ResistanceMutationsModule:
         """
         Returns RT gene M184 majority mutation outcomes.
         """
-        prob_mutation = 0.8 if on_3tc and rt184m is not MutationStatus.Majority else 0
+        prob_mutation = 0.8 if on_3tc and rt184m != MutationStatus.Majority else 0
         m184_mutations = rng.uniform(size=size) < prob_mutation
 
-        prob_mutation = 0.1 if on_isl and rt184m is not MutationStatus.Majority else 0
+        prob_mutation = 0.1 if on_isl and rt184m != MutationStatus.Majority else 0
         m184_mutations |= rng.uniform(size=size) < prob_mutation
 
         return m184_mutations
@@ -539,7 +539,7 @@ class ResistanceMutationsModule:
         """
         Returns RT gene Q151 majority mutation outcomes.
         """
-        prob_mutation = 0.02 if on_zdv and rt151m is not MutationStatus.Majority else 0
+        prob_mutation = 0.02 if on_zdv and rt151m != MutationStatus.Majority else 0
         q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
 
         return q151_mutations
@@ -549,7 +549,7 @@ class ResistanceMutationsModule:
         Returns RT gene K65 majority mutation outcomes.
         """
         r = rng.uniform(size=size)
-        prob_mutation = 0.02 if on_ten and rt65m is not MutationStatus.Majority else 0
+        prob_mutation = 0.02 if on_ten and rt65m != MutationStatus.Majority else 0
         k65_mutations = r < prob_mutation if on_zdv else r < self.ten_resist_rate
 
         return k65_mutations
@@ -559,11 +559,11 @@ class ResistanceMutationsModule:
         Returns RT gene K103 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.2 if on_nev and rt181m is not MutationStatus.Majority and rt190m is not MutationStatus.Majority else 0
+        prob_mutation = 0.2 if on_nev and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         k103_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.6 if on_efa and rt181m is not MutationStatus.Majority and rt190m is not MutationStatus.Majority else 0
+        prob_mutation = 0.6 if on_efa and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         k103_mutations |= rng.uniform(size=size) < prob_mutation
 
         return k103_mutations
@@ -573,11 +573,11 @@ class ResistanceMutationsModule:
         Returns RT gene Y181 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.4 if on_nev and rt103m is not MutationStatus.Majority and rt190m is not MutationStatus.Majority else 0
+        prob_mutation = 0.4 if on_nev and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         y181_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.1 if on_efa and rt103m is not MutationStatus.Majority and rt190m is not MutationStatus.Majority else 0
+        prob_mutation = 0.1 if on_efa and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         y181_mutations |= rng.uniform(size=size) < prob_mutation
 
         return y181_mutations
@@ -587,11 +587,11 @@ class ResistanceMutationsModule:
         Returns RT gene G190 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.2 if on_nev and rt103m is not MutationStatus.Majority and rt181m is not MutationStatus.Majority else 0
+        prob_mutation = 0.2 if on_nev and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
         g190_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.1 if on_efa and rt103m is not MutationStatus.Majority and rt181m is not MutationStatus.Majority else 0
+        prob_mutation = 0.1 if on_efa and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
         g190_mutations |= rng.uniform(size=size) < prob_mutation
 
         return g190_mutations
