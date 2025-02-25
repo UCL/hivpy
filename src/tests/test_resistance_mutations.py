@@ -324,14 +324,15 @@ def test_rttams():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 21% chance of new tams
     pop.set_present_variable(col.ON_ZDV, True)
     pop.set_present_variable(col.ON_3TC, False)
     pop.set_present_variable(col.RTTA_MUTATIONS, 0)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 21% chance of new tams
     res.risk_change_tams_resist = 1
+    res.resist_rate_tams_higher = 0.2
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -350,6 +351,7 @@ def test_rttams():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
     # 13% chance of new tams
+    res.resist_rate_tams_lower = 0.13
     pop.set_present_variable(col.ON_ZDV, True)
     pop.set_present_variable(col.ON_3TC, True)
     pop.set_present_variable(col.RTTA_MUTATIONS, 0)
@@ -383,13 +385,14 @@ def test_rt184m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 80% chance of rt184m
     pop.set_present_variable(col.ON_3TC, True)
     pop.set_present_variable(col.ON_ISL, False)
     pop.set_present_variable(col.RT184_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 80% chance of rt184m
+    res.resist_rate_3tc = 0.8
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -411,13 +414,14 @@ def test_rt151m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 2% chance of rt151m
     pop.set_present_variable(col.ON_ZDV, True)
     pop.set_present_variable(col.RT151_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 2% chance of rt151m
     res.risk_change_151_resist = 1
+    res.resist_rate_zdv = 0.02
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -439,13 +443,14 @@ def test_rt65m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 2% chance of rt65m
     pop.set_present_variable(col.ON_TEN, True)
     pop.set_present_variable(col.ON_ZDV, True)
     pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 2% chance of rt65m
+    res.resist_rate_zdv = 0.02
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -458,7 +463,7 @@ def test_rt65m():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
     # 30% chance of rt65m
-    res.ten_resist_rate = 0.3
+    res.resist_rate_ten = 0.3
     pop.set_present_variable(col.ON_ZDV, False)
     pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
     res.update_new_mutations_arising_art(pop, pop.data.index)
@@ -479,7 +484,6 @@ def test_rt103m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 68% chance of rt103m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
     pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
@@ -487,6 +491,9 @@ def test_rt103m():
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 68% chance of rt103m
+    res.resist_rate_nev_lower = 0.2
+    res.resist_rate_efa_higher = 0.6
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -508,7 +515,6 @@ def test_rt181m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 46% chance of rt181m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
     pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
@@ -516,6 +522,9 @@ def test_rt181m():
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 46% chance of rt181m
+    res.resist_rate_nev_higher = 0.4
+    res.resist_rate_efa_lower = 0.1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
@@ -537,7 +546,6 @@ def test_rt190m():
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
-    # 28% chance of rt190m
     pop.set_present_variable(col.ON_NEV, True)
     pop.set_present_variable(col.ON_EFA, True)
     pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
@@ -545,6 +553,9 @@ def test_rt190m():
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
+    # 28% chance of rt190m
+    res.resist_rate_nev_lower = 0.2
+    res.resist_rate_efa_lower = 0.1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
         res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)

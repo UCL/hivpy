@@ -13,14 +13,30 @@ mutation_risk_change:
   Probability: [0.1, 0.8, 0.1]
 risk_change_tams_resist: 1
 risk_change_151_resist: 1
-ten_resist_rate:
+risk_change_cab_resist:
+  Value: [1, 3, 5, 10, 20, 50]
+
+resist_rate_tams_higher: 0.2
+resist_rate_tams_lower: 0.12
+resist_rate_nev_higher: 0.4
+resist_rate_nev_lower: 0.2
+resist_rate_efa_higher: 0.6
+resist_rate_efa_lower: 0.1
+resist_rate_lpr_higher: 0.02
+resist_rate_lpr_lower: 0.01
+
+resist_rate_zdv: 0.02
+resist_rate_3tc: 0.8
+resist_rate_dar: 0.01
+resist_rate_taz: 0.03
+resist_rate_isl: 0.1
+resist_rate_ten:
   Value: [0.1, 0.2, 0.3]
-dol_resist_rate:
+resist_rate_dol:
   Value: [0.005, 0.010, 0.015]
-len_resist_rate:
+resist_rate_len:
   Value: [0.005, 0.010, 0.020, 0.050]
+
 incr_len_resist: 10
 cab_resist_factor:
   Value: [1.0, 1.5, 2.0]
-risk_change_cab_resist:
-  Value: [1, 3, 5, 10, 20, 50]

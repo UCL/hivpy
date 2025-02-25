@@ -51,13 +51,29 @@ class ResistanceMutationsModule:
         self.mutation_risk_change = self.rm_data.mutation_risk_change.sample()
         self.risk_change_tams_resist = self.rm_data.risk_change_tams_resist
         self.risk_change_151_resist = self.rm_data.risk_change_151_resist
+        self.risk_change_cab_resist = self.rm_data.risk_change_cab_resist.sample()
+
         # FIXME: resistance rates dependent on time step length
-        self.ten_resist_rate = self.rm_data.ten_resist_rate.sample()
-        self.dol_resist_rate = self.rm_data.dol_resist_rate.sample()
-        self.len_resist_rate = self.rm_data.len_resist_rate.sample()
+        self.resist_rate_tams_higher = self.rm_data.resist_rate_tams_higher
+        self.resist_rate_tams_lower = self.rm_data.resist_rate_tams_lower
+        self.resist_rate_nev_higher = self.rm_data.resist_rate_nev_higher
+        self.resist_rate_nev_lower = self.rm_data.resist_rate_nev_lower
+        self.resist_rate_efa_higher = self.rm_data.resist_rate_efa_higher
+        self.resist_rate_efa_lower = self.rm_data.resist_rate_efa_lower
+        self.resist_rate_lpr_higher = self.rm_data.resist_rate_lpr_higher
+        self.resist_rate_lpr_lower = self.rm_data.resist_rate_lpr_lower
+
+        self.resist_rate_zdv = self.rm_data.resist_rate_zdv
+        self.resist_rate_3tc = self.rm_data.resist_rate_3tc
+        self.resist_rate_dar = self.rm_data.resist_rate_dar
+        self.resist_rate_taz = self.rm_data.resist_rate_taz
+        self.resist_rate_isl = self.rm_data.resist_rate_isl
+        self.resist_rate_ten = self.rm_data.resist_rate_ten.sample()
+        self.resist_rate_dol = self.rm_data.resist_rate_dol.sample()
+        self.resist_rate_len = self.rm_data.resist_rate_len.sample()
+
         self.incr_len_resist = self.rm_data.incr_len_resist
         self.cab_resist_factor = self.rm_data.cab_resist_factor.sample()
-        self.risk_change_cab_resist = self.rm_data.risk_change_cab_resist.sample()
 
         # viral_load_matrix[active_drugs][cont_on_art_tm1][adherence][adherence_tm1]
         # (a, b, c) tuples used to calculate base viral load (a * max_viral_load + b + c * min_vl_on_art)
@@ -508,9 +524,9 @@ class ResistanceMutationsModule:
         prob_mutation = 0
         if on_zdv:
             if on_3tc:
-                prob_mutation = 0.12
+                prob_mutation = self.resist_rate_tams_lower
             else:
-                prob_mutation = 0.20
+                prob_mutation = self.resist_rate_tams_higher
         ta_mutations = r < prob_mutation
         extra_ta_mutations = (prob_mutation <= r) & (r < prob_mutation + 0.01) if prob_mutation > 0 else r < prob_mutation
 
@@ -527,10 +543,10 @@ class ResistanceMutationsModule:
         """
         Returns RT gene M184 majority mutation outcomes.
         """
-        prob_mutation = 0.8 if on_3tc and rt184m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_3tc if on_3tc and rt184m != MutationStatus.Majority else 0
         m184_mutations = rng.uniform(size=size) < prob_mutation
 
-        prob_mutation = 0.1 if on_isl and rt184m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_isl if on_isl and rt184m != MutationStatus.Majority else 0
         m184_mutations |= rng.uniform(size=size) < prob_mutation
 
         return m184_mutations
@@ -539,7 +555,7 @@ class ResistanceMutationsModule:
         """
         Returns RT gene Q151 majority mutation outcomes.
         """
-        prob_mutation = 0.02 if on_zdv and rt151m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_zdv if on_zdv and rt151m != MutationStatus.Majority else 0
         q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
 
         return q151_mutations
@@ -548,9 +564,13 @@ class ResistanceMutationsModule:
         """
         Returns RT gene K65 majority mutation outcomes.
         """
-        r = rng.uniform(size=size)
-        prob_mutation = 0.02 if on_ten and rt65m != MutationStatus.Majority else 0
-        k65_mutations = r < prob_mutation if on_zdv else r < self.ten_resist_rate
+        prob_mutation = 0
+        if on_ten and rt65m != MutationStatus.Majority:
+            if on_zdv:
+                prob_mutation = self.resist_rate_zdv
+            else:
+                prob_mutation = self.resist_rate_ten
+        k65_mutations = rng.uniform(size=size) < prob_mutation
 
         return k65_mutations
 
@@ -559,11 +579,13 @@ class ResistanceMutationsModule:
         Returns RT gene K103 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.2 if on_nev and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_nev_lower if on_nev \
+            and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         k103_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.6 if on_efa and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_efa_higher if on_efa \
+            and rt181m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         k103_mutations |= rng.uniform(size=size) < prob_mutation
 
         return k103_mutations
@@ -573,11 +595,13 @@ class ResistanceMutationsModule:
         Returns RT gene Y181 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.4 if on_nev and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_nev_higher if on_nev \
+            and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         y181_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.1 if on_efa and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_efa_lower if on_efa \
+            and rt103m != MutationStatus.Majority and rt190m != MutationStatus.Majority else 0
         y181_mutations |= rng.uniform(size=size) < prob_mutation
 
         return y181_mutations
@@ -587,11 +611,13 @@ class ResistanceMutationsModule:
         Returns RT gene G190 majority mutation outcomes.
         """
         # outcomes on nev
-        prob_mutation = 0.2 if on_nev and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_nev_lower if on_nev \
+            and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
         g190_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on efa
-        prob_mutation = 0.1 if on_efa and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_efa_lower if on_efa \
+            and rt103m != MutationStatus.Majority and rt181m != MutationStatus.Majority else 0
         g190_mutations |= rng.uniform(size=size) < prob_mutation
 
         return g190_mutations
@@ -600,7 +626,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P32 majority mutation outcomes.
         """
-        prob_mutation = 0.01 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_lower if on_lpr else 0
         p32_mutations = rng.uniform(size=size) < prob_mutation
 
         return p32_mutations
@@ -609,7 +635,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P46 majority mutation outcomes.
         """
-        prob_mutation = 0.02 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
         p46_mutations = rng.uniform(size=size) < prob_mutation
 
         return p46_mutations
@@ -618,7 +644,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P47 majority mutation outcomes.
         """
-        prob_mutation = 0.01 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_lower if on_lpr else 0
         p47_mutations = rng.uniform(size=size) < prob_mutation
 
         return p47_mutations
@@ -627,7 +653,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P50L majority mutation outcomes.
         """
-        prob_mutation = 0.03 if on_taz else 0
+        prob_mutation = self.resist_rate_taz if on_taz else 0
         p50l_mutations = rng.uniform(size=size) < prob_mutation
 
         return p50l_mutations
@@ -636,7 +662,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P50V majority mutation outcomes.
         """
-        prob_mutation = 0.01 if on_dar else 0
+        prob_mutation = self.resist_rate_dar if on_dar else 0
         p50v_mutations = rng.uniform(size=size) < prob_mutation
 
         return p50v_mutations
@@ -646,11 +672,11 @@ class ResistanceMutationsModule:
         Returns PR gene P54 majority mutation outcomes.
         """
         # outcomes on lpr
-        prob_mutation = 0.02 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
         p54_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on dar
-        prob_mutation = 0.01 if on_dar else 0
+        prob_mutation = self.resist_rate_dar if on_dar else 0
         p54_mutations |= rng.uniform(size=size) < prob_mutation
 
         return p54_mutations
@@ -660,11 +686,11 @@ class ResistanceMutationsModule:
         Returns PR gene P76 majority mutation outcomes.
         """
         # outcomes on lpr
-        prob_mutation = 0.02 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
         p76_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on dar
-        prob_mutation = 0.01 if on_dar else 0
+        prob_mutation = self.resist_rate_dar if on_dar else 0
         p76_mutations |= rng.uniform(size=size) < prob_mutation
 
         return p76_mutations
@@ -673,7 +699,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P82 majority mutation outcomes.
         """
-        prob_mutation = 0.02 if on_lpr else 0
+        prob_mutation = self.resist_rate_lpr_higher if on_lpr else 0
         p82_mutations = rng.uniform(size=size) < prob_mutation
 
         return p82_mutations
@@ -683,11 +709,11 @@ class ResistanceMutationsModule:
         Returns PR gene P84 majority mutation outcomes.
         """
         # outcomes on dar
-        prob_mutation = 0.01 if on_dar else 0
+        prob_mutation = self.resist_rate_dar if on_dar else 0
         p84_mutations = rng.uniform(size=size) < prob_mutation
 
         # outcomes on taz
-        prob_mutation = 0.03 if on_taz else 0
+        prob_mutation = self.resist_rate_taz if on_taz else 0
         p84_mutations |= rng.uniform(size=size) < prob_mutation
 
         return p84_mutations
@@ -696,7 +722,7 @@ class ResistanceMutationsModule:
         """
         Returns PR gene P88 majority mutation outcomes.
         """
-        prob_mutation = 0.03 if on_taz else 0
+        prob_mutation = self.resist_rate_taz if on_taz else 0
         p88_mutations = rng.uniform(size=size) < prob_mutation
 
         return p88_mutations

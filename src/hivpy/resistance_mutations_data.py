@@ -21,12 +21,28 @@ class ResistanceMutationsData(DataReader):
             self.mutation_risk_change = self._get_discrete_dist("mutation_risk_change")
             self.risk_change_tams_resist = self.data["risk_change_tams_resist"]
             self.risk_change_151_resist = self.data["risk_change_151_resist"]
-            self.ten_resist_rate = self._get_discrete_dist("ten_resist_rate")
-            self.dol_resist_rate = self._get_discrete_dist("dol_resist_rate")
-            self.len_resist_rate = self._get_discrete_dist("len_resist_rate")
+            self.risk_change_cab_resist = self._get_discrete_dist("risk_change_cab_resist")
+
+            self.resist_rate_tams_higher = self.data["resist_rate_tams_higher"]
+            self.resist_rate_tams_lower = self.data["resist_rate_tams_lower"]
+            self.resist_rate_nev_higher = self.data["resist_rate_nev_higher"]
+            self.resist_rate_nev_lower = self.data["resist_rate_nev_lower"]
+            self.resist_rate_efa_higher = self.data["resist_rate_efa_higher"]
+            self.resist_rate_efa_lower = self.data["resist_rate_efa_lower"]
+            self.resist_rate_lpr_higher = self.data["resist_rate_lpr_higher"]
+            self.resist_rate_lpr_lower = self.data["resist_rate_lpr_lower"]
+
+            self.resist_rate_zdv = self.data["resist_rate_zdv"]
+            self.resist_rate_3tc = self.data["resist_rate_3tc"]
+            self.resist_rate_dar = self.data["resist_rate_dar"]
+            self.resist_rate_taz = self.data["resist_rate_taz"]
+            self.resist_rate_isl = self.data["resist_rate_isl"]
+            self.resist_rate_ten = self._get_discrete_dist("resist_rate_ten")
+            self.resist_rate_dol = self._get_discrete_dist("resist_rate_dol")
+            self.resist_rate_len = self._get_discrete_dist("resist_rate_len")
+
             self.incr_len_resist = self.data["incr_len_resist"]
             self.cab_resist_factor = self._get_discrete_dist("cab_resist_factor")
-            self.risk_change_cab_resist = self._get_discrete_dist("risk_change_cab_resist")
 
         except KeyError as ke:
             print(ke.args)
