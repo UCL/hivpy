@@ -109,6 +109,9 @@ class PrEPModule:
         pop.init_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
         pop.init_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
         pop.init_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
+        pop.init_variable(col.IN_CAB_TAIL, False)
+        pop.init_variable(col.IN_LEN_TAIL, False)
+        pop.init_variable(col.IN_LEN_POST_TAIL, False)
         pop.init_variable(col.LTP_ON_ART, False)
 
     # FIXME: should this function be in another module?
