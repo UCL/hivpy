@@ -63,6 +63,9 @@ People who have chosen to stop taking PrEP but are still eligible can also choos
 - *`CUMULATIVE_PREP_CAB`* - A timedelta tracking the total length of cumulative cabotegravir PrEP usage.
 - *`CUMULATIVE_PREP_LEN`* - A timedelta tracking the total length of cumulative lenacapavir PrEP usage.
 - *`CUMULATIVE_PREP_VR`* - A timedelta tracking the total length of cumulative vaginal ring PrEP usage.
+- *`IN_CAB_TAIL`* - A boolean flag signifying whether an individual is in the tail period of injectable Cab PrEP after stopping usage.
+- *`IN_LEN_TAIL`* - A boolean flag signifying whether an individual in the tail period of injectable Len PrEP after stopping usage.
+- *`IN_LEN_POST_TAIL`* - A boolean flag signifying whether an individual is in the post-tail period of injectable Len PrEP after stopping usage.
 
 ### PrEP Data Variables
 
@@ -91,3 +94,5 @@ People who have chosen to stop taking PrEP but are still eligible can also choos
 - *`prob_len_prep_stop`* - The probability of choosing to stop taking lenacapavir PrEP despite being eligible.
 - *`prob_vr_prep_stop`* - The probability of choosing to stop taking vaginal ring PrEP despite being eligible.
 - *`prob_prep_restart`* - The probability of restarting any type of PrEP after choosing to stop taking PrEP.
+- *`cab_tail_length`* - The duration of the tail period after stopping Cab PrEP usage. Cab levels remain above 75% of the therapeutic dose during this time.
+- *`len_tail_length`* - The duration of the tail period after stopping Len PrEP usage. Len levels remain above 75% of the therapeutic dose during this time.
