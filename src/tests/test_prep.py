@@ -959,9 +959,11 @@ def test_stopping_prep():
     pop.data[col.CONT_ON_PREP] = timedelta(months=2)
     pop.data[col.CONT_INTENT_ON_PREP] = timedelta(months=2)
     pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=2)
-    pop.data[col.PREP_TYPE] = PrEPType.Oral
-    pop.data[col.FAVOURED_PREP_TYPE] = PrEPType.Oral
+    pop.data[col.PREP_TYPE] = PrEPType.Cabotegravir
+    pop.data[col.FAVOURED_PREP_TYPE] = PrEPType.Cabotegravir
+    pop.data[col.IN_CAB_TAIL] = False
 
+    pop.prep.cab_tail_length = timedelta(months=3)
     # nobody stops prep by choice
     prob_base_prep_stop = 0
     pop.prep.prob_oral_prep_stop = prob_base_prep_stop
@@ -974,6 +976,7 @@ def test_stopping_prep():
     assert sum(pop.data[col.ON_PREP]) == N*0.1
     assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
     assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
+    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
     # check continuous prep usage
     assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=3))
@@ -986,6 +989,7 @@ def test_stopping_prep():
     assert sum(pop.data[col.ON_PREP]) == N*0.1
     assert sum(pop.data[col.PREP_PAUSED]) == N*0.9
     assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
+    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
     # check continuous prep usage
     assert all(pop.data[col.PREP_PAUSED] == (pop.data[col.CONT_ON_PREP] == timedelta(months=2)))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=4))
@@ -1002,6 +1006,7 @@ def test_stopping_prep():
     assert all(pop.data[col.ON_PREP])
     assert sum(pop.data[col.PREP_PAUSED]) == 0
     assert all(pop.data[col.LAST_PREP_STOP_DATE].isnull())
+    assert all(pop.data[col.ON_PREP] == ~pop.data[col.IN_CAB_TAIL])
     # check continuous prep usage
     assert all(pop.data[col.CONT_ON_PREP] == timedelta(months=3))
     assert all(pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=5))
@@ -1016,6 +1021,7 @@ def test_stopping_prep():
     assert all(~pop.data[col.ON_PREP] == pop.data[col.HIV_DIAGNOSED])
     assert sum(pop.data[col.PREP_PAUSED]) == 0
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
+    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
     # check continuous prep usage
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ON_PREP] == timedelta(months=0)))
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=0)))
@@ -1027,3 +1033,73 @@ def test_stopping_prep():
     assert sum(pop.data[col.ON_PREP]) == N*0.1
     assert sum(pop.data[col.PREP_PAUSED]) == 0
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
+    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
+
+
+def test_prep_inj_tails():
+    N = 100
+    time_step = timedelta(months=1)
+    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop.prep.date_prep_intro = [date(2000), date(2000), date(2000), date(2000)]
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_ELIGIBLE] = False
+    pop.data[col.EVER_PREP] = True
+    pop.data[col.ON_PREP] = False
+    pop.data[col.LAST_PREP_STOP_DATE] = pop.date
+    pop.data[col.PREP_PAUSED] = False
+    pop.data[col.PREP_JUST_STARTED] = False
+    pop.data[col.CONT_ON_PREP] = timedelta(months=0)
+    pop.data[col.CONT_ACTIVE_ON_PREP] = timedelta(months=0)
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.PREP_TYPE] = [PrEPType.Cabotegravir, PrEPType.Lenacapavir] * (N // 2)
+    pop.data[col.IN_CAB_TAIL] = True
+    pop.data[col.IN_LEN_TAIL] = True
+    pop.data[col.IN_LEN_POST_TAIL] = False
+    pop.prep.cab_tail_length = timedelta(months=6)
+    pop.prep.len_tail_length = timedelta(months=3)
+
+    # pass 2 months
+    for i in range(2):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # tail periods are active
+    assert all(pop.get_variable(col.IN_CAB_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_TAIL))
+    assert all(~pop.get_variable(col.IN_LEN_POST_TAIL))
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+
+    # post-tail has begun
+    assert all(pop.get_variable(col.IN_CAB_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+
+    # len tail period has ended
+    assert all(pop.get_variable(col.IN_CAB_TAIL))
+    assert all(~pop.get_variable(col.IN_LEN_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
+
+    # pass 2 more months
+    for i in range(2):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    assert all(pop.get_variable(col.IN_CAB_TAIL))
+    assert all(~pop.get_variable(col.IN_LEN_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+
+    # all tail and post-tail periods have ended
+    assert all(~pop.get_variable(col.IN_CAB_TAIL))
+    assert all(~pop.get_variable(col.IN_LEN_TAIL))
+    assert all(~pop.get_variable(col.IN_LEN_POST_TAIL))
