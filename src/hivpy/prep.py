@@ -799,6 +799,7 @@ class PrEPModule:
                 pop.set_present_variable(col.ON_PREP, True, restarting_prep_pop)
                 # set start dates
                 self.set_all_prep_start_dates(pop, restarting_prep_pop)
+
                 # set continuous use
                 prep_cont = pop.get_variable(col.CONT_ON_PREP, restarting_prep_pop) + time_step
                 prep_intent_cont = pop.get_variable(col.CONT_INTENT_ON_PREP, restarting_prep_pop) + time_step
@@ -808,10 +809,16 @@ class PrEPModule:
                 # increment cumulative use
                 self.set_all_prep_cumulative(pop, restarting_prep_pop, time_step)
                 pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, restarting_prep_pop)
+
                 # unset stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, None, restarting_prep_pop)
                 # unpause prep
                 pop.set_present_variable(col.PREP_PAUSED, False, restarting_prep_pop)
+                # unset injectable prep tails
+                # FIXME: should this only happen for people restarting cab or len?
+                pop.set_present_variable(col.IN_CAB_TAIL, False, restarting_prep_pop)
+                pop.set_present_variable(col.IN_LEN_TAIL, False, restarting_prep_pop)
+                pop.set_present_variable(col.IN_LEN_POST_TAIL, False, restarting_prep_pop)
 
     def calc_restarting_prep(self, favoured_prep, prep_paused, size):
         """
@@ -847,6 +854,17 @@ class PrEPModule:
             # pause prep
             pop.set_present_variable(col.PREP_PAUSED, True, ineligible)
 
+        # set cab prep tail
+        in_cab_tail = pop.get_sub_pop_intersection(
+            pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir)), ineligible)
+        if len(in_cab_tail) > 0:
+            pop.set_present_variable(col.IN_CAB_TAIL, True, in_cab_tail)
+        # set len prep tail
+        in_len_tail = pop.get_sub_pop_intersection(
+            pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir)), ineligible)
+        if len(in_len_tail) > 0:
+            pop.set_present_variable(col.IN_LEN_TAIL, True, in_len_tail)
+
         # people who have paused prep
         paused = pop.get_sub_pop(COND(col.PREP_PAUSED, op.eq, True))
 
@@ -872,6 +890,33 @@ class PrEPModule:
             # unpause prep
             pop.set_present_variable(col.PREP_PAUSED, False, perm_ineligible)
 
+    def update_inj_prep_tails(self, pop: Population):
+        """
+        Update Cab and Len PrEP tail status after stopping PrEP.
+        """
+        # adjust cab tail
+        cab_tail_end = pop.get_sub_pop(AND(COND(col.IN_CAB_TAIL, op.eq, True),
+                                           COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - self.cab_tail_length)))
+        if len(cab_tail_end) > 0:
+            pop.set_present_variable(col.IN_CAB_TAIL, False, cab_tail_end)
+
+        # adjust len tail
+        len_tail_end = pop.get_sub_pop(AND(COND(col.IN_LEN_TAIL, op.eq, True),
+                                           COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - self.len_tail_length)))
+        if len(len_tail_end) > 0:
+            pop.set_present_variable(col.IN_LEN_TAIL, False, len_tail_end)
+
+        # keep track of len post-tail period for resistance
+        in_len_post_tail = pop.get_sub_pop(AND(COND(col.IN_LEN_POST_TAIL, op.eq, False),
+                                               COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.len_tail_length),
+                                               COND(col.LAST_PREP_STOP_DATE, op.ge, pop.date - 2 * self.len_tail_length)))
+        if len(in_len_post_tail) > 0:
+            pop.set_present_variable(col.IN_LEN_POST_TAIL, True, in_len_post_tail)
+        len_post_tail_end = pop.get_sub_pop(AND(COND(col.IN_LEN_POST_TAIL, op.eq, True),
+                                                COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - 2 * self.len_tail_length)))
+        if len(len_post_tail_end) > 0:
+            pop.set_present_variable(col.IN_LEN_POST_TAIL, False, len_post_tail_end)
+
     def prep_usage(self, pop: Population, time_step):
         """
         Update PrEP usage for people starting, continuing, switching, restarting, and stopping PrEP.
@@ -884,3 +929,5 @@ class PrEPModule:
         self.restart_prep(pop, time_step)
         # stopping prep
         self.stop_prep(pop, time_step)
+        # updating prep tails
+        self.update_inj_prep_tails(pop)
