@@ -32,3 +32,9 @@ prob_base_prep_stop_nonuniform:
   Probability: [0.8, 0.1, 0.1]
 prob_prep_restart:
   Value: [0.05, 0.10, 0.20]
+
+# injectable prep tail duration (in months)
+cab_tail_length:
+  Value: [3, 6, 12]
+  Probability: [0.58, 0.37, 0.05]
+len_tail_length: 3

@@ -69,6 +69,10 @@ class PrEPModule:
         self.prob_vr_prep_stop = self.p_data.prob_base_prep_stop_nonuniform.sample()
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
+        # injectable prep tail duration
+        self.cab_tail_length = timedelta(months=self.p_data.cab_tail_length.sample())
+        self.len_tail_length = timedelta(months=self.p_data.len_tail_length)
+
     def init_prep_variables(self, pop: Population):
         pop.init_variable(col.PREP_ORAL_PREF, 0)
         pop.init_variable(col.PREP_CAB_PREF, 0)
