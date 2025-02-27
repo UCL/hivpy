@@ -497,6 +497,27 @@ class ResistanceMutationsModule:
             # p88
             set_new_majority_mutation(col.PR88_MUTATION, [col.ON_TAZ], self.calc_pr88m_outcomes)
 
+            # in118
+            set_new_majority_mutation(col.IN118_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in140
+            set_new_majority_mutation(col.IN140_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in148
+            set_new_majority_mutation(col.IN148_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in155
+            set_new_majority_mutation(col.IN155_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in263
+            set_new_majority_mutation(col.IN263_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
             pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
@@ -726,6 +747,24 @@ class ResistanceMutationsModule:
         p88_mutations = rng.uniform(size=size) < prob_mutation
 
         return p88_mutations
+
+    def calc_inm_outcomes(self, on_dol, on_cab, in_cab_tail, in_primary_infection, size):
+        """
+        Returns integrase inhibitor IN118, IN140, IN148, IN155, or IN263 majority mutation outcomes.
+        """
+        # outcomes on dol
+        prob_mutation = self.resist_rate_dol if on_dol else 0
+        in_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on cab
+        prob_mutation = self.resist_rate_dol * self.cab_resist_factor if on_cab or in_cab_tail else 0
+        r = rng.uniform(size=size)
+        # increased risk during primary infection
+        if in_primary_infection:
+            r /= self.risk_change_cab_resist
+        in_mutations |= r < prob_mutation
+
+        return in_mutations
 
     def calc_total_mutations(self, person):
         """
