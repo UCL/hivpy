@@ -964,6 +964,50 @@ def test_inm():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
 
+def test_ca66m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    pop.set_present_variable(col.ON_OLE, True)
+    pop.set_present_variable(col.ON_LEN, False)
+    pop.set_present_variable(col.IN_LEN_TAIL, False)
+    pop.set_present_variable(col.IN_LEN_POST_TAIL, False)
+    pop.set_present_variable(col.ON_ART, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    # 30% chance of ca66m
+    res.resist_rate_len = 0.3
+    res.incr_len_resist = 2
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.CA66_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.30
+    stdev = sqrt(mean * (1 - 0.30))
+    # expecting ~30% of the population to gain ca66m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    pop.set_present_variable(col.ON_OLE, False)
+    pop.set_present_variable(col.CA66_MUTATION, MutationStatus.Minority)
+    # 60% chance of ca66m
+    pop.set_present_variable(col.IN_LEN_POST_TAIL, True)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.CA66_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.60
+    stdev = sqrt(mean * (1 - 0.60))
+    # expecting ~60% of the population to gain ca66m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
 def test_update_resistance():
     N = 100
     time_step = timedelta(months=1)
