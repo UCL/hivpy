@@ -517,6 +517,10 @@ class ResistanceMutationsModule:
             set_new_majority_mutation(col.IN263_MUTATION,
                                       [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
                                       self.calc_inm_outcomes)
+            # ca66m
+            set_new_majority_mutation(col.CA66_MUTATION,
+                                      [col.ON_OLE, col.ON_LEN, col.IN_LEN_TAIL, col.IN_LEN_POST_TAIL, col.ON_ART],
+                                      self.calc_ca66m_outcomes)
 
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
@@ -765,6 +769,19 @@ class ResistanceMutationsModule:
         in_mutations |= r < prob_mutation
 
         return in_mutations
+
+    def calc_ca66m_outcomes(self, on_ole, on_len, in_len_tail, in_len_post_tail, on_art, size):
+        """
+        Returns CA gene CA66 mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_len if on_ole or on_len or in_len_tail \
+            or (in_len_post_tail and not on_art) else 0
+        # increased risk during post-tail
+        if in_len_post_tail and not on_art:
+            prob_mutation *= self.incr_len_resist
+        ca66_mutations = rng.uniform(size=size) < prob_mutation
+
+        return ca66_mutations
 
     def calc_total_mutations(self, person):
         """
