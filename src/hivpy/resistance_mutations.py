@@ -258,7 +258,7 @@ class ResistanceMutationsModule:
 
     def init_resistance_mutations(self, pop: Population):
         """
-        Initialise drug resistance mutations at the start of the simulation to False.
+        Initialise drug resistance mutations at the start of the simulation to Absent.
         """
         pop.init_variable(col.RTTA_MUTATIONS, 0)  # only tams are tracked with integers
         pop.init_variable(col.RT184_MUTATION, MutationStatus.Absent)
