@@ -974,7 +974,7 @@ def test_ca66m():
     pop.set_present_variable(col.ON_OLE, True)
     pop.set_present_variable(col.ON_LEN, False)
     pop.set_present_variable(col.IN_LEN_TAIL, False)
-    pop.set_present_variable(col.IN_LEN_POST_TAIL, False)
+    pop.set_present_variable(col.IN_CAB_TAIL, False)
     pop.set_present_variable(col.ON_ART, False)
 
     res = pop.resistance
@@ -996,7 +996,7 @@ def test_ca66m():
     pop.set_present_variable(col.ON_OLE, False)
     pop.set_present_variable(col.CA66_MUTATION, MutationStatus.Minority)
     # 60% chance of ca66m
-    pop.set_present_variable(col.IN_LEN_POST_TAIL, True)
+    pop.set_present_variable(col.IN_LEN_TAIL, True)
     res.update_new_mutations_arising_art(pop, pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.CA66_MUTATION, op.eq, MutationStatus.Majority)]))
@@ -1031,7 +1031,6 @@ def test_resistance_mutations_total():
     pop.set_present_variable(col.ON_ISL, False)
     pop.set_present_variable(col.IN_CAB_TAIL, False)
     pop.set_present_variable(col.IN_LEN_TAIL, False)
-    pop.set_present_variable(col.IN_LEN_POST_TAIL, False)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
