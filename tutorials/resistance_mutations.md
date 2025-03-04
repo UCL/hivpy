@@ -48,3 +48,41 @@ All mutations are tracked with a `MutationStatus` enum, except thymidine analog 
 - *`IN155_MUTATION`* - A MutationStatus enum storing the current presence or absence of the integrase inhibitor IN155 mutation in an individual.
 - *`IN263_MUTATION`* - A MutationStatus enum storing the current presence or absence of the integrase inhibitor IN263 mutation in an individual.
 - *`CA66_MUTATION`* - A MutationStatus enum storing the current presence or absence of the capsid gene CA66 mutation in an individual.
+
+### Resistance Mutations Data Variables
+
+- *`active_drug_bins`* - Indexing boundaries of the number of active drugs in a regimen for resistance matrices.
+- *`cont_on_art_bins`* - Indexing boundaries of continuous ART usage for resistance matrices.
+- *`adherence_bins`* - Indexing boundaries of ART adherence for resistance matrices.
+- *`min_vl_on_art`* - The minimum viral load on ART.
+- *`vl_stdev_on_art`* - The standard deviation for viral load changes on ART.
+- *`hindered_cd4_recovery`* - A lowered base CD4 recovery starting value that is used when a failing NNRTI regimen hinders CD4 recovery.
+- *`failed_insti_hinders_cd4_recovery`* - A boolean flag that determines whether a failing INSTI regimen also hinders CD4 recovery.
+- *`cd4_recovery_pi_factor`* - A factor that increases CD4 recovery for people taking protease inhibitors.
+- *`cd4_recovery_female_factor`* - A factor that increases CD4 recovery for women.
+- *`cd4_stdev_on_art`* - The standard deviation for CD4 changes on ART.
+- *`mutation_risk_change`* - A constant factor affecting the population's new mutation probabilities.
+- *`risk_change_tams_resist`* - A factor affecting the probability of developing new TAMs.
+- *`risk_change_151_resist`* - A factor affecting the probability of developing the RT151 mutation.
+- *`risk_change_cab_resist`* - A factor affecting the probability of developing the IN118, IN140, IN148, IN155, and IN263 mutations.
+- *`resist_rate_tams_higher`* - The higher rate of TAMs acquisition.
+- *`resist_rate_tams_lower`* - The lower rate of TAMs acquisition.
+- *`resist_rate_nev_higher`* - The higher rate of nevirapine resistance acquisition.
+- *`resist_rate_nev_lower`* - The lower rate of nevirapine resistance acquisition.
+- *`resist_rate_efa_higher`* - The higher rate of efavirenz resistance acquisition.
+- *`resist_rate_efa_lower`* - The lower rate of efavirenz resistance acquisition.
+- *`resist_rate_lpr_higher`* - The higher rate of lopinavir resistance acquisition.
+- *`resist_rate_lpr_lower`* - The lower rate of lopinavir resistance acquisition.
+- *`zdv_resist_rate`* - The rate of zidovudine resistance acquisition.
+- *`3tc_resist_rate`* - The rate of lamivudine resistance acquisition.
+- *`dar_resist_rate`* - The rate of darunavir resistance acquisition.
+- *`taz_resist_rate`* - The rate of atazanavir resistance acquisition.
+- *`isl_resist_rate`* - The rate of islatravir resistance acquisition.
+- *`ten_resist_rate`* - The rate of tenofovir resistance acquisition.
+- *`dol_resist_rate`* - The rate of dolutegravir resistance acquisition.
+- *`len_resist_rate`* - The rate of lenacapavir resistance acquisition.
+- *`incr_len_resist`* - A multiplier for lenacapavir resistance acquisition.
+- *`cab_resist_factor`* - A multiplier for cabotegravir resistance acquisition.
+- *`viral_load_matrix`* - A matrix containing (`a`, `b`, `c`) float tuples used to calculate an individual's base viral load (`a * max_viral_load + b + c * min_vl_on_art`) for a given time step.
+- *`cd4_delta_matrix`* - A matrix containing floats used to calculate an individual's change in CD4 levels for a given time step.
+- *`new_mutation_matrix`* - A matrix containing floats used to calculate an individual's new mutation probability for a given time step.
