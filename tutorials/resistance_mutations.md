@@ -42,7 +42,6 @@ All mutations are tracked with a `MutationStatus` enum, except thymidine analog 
 - *`PR82_MUTATION`* - A MutationStatus enum storing the current presence or absence of the protease gene P82 mutation in an individual.
 - *`PR84_MUTATION`* - A MutationStatus enum storing the current presence or absence of the protease gene P84 mutation in an individual.
 - *`PR88_MUTATION`* - A MutationStatus enum storing the current presence or absence of the protease gene P88 mutation in an individual.
-- *`PR90_MUTATION`* - A MutationStatus enum storing the current presence or absence of the protease gene P90 mutation in an individual.
 - *`IN118_MUTATION`* - A MutationStatus enum storing the current presence or absence of the integrase inhibitor IN118 mutation in an individual.
 - *`IN140_MUTATION`* - A MutationStatus enum storing the current presence or absence of the integrase inhibitor IN140 mutation in an individual.
 - *`IN148_MUTATION`* - A MutationStatus enum storing the current presence or absence of the integrase inhibitor IN148 mutation in an individual.

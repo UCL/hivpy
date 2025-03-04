@@ -185,7 +185,6 @@ PR76_MUTATION = "pr76m"                         # resistance_mutations.MutationS
 PR82_MUTATION = "pr82m"                         # resistance_mutations.MutationStatus(enum): presence of an individual's PR gene P82 mutation
 PR84_MUTATION = "pr84m"                         # resistance_mutations.MutationStatus(enum): presence of an individual's PR gene P84 mutation
 PR88_MUTATION = "pr88m"                         # resistance_mutations.MutationStatus(enum): presence of an individual's PR gene P88 mutation
-PR90_MUTATION = "pr90m"                         # resistance_mutations.MutationStatus(enum): presence of an individual's PR gene P90 mutation
 IN118_MUTATION = "in118m"                       # resistance_mutations.MutationStatus(enum): presence of an individual's integrase inhibitor IN118 mutation
 IN140_MUTATION = "in140m"                       # resistance_mutations.MutationStatus(enum): presence of an individual's integrase inhibitor IN140 mutation
 IN148_MUTATION = "in148m"                       # resistance_mutations.MutationStatus(enum): presence of an individual's integrase inhibitor IN148 mutation

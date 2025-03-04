@@ -277,7 +277,6 @@ class ResistanceMutationsModule:
         pop.init_variable(col.PR82_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.PR84_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.PR88_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR90_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN118_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN140_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN148_MUTATION, MutationStatus.Absent)
@@ -804,7 +803,6 @@ class ResistanceMutationsModule:
                 self.get_mutation_presence(MutationStatus(person[col.PR82_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.PR84_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.PR88_MUTATION])) +
-                self.get_mutation_presence(MutationStatus(person[col.PR90_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN118_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN140_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN148_MUTATION])) +
