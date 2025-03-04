@@ -70,7 +70,7 @@ class PrEPModule:
         self.prob_prep_restart = self.p_data.prob_prep_restart.sample()
 
         # injectable prep tail duration
-        self.cab_tail_length = timedelta(months=self.p_data.cab_tail_length.sample())
+        self.cab_tail_length = timedelta(months=self.p_data.cab_tail_length)
         self.len_tail_length = timedelta(months=self.p_data.len_tail_length)
 
     def init_prep_variables(self, pop: Population):
@@ -115,7 +115,6 @@ class PrEPModule:
         pop.init_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
         pop.init_variable(col.IN_CAB_TAIL, False)
         pop.init_variable(col.IN_LEN_TAIL, False)
-        pop.init_variable(col.IN_LEN_POST_TAIL, False)
         pop.init_variable(col.LTP_ON_ART, False)
 
     # FIXME: should this function be in another module?
@@ -753,6 +752,17 @@ class PrEPModule:
                 # set stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, stopping_prep_pop)
 
+                # set cab prep tail
+                in_cab_tail = pop.get_sub_pop_intersection(
+                    pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir)), stopping_prep_pop)
+                if len(in_cab_tail) > 0:
+                    pop.set_present_variable(col.IN_CAB_TAIL, True, in_cab_tail)
+                # set len prep tail
+                in_len_tail = pop.get_sub_pop_intersection(
+                    pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir)), stopping_prep_pop)
+                if len(in_len_tail) > 0:
+                    pop.set_present_variable(col.IN_LEN_TAIL, True, in_len_tail)
+
     def calc_current_prep(self, prep_type, favoured_prep, size):
         """
         Returns PrEP types for people continuing PrEP.
@@ -818,7 +828,6 @@ class PrEPModule:
                 # FIXME: should this only happen for people restarting cab or len?
                 pop.set_present_variable(col.IN_CAB_TAIL, False, restarting_prep_pop)
                 pop.set_present_variable(col.IN_LEN_TAIL, False, restarting_prep_pop)
-                pop.set_present_variable(col.IN_LEN_POST_TAIL, False, restarting_prep_pop)
 
     def calc_restarting_prep(self, favoured_prep, prep_paused, size):
         """
@@ -854,16 +863,16 @@ class PrEPModule:
             # pause prep
             pop.set_present_variable(col.PREP_PAUSED, True, ineligible)
 
-        # set cab prep tail
-        in_cab_tail = pop.get_sub_pop_intersection(
-            pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir)), ineligible)
-        if len(in_cab_tail) > 0:
-            pop.set_present_variable(col.IN_CAB_TAIL, True, in_cab_tail)
-        # set len prep tail
-        in_len_tail = pop.get_sub_pop_intersection(
-            pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir)), ineligible)
-        if len(in_len_tail) > 0:
-            pop.set_present_variable(col.IN_LEN_TAIL, True, in_len_tail)
+            # set cab prep tail
+            in_cab_tail = pop.get_sub_pop_intersection(
+                pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir)), ineligible)
+            if len(in_cab_tail) > 0:
+                pop.set_present_variable(col.IN_CAB_TAIL, True, in_cab_tail)
+            # set len prep tail
+            in_len_tail = pop.get_sub_pop_intersection(
+                pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir)), ineligible)
+            if len(in_len_tail) > 0:
+                pop.set_present_variable(col.IN_LEN_TAIL, True, in_len_tail)
 
         # people who have paused prep
         paused = pop.get_sub_pop(COND(col.PREP_PAUSED, op.eq, True))
@@ -896,26 +905,15 @@ class PrEPModule:
         """
         # adjust cab tail
         cab_tail_end = pop.get_sub_pop(AND(COND(col.IN_CAB_TAIL, op.eq, True),
-                                           COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - self.cab_tail_length)))
+                                           COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.cab_tail_length)))
         if len(cab_tail_end) > 0:
             pop.set_present_variable(col.IN_CAB_TAIL, False, cab_tail_end)
 
         # adjust len tail
         len_tail_end = pop.get_sub_pop(AND(COND(col.IN_LEN_TAIL, op.eq, True),
-                                           COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - self.len_tail_length)))
+                                           COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.len_tail_length)))
         if len(len_tail_end) > 0:
             pop.set_present_variable(col.IN_LEN_TAIL, False, len_tail_end)
-
-        # keep track of len post-tail period for resistance
-        in_len_post_tail = pop.get_sub_pop(AND(COND(col.IN_LEN_POST_TAIL, op.eq, False),
-                                               COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.len_tail_length),
-                                               COND(col.LAST_PREP_STOP_DATE, op.ge, pop.date - 2 * self.len_tail_length)))
-        if len(in_len_post_tail) > 0:
-            pop.set_present_variable(col.IN_LEN_POST_TAIL, True, in_len_post_tail)
-        len_post_tail_end = pop.get_sub_pop(AND(COND(col.IN_LEN_POST_TAIL, op.eq, True),
-                                                COND(col.LAST_PREP_STOP_DATE, op.lt, pop.date - 2 * self.len_tail_length)))
-        if len(len_post_tail_end) > 0:
-            pop.set_present_variable(col.IN_LEN_POST_TAIL, False, len_post_tail_end)
 
     def prep_usage(self, pop: Population, time_step):
         """

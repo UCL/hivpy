@@ -32,7 +32,7 @@ class PrEPData(DataReader):
             self.prob_base_prep_stop_nonuniform = self._get_discrete_dist("prob_base_prep_stop_nonuniform")
             self.prob_prep_restart = self._get_discrete_dist("prob_prep_restart")
 
-            self.cab_tail_length = self._get_discrete_dist("cab_tail_length")
+            self.cab_tail_length = self.data["cab_tail_length"]
             self.len_tail_length = self.data["len_tail_length"]
 
         except KeyError as ke:

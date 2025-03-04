@@ -143,7 +143,6 @@ CUMULATIVE_PREP_LEN = "cumulative_prep_len"     # None | timedelta: total length
 CUMULATIVE_PREP_VR = "cumulative_prep_vr"       # None | timedelta: total length of cumulative injectable vaginal ring PrEP usage
 IN_CAB_TAIL = "in_cab_tail"                     # bool: True if an individual is in the tail period of injectable Cab PrEP after stopping usage
 IN_LEN_TAIL = "in_len_tail"                     # bool: True if an individual is in the tail period of injectable Len PrEP after stopping usage
-IN_LEN_POST_TAIL = "in_len_post_tail"           # bool: True if an individual is in the post-tail period of injectable Len PrEP after stopping usage
 
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
 ON_ART = "on_art"                               # bool: True if a person is currently on ART

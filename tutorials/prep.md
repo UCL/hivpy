@@ -65,7 +65,6 @@ People who have chosen to stop taking PrEP but are still eligible can also choos
 - *`CUMULATIVE_PREP_VR`* - A timedelta tracking the total length of cumulative vaginal ring PrEP usage.
 - *`IN_CAB_TAIL`* - A boolean flag signifying whether an individual is in the tail period of injectable Cab PrEP after stopping usage.
 - *`IN_LEN_TAIL`* - A boolean flag signifying whether an individual in the tail period of injectable Len PrEP after stopping usage.
-- *`IN_LEN_POST_TAIL`* - A boolean flag signifying whether an individual is in the post-tail period of injectable Len PrEP after stopping usage.
 
 ### PrEP Data Variables
 
