@@ -450,11 +450,9 @@ class ResistanceMutationsModule:
             set_new_majority_mutation(col.RT184_MUTATION, [col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
                                       self.calc_rt184m_outcomes)
             # q151
-            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV, col.RT151_MUTATION],
-                                      self.calc_rt151m_outcomes)
+            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV], self.calc_rt151m_outcomes)
             # k65
-            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
-                                      self.calc_rt65m_outcomes)
+            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV], self.calc_rt65m_outcomes)
 
             # k103, y181, and g190 (nnrti mutations)
             k103 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
@@ -575,21 +573,21 @@ class ResistanceMutationsModule:
 
         return m184_mutations
 
-    def calc_rt151m_outcomes(self, on_zdv, rt151m, size):
+    def calc_rt151m_outcomes(self, on_zdv, size):
         """
         Returns RT gene Q151 majority mutation outcomes.
         """
-        prob_mutation = self.resist_rate_zdv if on_zdv and rt151m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_zdv if on_zdv else 0
         q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
 
         return q151_mutations
 
-    def calc_rt65m_outcomes(self, on_ten, on_zdv, rt65m, size):
+    def calc_rt65m_outcomes(self, on_ten, on_zdv, size):
         """
         Returns RT gene K65 majority mutation outcomes.
         """
         prob_mutation = 0
-        if on_ten and rt65m != MutationStatus.Majority:
+        if on_ten:
             if on_zdv:
                 prob_mutation = self.resist_rate_zdv
             else:

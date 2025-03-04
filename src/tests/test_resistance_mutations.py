@@ -415,7 +415,6 @@ def test_rt151m():
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT151_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -445,7 +444,6 @@ def test_rt65m():
     pop.set_present_variable(col.VIRAL_LOAD, 10)
     pop.set_present_variable(col.ON_TEN, True)
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
