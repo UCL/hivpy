@@ -201,19 +201,20 @@ class PrEPModule:
 
         return pop.apply_bool_mask(mask, false_neg_pop)
 
-    def get_prep_cont_choice_pop(self, pop: Population):
+    def get_prep_dose_ready_pop(self, pop: Population):
         """
-        Return the sub-population that have reached a point in their PrEP usage
-        where they can choose whether to stop or switch. For people on oral
-        or vaginal ring PrEP this happens every time step, but injectable PrEP
+        Return the sub-population of people that are due to take their next dose of PrEP.
+        At this point in PrEP usage, an individual may choose whether to stop or switch,
+        or they may be forced to stop due to ineligibility. For people on oral or
+        vaginal ring PrEP this happens every time step, but injectable PrEP
         takes some time to wear off (~3 months for cab and ~6 months for len).
         """
         return pop.get_sub_pop(OR(COND(col.PREP_TYPE, op.eq, PrEPType.Oral),
                                   COND(col.PREP_TYPE, op.eq, PrEPType.VaginalRing),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=3))),
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.cab_tail_length)),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=6)))))
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.len_tail_length))))
 
     def prep_preference(self, pop: Population):
         """
@@ -690,7 +691,7 @@ class PrEPModule:
                                           AND(COND(col.LAST_TEST_DATE, op.eq, pop.date),
                                               COND(col.HIV_DIAGNOSED, op.eq, False)))))
         # people who can choose to stop or switch this time step
-        prep_choice_pop = pop.get_sub_pop_intersection(eligible, self.get_prep_cont_choice_pop(pop))
+        prep_choice_pop = pop.get_sub_pop_intersection(eligible, self.get_prep_dose_ready_pop(pop))
 
         if len(eligible) > 0:
             # continuous prep outcomes
@@ -851,8 +852,10 @@ class PrEPModule:
         and people who have paused PrEP usage.
         """
         # people who are using prep and are now ineligible
-        ineligible = pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, False),
-                                         COND(col.ON_PREP, op.eq, True)))
+        # (those on inj prep count as having stopped if they are ineligible when their next dose is due)
+        ineligible = pop.get_sub_pop_intersection(pop.get_sub_pop(AND(COND(col.PREP_ELIGIBLE, op.eq, False),
+                                                                      COND(col.ON_PREP, op.eq, True))),
+                                                  self.get_prep_dose_ready_pop(pop))
 
         if len(ineligible) > 0:
             pop.set_present_variable(col.ON_PREP, False, ineligible)
