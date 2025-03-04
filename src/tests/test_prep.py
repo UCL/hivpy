@@ -953,6 +953,7 @@ def test_stopping_prep():
     pop.data.loc[N*0.9:N-1, col.EVER_PREP] = False
     pop.data[col.ON_PREP] = True
     pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.LAST_PREP_USE_DATE] = pop.date - timedelta(months=3)
     pop.data[col.LAST_PREP_STOP_DATE] = None
     pop.data[col.PREP_PAUSED] = False
     pop.data[col.LAST_TEST_DATE] = pop.date
@@ -1054,9 +1055,8 @@ def test_prep_inj_tails():
     pop.data[col.PREP_TYPE] = [PrEPType.Cabotegravir, PrEPType.Lenacapavir] * (N // 2)
     pop.data[col.IN_CAB_TAIL] = True
     pop.data[col.IN_LEN_TAIL] = True
-    pop.data[col.IN_LEN_POST_TAIL] = False
-    pop.prep.cab_tail_length = timedelta(months=6)
-    pop.prep.len_tail_length = timedelta(months=3)
+    pop.prep.cab_tail_length = timedelta(months=3)
+    pop.prep.len_tail_length = timedelta(months=6)
 
     # pass 2 months
     for i in range(2):
@@ -1066,40 +1066,27 @@ def test_prep_inj_tails():
     # tail periods are active
     assert all(pop.get_variable(col.IN_CAB_TAIL))
     assert all(pop.get_variable(col.IN_LEN_TAIL))
-    assert all(~pop.get_variable(col.IN_LEN_POST_TAIL))
 
     # pass 1 more month
     pop.date += time_step
     pop.prep.prep_usage(pop, time_step)
 
-    # post-tail has begun
-    assert all(pop.get_variable(col.IN_CAB_TAIL))
+    # cab tail period has ended
+    assert all(~pop.get_variable(col.IN_CAB_TAIL))
     assert all(pop.get_variable(col.IN_LEN_TAIL))
-    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
-
-    # pass 1 more month
-    pop.date += time_step
-    pop.prep.prep_usage(pop, time_step)
-
-    # len tail period has ended
-    assert all(pop.get_variable(col.IN_CAB_TAIL))
-    assert all(~pop.get_variable(col.IN_LEN_TAIL))
-    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
 
     # pass 2 more months
     for i in range(2):
         pop.date += time_step
         pop.prep.prep_usage(pop, time_step)
 
-    assert all(pop.get_variable(col.IN_CAB_TAIL))
-    assert all(~pop.get_variable(col.IN_LEN_TAIL))
-    assert all(pop.get_variable(col.IN_LEN_POST_TAIL))
+    assert all(~pop.get_variable(col.IN_CAB_TAIL))
+    assert all(pop.get_variable(col.IN_LEN_TAIL))
 
     # pass 1 more month
     pop.date += time_step
     pop.prep.prep_usage(pop, time_step)
 
-    # all tail and post-tail periods have ended
+    # all tail periods have ended
     assert all(~pop.get_variable(col.IN_CAB_TAIL))
     assert all(~pop.get_variable(col.IN_LEN_TAIL))
-    assert all(~pop.get_variable(col.IN_LEN_POST_TAIL))
