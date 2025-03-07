@@ -563,29 +563,34 @@ class PrEPModule:
         Update people starting PrEP for the first time without specifically testing to start PrEP.
         """
         # not tested explicitly to start any prep
-        starting_prep_pop = pop.get_sub_pop_intersection(
+        eligible = pop.get_sub_pop_intersection(
            prep_eligible_pop, pop.get_sub_pop(AND(COND(col.PREP_ORAL_TESTED, op.eq, False),
                                                   COND(col.PREP_CAB_TESTED, op.eq, False),
                                                   COND(col.PREP_LEN_TESTED, op.eq, False),
                                                   COND(col.PREP_VR_TESTED, op.eq, False))))
 
-        if len(starting_prep_pop) > 0:
+        if len(eligible) > 0:
             # starting prep outcomes
             prep_types = pop.transform_group([col.FAVOURED_PREP_TYPE], self.calc_starting_prep,
-                                             sub_pop=starting_prep_pop)
-            pop.set_present_variable(col.PREP_TYPE, prep_types, starting_prep_pop)
-            pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
-            pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
-            pop.set_present_variable(col.ON_PREP, True, starting_prep_pop)
-            # set start dates
-            self.set_all_prep_start_dates(pop, starting_prep_pop)
-            # set continuous use
-            pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
-            pop.set_present_variable(col.CONT_INTENT_ON_PREP, time_step, starting_prep_pop)
-            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
-            # increment cumulative use
-            self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
-            pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, starting_prep_pop)
+                                             sub_pop=eligible)
+            pop.set_present_variable(col.PREP_TYPE, prep_types, eligible)
+            # people on no prep do not begin prep
+            starting_prep_mask = pop.get_variable(col.PREP_TYPE, eligible) != PrEPType.NoPrEP
+            starting_prep_pop = pop.apply_bool_mask(starting_prep_mask, eligible)
+
+            if len(starting_prep_pop) > 0:
+                pop.set_present_variable(col.EVER_PREP, True, starting_prep_pop)
+                pop.set_present_variable(col.PREP_JUST_STARTED, True, starting_prep_pop)
+                pop.set_present_variable(col.ON_PREP, True, starting_prep_pop)
+                # set start dates
+                self.set_all_prep_start_dates(pop, starting_prep_pop)
+                # set continuous use
+                pop.set_present_variable(col.CONT_ON_PREP, time_step, starting_prep_pop)
+                pop.set_present_variable(col.CONT_INTENT_ON_PREP, time_step, starting_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, time_step, starting_prep_pop)
+                # increment cumulative use
+                self.set_all_prep_cumulative(pop, starting_prep_pop, time_step)
+                pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date, starting_prep_pop)
 
     def set_all_prep_start_dates(self, pop: Population, starting_prep_pop):
         """
