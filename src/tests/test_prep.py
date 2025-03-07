@@ -1022,7 +1022,7 @@ def test_stopping_prep():
     assert all(~pop.data[col.ON_PREP] == pop.data[col.HIV_DIAGNOSED])
     assert sum(pop.data[col.PREP_PAUSED]) == 0
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date))
-    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
+    assert all(~pop.data[col.ON_PREP] == pop.data[col.IN_CAB_TAIL])
     # check continuous prep usage
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_ON_PREP] == timedelta(months=0)))
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.CONT_INTENT_ON_PREP] == timedelta(months=0)))
@@ -1034,7 +1034,7 @@ def test_stopping_prep():
     assert sum(pop.data[col.ON_PREP]) == N*0.1
     assert sum(pop.data[col.PREP_PAUSED]) == 0
     assert all(~pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_STOP_DATE] == pop.date - time_step))
-    assert all(pop.data[col.PREP_PAUSED] == pop.data[col.IN_CAB_TAIL])
+    assert all(~pop.data[col.ON_PREP] == pop.data[col.IN_CAB_TAIL])
 
 
 def test_prep_inj_tails():
