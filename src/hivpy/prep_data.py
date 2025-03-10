@@ -17,6 +17,8 @@ class PrEPData(DataReader):
             self.date_prep_cab_intro = self.data["date_prep_cab_intro"]
             self.date_prep_len_intro = self.data["date_prep_len_intro"]
             self.date_prep_vr_intro = self.data["date_prep_vr_intro"]
+            self.cab_inj_interval = self.data["cab_inj_interval"]
+            self.len_inj_interval = self.data["len_inj_interval"]
             self.prob_risk_informed_prep = self.data["prob_risk_informed_prep"]
             self.prob_greater_risk_informed_prep = self.data["prob_greater_risk_informed_prep"]
             self.prob_suspect_risk_prep = self.data["prob_suspect_risk_prep"]

@@ -39,6 +39,8 @@ class PrEPModule:
                                 date(self.p_data.date_prep_len_intro),
                                 date(self.p_data.date_prep_vr_intro)]
         self.cab_available = True
+        self.cab_inj_interval = timedelta(months=self.p_data.cab_inj_interval)
+        self.len_inj_interval = timedelta(months=self.p_data.len_inj_interval)
         self.prob_risk_informed_prep = self.p_data.prob_risk_informed_prep
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
         self.prob_suspect_risk_prep = self.p_data.prob_suspect_risk_prep
@@ -212,9 +214,9 @@ class PrEPModule:
         return pop.get_sub_pop(OR(COND(col.PREP_TYPE, op.eq, PrEPType.Oral),
                                   COND(col.PREP_TYPE, op.eq, PrEPType.VaginalRing),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.cab_tail_length)),
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.cab_inj_interval)),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.len_tail_length))))
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - self.len_inj_interval))))
 
     def prep_preference(self, pop: Population):
         """

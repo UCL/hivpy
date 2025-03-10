@@ -5,6 +5,9 @@ date_prep_oral_intro: 2018.25
 date_prep_cab_intro: 2027
 date_prep_len_intro: 3000
 date_prep_vr_intro: 2100
+# injectable prep dose intervals (in months)
+cab_inj_interval: 3
+len_inj_interval: 6
 # eligibility probabilities (r_prep boundaries)
 prob_risk_informed_prep: 0.05
 prob_greater_risk_informed_prep: 0.1
