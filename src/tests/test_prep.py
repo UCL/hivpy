@@ -776,6 +776,8 @@ def test_continuing_prep():
     # everyone is taking their favoured prep type
     pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
                                         PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+    pop.prep.cab_inj_interval = timedelta(months=3)
+    pop.prep.len_inj_interval = timedelta(months=6)
     # 10% chance to stop prep
     prob_base_prep_stop = 0.1
     pop.prep.prob_oral_prep_stop = prob_base_prep_stop
@@ -1047,6 +1049,8 @@ def test_prep_inj_tails():
     pop.data[col.EVER_PREP] = True
     pop.data[col.ON_PREP] = False
     pop.data[col.LAST_PREP_STOP_DATE] = pop.date
+    pop.data[col.LAST_CAB_STOP_DATE] = pop.date
+    pop.data[col.LAST_LEN_STOP_DATE] = pop.date
     pop.data[col.PREP_PAUSED] = False
     pop.data[col.PREP_JUST_STARTED] = False
     pop.data[col.CONT_ON_PREP] = timedelta(months=0)
