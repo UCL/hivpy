@@ -106,6 +106,8 @@ class PrEPModule:
         pop.init_variable(col.PREP_JUST_STARTED, False)
         pop.init_variable(col.LAST_PREP_USE_DATE, None)
         pop.init_variable(col.LAST_PREP_STOP_DATE, None)
+        pop.init_variable(col.LAST_CAB_STOP_DATE, None)
+        pop.init_variable(col.LAST_LEN_STOP_DATE, None)
         pop.init_variable(col.PREP_PAUSED, False)
         pop.init_variable(col.ON_PREP, False)
         pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
@@ -645,13 +647,20 @@ class PrEPModule:
         if len(on_cab) > 0:
             pop.set_present_variable(col.ON_CAB, on_drug, on_cab)
             pop.set_present_variable(col.IN_CAB_TAIL, not on_drug, on_cab)
+            if on_drug:
+                pop.set_present_variable(col.LAST_CAB_STOP_DATE, None, on_cab)
+            else:
+                pop.set_present_variable(col.LAST_CAB_STOP_DATE, pop.date, on_cab)
         # update len drug usage
         on_len = pop.get_sub_pop_intersection(
             pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir)), sub_pop)
         if len(on_len) > 0:
-            # FIXME: is ole (oral len) set elsewhere?
             pop.set_present_variable(col.ON_LEN, on_drug, on_len)
             pop.set_present_variable(col.IN_LEN_TAIL, not on_drug, on_len)
+            if on_drug:
+                pop.set_present_variable(col.LAST_LEN_STOP_DATE, None, on_len)
+            else:
+                pop.set_present_variable(col.LAST_LEN_STOP_DATE, pop.date, on_len)
 
     def calc_starting_prep(self, favoured_prep, size):
         """
@@ -925,13 +934,13 @@ class PrEPModule:
         """
         # adjust cab tail
         cab_tail_end = pop.get_sub_pop(AND(COND(col.IN_CAB_TAIL, op.eq, True),
-                                           COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.cab_tail_length)))
+                                           COND(col.LAST_CAB_STOP_DATE, op.le, pop.date - self.cab_tail_length)))
         if len(cab_tail_end) > 0:
             pop.set_present_variable(col.IN_CAB_TAIL, False, cab_tail_end)
 
         # adjust len tail
         len_tail_end = pop.get_sub_pop(AND(COND(col.IN_LEN_TAIL, op.eq, True),
-                                           COND(col.LAST_PREP_STOP_DATE, op.le, pop.date - self.len_tail_length)))
+                                           COND(col.LAST_LEN_STOP_DATE, op.le, pop.date - self.len_tail_length)))
         if len(len_tail_end) > 0:
             pop.set_present_variable(col.IN_LEN_TAIL, False, len_tail_end)
 
