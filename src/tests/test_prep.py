@@ -1039,6 +1039,222 @@ def test_stopping_prep():
     assert all(~pop.data[col.ON_PREP] == pop.data[col.IN_CAB_TAIL])
 
 
+def test_prep_inj_drug_usage():
+    N = 100
+    time_step = timedelta(months=1)
+    start_date = date(2000, 1, 1)
+    pop = Population(size=N, start_date=start_date)
+    pop.prep.date_prep_intro = [date(2000), date(2000), date(2000), date(2000)]
+    pop.data[col.HARD_REACH] = False
+    pop.data[col.HIV_DIAGNOSED] = False
+    pop.data[col.PREP_ELIGIBLE] = True
+    pop.data[col.PREP_ANY_WILLING] = True
+    pop.data[col.EVER_PREP] = False
+    pop.data[col.LAST_TEST_DATE] = pop.date
+    pop.data[col.ON_PREP] = False
+    pop.data[col.PREP_TYPE] = PrEPType.NoPrEP
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                                        PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+    pop.prep.cab_tail_length = timedelta(months=3)
+    pop.prep.len_tail_length = timedelta(months=6)
+    # 75% chance to start any prep
+    pop.prep.prob_base_prep_start = 0.75
+    pop.prep.prob_oral_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_cab_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_len_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_vr_prep_start = pop.prep.prob_base_prep_start
+    # 0% chance to stop prep
+    prob_base_prep_stop = 0
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+
+    pop.prep.prep_usage(pop, time_step)
+    # expecting ~75% of people to start prep for the first time
+    no_on_prep = sum(pop.data[col.ON_PREP])
+    mean = N * pop.prep.prob_base_prep_start
+    stdev = sqrt(mean * (1 - pop.prep.prob_base_prep_start))
+    assert mean - 3 * stdev <= no_on_prep <= mean + 3 * stdev
+    # check drug usage
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == pop.data[col.ON_CAB])
+    assert all(~pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == pop.data[col.ON_LEN])
+    assert all(~pop.data[col.IN_LEN_TAIL])
+
+    # lock people from starting more new prep
+    pop.prep.prob_base_prep_start = 0
+    pop.prep.prob_oral_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_cab_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_len_prep_start = pop.prep.prob_base_prep_start
+    pop.prep.prob_vr_prep_start = pop.prep.prob_base_prep_start
+
+    # pass 2 months
+    for i in range(2):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # people not on prep have no last use date
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.NoPrEP) ==
+               (pop.data[col.LAST_PREP_USE_DATE].isnull()))
+    # oral and vr should have new last use dates
+    assert all(((pop.data[col.PREP_TYPE] == PrEPType.Oral) |
+                (pop.data[col.PREP_TYPE] == PrEPType.VaginalRing)) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == pop.date))
+    # cab and len should not have updated use dates
+    assert all(((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) |
+                (pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir)) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == start_date))
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+
+    # check cab has been updated but len hasn't
+    assert all(((pop.data[col.PREP_TYPE] == PrEPType.Oral) |
+                (pop.data[col.PREP_TYPE] == PrEPType.VaginalRing) |
+                (pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir)) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == pop.date))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) ==
+               (pop.data[col.LAST_PREP_USE_DATE] == start_date))
+
+    # pass 3 more months
+    for i in range(3):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # check cab and len have been updated (everyone on prep has a new last use date)
+    assert all(pop.data[col.ON_PREP] == (pop.data[col.LAST_PREP_USE_DATE] == pop.date))
+
+    # pass 5 more months (wait for dose readiness)
+    for i in range(5):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # 100% chance to stop prep
+    prob_base_prep_stop = 1
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+    inj_stop_date = pop.date
+
+    # everyone is off prep
+    assert all(~pop.data[col.ON_PREP])
+    assert all(~pop.data[col.ON_CAB])
+    assert all(~pop.data[col.ON_LEN])
+    # everyone previously on cab and len is now in tail periods
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) == pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Cabotegravir) ==
+               (pop.data[col.LAST_CAB_STOP_DATE] == inj_stop_date))
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) == pop.data[col.IN_LEN_TAIL])
+    assert all((pop.data[col.PREP_TYPE] == PrEPType.Lenacapavir) ==
+               (pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date))
+
+    # everyone who restarts changes prep type
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Cabotegravir, PrEPType.Oral,
+                                        PrEPType.VaginalRing, PrEPType.Lenacapavir] * (N // 4)
+    pop.data[col.LAST_TEST_DATE] = pop.date + time_step
+    # lock people from choosing to stop prep
+    prob_base_prep_stop = 0
+    pop.prep.prob_oral_prep_stop = prob_base_prep_stop
+    pop.prep.prob_cab_prep_stop = prob_base_prep_stop
+    pop.prep.prob_len_prep_stop = prob_base_prep_stop
+    pop.prep.prob_vr_prep_stop = prob_base_prep_stop
+    # 75% chance to restart prep
+    pop.prep.prob_prep_restart = 0.75
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+
+    # everyone that used to be on cab and len is still in their tail periods
+    assert all((pop.data[col.LAST_CAB_STOP_DATE] == inj_stop_date) == pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date) == pop.data[col.IN_LEN_TAIL])
+    # everyone currently on cab or len don't have last stop dates for their respective drugs
+    assert all(pop.data[col.ON_CAB] ==
+               pop.data[col.ON_CAB] & pop.data[col.LAST_CAB_STOP_DATE].isnull())
+    assert all(pop.data[col.ON_LEN] ==
+               pop.data[col.ON_LEN] & pop.data[col.LAST_LEN_STOP_DATE].isnull())
+
+    # 0% chance to restart prep
+    pop.prep.prob_prep_restart = 0
+    # pass 2 more months
+    for i in range(2):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # nobody should be in a cab tail anymore
+    assert all(~pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date) == pop.data[col.IN_LEN_TAIL])
+
+    # pass 3 more months
+    for i in range(3):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # nobody should be in a len tail anymore
+    assert all(~pop.data[col.IN_CAB_TAIL])
+    assert all(~pop.data[col.IN_LEN_TAIL])
+
+    # 100% chance to switch prep
+    pop.data[col.FAVOURED_PREP_TYPE] = [PrEPType.Oral, PrEPType.Cabotegravir,
+                                        PrEPType.Lenacapavir, PrEPType.VaginalRing] * (N // 4)
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+    inj_stop_date = pop.date
+
+    # everyone that used to be on cab and len is in their tail periods
+    assert all((pop.data[col.LAST_CAB_STOP_DATE] == inj_stop_date) == pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date) == pop.data[col.IN_LEN_TAIL])
+
+    # pass 3 more months
+    for i in range(3):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # nobody should be in a cab tail anymore
+    assert all(~pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date) == pop.data[col.IN_LEN_TAIL])
+
+    # pass 3 more months
+    for i in range(3):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # nobody should be in a len tail anymore
+    assert all(~pop.data[col.IN_CAB_TAIL])
+    assert all(~pop.data[col.IN_LEN_TAIL])
+
+    # pass 5 more months (wait for dose readiness)
+    for i in range(5):
+        pop.date += time_step
+        pop.prep.prep_usage(pop, time_step)
+
+    # everyone becomes either permanently or temporarily ineligible
+    pop.data[col.HIV_DIAGNOSED] = [True, False] * (N // 2)
+    pop.data[col.PREP_ELIGIBLE] = [True, False] * (N // 2)
+
+    # pass 1 more month
+    pop.date += time_step
+    pop.prep.prep_usage(pop, time_step)
+    inj_stop_date = pop.date
+
+    # everyone is off prep
+    assert all(~pop.data[col.ON_PREP])
+    assert all(~pop.data[col.ON_CAB])
+    assert all(~pop.data[col.ON_LEN])
+    # everyone that used to be on cab and len is in their tail periods
+    assert all((pop.data[col.LAST_CAB_STOP_DATE] == inj_stop_date) == pop.data[col.IN_CAB_TAIL])
+    assert all((pop.data[col.LAST_LEN_STOP_DATE] == inj_stop_date) == pop.data[col.IN_LEN_TAIL])
+
+
 def test_prep_inj_tails():
     N = 100
     time_step = timedelta(months=1)
