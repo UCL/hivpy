@@ -764,8 +764,6 @@ class PrEPModule:
 
             if len(switching_prep_pop) > 0:
                 # unset old drugs and set tails
-                # FIXME: probably need separate cab/len stop dates; tails won't
-                # tick down properly after switching because there is no last prep stop date
                 self.set_prep_drug_usage(pop, switching_prep_pop, False)
                 # set new prep types
                 pop.set_present_variable(col.PREP_TYPE, prep_types, switching_prep_pop)
@@ -844,8 +842,6 @@ class PrEPModule:
                 # set start dates
                 self.set_all_prep_start_dates(pop, restarting_prep_pop)
                 # set drug usage and unset tails
-                # FIXME: probably need separate cab/len stop dates; tails won't
-                # tick down properly after restarting because last prep stop date gets unset
                 self.set_prep_drug_usage(pop, restarting_prep_pop, True)
 
                 # set continuous use
