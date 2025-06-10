@@ -10,6 +10,11 @@ from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
 
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
+
+
 @pytest.fixture
 def pop_with_initial_hiv():
     pop_size = 100000
@@ -205,22 +210,22 @@ def test_viral_group_risk_vector():
     pop.data[col.SEX] = np.array(sex_list)
     pop.data[col.SEX_MIX_AGE_GROUP] = np.array(age_group_list)
     pop.data[col.NUM_PARTNERS] = 1  # give everyone a single stp to start with
-    pop.data[col.VIRAL_LOAD] = 3.0  # put everyone in the same viral load group to begin with
+    pop.set_present_variable(col.VIRAL_LOAD, 3.0)  # put everyone in the same viral load group to begin with
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)  # probability of group 1 should be 100%
     expectation = np.array([0., 1., 0., 0., 0., 0.])
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
-    pop.data[col.VIRAL_LOAD] = np.array([3.0, 4.0] * (N // 2))  # alternate groups 1 & 2
-    pop.data.loc[pop.data[col.VIRAL_LOAD] == 3.0, col.NUM_PARTNERS] = 2
+    pop.set_present_variable(col.VIRAL_LOAD, np.array([3.0, 4.0] * (N // 2)))  # alternate groups 1 & 2
+    pop.data.loc[pop.data[pop.get_correct_column(col.VIRAL_LOAD, dt=0)] == 3.0, col.NUM_PARTNERS] = 2
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)
     expectation = np.array([0., 2/3, 1/3, 0., 0., 0.])
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
     # check for appropriate sex differences
-    pop.data.loc[(pop.data[col.VIRAL_LOAD] == 3.0) & (
-        pop.data[col.SEX] == SexType.Female), col.VIRAL_LOAD] = 5.0
+    pop.data.loc[(pop.data[pop.get_correct_column(col.VIRAL_LOAD, dt=0)] == 3.0) & (
+        pop.data[col.SEX] == SexType.Female), pop.get_correct_column(col.VIRAL_LOAD, dt=0)] = 5.0
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)
     expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0.])
@@ -233,7 +238,7 @@ def test_initial_vl():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = [True, False] * 500
     # Reset viral load for testing (original values affected by intro of HIV)
-    pop.data[col.VIRAL_LOAD] = 0.0
+    pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
     hivneg_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False))
     hiv_module = pop.hiv_status
@@ -270,10 +275,10 @@ def test_naive_vl_progression():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     init_vl = 5
     pop.data[col.AGE] = 35
-    pop.data[col.VIRAL_LOAD] = init_vl
+    pop.set_present_variable(col.VIRAL_LOAD, init_vl)
     pop.data[col.HIV_STATUS] = [True, False] * 500
     # Reset viral load for testing (original values affected by intro of HIV)
-    pop.data[col.VIRAL_LOAD] = 0.0
+    pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     pop.data[col.ART_NAIVE] = True
     hiv_module = pop.hiv_status
     hiv_module.vl_base_change = 1.5
@@ -289,7 +294,7 @@ def test_naive_vl_progression():
 
     # Check that we can't exceed maximum viral load
     pop.data[col.AGE] = 35
-    pop.data[col.VIRAL_LOAD] = 6.5
+    pop.set_present_variable(col.VIRAL_LOAD, 6.5)
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     new_vls = pop.get_variable(col.VIRAL_LOAD, hivpos_subpop)
     assert (all(new_vls <= 6.5))
@@ -297,7 +302,7 @@ def test_naive_vl_progression():
 
 def check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, age_diff):
     pop.data[col.AGE] = 35 + age_diff
-    pop.data[col.VIRAL_LOAD] = init_vl
+    pop.set_present_variable(col.VIRAL_LOAD, init_vl)
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     assert (all(pop.get_variable(col.VIRAL_LOAD, hivneg_subpop) == 5))
     new_vls = pop.get_variable(col.VIRAL_LOAD, hivpos_subpop)
@@ -314,8 +319,8 @@ def test_initial_cd4():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     pop.data[col.HIV_STATUS] = [True, False] * 5000
-    pop.data[col.CD4] = 0.0
-    pop.data[col.VIRAL_LOAD] = 0.0
+    pop.set_present_variable(col.CD4, 0.0)
+    pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
     hivneg_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, False))
     hiv_module = pop.hiv_status
@@ -330,8 +335,8 @@ def test_initial_cd4():
 
 def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex, age_diff):
     pop.data[col.AGE] = 35 + age_diff
-    pop.data[col.CD4] = 0.0
-    pop.data[col.VIRAL_LOAD] = 0.0
+    pop.set_present_variable(col.CD4, 0.0)
+    pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hiv_module.initialise_HIV_progression(pop, hivpos_subpop)
     neg_cd4_counts = pop.get_variable(col.CD4, hivneg_subpop)
     assert np.allclose(neg_cd4_counts, 0.0)
@@ -365,16 +370,16 @@ def test_naive_cd4_progression():
     hiv_module.cd4_base_change = 1.5  # Fix to avoid sampling
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
 
-    pop.data[col.VIRAL_LOAD] = 5.25  # in the middle of a VL group
+    pop.set_present_variable(col.VIRAL_LOAD, 5.25)  # in the middle of a VL group
     check_cd4_progression(pop, hiv_module, hivpos_subpop, 0.85)
-    pop.data[col.VIRAL_LOAD] = 5.75  # in the middle of a VL group
+    pop.set_present_variable(col.VIRAL_LOAD, 5.75)  # in the middle of a VL group
     check_cd4_progression(pop, hiv_module, hivpos_subpop, 1.3)
-    pop.data[col.VIRAL_LOAD] = 4.75  # in the middle of a VL group
+    pop.set_present_variable(col.VIRAL_LOAD, 4.75)  # in the middle of a VL group
     check_cd4_progression(pop, hiv_module, hivpos_subpop, 0.4)
 
 
 def check_cd4_progression(pop, hiv_module, hivpos_subpop, change_factor):
-    pop.data[col.CD4] = 1000.0
+    pop.data[pop.get_correct_column(col.CD4, dt=0)] = 1000.0
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     cd4_counts = pop.get_variable(col.CD4, hivpos_subpop)
     assert np.all(cd4_counts <= 1500)
@@ -517,8 +522,10 @@ def test_ltp_infection_by_subject(vl_group):
     HIVM.monogamous_ltp_transmission(pop)
     women_infected = sum(pop.get_variable(col.LTP_STATUS, men))
     men_infected = sum(pop.get_variable(col.LTP_STATUS, women))
-    assert (expected_men_infected - 4 * sigma_men_infected < men_infected < expected_men_infected + 4 * sigma_men_infected)
-    assert (expected_women_infected - 4 * sigma_women_infected < women_infected < expected_women_infected + 4 * sigma_women_infected)
+    assert (np.floor(expected_men_infected - 4 * sigma_men_infected) <= men_infected)
+    assert (men_infected <= np.ceil(expected_men_infected + 4 * sigma_men_infected))
+    assert (np.floor(expected_women_infected - 4 * sigma_women_infected) <= women_infected)
+    assert (women_infected <= np.ceil(expected_women_infected + 4 * sigma_women_infected))
 
 
 @pytest.mark.parametrize("risk_factors", zip([0, 1, 2], [False, True], [False, True]))

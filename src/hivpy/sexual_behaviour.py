@@ -460,7 +460,7 @@ class SexualBehaviourModule:
 
     def update_risk_art_adherence(self, pop: Population):
         # need to make this column check more intuitive
-        if (col.ART_ADHERENCE in pop.data.columns):
+        if (pop.get_correct_column(col.ART_ADHERENCE, dt=0) in pop.data.columns):
             low_adherence_pop = pop.get_sub_pop(
                 [(col.ART_ADHERENCE, operator.lt, self.adherence_threshold)])
             pop.set_present_variable(col.RISK_ART_ADHERENCE,

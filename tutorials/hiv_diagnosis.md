@@ -7,7 +7,7 @@ The HIV diagnosis module tracks the current HIV test type, test sensitivities, a
 - `src/hivpy/data/hiv_diagnosis.yaml` - HIV diagnosis data and variables.
 - `src/hivpy/hiv_diagnosis_data.py` - A class for storing data loaded from `hiv_diagnosis.yaml`.
 
-If there are any testing-related variables you would like to change before running your simulation, please change them in `hiv_diagnosis.yaml`.
+If there are any diagnosis-related variables you would like to change before running your simulation, please change them in `hiv_diagnosis.yaml`.
 
 ### Module Overview
 

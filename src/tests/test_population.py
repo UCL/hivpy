@@ -1,10 +1,16 @@
 import operator as op
 
 import numpy as np
+import pytest
 
 from hivpy import column_names as col
-from hivpy.common import AND, COND, OR, SexType, date
+from hivpy.common import AND, COND, OR, SexType, date, rng
 from hivpy.population import Population
+
+
+@pytest.fixture(autouse=True)
+def resetRandomState():
+    rng.set_seed(42)
 
 
 def test_population_init():
