@@ -64,8 +64,9 @@ class ArtMonitoringStrategy(Enum):
     vl_monitor_biannual = 152
     # 153. Viral load monitoring (6m, annual) no confirmation
     vl_monitor_no_confirm = 153
-    # 1500.Viral load monitoring (6m, 12m, annual) + adh > 0.8 based on tdf level test;
+    # 1500. Viral load monitoring (6m, 12m, annual) + adh > 0.8 based on tdf level test;
     vl_monitor_tdf_test = 1500
+    # 1700. Monitoring people on len/cab 
 
 class VmFormat(Enum):
     # vm_format=1  plasma  lab
@@ -137,11 +138,14 @@ class ARTModule:
         self.base_rate_return = self.art_data.base_rate_return.sample()
         self.base_rate_return_lencab = self.art_data.base_rate_return_lencab.sample()
 
-    def update_strategies(self, current_date: date):
-        if current_date < date(2005, 6, 1):
-            self.hiv_monitoring_strategy = HivMonitoringStrategy.presence_tb_who4
-            self.art_initiation_strategy = ArtInitiationStrategy.all_tb_who4
-            self.art_monitoring_strategy = ArtMonitoringStrategy.only_clinical
+    def init_strategies(self, pop: Population):
+        pop.init_variable(col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4)
+        pop.init_variable(col.ART_INITIATION_STRATEGY, ArtInitiationStrategy.all_tb_who4)
+        pop.init_variable(col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_clinical)
+
+    def update_strategies(self, current_date: date, pop: Population):
+        """ Update strategies for HIV monitoring, ART initiation, and ART monitoring
+            for all members of the population"""
 
         def set_initiation_strategy(art_strategy: ArtInitiationStrategy,
                               start_date: date,
@@ -188,5 +192,5 @@ class ARTModule:
             
         if (current_date == date(self.year_intervention, 1, 1)):
             # lower future ART coverage
-            
+            self.art_monitoring_strategy = ArtMonitoringStrategy.
             # higher future oral prep coverage

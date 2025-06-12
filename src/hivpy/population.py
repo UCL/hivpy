@@ -15,6 +15,7 @@ from .pregnancy import PregnancyModule
 from .prep import PrEPModule
 from .resistance_mutations import ResistanceMutationsModule
 from .sexual_behaviour import SexualBehaviourModule
+from .art import ARTModule
 
 HIV_APPEARANCE = date(1989, 1, 1)
 
@@ -48,6 +49,7 @@ class Population:
         self.hiv_testing = HIVTestingModule()
         self.hiv_diagnosis = HIVDiagnosisModule()
         self.prep = PrEPModule()
+        self.art = ARTModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -109,6 +111,8 @@ class Population:
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
+        
+        self.art.init_strategies(self)
 
     def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
         """

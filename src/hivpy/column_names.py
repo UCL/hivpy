@@ -152,6 +152,10 @@ NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in
 ART_ADHERENCE = "art_adherence"                 # float: percentage of ART intake that is adhered to
 RESISTANCE_INDEX = "resistance_index"           # float: an index used to identify an individual's resistance profile for various calculations
 
+ART_MONITORING_STRATEGY = "art_monitoring_strategy" # enum: used to distinguish different approaches to monitoring ART for individuals
+HIV_MONITORING_STRATEGY = "hiv_monitoring_strategy" # enum: used to distinguish different approaches to monitoring HIV progression
+ART_INITIATION_STRATEGY = "art_initiation_strategy" # enum: used to distinguish different conditions for initiating ART in HIV+ people
+
 ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence
 ART_ADHERENCE_STDEV = "art_adherence_stdev"         # float: variation (i.e. standard deviation) in art adherence (timestep to timestep)
 PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in current timestep ~ N(art_adherence_mean, art_adherence_stdev**2) clamped to interval [0,1]
