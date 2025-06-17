@@ -152,10 +152,21 @@ NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in
 ART_ADHERENCE = "art_adherence"                 # float: percentage of ART intake that is adhered to
 RESISTANCE_INDEX = "resistance_index"           # float: an index used to identify an individual's resistance profile for various calculations
 
-ART_MONITORING_STRATEGY = "art_monitoring_strategy" # enum: used to distinguish different approaches to monitoring ART for individuals
-HIV_MONITORING_STRATEGY = "hiv_monitoring_strategy" # enum: used to distinguish different approaches to monitoring HIV progression
-ART_INITIATION_STRATEGY = "art_initiation_strategy" # enum: used to distinguish different conditions for initiating ART in HIV+ people
+ART_MONITORING_STRATEGY = "art_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring ART for individuals
+HIV_MONITORING_STRATEGY = "hiv_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring HIV progression
+ART_INITIATION_STRATEGY = "art_initiation_strategy"     # enum: used to distinguish different conditions for initiating ART in HIV+ people
+RATE_CHOOSE_INTERRUPTION = "rate_choose_interruption"   # float: chance of ART interruption due to "choice" (e.g. side effects) each timestep
+PROB_LOSS_DIAGNOSIS = "prob_loss_diagnosis"             # float: probability of person disengaging with clinic after diagnosis
+PROB_LOSS_ADC_TB = "prob_loss_adc_tb"                   # float: probability of a person disengaging with clinic after diagnosis with ADC / TB
+PROB_LOSS_WHO3 = "prob_loss_who3"                       # float: probability of person disengaging with clinic after diagnosis with non-TB WHO3 condition
+PROB_LOSS_ART = "prob_loss_art"
+RATE_LOST = "rate_lost"
+RATE_RESTART = "rate_restart"
+RATE_RETURN = "rate_return"
+PROB_ART_INIT = "prob_art_init"
+PROB_RETURN_ADC = "prob_return_adc"
 
+ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present)
 ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence
 ART_ADHERENCE_STDEV = "art_adherence_stdev"         # float: variation (i.e. standard deviation) in art adherence (timestep to timestep)
 PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in current timestep ~ N(art_adherence_mean, art_adherence_stdev**2) clamped to interval [0,1]

@@ -226,6 +226,13 @@ class Population:
         else:
             self.data.loc[sub_pop, present_col] = value
 
+    def scale_present_variable(self, target: str, multiplier, sub_pop=None):
+        present_col = self.get_correct_column(target, 0)
+        if sub_pop is None:
+            self.data[present_col] *= multiplier
+        else:
+            self.data.loc[sub_pop, present_col] *= multiplier
+
     def get_correct_column(self, param, dt=0):
         """Gets the correct column for a parameter and a given time delay."""
         if (self.variable_history[param] == 1):

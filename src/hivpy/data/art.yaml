@@ -2,6 +2,10 @@ lower_future_art_coverage:
   Value: [False, True]
   Probability: [0.97, 0.03]
 
+higher_future_prep_oral_coverage:
+  Value: [False, True]
+  Probability: [1, 0]
+
 base_prob_init_ART:
   Value: [0.5, 0.7, 0.9, 0.95, 1.0]
 
@@ -19,8 +23,8 @@ reduced_interrupt_poc_vl:
 
 # Rate of interruption due to patient factors (rate_int_choice)
 base_rate_interruption:
-  Value: [0.001, 0.004, 0.008, 0.012]
-  Probability: [0.3, 0.3, 0.3, 0.1]
+  Value: [0.002, 0.004, 0.008, 0.02, 0.05]
+  Probability: [0.35, 0.4, 0.2, 0.04, 0.01]
 
 prob_lost_ART:
   Value: [0.5, 0.6, 0.7, 0.8, 0.9]

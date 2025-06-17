@@ -16,6 +16,7 @@ class ARTData(DataReader):
 
         try:
             self.lower_future_art_coverage = self._get_discrete_dist("lower_future_art_coverage")
+            self.higher_future_prep_oral_coverage = self._get_discrete_dist("higher_future_prep_oral_coverage")
             self.base_prob_init_ART = self._get_discrete_dist("base_prob_init_ART")
             self.base_prob_switch_line = self._get_discrete_dist("prob_switch_line")
             self.prob_vl_measurement_done = self._get_discrete_dist("prob_vl_measurement_done")

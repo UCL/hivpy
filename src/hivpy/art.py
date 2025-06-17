@@ -16,7 +16,7 @@ import hivpy.column_names as col
 
 from . import output
 from .art_data import ARTData
-from .common import COND, SexType, date, opposite_sex, rng, timedelta
+from .common import OR, AND, COND, SexType, date, opposite_sex, rng, timedelta
 
 
 class HivMonitoringStrategy(Enum):
@@ -67,6 +67,7 @@ class ArtMonitoringStrategy(Enum):
     # 1500. Viral load monitoring (6m, 12m, annual) + adh > 0.8 based on tdf level test;
     vl_monitor_tdf_test = 1500
     # 1700. Monitoring people on len/cab 
+    on_len_cab = 1700
 
 class VmFormat(Enum):
     # vm_format=1  plasma  lab
@@ -91,9 +92,6 @@ class ARV(Enum):
     cabotegravir = 10  # long acting PrEP
 
 class ARTModule:
-    hiv_monitoring_strategy = HivMonitoringStrategy.presence_tb_who4
-    art_initiation_strategy = ArtInitiationStrategy.all_tb_who4
-    art_monitoring_strategy = ArtMonitoringStrategy.only_clinical
     vm_format = VmFormat.whb_lab  # TODO: check correct initial value? 
     vl_threshold = 1000
     time_of_first_vm = 0.5
@@ -138,6 +136,9 @@ class ARTModule:
         self.base_rate_return = self.art_data.base_rate_return.sample()
         self.base_rate_return_lencab = self.art_data.base_rate_return_lencab.sample()
 
+        self.lower_future_art_coverage = self.art_data.lower_future_art_coverage.sample()
+        self.higher_future_prep_oral_coverage = self.art_data.higher_future_prep_oral_coverage.sample()
+
     def init_strategies(self, pop: Population):
         pop.init_variable(col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4)
         pop.init_variable(col.ART_INITIATION_STRATEGY, ArtInitiationStrategy.all_tb_who4)
@@ -147,39 +148,39 @@ class ARTModule:
         """ Update strategies for HIV monitoring, ART initiation, and ART monitoring
             for all members of the population"""
 
-        def set_initiation_strategy(art_strategy: ArtInitiationStrategy,
+        def apply_initiation_strategy(art_strategy: ArtInitiationStrategy,
                               start_date: date,
                               end_date: date,
                               hiv_strategy = None):
-            if ((self.art_initiation_strategy != art_strategy)
-                and (start_date <= current_date < end_date)
-                and (rng.uniform() < self.rate_change_art_init_strategy[art_strategy])
+            if ((start_date <= current_date) and
+                ((end_date is not None) and (current_date < end_date))
             ):
-                self.art_initiation_strategy = art_strategy
-                if hiv_strategy is not None:
-                    self.hiv_monitoring_strategy = hiv_strategy
+                r = rng.uniform(size=pop.size)
+                new_strategy = pop.apply_bool_mask(r < self.rate_change_art_init_strategy[art_strategy])
+                pop.set_present_variable(col.ART_INITIATION_STRATEGY, art_strategy, new_strategy)
+                if(hiv_strategy is not None):
+                    pop.set_present_variable(col.HIV_MONITORING_STRATEGY, hiv_strategy, new_strategy)
 
-        set_initiation_strategy(ArtInitiationStrategy.cd4_lt_200_who4,
+        apply_initiation_strategy(ArtInitiationStrategy.cd4_lt_200_who4,
                                 date(2008, 1, 1),
                                 date(2011, 6, 1),
                                 HivMonitoringStrategy.cd4_6_monthly)
         
-        set_initiation_strategy(ArtInitiationStrategy.cd4_lt_350_pregnant,
+        apply_initiation_strategy(ArtInitiationStrategy.cd4_lt_350_pregnant,
                                 date(2011, 6, 1),
                                 date(2014, 1, 1))
 
-        set_initiation_strategy(ArtInitiationStrategy.cd4_lt_500_pregnant,
+        apply_initiation_strategy(ArtInitiationStrategy.cd4_lt_500_pregnant,
                                 date(2014, 1, 1),
                                 date(2016, 6, 1))
         
-        # FIXME: This end date is silly because there is no end date for this policy
-        set_initiation_strategy(ArtInitiationStrategy.all_hiv_diagnosed,
+        apply_initiation_strategy(ArtInitiationStrategy.all_hiv_diagnosed,
                                 date(2016, 6, 1),
-                                date(3000, 1, 1),
+                                None,
                                 HivMonitoringStrategy.presence_tb_who4)
         
         if current_date >= date(2016, 3, 1):
-            self.art_monitoring_strategy = ArtMonitoringStrategy.vl_monitor_who
+            pop.set_present_variable(col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.vl_monitor_who)
             self.vm_format = VmFormat.whb_lab
             self.vl_threshold = 1000
             self.time_of_first_vm = 0.5
@@ -188,9 +189,36 @@ class ARTModule:
                 self.vm_format = VmFormat.whb_poc
 
         if ((current_date >= date(2016, 6, 1)) and self.cd4_monitoring):
-            self.art_monitoring_strategy = ArtMonitoringStrategy.only_cd4_monitor
+            pop.set_present_variable(col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_cd4_monitor)
             
-        if (current_date == date(self.year_intervention, 1, 1)):
-            # lower future ART coverage
-            self.art_monitoring_strategy = ArtMonitoringStrategy.
-            # higher future oral prep coverage
+        if (current_date >= date(2026, 1, 1)):
+            people_on_cab_len = pop.get_sub_pop(OR(COND(col.ON_CAB, op.eq, True),
+                                                   COND(col.ON_LEN, op.eq, True)))
+            pop.set_present_variable(col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.on_len_cab, people_on_cab_len)
+        
+        # Changes in ART converage and oral PrEP coverage after year of intervention
+        # only happens once
+        # FIXME: what if the timestep doesn't divide the year exactly so we don't fulfil this equality?
+        if(current_date == date(pop.policy_intervention_year, 1, 1)):
+            if (self.lower_future_art_coverage):
+                pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
+                pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
+                pop.scale_present_variable(col.PROB_LOSS_ADC_TB, 1.25)
+                pop.scale_present_variable(col.PROB_LOSS_WHO3, 1.25)
+                pop.scale_present_variable(col.PROB_LOSS_ART, 1.25)
+                pop.scale_present_variable(col.RATE_LOST, 1.25)
+
+                pop.scale_present_variable(col.RATE_RESTART, 0.8)
+                pop.scale_present_variable(col.RATE_RETURN, 0.8)
+                pop.scale_present_variable(col.PROB_ART_INIT, 0.8)
+                pop.scale_present_variable(col.PROB_RETURN_ADC, 0.8)
+        
+        # TODO: Do we need higher prep oral coverage? In SAS is it always false
+        
+    def update_regimens(self, current_date: date, pop: Population):
+        if(date(2019, 6, 1) <= current_date <= date(2021, 1, 1)):
+            pop.set_present_variable(col.ART_REGIMEN_OPT, 120)
+    
+        if(current_date >= date(2021, 1, 1)):
+            pop.set_present_variable(col.ART_REGIMEN_OPT, 104)
+        
