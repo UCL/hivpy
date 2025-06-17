@@ -17,6 +17,8 @@ class PrEPData(DataReader):
             self.date_prep_cab_intro = self.data["date_prep_cab_intro"]
             self.date_prep_len_intro = self.data["date_prep_len_intro"]
             self.date_prep_vr_intro = self.data["date_prep_vr_intro"]
+            self.cab_inj_interval = self.data["cab_inj_interval"]
+            self.len_inj_interval = self.data["len_inj_interval"]
             self.prob_risk_informed_prep = self.data["prob_risk_informed_prep"]
             self.prob_greater_risk_informed_prep = self.data["prob_greater_risk_informed_prep"]
             self.prob_suspect_risk_prep = self.data["prob_suspect_risk_prep"]
@@ -31,6 +33,9 @@ class PrEPData(DataReader):
             self.prob_base_prep_stop = self._get_discrete_dist("prob_base_prep_stop")
             self.prob_base_prep_stop_nonuniform = self._get_discrete_dist("prob_base_prep_stop_nonuniform")
             self.prob_prep_restart = self._get_discrete_dist("prob_prep_restart")
+
+            self.cab_tail_length = self.data["cab_tail_length"]
+            self.len_tail_length = self.data["len_tail_length"]
 
         except KeyError as ke:
             print(ke.args)

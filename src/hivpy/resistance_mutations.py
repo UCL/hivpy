@@ -258,7 +258,7 @@ class ResistanceMutationsModule:
 
     def init_resistance_mutations(self, pop: Population):
         """
-        Initialise drug resistance mutations at the start of the simulation to False.
+        Initialise drug resistance mutations at the start of the simulation to Absent.
         """
         pop.init_variable(col.RTTA_MUTATIONS, 0)  # only tams are tracked with integers
         pop.init_variable(col.RT184_MUTATION, MutationStatus.Absent)
@@ -277,7 +277,6 @@ class ResistanceMutationsModule:
         pop.init_variable(col.PR82_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.PR84_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.PR88_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR90_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN118_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN140_MUTATION, MutationStatus.Absent)
         pop.init_variable(col.IN148_MUTATION, MutationStatus.Absent)
@@ -451,11 +450,9 @@ class ResistanceMutationsModule:
             set_new_majority_mutation(col.RT184_MUTATION, [col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
                                       self.calc_rt184m_outcomes)
             # q151
-            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV, col.RT151_MUTATION],
-                                      self.calc_rt151m_outcomes)
+            set_new_majority_mutation(col.RT151_MUTATION, [col.ON_ZDV], self.calc_rt151m_outcomes)
             # k65
-            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV, col.RT65_MUTATION],
-                                      self.calc_rt65m_outcomes)
+            set_new_majority_mutation(col.RT65_MUTATION, [col.ON_TEN, col.ON_ZDV], self.calc_rt65m_outcomes)
 
             # k103, y181, and g190 (nnrti mutations)
             k103 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
@@ -496,6 +493,31 @@ class ResistanceMutationsModule:
             set_new_majority_mutation(col.PR84_MUTATION, [col.ON_DAR, col.ON_TAZ], self.calc_pr84m_outcomes)
             # p88
             set_new_majority_mutation(col.PR88_MUTATION, [col.ON_TAZ], self.calc_pr88m_outcomes)
+
+            # in118
+            set_new_majority_mutation(col.IN118_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in140
+            set_new_majority_mutation(col.IN140_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in148
+            set_new_majority_mutation(col.IN148_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in155
+            set_new_majority_mutation(col.IN155_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # in263
+            set_new_majority_mutation(col.IN263_MUTATION,
+                                      [col.ON_DOL, col.ON_CAB, col.IN_CAB_TAIL, col.IN_PRIMARY_INFECTION],
+                                      self.calc_inm_outcomes)
+            # ca66m
+            set_new_majority_mutation(col.CA66_MUTATION,
+                                      [col.ON_OLE, col.ON_LEN, col.IN_LEN_TAIL, col.IN_CAB_TAIL, col.ON_ART],
+                                      self.calc_ca66m_outcomes)
 
             # tally up all mutations
             resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
@@ -551,21 +573,21 @@ class ResistanceMutationsModule:
 
         return m184_mutations
 
-    def calc_rt151m_outcomes(self, on_zdv, rt151m, size):
+    def calc_rt151m_outcomes(self, on_zdv, size):
         """
         Returns RT gene Q151 majority mutation outcomes.
         """
-        prob_mutation = self.resist_rate_zdv if on_zdv and rt151m != MutationStatus.Majority else 0
+        prob_mutation = self.resist_rate_zdv if on_zdv else 0
         q151_mutations = rng.uniform(size=size) / self.risk_change_151_resist < prob_mutation
 
         return q151_mutations
 
-    def calc_rt65m_outcomes(self, on_ten, on_zdv, rt65m, size):
+    def calc_rt65m_outcomes(self, on_ten, on_zdv, size):
         """
         Returns RT gene K65 majority mutation outcomes.
         """
         prob_mutation = 0
-        if on_ten and rt65m != MutationStatus.Majority:
+        if on_ten:
             if on_zdv:
                 prob_mutation = self.resist_rate_zdv
             else:
@@ -727,6 +749,36 @@ class ResistanceMutationsModule:
 
         return p88_mutations
 
+    def calc_inm_outcomes(self, on_dol, on_cab, in_cab_tail, in_primary_infection, size):
+        """
+        Returns integrase inhibitor IN118, IN140, IN148, IN155, or IN263 majority mutation outcomes.
+        """
+        # outcomes on dol
+        prob_mutation = self.resist_rate_dol if on_dol else 0
+        in_mutations = rng.uniform(size=size) < prob_mutation
+
+        # outcomes on cab
+        prob_mutation = self.resist_rate_dol * self.cab_resist_factor if on_cab or in_cab_tail else 0
+        r = rng.uniform(size=size)
+        # increased risk during primary infection
+        if in_primary_infection:
+            r /= self.risk_change_cab_resist
+        in_mutations |= r < prob_mutation
+
+        return in_mutations
+
+    def calc_ca66m_outcomes(self, on_ole, on_len, in_len_tail, in_cab_tail, on_art, size):
+        """
+        Returns CA gene CA66 mutation outcomes.
+        """
+        prob_mutation = self.resist_rate_len if on_ole or on_len or in_len_tail else 0
+        # increased risk when cab tail has worn off but len tail has not
+        if in_len_tail and not in_cab_tail and not on_art:
+            prob_mutation *= self.incr_len_resist
+        ca66_mutations = rng.uniform(size=size) < prob_mutation
+
+        return ca66_mutations
+
     def calc_total_mutations(self, person):
         """
         Returns the total number of resistance mutations present in a given individual.
@@ -748,7 +800,6 @@ class ResistanceMutationsModule:
                 self.get_mutation_presence(MutationStatus(person[col.PR82_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.PR84_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.PR88_MUTATION])) +
-                self.get_mutation_presence(MutationStatus(person[col.PR90_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN118_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN140_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.IN148_MUTATION])) +

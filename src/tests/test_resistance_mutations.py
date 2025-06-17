@@ -415,7 +415,6 @@ def test_rt151m():
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT151_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -445,7 +444,6 @@ def test_rt65m():
     pop.set_present_variable(col.VIRAL_LOAD, 10)
     pop.set_present_variable(col.ON_TEN, True)
     pop.set_present_variable(col.ON_ZDV, True)
-    pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
 
     res = pop.resistance
     res.mutation_risk_change = 0.5
@@ -881,6 +879,203 @@ def test_pr88m():
     stdev = sqrt(mean * (1 - 0.03))
     # expecting ~3% of the population to gain pr88m
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_inm():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    pop.set_present_variable(col.ON_DOL, True)
+    pop.set_present_variable(col.ON_CAB, True)
+    pop.set_present_variable(col.IN_CAB_TAIL, False)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    # 84% chance of all inm
+    res.risk_change_cab_resist = 2
+    res.resist_rate_dol = 0.2
+    res.cab_resist_factor = 2
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.IN118_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.84
+    stdev = sqrt(mean * (1 - 0.84))
+    # expecting ~84% of the population to gain in118m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN140_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~84% of the population to gain in140m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN148_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~84% of the population to gain in148m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN155_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~84% of the population to gain in155m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN263_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~84% of the population to gain in263m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    pop.set_present_variable(col.ON_CAB, False)
+    pop.set_present_variable(col.IN_CAB_TAIL, True)
+    pop.set_present_variable(col.IN118_MUTATION, MutationStatus.Minority)
+    pop.set_present_variable(col.IN140_MUTATION, MutationStatus.Minority)
+    pop.set_present_variable(col.IN148_MUTATION, MutationStatus.Minority)
+    pop.set_present_variable(col.IN155_MUTATION, MutationStatus.Minority)
+    pop.set_present_variable(col.IN263_MUTATION, MutationStatus.Minority)
+    # 52% chance of all inm
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.IN118_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.52
+    stdev = sqrt(mean * (1 - 0.52))
+    # expecting ~52% of the population to gain in118m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN140_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~52% of the population to gain in140m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN148_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~52% of the population to gain in148m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN155_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~52% of the population to gain in155m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    mutated = len(pop.get_sub_pop([(col.IN263_MUTATION, op.eq, MutationStatus.Majority)]))
+    # expecting ~52% of the population to gain in263m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_ca66m():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    pop.set_present_variable(col.ON_OLE, True)
+    pop.set_present_variable(col.ON_LEN, False)
+    pop.set_present_variable(col.IN_LEN_TAIL, False)
+    pop.set_present_variable(col.IN_CAB_TAIL, False)
+    pop.set_present_variable(col.ON_ART, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    # 30% chance of ca66m
+    res.resist_rate_len = 0.3
+    res.incr_len_resist = 2
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.CA66_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.30
+    stdev = sqrt(mean * (1 - 0.30))
+    # expecting ~30% of the population to gain ca66m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+    pop.set_present_variable(col.ON_OLE, False)
+    pop.set_present_variable(col.CA66_MUTATION, MutationStatus.Minority)
+    # 60% chance of ca66m
+    pop.set_present_variable(col.IN_LEN_TAIL, True)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    mutated = len(pop.get_sub_pop([(col.CA66_MUTATION, op.eq, MutationStatus.Majority)]))
+    mean = N * 0.60
+    stdev = sqrt(mean * (1 - 0.60))
+    # expecting ~60% of the population to gain ca66m
+    assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
+
+
+def test_resistance_mutations_total():
+    N = 1000
+    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.set_present_variable(col.ART_ADHERENCE, 0.5)
+    # the entire population has a chance to gain mutations
+    pop.set_present_variable(col.VIRAL_LOAD, 10)
+    # nobody is on any drugs and there should be no mutations
+    pop.set_present_variable(col.ON_ZDV, False)
+    pop.set_present_variable(col.ON_3TC, False)
+    pop.set_present_variable(col.ON_TEN, False)
+    pop.set_present_variable(col.ON_NEV, False)
+    pop.set_present_variable(col.ON_DAR, False)
+    pop.set_present_variable(col.ON_EFA, False)
+    pop.set_present_variable(col.ON_LPR, False)
+    pop.set_present_variable(col.ON_TAZ, False)
+    pop.set_present_variable(col.ON_DOL, False)
+    pop.set_present_variable(col.ON_CAB, False)
+    pop.set_present_variable(col.ON_LEN, False)
+    pop.set_present_variable(col.ON_OLE, False)
+    pop.set_present_variable(col.ON_ISL, False)
+    pop.set_present_variable(col.IN_CAB_TAIL, False)
+    pop.set_present_variable(col.IN_LEN_TAIL, False)
+
+    res = pop.resistance
+    res.mutation_risk_change = 0.5
+    res.active_drug_indices, res.cont_on_art_tm1_indices, \
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+    pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    # expecting no resistance
+    assert all(pop.get_variable(col.RESISTANCE_MUTATIONS) == 0)
+
+    # maximise chances of resistance
+    res.resist_rate_tams_higher = 0.99
+    res.resist_rate_tams_lower = 0.99
+    res.resist_rate_nev_higher = 0.99
+    res.resist_rate_nev_lower = 0.99
+    res.resist_rate_efa_higher = 0.99
+    res.resist_rate_efa_lower = 0.99
+    res.resist_rate_lpr_higher = 0.99
+    res.resist_rate_lpr_lower = 0.99
+    res.resist_rate_zdv = 0.99
+    res.resist_rate_3tc = 0.99
+    res.resist_rate_dar = 0.99
+    res.resist_rate_taz = 0.99
+    res.resist_rate_isl = 0.99
+    res.resist_rate_ten = 0.99
+    res.resist_rate_dol = 0.99
+    res.resist_rate_len = 0.99
+    pop.set_present_variable(col.ON_ZDV, True)
+    pop.set_present_variable(col.ON_3TC, True)
+    pop.set_present_variable(col.ON_TEN, True)
+    pop.set_present_variable(col.ON_NEV, True)
+    pop.set_present_variable(col.ON_DAR, True)
+    pop.set_present_variable(col.ON_EFA, True)
+    pop.set_present_variable(col.ON_LPR, True)
+    pop.set_present_variable(col.ON_TAZ, True)
+    pop.set_present_variable(col.ON_DOL, True)
+    pop.set_present_variable(col.ON_CAB, True)
+    pop.set_present_variable(col.ON_LEN, True)
+    pop.set_present_variable(col.ON_OLE, True)
+    pop.set_present_variable(col.ON_ISL, True)
+    res.update_new_mutations_arising_art(pop, pop.data.index)
+
+    # total mutations can't exceed 24 (23 mutations + up to 1 extra tam)
+    assert all(pop.get_variable(col.RESISTANCE_MUTATIONS) <= 24)
 
 
 def test_update_resistance():
