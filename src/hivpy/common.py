@@ -50,6 +50,13 @@ class DiscreteChoice:
             indices = np.array(self.dist.rvs(size=size))
             return self.data[indices]
 
+class BetaDistribution:
+    def __init__(self, alpha, beta):
+        self.alpha = alpha
+        self.beta = beta
+
+    def sample(self, size=None):
+        return np.random.beta(self.alpha, self.beta, size)
 
 class SexType(IntEnum):
     Male = 0

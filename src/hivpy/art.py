@@ -115,8 +115,8 @@ class ARTModule:
         with importlib.resources.path("hivpy.data", "art.yaml") as data_path:
             self.art_data = ARTData(data_path)
 
-        self.prob_base_init_ART = self.art_data.base_prob_init_ART.sample()
-        self.prob_base_switch_line = self.art_data.base_prob_switch_line.sample()
+        self.base_prob_init_ART = self.art_data.base_prob_init_ART.sample()
+        self.base_prob_switch_line = self.art_data.base_prob_switch_line.sample()
         self.prob_vl_measurement_done = self.art_data.prob_vl_measurement_done.sample()
 
         # reduced interruption risk with point-of-care viral load monitoring
@@ -126,7 +126,10 @@ class ARTModule:
         self.effect_adherence_nnrti = 0.1 * np.exp(rng.normal(0.0, 0.3))
 
         self.base_rate_interruption = self.art_data.base_rate_interruption.sample()
-        self.prob_lost_ART = self.art_data.prob_lost_ART.sample()
+        self.base_prob_lost_ART = self.art_data.prob_lost_ART.sample()
+        self.base_prob_loss_at_diagnosis = self.art_data.prob_loss_at_diagnosis.sample()
+        self.base_prob_loss_adc_tb = self.art_data.prob_loss_adc_tb.sample()
+        self.base_prob_loss_who3 = self.art_data.prob_loss_non_tb_who3.sample()
         self.base_rate_restart_ART = self.art_data.base_rate_restart_ART.sample()
         self.prob_supply_interrupted = self.art_data.prob_supply_interrupted
         self.prob_supply_resumed = self.art_data.prob_supply_resumed
@@ -134,6 +137,7 @@ class ARTModule:
         # rate that people are lost to follow up if average adherence is >=0.8
         self.base_rate_lost = self.art_data.base_rate_lost.sample()
         self.base_rate_return = self.art_data.base_rate_return.sample()
+        self.base_rate_return_adc = self.art_data.rate_return_adc.sample()
         self.base_rate_return_lencab = self.art_data.base_rate_return_lencab.sample()
 
         self.lower_future_art_coverage = self.art_data.lower_future_art_coverage.sample()
@@ -141,6 +145,23 @@ class ARTModule:
 
     def init_ART_columns(self, pop: Population):
         pop.init_variable(col.ART_REGIMEN_OPT, 0)
+        pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
+        pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
+        pop.init_variable(col.ART_START_DATE, None)
+        self.init_strategies(pop)
+        pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
+        pop.init_variable(col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption)
+        pop.init_variable(col.PROB_LOSS_DIAGNOSIS, self.base_prob_loss_at_diagnosis)
+        pop.init_variable(col.PROB_LOSS_ADC_TB, self.base_prob_loss_adc_tb)
+        pop.init_variable(col.PROB_LOSS_WHO3, self.base_prob_loss_who3)
+        pop.init_variable(col.PROB_LOSS_ART, self.base_prob_lost_ART)
+        pop.init_variable(col.RATE_LOST, self.base_rate_lost)
+        pop.init_variable(col.RATE_RESTART, self.base_rate_restart_ART)
+        pop.init_variable(col.RATE_RETURN, self.base_rate_return)
+        pop.init_variable(col.PROB_ART_INIT, self.base_prob_init_ART)
+        pop.init_variable(col.PROB_RETURN_ADC, self.base_rate_return_adc)
+        pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
+        pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
 
     def init_strategies(self, pop: Population):
         pop.init_variable(col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4)

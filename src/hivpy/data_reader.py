@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import yaml
 
-from .common import DiscreteChoice
+from .common import DiscreteChoice, BetaDistribution
 
 
 class DataReader(ABC):
@@ -52,6 +52,14 @@ class DataReader(ABC):
             key: data / sum(data)
             for key, data in prob_dict.items()
         }
+
+    def _get_beta_distribution(self, keys):
+        dist_data = self.data
+        for k in keys:
+            dist_data = dist_data[k]
+        alpha = dist_data["alpha"]
+        beta = dist_data["beta"]
+        return BetaDistribution(alpha, beta)
 
     @abstractmethod
     def __init__(self, filename):

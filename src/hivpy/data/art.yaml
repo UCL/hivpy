@@ -26,6 +26,18 @@ base_rate_interruption:
   Value: [0.002, 0.004, 0.008, 0.02, 0.05]
   Probability: [0.35, 0.4, 0.2, 0.04, 0.01]
 
+prob_loss_at_diagnosis:
+  Value: [0.02, 0.05, 0.15, 0.35, 0.50]
+  Probability: [0.6, 0.3, 0.05, 0.04, 0.01]
+
+prob_loss_adc_tb:
+  alpha: 5
+  beta: 95
+
+prob_loss_non_tb_who3:
+  alpha: 15
+  beta: 85
+
 prob_lost_ART:
   Value: [0.5, 0.6, 0.7, 0.8, 0.9]
 
@@ -41,6 +53,10 @@ rate_lost:
 rate_return:
   Value: [0.05, 0.1, 0.3, 0.6]
   Probability: [0.25, 0.25, 0.25, 0.25]
+
+rate_return_adc:
+  Value: [0.7, 0.8, 0.9]
+  Probability: [0.05, 0.15, 0.8]
 
 rate_return_lencab:
   Value: [0.5, 0.7, 0.9]
