@@ -166,6 +166,7 @@ RATE_RESTART = "rate_restart"
 RATE_RETURN = "rate_return"
 PROB_ART_INIT = "prob_art_init"
 PROB_RETURN_ADC = "prob_return_adc"
+CLINIC_VISIT = "clinic_visit"                       # bool: true if a person visits a clinic in this time step
 
 ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present). Use 0 for none.
 FIRST_LINE_REGIMEN = "first_line_regimen"           # int/enum: code for distinguishing between first line regimens (1-3; use 0 for none)
