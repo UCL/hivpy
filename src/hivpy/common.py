@@ -278,6 +278,7 @@ class ResettableRandomState:
 # Will be initialised at first import.
 rng = ResettableRandomState()
 
+is_in = lambda x, y: (x in y)
 
 class LogicExpr(ABC):
     """

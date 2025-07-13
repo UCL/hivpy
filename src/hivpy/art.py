@@ -16,7 +16,7 @@ import hivpy.column_names as col
 
 from . import output
 from .art_data import ARTData
-from .common import OR, AND, COND, SexType, date, opposite_sex, rng, timedelta
+from .common import OR, AND, COND, SexType, date, opposite_sex, rng, timedelta, is_in
 
 
 class HivMonitoringStrategy(Enum):
@@ -139,6 +139,9 @@ class ARTModule:
         self.lower_future_art_coverage = self.art_data.lower_future_art_coverage.sample()
         self.higher_future_prep_oral_coverage = self.art_data.higher_future_prep_oral_coverage.sample()
 
+    def init_ART_columns(self, pop: Population):
+        pop.init_variable(col.ART_REGIMEN_OPT, 0)
+
     def init_strategies(self, pop: Population):
         pop.init_variable(col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4)
         pop.init_variable(col.ART_INITIATION_STRATEGY, ArtInitiationStrategy.all_tb_who4)
@@ -212,13 +215,52 @@ class ARTModule:
                 pop.scale_present_variable(col.RATE_RETURN, 0.8)
                 pop.scale_present_variable(col.PROB_ART_INIT, 0.8)
                 pop.scale_present_variable(col.PROB_RETURN_ADC, 0.8)
-        
-        # TODO: Do we need higher prep oral coverage? In SAS is it always false
-        
+                
     def update_regimens(self, current_date: date, pop: Population):
         if(date(2019, 6, 1) <= current_date <= date(2021, 1, 1)):
             pop.set_present_variable(col.ART_REGIMEN_OPT, 120)
     
         if(current_date >= date(2021, 1, 1)):
-            pop.set_present_variable(col.ART_REGIMEN_OPT, 104)
+            pop.set_present_variable(col.ART_REGIMEN_OPT, 125)
+
+        flr_1 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 107))
+        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 1, flr_1)
+
+
+        flr_2 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, is_in, [102, 103, 104, 105, 106, 113, 115, 116, 117, 118, 119, 120, 121, 125]))
+        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 2, flr_2)
+
+        flr_3 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 130))
+        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 3, flr_3)
+    
+        reg_108 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 108))
+        pop.set_present_variable(col.PROB_SWITCH_LINE, 0.85, reg_108)
+        pop.set_present_variable(col.PROB_VL_MEASURE, 0.85, reg_108)
+
+        
+        def set_absence_vl_strategy_by_regim(person):
+            art_reg = person[col.ART_REGIMEN_OPT]
+            art_start = person[col.ART_START_DATE]
+            current_date = pop.date
+            monitoring_strategy = 1  # default if nothing else modifies it
+            if art_reg in [101, 102, 103, 104, 107, 110, 113, 116, 120, 121, 125, 130]:
+                monitoring_strategy = 1500
+            elif art_reg in [105, 106, 108, 109, 111, 112, 114]:
+                monitoring_strategy = 153
+            elif art_reg in [115, 117, 118, 119]:
+                monitoring_strategy = 1500
+            
+            if art_reg in [112, 114] and ((current_date - art_start) > 1):
+                monitoring_strategy = 150
+
+            if current_date >= 2026 and person[col.ON_CAB] and person[col.ON_LEN]:
+                monitoring_strategy = 1700
+
+            return monitoring_strategy
+        
+        absence_vl_pop = pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
+        pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
+
+
+        
         

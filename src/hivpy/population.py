@@ -206,7 +206,7 @@ class Population:
         param_cols = list(map(lambda x: self.get_variable(x), params))
         return func(*param_cols)
 
-    def apply_function(self, function, axis, sub_pop=None):
+    def apply_function(self, function, axis=1, sub_pop=None):
         if sub_pop is None:
             return self.data.apply(function, axis)
         else:
@@ -225,6 +225,10 @@ class Population:
             self.data[present_col] = value
         else:
             self.data.loc[sub_pop, present_col] = value
+
+    def set_variable_with_condition(self, target: str, value, cond):
+        sub_pop = self.get_sub_pop(cond)
+        self.set_present_variable(target, value, sub_pop)
 
     def scale_present_variable(self, target: str, multiplier, sub_pop=None):
         present_col = self.get_correct_column(target, 0)

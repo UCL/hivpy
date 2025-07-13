@@ -145,6 +145,7 @@ IN_CAB_TAIL = "in_cab_tail"                     # bool: True if an individual is
 IN_LEN_TAIL = "in_len_tail"                     # bool: True if an individual is in the tail period of injectable Len PrEP after stopping usage (DUMMY)
 
 ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
+ART_START_DATE = "art_start_date"               # date: Date of starting ART
 ON_ART = "on_art"                               # bool: True if a person is currently on ART
 CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
 CONT_ON_ARV = "cont_on_arv"                     # None | timedelta: total length of continuous time on antiretroviral drugs (PrEP or ART)
@@ -166,7 +167,12 @@ RATE_RETURN = "rate_return"
 PROB_ART_INIT = "prob_art_init"
 PROB_RETURN_ADC = "prob_return_adc"
 
-ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present)
+ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present). Use 0 for none.
+FIRST_LINE_REGIMEN = "first_line_regimen"           # int/enum: code for distinguishing between first line regimens (1-3; use 0 for none)
+PROB_SWITCH_LINE = "prob_switch_line"               # float: probability of switching from first line ART regimen
+PROB_VL_MEASURE = "prob_vl_measure"                 # float: probability that viral load is measured in a ART visit
+ABSENCE_VL_YEAR_I = "absence_vl_year_i"             # bool: TODO find out a proper definition for this property
+ABSENCE_CD4_YEAR_I = "absence_c4_year_i"            # bool: TODO find out a proper definition for this property
 ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence
 ART_ADHERENCE_STDEV = "art_adherence_stdev"         # float: variation (i.e. standard deviation) in art adherence (timestep to timestep)
 PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in current timestep ~ N(art_adherence_mean, art_adherence_stdev**2) clamped to interval [0,1]
