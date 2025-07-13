@@ -842,28 +842,28 @@ class HIVStatusModule:
 
         # For people who are not on treatment
         # Viral Load
-        art_naive_pop = population.get_sub_pop_intersection(
-            HIV_subpop, population.get_sub_pop([(col.ART_NAIVE, op.eq, True)]))
-        ages = population.get_variable(col.AGE, art_naive_pop)
+        HIV_NAIVE_pop = population.get_sub_pop_intersection(
+            HIV_subpop, population.get_sub_pop([(col.HIV_NAIVE, op.eq, True)]))
+        ages = population.get_variable(col.AGE, HIV_NAIVE_pop)
         delta_vl = self.vl_base_change*0.02275 + (0.05 * rng.normal(size=len(ages))) + (ages - 35)*0.00075
-        prev_vl = population.get_variable(col.VIRAL_LOAD, art_naive_pop)
+        prev_vl = population.get_variable(col.VIRAL_LOAD, HIV_NAIVE_pop)
 
-        population.set_present_variable(col.VIRAL_LOAD, prev_vl + delta_vl, art_naive_pop)
+        population.set_present_variable(col.VIRAL_LOAD, prev_vl + delta_vl, HIV_NAIVE_pop)
         high_vl = population.get_sub_pop_intersection(
-            art_naive_pop, population.get_sub_pop([(col.VIRAL_LOAD, op.gt, 6.5)]))
+            HIV_NAIVE_pop, population.get_sub_pop([(col.VIRAL_LOAD, op.gt, 6.5)]))
         population.set_present_variable(col.VIRAL_LOAD, 6.5, high_vl)
 
         # CD4 count
         vl_lims = np.array([3, 3.5, 4., 4.5, 5., 5.5, 6])
         vl_groups = np.digitize(prev_vl, vl_lims)
         vl_group_factors = np.array([0.0, 0.022, 0.095, 0.4, 0.4, 0.85, 1.3, 1.75])
-        x4 = population.get_variable(col.X4_VIRUS, art_naive_pop)
+        x4 = population.get_variable(col.X4_VIRUS, HIV_NAIVE_pop)
         delta_cd4_sqrt = vl_group_factors[vl_groups] * self.cd4_base_change \
             + rng.normal(size=len(vl_groups))*self.sigma_cd4 + x4*0.25
-        prev_cd4 = population.get_variable(col.CD4, art_naive_pop)
+        prev_cd4 = population.get_variable(col.CD4, HIV_NAIVE_pop)
         sqrt_cd4 = np.maximum(np.sqrt(prev_cd4) - delta_cd4_sqrt, 0)
         new_cd4 = sqrt_cd4**2
-        population.set_present_variable(col.CD4, new_cd4, art_naive_pop)
+        population.set_present_variable(col.CD4, new_cd4, HIV_NAIVE_pop)
 
         # TODO: people on treatment
 

@@ -279,7 +279,7 @@ def test_naive_vl_progression():
     pop.data[col.HIV_STATUS] = [True, False] * 500
     # Reset viral load for testing (original values affected by intro of HIV)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
-    pop.data[col.ART_NAIVE] = True
+    pop.data[col.HIV_NAIVE] = True
     hiv_module = pop.hiv_status
     hiv_module.vl_base_change = 1.5
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -365,7 +365,7 @@ def test_naive_cd4_progression():
     pop.data[col.AGE] = 35
     pop.data[col.HIV_STATUS] = [True, False] * 5000
     # Reset viral load for testing (original values affected by intro of HIV)
-    pop.data[col.ART_NAIVE] = True
+    pop.data[col.HIV_NAIVE] = True
     hiv_module = pop.hiv_status
     hiv_module.cd4_base_change = 1.5  # Fix to avoid sampling
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))

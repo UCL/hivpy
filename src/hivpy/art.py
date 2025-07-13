@@ -144,6 +144,8 @@ class ARTModule:
         self.higher_future_prep_oral_coverage = self.art_data.higher_future_prep_oral_coverage.sample()
 
     def init_ART_columns(self, pop: Population):
+        pop.init_variable(col.HIV_NAIVE, True, 1)
+        pop.init_variable(col.ON_ART, False)
         pop.init_variable(col.ART_REGIMEN_OPT, 0)
         pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
         pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
@@ -262,7 +264,6 @@ class ARTModule:
         def set_absence_vl_strategy_by_regim(person):
             art_reg = person[col.ART_REGIMEN_OPT]
             art_start = person[col.ART_START_DATE]
-            current_date = pop.date
             monitoring_strategy = 1  # default if nothing else modifies it
             if art_reg in [101, 102, 103, 104, 107, 110, 113, 116, 120, 121, 125, 130]:
                 monitoring_strategy = 1500
@@ -277,10 +278,12 @@ class ARTModule:
             if current_date >= 2026 and person[col.ON_CAB] and person[col.ON_LEN]:
                 monitoring_strategy = 1700
 
-            return monitoring_strategy
-        
+            person[col.ART_MONITORING_STRATEGY] = monitoring_strategy
+
         absence_vl_pop = pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
         pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
+
+
 
 
         

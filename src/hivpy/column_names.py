@@ -144,7 +144,7 @@ CUMULATIVE_PREP_VR = "cumulative_prep_vr"       # None | timedelta: total length
 IN_CAB_TAIL = "in_cab_tail"                     # bool: True if an individual is in the tail period of injectable Cab PrEP after stopping usage (DUMMY)
 IN_LEN_TAIL = "in_len_tail"                     # bool: True if an individual is in the tail period of injectable Len PrEP after stopping usage (DUMMY)
 
-ART_NAIVE = "art_naive"                         # bool: True if person has never been on antiretroviral therapy
+HIV_NAIVE = "HIV_NAIVE"                         # bool: True if person has never been on antiretroviral therapy
 ART_START_DATE = "art_start_date"               # date: Date of starting ART
 ON_ART = "on_art"                               # bool: True if a person is currently on ART
 CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
