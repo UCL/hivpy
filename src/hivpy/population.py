@@ -113,7 +113,7 @@ class Population:
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
-        
+
         self.art.init_strategies(self)
 
         self.data = self.data.copy(deep=True)

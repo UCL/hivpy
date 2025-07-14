@@ -1,8 +1,5 @@
-import numpy as np
-
 from hivpy.exceptions import DataLoadException
 
-from .common import SexType, rng
 from .data_reader import DataReader
 
 

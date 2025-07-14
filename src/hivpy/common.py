@@ -50,6 +50,7 @@ class DiscreteChoice:
             indices = np.array(self.dist.rvs(size=size))
             return self.data[indices]
 
+
 class BetaDistribution:
     def __init__(self, alpha, beta):
         self.alpha = alpha
@@ -57,6 +58,7 @@ class BetaDistribution:
 
     def sample(self, size=None):
         return rng.beta(self.alpha, self.beta, size)
+
 
 class SexType(IntEnum):
     Male = 0
@@ -285,7 +287,10 @@ class ResettableRandomState:
 # Will be initialised at first import.
 rng = ResettableRandomState()
 
-is_in = lambda x, y: (x in y)
+
+def is_in(x, y):
+    return (x in y)
+
 
 class LogicExpr(ABC):
     """
