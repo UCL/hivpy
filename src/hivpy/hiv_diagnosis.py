@@ -69,10 +69,12 @@ class HIVDiagnosisModule:
             # primary infection diagnosis outcomes
             diagnosed = pop.transform_group([col.PREP_TYPE, col.PREP_JUST_STARTED],
                                             self.calc_primary_diag_outcomes, sub_pop=primary_pop)
+            newly_diagnosed = pop.apply_bool_mask(diagnosed, primary_pop)
             # set outcomes
             pop.set_present_variable(col.HIV_DIAGNOSED, diagnosed, primary_pop)
             pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date,
-                                     sub_pop=pop.apply_bool_mask(diagnosed, primary_pop))
+                                     newly_diagnosed)
+            pop.set_present_variable(col.CLINIC_VISIT, True, newly_diagnosed)
 
             # some people lost at diagnosis
             lost = pop.transform_group([col.SEX_WORKER], self.calc_primary_loss_at_diag,

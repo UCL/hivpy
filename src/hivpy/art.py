@@ -144,6 +144,7 @@ class ARTModule:
         self.higher_future_prep_oral_coverage = self.art_data.higher_future_prep_oral_coverage.sample()
 
     def init_ART_columns(self, pop: Population):
+        pop.init_variable(col.CLINIC_VISIT, False)
         pop.init_variable(col.HIV_NAIVE, True, 1)
         pop.init_variable(col.ON_ART, False)
         pop.init_variable(col.ART_REGIMEN_OPT, 0)
@@ -282,9 +283,10 @@ class ARTModule:
 
         absence_vl_pop = pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
         pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
-
-
-
-
         
-        
+    def initiate_ART(self, pop: Population):
+        HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+
+        def init_art(person):
+            art_init_strategy = person[col.ART_INITIATION_STRATEGY]
+            hiv_monitoring_strategy = person[col.HIV_MONITORING_STRATEGY]
