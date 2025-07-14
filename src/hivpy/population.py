@@ -116,6 +116,8 @@ class Population:
         
         self.art.init_strategies(self)
 
+        self.data = self.data.copy(deep=True)
+
     def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
         """
            New variable will be initialised as a collection of columns.\\
