@@ -56,7 +56,7 @@ class BetaDistribution:
         self.beta = beta
 
     def sample(self, size=None):
-        return np.random.beta(self.alpha, self.beta, size)
+        return rng.beta(self.alpha, self.beta, size)
 
 class SexType(IntEnum):
     Male = 0
