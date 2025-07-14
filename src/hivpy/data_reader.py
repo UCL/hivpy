@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import yaml
 
-from .common import DiscreteChoice, BetaDistribution
+from .common import BetaDistribution, DiscreteChoice
 
 
 class DataReader(ABC):

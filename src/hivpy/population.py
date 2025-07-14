@@ -5,6 +5,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from .art import ARTModule
 from .circumcision import CircumcisionModule
 from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
@@ -15,7 +16,6 @@ from .pregnancy import PregnancyModule
 from .prep import PrEPModule
 from .resistance_mutations import ResistanceMutationsModule
 from .sexual_behaviour import SexualBehaviourModule
-from .art import ARTModule
 
 HIV_APPEARANCE = date(1989, 1, 1)
 
