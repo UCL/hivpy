@@ -36,9 +36,9 @@ class DataReader(ABC):
     def _extract_discrete_dist(self, dist_data):
         vals = np.array(dist_data["Value"])
         if "Probability" in dist_data:
-            probs = np.array(dist_data["Probability"])
+            probs = np.array(dist_data["Probability"], dtype=float)
         else:
-            probs = np.ones(vals.size)
+            probs = np.ones(vals.size, dtype=float)
         probs /= sum(probs)
         return DiscreteChoice(vals, probs)
 
@@ -53,7 +53,7 @@ class DataReader(ABC):
             for key, data in prob_dict.items()
         }
 
-    def _get_beta_distribution(self, keys):
+    def _get_beta_distribution(self, *keys):
         dist_data = self.data
         for k in keys:
             dist_data = dist_data[k]

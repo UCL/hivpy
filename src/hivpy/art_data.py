@@ -29,10 +29,10 @@ class ARTData(DataReader):
             self.base_rate_restart_ART = self._get_discrete_dist("rate_restart_ART")
             self.prob_supply_interrupted = self.data["prob_supply_interrupted"]
             self.prob_supply_resumed = self.data["prob_supply_resumed"]
-            self.base_rate_lost = self._get_discrete_dist["rate_lost"]
-            self.base_rate_return = self._get_discrete_dist["rate_return"]
-            self.rate_return_adc = self._get_discrete_dist["rate_return_adc"]
-            self.base_rate_return_lencab = self._get_discrete_dist["rate_return_lencab"]
+            self.base_rate_lost = self._get_discrete_dist("rate_lost")
+            self.base_rate_return = self._get_discrete_dist("rate_return")
+            self.rate_return_adc = self._get_discrete_dist("rate_return_adc")
+            self.base_rate_return_lencab = self._get_discrete_dist("rate_return_lencab")
 
         except KeyError as ke:
             print(ke.args)

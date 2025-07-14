@@ -91,6 +91,8 @@ class Population:
         self.init_variable(col.NP_LAST_TEST, 0)
         self.init_variable(col.STI, False)
 
+        self.art.init_ART_columns(self)
+
         self.sexual_behaviour.init_sex_behaviour(self)
 
         self.init_variable(col.CIRCUMCISED, False)
