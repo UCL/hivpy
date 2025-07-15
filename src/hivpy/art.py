@@ -17,7 +17,7 @@ import hivpy.column_names as col
 from . import output
 from .art_data import ARTData
 from .common import (AND, COND, OR, SexType, date, is_in, opposite_sex, rng,
-                     timedelta)
+                     timedelta, none_or_compare)
 
 
 class HivMonitoringStrategy(Enum):
@@ -120,6 +120,10 @@ class ARTModule:
         with importlib.resources.path("hivpy.data", "art.yaml") as data_path:
             self.art_data = ARTData(data_path)
 
+        self.art_intro_date = 2004
+        self.prob_cd4_measure_done = 0.85
+        self.sigma_measured_cd4 = 1.7
+
         self.base_prob_init_ART = self.art_data.base_prob_init_ART.sample()
         self.base_prob_switch_line = self.art_data.base_prob_switch_line.sample()
         self.prob_vl_measurement_done = self.art_data.prob_vl_measurement_done.sample()
@@ -149,8 +153,9 @@ class ARTModule:
         self.higher_future_prep_oral_coverage = self.art_data.higher_future_prep_oral_coverage.sample()
 
     def init_ART_columns(self, pop: Population):
+        pop.init_variable(col.DATE_START_ART, None)
         pop.init_variable(col.CLINIC_VISIT, False)
-        pop.init_variable(col.HIV_NAIVE, True, 1)
+        pop.init_variable(col.ART_NAIVE, True, 1)
         pop.init_variable(col.ON_ART, False)
         pop.init_variable(col.ART_REGIMEN_OPT, 0)
         pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
@@ -170,6 +175,7 @@ class ARTModule:
         pop.init_variable(col.PROB_RETURN_ADC, self.base_rate_return_adc)
         pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
         pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
+        pop.init_variable(col.CD4_MEASUREMENT, None, 2)
 
     def init_strategies(self, pop: Population):
         pop.init_variable(col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4)
@@ -285,9 +291,83 @@ class ARTModule:
         absence_vl_pop = pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
         pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
 
-    def initiate_ART(self, pop: Population):
-        HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+    def measure_CD4(self, current_date: date, pop: Population):
+        subpop = pop.get_sub_pop(AND(COND(col.HIV_MONITORING_STRATEGY, op.eq, 2),
+                                     COND(col.HIV_STATUS, op.eq, True),
+                                     COND(col.ART_NAIVE, op.eq, True),
+                                     COND(col.CLINIC_VISIT, op.eq, True),
+                                     COND(col.DATE_LAST_CD4_MEASURE, 
+                                          lambda t,dt: (t is None) or (current_date-t) > dt,
+                                          timedelta(months=3)
+                                          )
+                                    )
+                                )
+        measured = pop.apply_bool_mask(rng.uniform(size=len(subpop)) < self.prob_cd4_measure_done, subpop)
+        n_measured = len(measured)
+        cd4s = pop.get_variable(col.CD4, measured)
+        cd4_measured = (np.sqrt(cd4s) + rng.normal(0, self.sigma_measured_cd4, size=n_measured))**2
+        pop.set_present_variable(col.CD4_MEASUREMENT, cd4_measured, measured)
+        pop.set_present_variable(col.DATE_LAST_CD4_MEASURE, current_date, measured)
+                                     
+
+    def initiate_ART(self, current_date: date, date_pmtct: date, prob_pmtct, pop: Population):
+        subpop = pop.get_sub_pop(AND((col.HIV_STATUS, op.eq, True),
+                                     (col.DATE_START_ART, op.is_, None)))
 
         def init_art(person):
             art_init_strategy = person[col.ART_INITIATION_STRATEGY]
             hiv_monitoring_strategy = person[col.HIV_MONITORING_STRATEGY]
+
+            recent_tb = True if (person[col.TB_INFECTION_DATE] is not None) and (person.col[col.TB_INFECTION_DATE] < timedelta(months=6)) else False
+
+            def probabilistically_set_ART_init(prob_factor=1):
+                if rng.uniform() < (person[col.PROB_ART_INIT] * prob_factor):
+                    person[col.DATE_START_ART] = current_date
+            
+            def check_cd4_measurements(limit):
+                for dt in range(3):
+                    cd4_column = pop.get_correct_column(col.CD4_MEASUREMENT, dt)
+                    cd4_measurement = person[cd4_column]
+                    if cd4_measurement is not None and cd4_measurement < limit:
+                        return True
+                return False
+
+            if(current_date < self.art_intro_date and person[col.ART_NAIVE] and person[col.CLINIC_VISIT]):
+
+                if (art_init_strategy==ArtInitiationStrategy.all_who4):
+                    if (person[col.EVER_WHO4]): probabilistically_set_ART_init(0.5)
+
+                elif (art_init_strategy==ArtInitiationStrategy.all_tb_who4):
+                    if (person[col.EVER_WHO4] or recent_tb):
+                        probabilistically_set_ART_init(0.5)
+                
+                elif (art_init_strategy==ArtInitiationStrategy.all_hiv_diagnosed):
+                    prob_factor = 0.5 if (person[col.EVER_WHO4] or recent_tb) else 1
+                    if person[col.PREGNANT]: prob_factor /= 4
+                    probabilistically_set_ART_init(prob_factor)
+                
+                elif (art_init_strategy==4) and (hiv_monitoring_strategy==2):
+                    if (person[col.EVER_WHO4] or recent_tb or check_cd4_measurements(200)):
+                        prob_factor = 0.5 if (person[col.EVER_WHO4] or recent_tb) else 1
+                        probabilistically_set_ART_init(prob_factor)
+
+                elif (art_init_strategy==5) and (hiv_monitoring_strategy==2):
+                    if (person[col.EVER_WHO4] or recent_tb or check_cd4_measurements(200)):
+                        prob_factor = 0.5 if (person[col.EVER_WHO4] or recent_tb) else 1
+                        probabilistically_set_ART_init(prob_factor)
+                
+                elif (art_init_strategy in [6, 9]) and (hiv_monitoring_strategy==2):
+                    if (person[col.EVER_WHO4] or recent_tb or check_cd4_measurements(350)):
+                        probabilistically_set_ART_init()
+
+                elif (art_init_strategy in [3, 9, 10]) and person[col.PREGNANT]:
+                    probabilistically_set_ART_init()
+                
+                elif (art_init_strategy==10) and (hiv_monitoring_strategy==2):
+                    if (person[col.EVER_WHO4] or recent_tb or check_cd4_measurements(500)):
+                        probabilistically_set_ART_init()
+
+            # TODO: ART for PMTCT
+            # if (person[col.SEX] == SexType.Female and current_date > date_pmtct and person[col.ANC] and person[col.ART_NAIVE]):
+            #     if(rng.uniform() < prob_pmtct):
+                    

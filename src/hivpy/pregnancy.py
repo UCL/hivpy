@@ -170,7 +170,7 @@ class PregnancyModule:
             self.prob_pmtct = min(diff_years(pop.date, self.date_pmtct) * self.pmtct_inc_rate, 0.975)
             # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
             # this expression assumed ANC can only be true if pregnant
-            in_anc = pop.get_sub_pop([(col.HIV_NAIVE, op.eq, True),
+            in_anc = pop.get_sub_pop([(col.ART_NAIVE, op.eq, True),
                                       (col.ANC, op.eq, True)])
             # pmtct outcomes
             r = rng.uniform(size=len(in_anc))

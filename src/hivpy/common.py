@@ -83,6 +83,12 @@ def safe_ratio(n1, n2):
         return n1/n2
 
 
+def none_or_compare(fn):
+    return lambda x,y: x is None or fn(x,y)
+
+def not_none_and_compare(fn):
+    return lambda x,y: x is not None and fn(x,y)
+
 class date:
     def __init__(self, year, month=1, day=1):
         self.year = year

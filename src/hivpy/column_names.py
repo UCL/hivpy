@@ -86,6 +86,8 @@ CD4 = "cd4"                                     # None | float: CD4 count per cu
 CD4_DELTA = "cd4_delta"                         # float: change in CD4 count since the last time step
 MAX_CD4 = "max_cd4"                             # float: maximum CD4 count to which a person can return when on ART
 CD4_RECOVERY_ON_ART = "cd4_recovery_on_art"     # float: individual propensity for immune recovery given viral suppression
+CD4_MEASUREMENT = "cd4_measurement"             # float: cd4 measurement if taken in this timestep, else None
+DATE_LAST_CD4_MEASURE = "date_last_cd4_measure" # date: date of most recent cd4 measurement (or None)
 X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, False otherwise
 
 WHO3_EVENT = "who3_event"                       # bool: True if who3 disease occurs this timestep in HIV positive person
@@ -100,7 +102,8 @@ SBI = "serious_bacterial_infection"             # bool: True if serious bacteria
 SBI_DIAGNOSED = "sbi_diagnosed"                 # bool: True if SBI diagnosed this time step
 WHO4_OTHER = "who4_other"                       # bool: True if other WHO4 disease occurs this timestep
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # bool: True if other WHO4 disease diagnosed this timestep
-ADC = "AIDS_defining_condition"                 # bool: presence of AIDS defining condition (any WHO4)
+ADC = "AIDS_defining_condition"                 # bool: presence of AIDS defining condition (any WHO4) in current time step
+EVER_WHO4 = "ever_WHO4"                         # bool: True if a person has ever had a WHO4 condition, even if they do not currently
 
 R_PREP = "r_prep"                               # float: a semi-permanent random personal variable that determines whether someone is risk informed or suspects they are at risk enough to take PrEP
 PREP_ORAL_PREF = "prep_oral_pref"               # float: a value that determines and individual's preference for oral PrEP
@@ -144,7 +147,7 @@ CUMULATIVE_PREP_VR = "cumulative_prep_vr"       # None | timedelta: total length
 IN_CAB_TAIL = "in_cab_tail"                     # bool: True if an individual is in the tail period of injectable Cab PrEP after stopping usage (DUMMY)
 IN_LEN_TAIL = "in_len_tail"                     # bool: True if an individual is in the tail period of injectable Len PrEP after stopping usage (DUMMY)
 
-HIV_NAIVE = "HIV_NAIVE"                         # bool: True if person has never been on antiretroviral therapy
+ART_NAIVE = "ART_NAIVE"                         # bool: True if person has never been on antiretroviral therapy
 ART_START_DATE = "art_start_date"               # date: Date of starting ART
 ON_ART = "on_art"                               # bool: True if a person is currently on ART
 CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
@@ -168,6 +171,7 @@ PROB_ART_INIT = "prob_art_init"
 PROB_RETURN_ADC = "prob_return_adc"
 CLINIC_VISIT = "clinic_visit"                       # bool: true if a person visits a clinic in this time step
 
+DATE_START_ART = "date_start_art"                   # date: date of first accessing ART (not reset due to interruptions). "None" if never accessed ART yet.
 ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present). Use 0 for none.
 FIRST_LINE_REGIMEN = "first_line_regimen"           # int/enum: code for distinguishing between first line regimens (1-3; use 0 for none)
 PROB_SWITCH_LINE = "prob_switch_line"               # float: probability of switching from first line ART regimen
