@@ -318,7 +318,11 @@ class ARTModule:
             art_init_strategy = person[col.ART_INITIATION_STRATEGY]
             hiv_monitoring_strategy = person[col.HIV_MONITORING_STRATEGY]
 
-            recent_tb = True if (person[col.TB_INFECTION_DATE] is not None) and (person.col[col.TB_INFECTION_DATE] < timedelta(months=6)) else False
+            recent_tb = (
+                True
+                if (person[col.TB_INFECTION_DATE] is not None) and (person.col[col.TB_INFECTION_DATE] < timedelta(months=6))
+                else False
+            )
 
             def probabilistically_set_ART_init(prob_factor=1):
                 if rng.uniform() < (person[col.PROB_ART_INIT] * prob_factor):
