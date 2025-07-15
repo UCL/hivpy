@@ -311,7 +311,7 @@ class ARTModule:
                                      
 
     def initiate_ART(self, current_date: date, date_pmtct: date, prob_pmtct, pop: Population):
-        subpop = pop.get_sub_pop(AND((col.HIV_STATUS, op.eq, True),
+        hiv_pos_never_art = pop.get_sub_pop(AND((col.HIV_STATUS, op.eq, True),
                                      (col.DATE_START_ART, op.is_, None)))
 
         def init_art(person):
@@ -370,4 +370,5 @@ class ARTModule:
             # TODO: ART for PMTCT
             # if (person[col.SEX] == SexType.Female and current_date > date_pmtct and person[col.ANC] and person[col.ART_NAIVE]):
             #     if(rng.uniform() < prob_pmtct):
-                    
+        
+        pop.apply_function(init_art, sub_pop=hiv_pos_never_art)
