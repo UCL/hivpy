@@ -10,7 +10,8 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import SexType, diff_years, float_to_date, rng, timedelta, AND, COND, date
+from .common import (AND, COND, SexType, date, diff_years, float_to_date, rng,
+                     timedelta)
 from .pregnancy_data import PregnancyData
 from .resistance_mutations import MutationStatus
 

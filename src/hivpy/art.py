@@ -16,8 +16,8 @@ import hivpy.column_names as col
 
 from . import output
 from .art_data import ARTData
-from .common import (AND, COND, OR, SexType, date, is_in, opposite_sex, rng,
-                     timedelta, none_or_compare)
+from .common import (AND, COND, OR, SexType, date, is_in, none_or_compare,
+                     opposite_sex, rng, timedelta)
 
 
 class HivMonitoringStrategy(Enum):

@@ -8,6 +8,7 @@ from hivpy.common import SexType, date, diff_years, rng, timedelta
 from hivpy.population import Population
 from hivpy.resistance_mutations import MutationStatus
 
+
 @pytest.fixture(autouse=True)
 def resetRandomState():
     rng.set_seed(42)
