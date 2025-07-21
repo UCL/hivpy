@@ -10,7 +10,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import SexType, diff_years, float_to_date, rng, timedelta
+from .common import SexType, diff_years, float_to_date, rng, timedelta, AND, COND, date
 from .pregnancy_data import PregnancyData
 
 if TYPE_CHECKING:
@@ -165,17 +165,21 @@ class PregnancyModule:
 
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission
-        if pop.date >= self.date_pmtct:
+        candidates_for_pmtct = pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                                   COND(col.DATE_START_ART, op.is_, None),
+                                                   COND(col.SEX, op.eq, SexType.Female),
+                                                   COND(col.ANC, op.eq, True)))
+        
+        current_date = pop.date
+        if current_date >= self.date_pmtct:
             # probability of prevention of mother to child transmission care
-            self.prob_pmtct = min(diff_years(pop.date, self.date_pmtct) * self.pmtct_inc_rate, 0.975)
-            # FIXME: NVP use hasn't been modelled yet and neither has drug resistance
-            # this expression assumed ANC can only be true if pregnant
-            in_anc = pop.get_sub_pop([(col.ART_NAIVE, op.eq, True),
-                                      (col.ANC, op.eq, True)])
+            self.prob_pmtct = min(diff_years(current_date, self.date_pmtct) * self.pmtct_inc_rate, 0.975)
+
             # pmtct outcomes
-            r = rng.uniform(size=len(in_anc))
-            pmtct = r < self.prob_pmtct
-            pop.set_present_variable(col.PMTCT, pmtct, in_anc)
+            if (current_date < date(year=2012.5, month=6)):
+                r = rng.uniform(size=len(candidates_for_pmtct))
+                pmtct = r < self.prob_pmtct
+                pop.set_present_variable(col.PMTCT, pmtct, candidates_for_pmtct)
 
     def update_births(self, pop: Population):
         """

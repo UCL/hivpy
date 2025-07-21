@@ -311,8 +311,8 @@ class ARTModule:
                                      
 
     def initiate_ART(self, current_date: date, date_pmtct: date, prob_pmtct, pop: Population):
-        hiv_pos_never_art = pop.get_sub_pop(AND((col.HIV_STATUS, op.eq, True),
-                                     (col.DATE_START_ART, op.is_, None)))
+        hiv_pos_never_art = pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                                COND(col.DATE_START_ART, op.is_, None)))
 
         def init_art(person):
             art_init_strategy = person[col.ART_INITIATION_STRATEGY]
@@ -370,9 +370,3 @@ class ARTModule:
                 elif (art_init_strategy==10) and (hiv_monitoring_strategy==2):
                     if (person[col.EVER_WHO4] or recent_tb or check_cd4_measurements(500)):
                         probabilistically_set_ART_init()
-
-            # TODO: ART for PMTCT
-            # if (person[col.SEX] == SexType.Female and current_date > date_pmtct and person[col.ANC] and person[col.ART_NAIVE]):
-            #     if(rng.uniform() < prob_pmtct):
-        
-        pop.apply_function(init_art, sub_pop=hiv_pos_never_art)

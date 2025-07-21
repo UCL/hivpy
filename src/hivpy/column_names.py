@@ -155,6 +155,7 @@ CONT_ON_ARV = "cont_on_arv"                     # None | timedelta: total length
 NUM_ACTIVE_DRUGS = "num_active_drugs"           # int: number of active drugs in an individual's regimen
 ART_ADHERENCE = "art_adherence"                 # float: percentage of ART intake that is adhered to
 RESISTANCE_INDEX = "resistance_index"           # float: an index used to identify an individual's resistance profile for various calculations
+TIME_OFF_ART = "time_off_art"                   # time: time since stopping ART (if not currently on ART)
 
 ART_MONITORING_STRATEGY = "art_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring ART for individuals
 HIV_MONITORING_STRATEGY = "hiv_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring HIV progression
