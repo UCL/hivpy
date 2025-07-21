@@ -87,7 +87,7 @@ CD4_DELTA = "cd4_delta"                         # float: change in CD4 count sin
 MAX_CD4 = "max_cd4"                             # float: maximum CD4 count to which a person can return when on ART
 CD4_RECOVERY_ON_ART = "cd4_recovery_on_art"     # float: individual propensity for immune recovery given viral suppression
 CD4_MEASUREMENT = "cd4_measurement"             # float: cd4 measurement if taken in this timestep, else None
-DATE_LAST_CD4_MEASURE = "date_last_cd4_measure" # date: date of most recent cd4 measurement (or None)
+DATE_LAST_CD4_MEASURE = "date_last_cd4_measure"  # date: date of most recent cd4 measurement (or None)
 X4_VIRUS = "x4_virus"                           # bool: True if X4 virus is present in person, False otherwise
 
 WHO3_EVENT = "who3_event"                       # bool: True if who3 disease occurs this timestep in HIV positive person

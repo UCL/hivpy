@@ -1,6 +1,7 @@
 """
 Functionality shared between multiple parts of the framework.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -29,7 +30,7 @@ seedManager = SeedManager()
 class DiscreteChoice:
     def __init__(self, vals: np.ndarray, probs):
         N = len(vals)
-        if (len(probs) != N):
+        if len(probs) != N:
             raise Exception
         index_range = np.arange(0, N, 1)
         self.probs = probs
@@ -66,7 +67,7 @@ class SexType(IntEnum):
 
 
 def opposite_sex(sex: SexType):
-    return (1 - sex)
+    return 1 - sex
 
 
 def sub_pop_ratio(sp1, sp2):
@@ -80,14 +81,16 @@ def safe_ratio(n1, n2):
     if n2 == 0:
         return 0
     else:
-        return n1/n2
+        return n1 / n2
 
 
 def none_or_compare(fn):
-    return lambda x,y: x is None or fn(x,y)
+    return lambda x, y: x is None or fn(x, y)
+
 
 def not_none_and_compare(fn):
-    return lambda x,y: x is not None and fn(x,y)
+    return lambda x, y: x is not None and fn(x, y)
+
 
 class date:
     def __init__(self, year, month=1, day=1):
@@ -96,16 +99,16 @@ class date:
         self.day = day
 
     def __add__(self, delta):
-        year = self.year + delta.year + (self.month + delta.month)//12
+        year = self.year + delta.year + (self.month + delta.month) // 12
         month = (self.month + delta.month) % 12
         return date(year, month, self.day)
 
     def __sub__(self, delta):
-        if (type(delta) is timedelta):
+        if type(delta) is timedelta:
             return self.__add__(timedelta(years=-delta.year, months=-delta.month))
-        elif (type(delta) is date):
+        elif type(delta) is date:
             month = (self.month - delta.month) % 12
-            year = (self.year - delta.year) + (self.month - delta.month)//12
+            year = (self.year - delta.year) + (self.month - delta.month) // 12
             return timedelta(year, month)
 
     def __repr__(self):
@@ -115,23 +118,25 @@ class date:
         return self.__repr__()
 
     def __eq__(self, d2):
-        return (self.year == d2.year) and (self.month == d2.month) and (self.day == d2.day)
+        return (
+            (self.year == d2.year) and (self.month == d2.month) and (self.day == d2.day)
+        )
 
     def __gt__(self, d2):
-        if (self.year != d2.year):
-            return (self.year > d2.year)
-        elif (self.month != d2.month):
-            return (self.month > d2.month)
+        if self.year != d2.year:
+            return self.year > d2.year
+        elif self.month != d2.month:
+            return self.month > d2.month
         else:
-            return (self.day > d2.day)
+            return self.day > d2.day
 
     def __lt__(self, d2):
-        if (self.year != d2.year):
-            return (self.year < d2.year)
-        elif (self.month != d2.month):
-            return (self.month < d2.month)
+        if self.year != d2.year:
+            return self.year < d2.year
+        elif self.month != d2.month:
+            return self.month < d2.month
         else:
-            return (self.day < d2.day)
+            return self.day < d2.day
 
     def __ge__(self, d2):
         return not self.__lt__(d2)
@@ -161,7 +166,7 @@ class timedelta:
         year_remainder = years % 1
         years = int(years)
         months = (self.month * x) + (year_remainder * 12)
-        years = years + int(months//12)
+        years = years + int(months // 12)
         months = int(months % 12)
         return timedelta(years=years, months=months)
 
@@ -188,16 +193,16 @@ class timedelta:
         return (self.year == dt2.year) and (self.month == dt2.month)
 
     def __gt__(self, dt2: timedelta):
-        if (self.year != dt2.year):
-            return (self.year > dt2.year)
+        if self.year != dt2.year:
+            return self.year > dt2.year
         else:
-            return (self.month > dt2.month)
+            return self.month > dt2.month
 
     def __lt__(self, dt2):
-        if (self.year != dt2.year):
-            return (self.year < dt2.year)
+        if self.year != dt2.year:
+            return self.year < dt2.year
         else:
-            return (self.month < dt2.month)
+            return self.month < dt2.month
 
     def __ge__(self, dt2):
         return not self.__lt__(dt2)
@@ -242,6 +247,7 @@ class ResettableRandomState:
     while allowing anyone to set the seed, whether in tests or the main code.
     It also offers the ability to use a temporary seed.
     """
+
     def __init__(self):
         """
         Create a new wrapper around a NumPy Generator.
@@ -295,7 +301,7 @@ rng = ResettableRandomState()
 
 
 def is_in(x, y):
-    return (x in y)
+    return x in y
 
 
 class LogicExpr(ABC):
@@ -308,6 +314,7 @@ class LogicExpr(ABC):
     give full freedom to create any logical statement without being beholden to e.g.
     conjunctive normal form.
     """
+
     @abstractmethod
     def eval(self, pop: Population):
         pass
@@ -323,6 +330,7 @@ class COND(LogicExpr):
     As an example, expressing "age > 15" would be
     COND(col.AGE, op.gt, 15)
     """
+
     def __init__(self, var, op, val):
         self.var = var
         self.op = op
@@ -346,12 +354,12 @@ class AND(LogicExpr):
     For example to express age > 15 and age < 65 we can write:
     `AND(COND(col.AGE, op.gt, 15), COND(col.AGE, op.lt, 65))`
     """
+
     def __init__(self, *props):
         self.props = props
 
     def eval(self, pop: Population):
-        return reduce(operator.and_,
-                      (p.eval(pop) for p in self.props))
+        return reduce(operator.and_, (p.eval(pop) for p in self.props))
 
 
 class OR(LogicExpr):
@@ -362,9 +370,9 @@ class OR(LogicExpr):
     For example to express age < 15 or age > 65 we can write:
     `OR(COND(col.AGE, op.lt, 15), COND(col.AGE, op.gt, 65))`
     """
+
     def __init__(self, *props):
         self.props = props
 
     def eval(self, pop: Population):
-        return reduce(operator.or_,
-                      (p.eval(pop) for p in self.props))
+        return reduce(operator.or_, (p.eval(pop) for p in self.props))
