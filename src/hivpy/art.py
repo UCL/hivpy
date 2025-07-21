@@ -20,8 +20,6 @@ from .common import (
     OR,
     date,
     is_in,
-    none_or_compare,
-    opposite_sex,
     rng,
     timedelta,
 )
