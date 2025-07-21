@@ -14,15 +14,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .art_data import ARTData
-from .common import (
-    AND,
-    COND,
-    OR,
-    date,
-    is_in,
-    rng,
-    timedelta,
-)
+from .common import AND, COND, OR, date, is_in, rng, timedelta
 
 
 class HivMonitoringStrategy(Enum):
