@@ -166,10 +166,10 @@ class PregnancyModule:
         # FIXME: this should probably only be applied to HIV diagnosed individuals?
         # If date is after introduction of prevention of mother to child transmission
         candidates_for_pmtct = pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
-                                                   COND(col.DATE_START_ART, op.is_, None),
+                                                   COND(col.DATE_START_ART, op.eq, None),
                                                    COND(col.SEX, op.eq, SexType.Female),
                                                    COND(col.ANC, op.eq, True)))
-        
+        print("candidates for pmtct = ", len(candidates_for_pmtct))
         current_date = pop.date
         if current_date >= self.date_pmtct:
             # probability of prevention of mother to child transmission care

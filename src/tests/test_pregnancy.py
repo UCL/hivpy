@@ -268,6 +268,7 @@ def test_anc_and_pmtct():
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     pop.data[col.WANT_NO_CHILDREN] = False
+    pop.data[col.HIV_STATUS] = ([True,False]*(N//2))
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
     pop.pregnancy.rate_test_anc_inc = 1
@@ -287,7 +288,7 @@ def test_anc_and_pmtct():
     # get stats
     no_pmtct = sum(pop.data[col.PMTCT])
     prob_pmtct = min(diff_years(pop.date, pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
-    mean = no_anc * prob_pmtct
+    mean = no_anc * prob_pmtct / 2
     stdev = sqrt(mean * (1 - prob_pmtct))
     # check pmtct value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pmtct <= mean + 3 * stdev
