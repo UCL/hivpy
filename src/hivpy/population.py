@@ -5,6 +5,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
+from .art import ARTModule
 from .circumcision import CircumcisionModule
 from .common import LogicExpr, date, timedelta
 from .demographics import DemographicsModule
@@ -48,6 +49,7 @@ class Population:
         self.hiv_testing = HIVTestingModule()
         self.hiv_diagnosis = HIVDiagnosisModule()
         self.prep = PrEPModule()
+        self.art = ARTModule()
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -89,6 +91,8 @@ class Population:
         self.init_variable(col.NP_LAST_TEST, 0)
         self.init_variable(col.STI, False)
 
+        self.art.init_ART_columns(self)
+
         self.sexual_behaviour.init_sex_behaviour(self)
 
         self.init_variable(col.CIRCUMCISED, False)
@@ -109,6 +113,10 @@ class Population:
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
+
+        self.art.init_strategies(self)
+
+        self.data = self.data.copy(deep=True)
 
     def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
         """
@@ -202,7 +210,7 @@ class Population:
         param_cols = list(map(lambda x: self.get_variable(x), params))
         return func(*param_cols)
 
-    def apply_function(self, function, axis, sub_pop=None):
+    def apply_function(self, function, axis=1, sub_pop=None):
         if sub_pop is None:
             return self.data.apply(function, axis)
         else:
@@ -221,6 +229,17 @@ class Population:
             self.data[present_col] = value
         else:
             self.data.loc[sub_pop, present_col] = value
+
+    def set_variable_with_condition(self, target: str, value, cond):
+        sub_pop = self.get_sub_pop(cond)
+        self.set_present_variable(target, value, sub_pop)
+
+    def scale_present_variable(self, target: str, multiplier, sub_pop=None):
+        present_col = self.get_correct_column(target, 0)
+        if sub_pop is None:
+            self.data[present_col] *= multiplier
+        else:
+            self.data.loc[sub_pop, present_col] *= multiplier
 
     def get_correct_column(self, param, dt=0):
         """Gets the correct column for a parameter and a given time delay."""

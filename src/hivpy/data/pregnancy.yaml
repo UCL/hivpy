@@ -10,6 +10,10 @@ date_pmtct: 2004
 # pmtct increase year per year
 pmtct_inc_rate: 0.2
 
+# probabilities of resistance mutation for pmtct
+prob_resistance_sd_nvp: 0.35
+prob_resistance_dual_nvp: 0.045
+
 # fertility factor that changes with age
 fertility_factor: [2.0, 1.9, 1, 0.2]
 

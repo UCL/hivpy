@@ -24,6 +24,9 @@ class PregnancyData(DataReader):
             self.max_children = self.data["max_children"]
             self.init_num_children_distributions = self._get_discrete_dist_list("init_num_children_distributions")
 
+            self.prob_resistance_sd_nvp = self.data["prob_resistance_sd_nvp"]
+            self.prob_resistance_dual_nvp = self.data["prob_resistance_dual_nvp"]
+
         except KeyError as ke:
             print(ke.args)
             raise DataLoadException

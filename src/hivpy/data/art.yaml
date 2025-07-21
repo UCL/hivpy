@@ -1,0 +1,62 @@
+lower_future_art_coverage:
+  Value: [False, True]
+  Probability: [0.97, 0.03]
+
+higher_future_prep_oral_coverage:
+  Value: [False, True]
+  Probability: [1, 0]
+
+base_prob_init_ART:
+  Value: [0.5, 0.7, 0.9, 0.95, 1.0]
+
+prob_vl_measurement_done:
+  Value: [0.3, 0.5, 0.7, 1]
+  Probability: [0.05, 0.05, 0.05, 0.85]
+
+prob_switch_line:
+  Value: [0.1, 0.2, 0.5, 0.75]
+  Probability: [0.25, 0.25, 0.25, 0.25]
+
+# Reduced interruption with point-of-care viral load monitoring (red_int_risk_poc_vl)
+reduced_interrupt_poc_vl:
+  Value: [0.7, 0.8, 0.9]
+
+# Rate of interruption due to patient factors (rate_int_choice)
+base_rate_interruption:
+  Value: [0.002, 0.004, 0.008, 0.02, 0.05]
+  Probability: [0.35, 0.4, 0.2, 0.04, 0.01]
+
+prob_loss_at_diagnosis:
+  Value: [0.02, 0.05, 0.15, 0.35, 0.50]
+  Probability: [0.6, 0.3, 0.05, 0.04, 0.01]
+
+prob_loss_adc_tb:
+  alpha: 5
+  beta: 95
+
+prob_loss_non_tb_who3:
+  alpha: 15
+  beta: 85
+
+prob_lost_ART:
+  Value: [0.5, 0.6, 0.7, 0.8, 0.9]
+
+rate_restart_ART:
+  Value: [0.8, 0.85, 0.9, 0.95]
+
+prob_supply_interrupted: 0.003
+prob_supply_resumed: 0.8
+
+rate_lost:
+  Value: [0.2, 0.35, 0.5]
+
+rate_return:
+  Value: [0.05, 0.1, 0.3, 0.6]
+  Probability: [0.25, 0.25, 0.25, 0.25]
+
+rate_return_adc:
+  Value: [0.7, 0.8, 0.9]
+  Probability: [0.05, 0.15, 0.8]
+
+rate_return_lencab:
+  Value: [0.5, 0.7, 0.9]

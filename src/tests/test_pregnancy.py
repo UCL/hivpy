@@ -6,6 +6,7 @@ import pytest
 import hivpy.column_names as col
 from hivpy.common import SexType, date, diff_years, rng, timedelta
 from hivpy.population import Population
+from hivpy.resistance_mutations import MutationStatus
 
 
 @pytest.fixture(autouse=True)
@@ -44,19 +45,28 @@ def test_num_children():
         pop.pregnancy.init_num_children(pop)
 
         # check that anyone with child has a pregnancy date
-        assert ((pop.data[col.NUM_CHILDREN] > 0) == pop.data[col.LAST_PREGNANCY_DATE].notnull()).all()
+        assert (
+            (pop.data[col.NUM_CHILDREN] > 0)
+            == pop.data[col.LAST_PREGNANCY_DATE].notnull()
+        ).all()
 
         # probability distribution and values for initialising child numbers
-        prob_children_dist = pop.pregnancy.init_num_children_distributions[test_ages.index(age)].probs
-        num_children_values = pop.pregnancy.init_num_children_distributions[test_ages.index(age)].data
+        prob_children_dist = pop.pregnancy.init_num_children_distributions[
+            test_ages.index(age)
+        ].probs
+        num_children_values = pop.pregnancy.init_num_children_distributions[
+            test_ages.index(age)
+        ].data
         prob_dist_size = len(prob_children_dist)
 
         # get stats
         no_female = sum(~pop.data[col.LOW_FERTILITY])
         # loop through distribution
         for i in range(0, prob_dist_size):
-            no_children = sum((pop.data[col.NUM_CHILDREN] == num_children_values[i])
-                              & (~pop.data[col.LOW_FERTILITY]))
+            no_children = sum(
+                (pop.data[col.NUM_CHILDREN] == num_children_values[i])
+                & (~pop.data[col.LOW_FERTILITY])
+            )
             prob_children = prob_children_dist[i]
             mean = no_female * prob_children
             stdev = sqrt(mean * (1 - prob_children))
@@ -77,7 +87,7 @@ def test_ltp_preg():
             pop.data[col.AGE] = age
             pop.data[col.NUM_PARTNERS] = 0
             pop.data[col.LONG_TERM_PARTNER] = True
-            pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None]*(N//2)
+            pop.data[col.LAST_PREGNANCY_DATE] = [date(1980, 1, 1), None] * (N // 2)
             pop.data[col.NUM_CHILDREN] = 0
             pop.pregnancy.prob_pregnancy_base = 0.4
             pop.pregnancy.init_fertility(pop)
@@ -91,16 +101,23 @@ def test_ltp_preg():
 
             else:
                 # get stats
-                no_active_female = sum((~pop.data[col.LOW_FERTILITY])
-                                       & ((pop.data[col.NUM_PARTNERS] > 0)
-                                       | pop.data[col.LONG_TERM_PARTNER]))
+                no_active_female = sum(
+                    (~pop.data[col.LOW_FERTILITY])
+                    & (
+                        (pop.data[col.NUM_PARTNERS] > 0)
+                        | pop.data[col.LONG_TERM_PARTNER]
+                    )
+                )
                 no_pregnant = sum(pop.data[col.PREGNANT])
-                prob_preg = pop.pregnancy.prob_pregnancy_base * pop.pregnancy.fertility_factor[test_ages.index(age)-1]
+                prob_preg = (
+                    pop.pregnancy.prob_pregnancy_base
+                    * pop.pregnancy.fertility_factor[test_ages.index(age) - 1]
+                )
                 mean = no_active_female * prob_preg
                 stdev = sqrt(mean * (1 - prob_preg))
                 # check pregnancy value is within 3 standard deviations
-                max = mean + 3*stdev
-                min = mean - 3*stdev
+                max = mean + 3 * stdev
+                min = mean - 3 * stdev
                 assert min <= no_pregnant
                 assert no_pregnant <= max
                 # low fertility individuals don't become pregnant
@@ -129,11 +146,14 @@ def test_stp_preg():
             pop.pregnancy.update_pregnancy(pop)
 
             # get stats
-            no_active_female = sum((~pop.data[col.LOW_FERTILITY])
-                                   & ((pop.data[col.NUM_PARTNERS] > 0)
-                                      | pop.data[col.LONG_TERM_PARTNER]))
+            no_active_female = sum(
+                (~pop.data[col.LOW_FERTILITY])
+                & ((pop.data[col.NUM_PARTNERS] > 0) | pop.data[col.LONG_TERM_PARTNER])
+            )
             no_pregnant = sum(pop.data[col.PREGNANT])
-            prob_preg = pop.pregnancy.calc_prob_preg(test_ages.index(age)+1, False, stp, False)
+            prob_preg = pop.pregnancy.calc_prob_preg(
+                test_ages.index(age) + 1, False, stp, False
+            )
             mean = no_active_female * prob_preg
             stdev = sqrt(mean * (1 - prob_preg))
             # check pregnancy value is within 3 standard deviations
@@ -158,7 +178,7 @@ def test_childbirth():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for _ in range(0, ceil(timedelta(days=270)/time_step)):
+    for _ in range(0, ceil(timedelta(days=270) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -204,7 +224,7 @@ def test_child_cap():
 
     # evolve population
     # get through pregnancy, childbirth, and pregnancy pause period
-    for _ in range(0, ceil(timedelta(days=450)/time_step)):
+    for _ in range(0, ceil(timedelta(days=450) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -231,7 +251,7 @@ def test_want_no_children():
     pop.pregnancy.prob_pregnancy_base = 0.4
 
     # make half the population not want children
-    pop.data[col.WANT_NO_CHILDREN] = [True, False] * (N//2)
+    pop.data[col.WANT_NO_CHILDREN] = [True, False] * (N // 2)
 
     # advance pregnancy
     pop.pregnancy.update_pregnancy(pop)
@@ -255,11 +275,15 @@ def test_want_no_children():
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
 
 
-def test_anc_and_pmtct():
+@pytest.mark.parametrize(
+    ("test_date"),
+    [date(2000, 1, 1), date(2010, 1, 1), date(2012, 1, 1), date(2015, 1, 1)],
+)
+def test_anc_and_pmtct(test_date):
 
     # build artificial population
     N = 10000
-    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop = Population(size=N, start_date=test_date)
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 20
     pop.data[col.LOW_FERTILITY] = False
@@ -268,29 +292,53 @@ def test_anc_and_pmtct():
     pop.data[col.LAST_PREGNANCY_DATE] = None
     pop.data[col.NUM_CHILDREN] = 0
     pop.data[col.WANT_NO_CHILDREN] = False
+    pop.data[col.HIV_STATUS] = [True, False] * (N // 2)
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
     pop.pregnancy.rate_test_anc_inc = 1
     pop.pregnancy.date_pmtct = date(2004)
-    pop.pregnancy.pmtct_inc_rate = 1
+    pop.pregnancy.pmtct_inc_rate = 0.2
 
     # advance pregnancy
     pop.pregnancy.update_pregnancy(pop)
 
     # get stats
     no_anc = sum(pop.data[col.ANC])
-    mean = len(pop.data) * pop.pregnancy.prob_anc
-    stdev = sqrt(mean * (1 - pop.pregnancy.prob_anc))
+    mean_pmtct = len(pop.data) * pop.pregnancy.prob_anc
+    stdev = sqrt(mean_pmtct * (1 - pop.pregnancy.prob_anc))
     # check anc attendance value is within 3 standard deviations
-    assert mean - 3 * stdev <= no_anc <= mean + 3 * stdev
+    assert mean_pmtct - 3 * stdev <= no_anc <= mean_pmtct + 3 * stdev
 
-    # get stats
+    # get stats for PMTCT
+    sd_nvp_end_date = date(year=2010, month=6)
+    dual_nvp_end_date = date(year=2012, month=6)
     no_pmtct = sum(pop.data[col.PMTCT])
-    prob_pmtct = min(diff_years(pop.date, pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
-    mean = no_anc * prob_pmtct
-    stdev = sqrt(mean * (1 - prob_pmtct))
+    prob_pmtct = (
+        0
+        if test_date < pop.pregnancy.date_pmtct
+        else min(
+            diff_years(pop.date, pop.pregnancy.date_pmtct)
+            * pop.pregnancy.pmtct_inc_rate,
+            0.975,
+        )
+    )
+    mean_pmtct = no_anc * prob_pmtct / 2
+    stdev = sqrt(mean_pmtct * (1 - prob_pmtct))
     # check pmtct value is within 3 standard deviations
-    assert mean - 3 * stdev <= no_pmtct <= mean + 3 * stdev
+    if test_date < pop.pregnancy.date_pmtct:
+        assert no_pmtct == 0
+    elif test_date <= dual_nvp_end_date:
+        assert mean_pmtct - 3 * stdev <= no_pmtct <= mean_pmtct + 3 * stdev
+    else:
+        assert no_pmtct == 0
+
+    num_mutations = sum(pop.data[col.RT103_MUTATION] == MutationStatus.Majority)
+    prob_mut = 0
+    if test_date > pop.pregnancy.date_pmtct and test_date < dual_nvp_end_date:
+        prob_mut = 0.35 if test_date < sd_nvp_end_date else 0.045
+    mean_mut = mean_pmtct * prob_mut
+    stdev = sqrt(mean_mut * (1 - prob_mut))
+    assert mean_mut - 3 * stdev <= num_mutations <= mean_mut + 3 * stdev
 
 
 def test_anc_testing():
@@ -327,7 +375,7 @@ def test_anc_testing():
 
     # advance pregnancy to start of second trimester
     pop.pregnancy.update_pregnancy(pop)
-    for _ in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -346,7 +394,7 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # advance pregnancy to start of third trimester
-    for _ in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -360,7 +408,7 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # final advancement into childbirth
-    for _ in range(0, ceil(timedelta(days=90)/time_step)):
+    for _ in range(0, ceil(timedelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -388,8 +436,14 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # check that nobody not in ANC has been tested
-    assert len(pop.get_sub_pop_intersection(
-        not_inc_anc, pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)]))) == 0
+    assert (
+        len(
+            pop.get_sub_pop_intersection(
+                not_inc_anc, pop.get_sub_pop([(col.EVER_TESTED, op.eq, True)])
+            )
+        )
+        == 0
+    )
 
 
 def test_infected_births():
@@ -413,7 +467,7 @@ def test_infected_births():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for _ in range(0, ceil(timedelta(days=270)/time_step)):
+    for _ in range(0, ceil(timedelta(days=270) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
