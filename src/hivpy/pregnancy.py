@@ -12,6 +12,7 @@ import hivpy.column_names as col
 from . import output
 from .common import SexType, diff_years, float_to_date, rng, timedelta, AND, COND, date
 from .pregnancy_data import PregnancyData
+from .resistance_mutations import MutationStatus
 
 if TYPE_CHECKING:
     from .population import Population
@@ -39,6 +40,8 @@ class PregnancyModule:
         self.init_num_children_distributions = self.p_data.init_num_children_distributions
         self.prob_anc = 0
         self.prob_pmtct = 0
+        self.prob_resistance_sd_nvp = self.p_data.prob_resistance_sd_nvp
+        self.prob_resistance_dual_nvp = self.p_data.prob_resistance_dual_nvp
 
     def generate_prob_pregnancy_base(self):
         """
@@ -169,17 +172,21 @@ class PregnancyModule:
                                                    COND(col.DATE_START_ART, op.eq, None),
                                                    COND(col.SEX, op.eq, SexType.Female),
                                                    COND(col.ANC, op.eq, True)))
-        print("candidates for pmtct = ", len(candidates_for_pmtct))
         current_date = pop.date
-        if current_date >= self.date_pmtct:
+
+        pop.set_present_variable(col.PMTCT, False)
+        if current_date >= self.date_pmtct and current_date < date(year=2012, month=6):
             # probability of prevention of mother to child transmission care
             self.prob_pmtct = min(diff_years(current_date, self.date_pmtct) * self.pmtct_inc_rate, 0.975)
 
             # pmtct outcomes
-            if (current_date < date(year=2012.5, month=6)):
-                r = rng.uniform(size=len(candidates_for_pmtct))
-                pmtct = r < self.prob_pmtct
-                pop.set_present_variable(col.PMTCT, pmtct, candidates_for_pmtct)
+            r = rng.uniform(size=len(candidates_for_pmtct))
+            pmtct = r < self.prob_pmtct
+            pop.set_present_variable(col.PMTCT, pmtct, candidates_for_pmtct)
+            pmtct_pop = pop.get_sub_pop(COND(col.PMTCT, op.eq, True))
+            n_pmtct = len(pmtct_pop)
+            mutations = rng.uniform(size=n_pmtct) < (self.prob_resistance_sd_nvp if current_date < date(year=2010, month=6) else self.prob_resistance_dual_nvp)
+            pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority, pop.apply_bool_mask(mutations, pmtct_pop))
 
     def update_births(self, pop: Population):
         """

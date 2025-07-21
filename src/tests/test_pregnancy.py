@@ -6,7 +6,7 @@ import pytest
 import hivpy.column_names as col
 from hivpy.common import SexType, date, diff_years, rng, timedelta
 from hivpy.population import Population
-
+from hivpy.resistance_mutations import MutationStatus
 
 @pytest.fixture(autouse=True)
 def resetRandomState():
@@ -254,12 +254,12 @@ def test_want_no_children():
     # check pregnancy value is within 3 standard deviations
     assert mean - 3 * stdev <= no_pregnant <= mean + 3 * stdev
 
-
-def test_anc_and_pmtct():
+@pytest.mark.parametrize(("test_date"), [date(2000, 1, 1), date(2010, 1, 1), date(2012, 1, 1), date(2015, 1, 1)])
+def test_anc_and_pmtct(test_date):
 
     # build artificial population
     N = 10000
-    pop = Population(size=N, start_date=date(2010, 1, 1))
+    pop = Population(size=N, start_date=test_date)
     pop.data[col.SEX] = SexType.Female
     pop.data[col.AGE] = 20
     pop.data[col.LOW_FERTILITY] = False
@@ -273,25 +273,40 @@ def test_anc_and_pmtct():
     pop.pregnancy.prob_pregnancy_base = 1
     pop.pregnancy.rate_test_anc_inc = 1
     pop.pregnancy.date_pmtct = date(2004)
-    pop.pregnancy.pmtct_inc_rate = 1
+    pop.pregnancy.pmtct_inc_rate = 0.2
 
     # advance pregnancy
     pop.pregnancy.update_pregnancy(pop)
 
     # get stats
     no_anc = sum(pop.data[col.ANC])
-    mean = len(pop.data) * pop.pregnancy.prob_anc
-    stdev = sqrt(mean * (1 - pop.pregnancy.prob_anc))
+    mean_pmtct = len(pop.data) * pop.pregnancy.prob_anc
+    stdev = sqrt(mean_pmtct * (1 - pop.pregnancy.prob_anc))
     # check anc attendance value is within 3 standard deviations
-    assert mean - 3 * stdev <= no_anc <= mean + 3 * stdev
+    assert mean_pmtct - 3 * stdev <= no_anc <= mean_pmtct + 3 * stdev
 
-    # get stats
+    # get stats for PMTCT
+    sd_nvp_end_date = date(year=2010, month=6)
+    dual_nvp_end_date = date(year=2012, month=6)
     no_pmtct = sum(pop.data[col.PMTCT])
-    prob_pmtct = min(diff_years(pop.date, pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
-    mean = no_anc * prob_pmtct / 2
-    stdev = sqrt(mean * (1 - prob_pmtct))
+    prob_pmtct = 0 if test_date < pop.pregnancy.date_pmtct else min(diff_years(pop.date, pop.pregnancy.date_pmtct) * pop.pregnancy.pmtct_inc_rate, 0.975)
+    mean_pmtct = no_anc * prob_pmtct / 2
+    stdev = sqrt(mean_pmtct * (1 - prob_pmtct))
     # check pmtct value is within 3 standard deviations
-    assert mean - 3 * stdev <= no_pmtct <= mean + 3 * stdev
+    if (test_date < pop.pregnancy.date_pmtct):
+        assert no_pmtct==0
+    elif (test_date <= dual_nvp_end_date):
+        assert mean_pmtct - 3 * stdev <= no_pmtct <= mean_pmtct + 3 * stdev
+    else:
+        assert no_pmtct==0
+
+    num_mutations = sum(pop.data[col.RT103_MUTATION]==MutationStatus.Majority)
+    prob_mut = 0
+    if test_date > pop.pregnancy.date_pmtct and test_date < dual_nvp_end_date:
+        prob_mut = 0.35 if test_date < sd_nvp_end_date else 0.045
+    mean_mut = mean_pmtct * prob_mut
+    stdev = sqrt(mean_mut * (1-prob_mut))
+    assert mean_mut - 3*stdev <= num_mutations <= mean_mut + 3*stdev
 
 
 def test_anc_testing():
