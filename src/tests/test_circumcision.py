@@ -14,9 +14,9 @@ def resetRandomState():
 
 
 def reset_pop_circ(pop):
-    pop.data[col.CIRCUMCISED] = False
-    pop.data[col.CIRCUMCISION_DATE] = None
-    pop.data[col.VMMC] = False
+    pop.set_present_variable(col.CIRCUMCISED, False)
+    pop.set_present_variable(col.CIRCUMCISION_DATE, None)
+    pop.set_present_variable(col.VMMC, False)
 
 
 def set_covid(circ_module, truth_val):
@@ -181,8 +181,8 @@ def test_vmmc_case_0():
 
         # build artificial population
         pop = Population(size=N, start_date=start_date)
-        pop.data[col.SEX] = SexType.Male
-        pop.data[col.AGE] = age
+        pop.set_present_variable(col.SEX, SexType.Male)
+        pop.set_present_variable(col.AGE, age)
         reset_pop_circ(pop)
 
         pop.circumcision.circ_policy_scenario = 0
@@ -239,8 +239,8 @@ def test_vmmc_case_1():
 
         # build population
         pop = Population(size=N, start_date=start_date)
-        pop.data[col.SEX] = SexType.Male
-        pop.data[col.AGE] = age
+        pop.set_present_variable(col.SEX, SexType.Male)
+        pop.set_present_variable(col.AGE, age)
         reset_pop_circ(pop)
 
         # case 1
@@ -305,8 +305,8 @@ def test_vmmc_case_3():
 
         # build population
         pop = Population(size=N, start_date=start_date)
-        pop.data[col.SEX] = SexType.Male
-        pop.data[col.AGE] = age
+        pop.set_present_variable(col.SEX, SexType.Male)
+        pop.set_present_variable(col.AGE, age)
         reset_pop_circ(pop)
 
         # case 3
@@ -340,8 +340,8 @@ def test_vmmc_case_4():
 
         # build population
         pop = Population(size=N, start_date=start_date)
-        pop.data[col.SEX] = SexType.Male
-        pop.data[col.AGE] = age
+        pop.set_present_variable(col.SEX, SexType.Male)
+        pop.set_present_variable(col.AGE, age)
         reset_pop_circ(pop)
 
         # case 4
@@ -406,11 +406,11 @@ def test_vmmc_after_testing():
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)
-    pop.data[col.SEX] = SexType.Male
-    pop.data[col.AGE] = 18
+    pop.set_present_variable(col.SEX, SexType.Male)
+    pop.set_present_variable(col.AGE, 18)
     # everyone marked as tested last timestep
-    pop.data[col.EVER_TESTED] = True
-    pop.data[col.LAST_TEST_DATE] = start_date - time_step
+    pop.set_present_variable(col.EVER_TESTED, True)
+    pop.set_present_variable(col.LAST_TEST_DATE, start_date - time_step)
     reset_pop_circ(pop)
 
     pop.circumcision.circ_policy_scenario = 0
@@ -443,8 +443,8 @@ def test_vmmc_testing():
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)
-    pop.data[col.SEX] = SexType.Male
-    pop.data[col.AGE] = 18
+    pop.set_present_variable(col.SEX, SexType.Male)
+    pop.set_present_variable(col.AGE, 18)
     reset_pop_circ(pop)
 
     pop.circumcision.circ_policy_scenario = 0

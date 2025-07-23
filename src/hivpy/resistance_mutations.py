@@ -564,7 +564,7 @@ class ResistanceMutationsModule:
         # calculate change in cd4
         cd4_delta = base_cd4_recovery_on_art + person[col.CD4_RECOVERY_ON_ART] * x
         # changes for people on antiretroviral drugs
-        if person[col.ON_PREP] or person[self.pop.get_correct_column(col.ON_ART)]:
+        if person[self.pop.get_correct_column(col.ON_PREP)] or person[self.pop.get_correct_column(col.ON_ART)]:
             # adjust cd4 delta for higher previous cd4 levels
             if 100 < prev_cd4 <= 200:
                 cd4_delta *= 0.85
@@ -574,7 +574,7 @@ class ResistanceMutationsModule:
         # calculate current cd4 levels
         cd4 = max(0, prev_cd4 + cd4_delta)
         # changes for people on antiretroviral drugs
-        if person[col.ON_PREP] or person[self.pop.get_correct_column(col.ON_ART)]:
+        if person[self.pop.get_correct_column(col.ON_PREP)] or person[self.pop.get_correct_column(col.ON_ART)]:
             # add cd4 variability
             cd4 = (np.sqrt(cd4) + self.cd4_stdev_on_art * rng.normal()) ** 2
             # adjust cd4 according to max value

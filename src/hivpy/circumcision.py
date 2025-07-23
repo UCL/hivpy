@@ -145,18 +145,18 @@ class CircumcisionModule:
             if len(uncirc_male_population) > 0:
 
                 # group males by age groups
-                age_groups = np.digitize(pop.data.loc[uncirc_male_population, col.AGE],
+                age_groups = np.digitize(pop.get_variable(col.AGE, uncirc_male_population),
                                          [self.min_vmmc_age,
                                           self.vmmc_age_bound_1,
                                           self.vmmc_age_bound_2,
                                           self.max_vmmc_age])
                 # TODO: change age group col name to be more descriptive
-                pop.data.loc[uncirc_male_population, col.AGE_GROUP] = age_groups
+                pop.set_present_variable(col.AGE_GROUP, age_groups, uncirc_male_population) 
                 # calculate vmmc outcomes
                 circumcision = pop.transform_group([col.AGE_GROUP], self.calc_circ_outcomes,
                                                    sub_pop=uncirc_male_population)
-                pop.data.loc[uncirc_male_population, col.CIRCUMCISED] = circumcision
-                pop.data.loc[uncirc_male_population, col.VMMC] = circumcision
+                pop.set_present_variable(col.CIRCUMCISED, circumcision, uncirc_male_population) 
+                pop.set_present_variable(col.VMMC, circumcision, uncirc_male_population) 
 
                 # chance to get vmmc after a negative HIV test
                 self.update_vmmc_after_test(pop, time_step)
@@ -164,7 +164,7 @@ class CircumcisionModule:
                 # newly circumcised males get the current date set as their circumcision date
                 new_circ_males = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
                                                   (col.CIRCUMCISION_DATE, op.eq, None)])
-                pop.data.loc[new_circ_males, col.CIRCUMCISION_DATE] = self.date
+                pop.set_present_variable(col.CIRCUMCISION_DATE, self.date, new_circ_males)
 
     def calc_circ_outcomes(self, age_group, size):
         """

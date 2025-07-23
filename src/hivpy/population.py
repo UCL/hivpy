@@ -230,6 +230,13 @@ class Population:
         else:
             self.data.loc[sub_pop, present_col] = value
 
+    def inc_variable(self, target: str, value, sub_pop=None):
+        present_col = self.get_correct_column(target, 0)
+        if sub_pop is None:
+            self.data[present_col] += value
+        else:
+            self.data.loc[sub_pop, present_col] = value
+
     def set_variable_with_condition(self, target: str, value, cond):
         sub_pop = self.get_sub_pop(cond)
         self.set_present_variable(target, value, sub_pop)
@@ -282,6 +289,8 @@ class Population:
         `dropna` is false by default to allow for the inclusion of missing values in groups, but
         should be set to true if missing values should instead be dropped during groupby.
         """
+        param_list = [self.get_correct_column(p) for p in param_list]
+
         def general_func(g):
             if len(param_list) == 1:
                 args = [g.name]
