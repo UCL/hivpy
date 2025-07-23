@@ -235,7 +235,7 @@ def test_calc_cd4_delta():
     assert isclose(cd4, 62)
     assert isclose(delta, 12)
 
-    pop.set_present_variable(res.cd4_tm1_col, 110)
+    pop.data[pop.get_correct_column(col.CD4, dt=1)] = 110
     pop.set_present_variable(col.CD4_RECOVERY_ON_ART, 0.2)
     pop.set_present_variable(col.MAX_CD4, 200)
     pop.set_present_variable(col.ON_DAR, False)
@@ -252,7 +252,7 @@ def test_calc_cd4_delta():
         assert isclose(delta, 10.2)
     assert (outliers <= 1)
 
-    pop.set_present_variable(res.cd4_tm1_col, 10000)
+    pop.data[pop.get_correct_column(col.CD4, dt=1)] = 10000
     pop.set_present_variable(col.MAX_CD4, 100)
     pop.set_present_variable(col.ON_PREP, False)
     pop.set_present_variable(col.ON_ART, True)
