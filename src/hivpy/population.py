@@ -174,6 +174,8 @@ class Population:
 
     def eval(self, expr):
         var, op, val = expr
+        if isinstance(var, tuple):
+            var = self.get_correct_column(var[0], var[1])
         if val is None:
             if op == operator.eq:
                 return self.data[self.get_correct_column(var)].isnull()

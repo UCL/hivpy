@@ -151,10 +151,10 @@ def test_HIV_risk_vector():
             sex_list += [sex] * N_group
             age_group_list += [age_group] * N_group
             HIV_list += [True] * (N_group // HIV_ratio) + [False] * (N_group - N_group//HIV_ratio)
-    pop.data[col.SEX] = np.array(sex_list)
-    pop.data[col.SEX_MIX_AGE_GROUP] = np.array(age_group_list)
-    pop.data[col.HIV_STATUS] = np.array(HIV_list)
-    pop.data[col.NUM_PARTNERS] = 1  # give everyone a single stp to start with
+    pop.set_present_variable(col.SEX, np.array(sex_list))
+    pop.set_present_variable(col.SEX_MIX_AGE_GROUP, np.array(age_group_list))
+    pop.set_present_variable(col.HIV_STATUS, np.array(HIV_list))
+    pop.set_present_variable(col.NUM_PARTNERS, 1)  # give everyone a single stp to start with
 
     # if everyone has the same number of partners,
     # probability of being with someone with HIV should be = HIV prevalence
@@ -165,21 +165,21 @@ def test_HIV_risk_vector():
 
     # Check for differences in male and female rate correctly
     # change HIV rate in men to double
-    males = pop.data.index[pop.data[col.SEX] == SexType.Male]
+    males = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
     # transform group fails when only grouped by one field
     # appears to change the type of the object passed to the function!
     male_HIV_status = pop.transform_group([col.SEX_MIX_AGE_GROUP, col.SEX], lambda x, y: np.array(
         [True] * (2 * N_group // HIV_ratio) +
         [False] * (N_group - 2*N_group // HIV_ratio)), False, males)
-    pop.data.loc[males, col.HIV_STATUS] = male_HIV_status
+    pop.set_present_variable( col.HIV_STATUS, male_HIV_status, males)
     hiv_module.update_partner_risk_vectors(pop)
     assert np.allclose(hiv_module.ratio_infected_stp[SexType.Male], 2*expectation)
     assert np.allclose(hiv_module.ratio_infected_stp[SexType.Female], expectation)
 
     # Check for difference when changing number of partners between HIV + / - people
-    HIV_positive = pop.data.index[pop.data[col.HIV_STATUS]]
+    HIV_positive = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
     # 2 partners for each HIV+ person, one for each HIV- person.
-    pop.data.loc[HIV_positive, col.NUM_PARTNERS] = 2
+    pop.set_present_variable(col.NUM_PARTNERS, 2, HIV_positive)
     expectation_male = (2 * 0.2) / (2*0.2 + 0.8)
     expectation_female = (2 * 0.1) / (2*0.1 + 0.9)
     hiv_module.update_partner_risk_vectors(pop)
@@ -203,13 +203,13 @@ def test_viral_group_risk_vector():
             sex_list += [sex] * N_group
             age_group_list += [age_group] * N_group
             HIV_list += [True] * (N_group // HIV_ratio) + [False] * (N_group - N_group//HIV_ratio)
-    pop.data[col.DATE_HIV_INFECTION] = pop.date
+    pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
     pop.date += timedelta(days=180)  # no one in primary infection
     hiv_module.set_primary_infection(pop)
-    pop.data[col.HIV_STATUS] = HIV_list
-    pop.data[col.SEX] = np.array(sex_list)
-    pop.data[col.SEX_MIX_AGE_GROUP] = np.array(age_group_list)
-    pop.data[col.NUM_PARTNERS] = 1  # give everyone a single stp to start with
+    pop.set_present_variable(col.HIV_STATUS, HIV_list)
+    pop.set_present_variable(col.SEX, np.array(sex_list))
+    pop.set_present_variable(col.SEX_MIX_AGE_GROUP, np.array(age_group_list))
+    pop.set_present_variable(col.NUM_PARTNERS, 1)  # give everyone a single stp to start with
     pop.set_present_variable(col.VIRAL_LOAD, 3.0)  # put everyone in the same viral load group to begin with
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)  # probability of group 1 should be 100%
@@ -217,15 +217,16 @@ def test_viral_group_risk_vector():
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
     pop.set_present_variable(col.VIRAL_LOAD, np.array([3.0, 4.0] * (N // 2)))  # alternate groups 1 & 2
-    pop.data.loc[pop.data[pop.get_correct_column(col.VIRAL_LOAD, dt=0)] == 3.0, col.NUM_PARTNERS] = 2
+    pop.set_present_variable(col.NUM_PARTNERS, 2, pop.get_sub_pop(COND(col.VIRAL_LOAD, op.eq, 3.0)))  # 2 partners for anyone with viral load of 3
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)
     expectation = np.array([0., 2/3, 1/3, 0., 0., 0.])
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Male], expectation)
     assert np.allclose(hiv_module.ratio_vl_stp[SexType.Female], expectation)
     # check for appropriate sex differences
-    pop.data.loc[(pop.data[pop.get_correct_column(col.VIRAL_LOAD, dt=0)] == 3.0) & (
-        pop.data[col.SEX] == SexType.Female), pop.get_correct_column(col.VIRAL_LOAD, dt=0)] = 5.0
+    women_vl_3 = pop.get_sub_pop(AND(COND(col.VIRAL_LOAD, op.eq, 3.0),
+                                     COND(col.SEX, op.eq, SexType.Female)))
+    pop.set_present_variable(col.VIRAL_LOAD, 5.0, women_vl_3)
     hiv_module.set_viral_load_groups(pop)
     hiv_module.update_partner_risk_vectors(pop)
     expecation_female = np.array([0., 0., 1/3, 2/3, 0., 0.])
@@ -236,7 +237,7 @@ def test_viral_group_risk_vector():
 def test_initial_vl():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.HIV_STATUS] = [True, False] * 500
+    pop.set_present_variable(col.HIV_STATUS, [True, False] * 500)
     # Reset viral load for testing (original values affected by intro of HIV)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -254,7 +255,7 @@ def test_initial_vl():
 
 
 def check_initial_vl_by_sex(pop: Population, hiv_module, hivpos_subpop, hivneg_subpop, sex, age_diff=0):
-    pop.data[col.AGE] = 35 + age_diff
+    pop.set_present_variable(col.AGE, 35 + age_diff)
     hiv_module.initialise_HIV_progression(pop, hivpos_subpop)
     hiv_pos_by_sex = pop.get_sub_pop_intersection(hivpos_subpop,
                                                   pop.get_sub_pop([(col.SEX, op.eq, sex)]))
@@ -274,12 +275,12 @@ def test_naive_vl_progression():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     init_vl = 5
-    pop.data[col.AGE] = 35
+    pop.set_present_variable(col.AGE, 35)
     pop.set_present_variable(col.VIRAL_LOAD, init_vl)
-    pop.data[col.HIV_STATUS] = [True, False] * 500
+    pop.set_present_variable(col.HIV_STATUS, [True, False] * 500)
     # Reset viral load for testing (original values affected by intro of HIV)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
-    pop.data[col.ART_NAIVE] = True
+    pop.set_present_variable(col.ART_NAIVE, True)
     hiv_module = pop.hiv_status
     hiv_module.vl_base_change = 1.5
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -293,7 +294,7 @@ def test_naive_vl_progression():
     check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, -10)
 
     # Check that we can't exceed maximum viral load
-    pop.data[col.AGE] = 35
+    pop.set_present_variable(col.AGE, 35)
     pop.set_present_variable(col.VIRAL_LOAD, 6.5)
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     new_vls = pop.get_variable(col.VIRAL_LOAD, hivpos_subpop)
@@ -301,7 +302,7 @@ def test_naive_vl_progression():
 
 
 def check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, age_diff):
-    pop.data[col.AGE] = 35 + age_diff
+    pop.set_present_variable(col.AGE, 35 + age_diff)
     pop.set_present_variable(col.VIRAL_LOAD, init_vl)
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     assert (all(pop.get_variable(col.VIRAL_LOAD, hivneg_subpop) == 5))
@@ -318,7 +319,7 @@ def check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, age_
 def test_initial_cd4():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.HIV_STATUS] = [True, False] * 5000
+    pop.set_present_variable(col.HIV_STATUS, [True, False] * 5000)
     pop.set_present_variable(col.CD4, 0.0)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -334,7 +335,7 @@ def test_initial_cd4():
 
 
 def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex, age_diff):
-    pop.data[col.AGE] = 35 + age_diff
+    pop.set_present_variable(col.AGE, 35 + age_diff)
     pop.set_present_variable(col.CD4, 0.0)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
     hiv_module.initialise_HIV_progression(pop, hivpos_subpop)
@@ -362,10 +363,10 @@ def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex
 def test_naive_cd4_progression():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.AGE] = 35
-    pop.data[col.HIV_STATUS] = [True, False] * 5000
+    pop.set_present_variable(col.AGE, 35)
+    pop.set_present_variable(col.HIV_STATUS, [True, False] * 5000)
     # Reset viral load for testing (original values affected by intro of HIV)
-    pop.data[col.ART_NAIVE] = True
+    pop.set_present_variable(col.ART_NAIVE, True)
     hiv_module = pop.hiv_status
     hiv_module.cd4_base_change = 1.5  # Fix to avoid sampling
     hivpos_subpop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
@@ -378,8 +379,8 @@ def test_naive_cd4_progression():
     check_cd4_progression(pop, hiv_module, hivpos_subpop, 0.4)
 
 
-def check_cd4_progression(pop, hiv_module, hivpos_subpop, change_factor):
-    pop.data[pop.get_correct_column(col.CD4, dt=0)] = 1000.0
+def check_cd4_progression(pop: Population, hiv_module, hivpos_subpop, change_factor):
+    pop.set_present_variable(col.CD4, 1000.0)
     hiv_module.update_HIV_progression(pop, hivpos_subpop)
     cd4_counts = pop.get_variable(col.CD4, hivpos_subpop)
     assert np.all(cd4_counts <= 1500)
@@ -396,8 +397,8 @@ def check_cd4_progression(pop, hiv_module, hivpos_subpop, change_factor):
 def test_who3_tb():
     N = 1000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.AGE] = 35
-    pop.data[col.HIV_STATUS] = True
+    pop.set_present_variable(col.AGE, 35)
+    pop.set_present_variable(col.HIV_STATUS, True)
 
     pop.hiv_status.HIV_related_disease_risk(pop, timedelta(0, 3, 0))
     tb_infected = pop.get_sub_pop(COND(col.TB, op.eq, True))
