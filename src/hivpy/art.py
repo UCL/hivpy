@@ -157,7 +157,7 @@ class ARTModule:
         pop.init_variable(col.DATE_START_ART, None)
         pop.init_variable(col.CLINIC_VISIT, False)
         pop.init_variable(col.ART_NAIVE, True, 1)
-        pop.init_variable(col.ON_ART, False)
+        pop.init_variable(col.ON_ART, False, n_prev_steps=1)
         pop.init_variable(col.ART_REGIMEN_OPT, 0)
         pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
         pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
