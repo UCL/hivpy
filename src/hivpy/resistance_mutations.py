@@ -13,7 +13,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import COND, SexType, rng, timedelta, get_col_dt
+from .common import COND, SexType, rng, timedelta
 from .resistance_mutations_data import ResistanceMutationsData
 
 
@@ -505,8 +505,8 @@ class ResistanceMutationsModule:
         x = self.get_matrix_value(self.new_mutation_matrix, person[col.RESISTANCE_INDEX],
                                   on_nev=person[col.ON_NEV], on_efa=person[col.ON_EFA])
         # calculate new mutation probability
-        prev_viral_load = person[get_col_dt(col.VIRAL_LOAD, dt=1)]
-        current_viral_load = person[get_col_dt(col.VIRAL_LOAD, dt=0)]
+        prev_viral_load = person[self.pop.get_correct_column(col.VIRAL_LOAD, dt=1)]
+        current_viral_load = person[self.pop.get_correct_column(col.VIRAL_LOAD, dt=0)]
         prob_new_mutation = min(x * (current_viral_load + prev_viral_load)/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
