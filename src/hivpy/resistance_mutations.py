@@ -13,7 +13,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import COND, SexType, rng, timedelta
+from .common import COND, SexType, rng, timedelta, get_col_dt
 from .resistance_mutations_data import ResistanceMutationsData
 
 
@@ -230,7 +230,6 @@ class ResistanceMutationsModule:
         pop.init_variable(col.CONT_ON_ART, timedelta(months=0), n_prev_steps=1)
         pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
         pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
-        pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
         pop.init_variable(col.RESISTANCE_INDEX, -1)
         self.init_arv_drugs(pop)
         pop.init_variable(col.RESISTANCE_MUTATIONS, 0)
@@ -359,14 +358,12 @@ class ResistanceMutationsModule:
         """
         Update CD4 count in HIV+ individuals.
         """
-        # FIXME: is there a better way to pass the the cd4_tm1 column string to calc_cd4_delta?
-        self.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
         # get cd4 outcomes
-        cd4_outcomes = pop.apply_function(self.calc_cd4_delta, 1, sub_pop)
+        cd4_outcomes = pop.apply_function(lambda x: self.calc_cd4_delta(x, pop), 1, sub_pop)
         pop.set_present_variable(col.CD4, [i[0] for i in cd4_outcomes], sub_pop)
         pop.set_present_variable(col.CD4_DELTA, [i[1] for i in cd4_outcomes], sub_pop)
 
-    def calc_cd4_delta(self, person):
+    def calc_cd4_delta(self, person, pop: Population):
         """
         Returns an individual's change in CD4 levels this time step.
         Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
@@ -375,7 +372,7 @@ class ResistanceMutationsModule:
         """
         # use resistance index to lookup cd4 delta multiplier
         x = self.get_matrix_value(self.cd4_delta_matrix, person[col.RESISTANCE_INDEX])
-
+        prev_cd4 = person[pop.get_correct_column(col.CD4, dt=1)]
         # find base cd4 recovery
         base_cd4_recovery_on_art = 0
         # recovery is hindered by a failing nnrti (or possibly insti) regimen
@@ -397,13 +394,13 @@ class ResistanceMutationsModule:
         # changes for people on antiretroviral drugs
         if person[col.ON_PREP] or person[col.ON_ART]:
             # adjust cd4 delta for higher previous cd4 levels
-            if 100 < person[self.cd4_tm1_col] <= 200:
+            if 100 < prev_cd4 <= 200:
                 cd4_delta *= 0.85
-            elif person[self.cd4_tm1_col] > 200:
+            elif prev_cd4 > 200:
                 cd4_delta *= 0.7
 
         # calculate current cd4 levels
-        cd4 = max(0, person[self.cd4_tm1_col] + cd4_delta)
+        cd4 = max(0, prev_cd4 + cd4_delta)
         # changes for people on antiretroviral drugs
         if person[col.ON_PREP] or person[col.ON_ART]:
             # add cd4 variability
@@ -418,9 +415,6 @@ class ResistanceMutationsModule:
         """
         Update new resistance mutations arising in HIV+ individuals.
         """
-        # FIXME: is there a better way to pass the the viral_load column strings to calc_prob_new_mutation?
-        self.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
-        self.viral_load_tm1_col = pop.get_correct_column(col.VIRAL_LOAD, dt=1)
         # get new mutation probabilities
         new_mutation_probs = pop.apply_function(self.calc_prob_new_mutation, 1, sub_pop)
         # outcomes
@@ -509,7 +503,9 @@ class ResistanceMutationsModule:
         x = self.get_matrix_value(self.new_mutation_matrix, person[col.RESISTANCE_INDEX],
                                   on_nev=person[col.ON_NEV], on_efa=person[col.ON_EFA])
         # calculate new mutation probability
-        prob_new_mutation = min(x * (person[self.viral_load_col] + person[self.viral_load_tm1_col])/2 * self.mutation_risk_change, 1)
+        prev_viral_load = person[get_col_dt(col.VIRAL_LOAD, dt=1)]
+        current_viral_load = person[get_col_dt(col.VIRAL_LOAD, dt=0)]
+        prob_new_mutation = min(x * (current_viral_load + prev_viral_load)/2 * self.mutation_risk_change, 1)
 
         return prob_new_mutation
 

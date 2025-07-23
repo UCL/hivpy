@@ -92,6 +92,16 @@ def not_none_and_compare(fn):
     return lambda x, y: x is not None and fn(x, y)
 
 
+def constructParamColumn(name, i):
+        return name + "," + str(i)
+
+
+def get_col_dt(param, dt=0):
+        """Gets the correct column for a parameter and a given time delay."""
+        col_index = dt #(self.step + dt) % self.variable_history[param]
+        return constructParamColumn(param, col_index)
+
+
 class date:
     def __init__(self, year, month=1, day=1):
         self.year = year

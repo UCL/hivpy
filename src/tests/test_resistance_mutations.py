@@ -21,6 +21,7 @@ def test_matrix_value_retrieval():
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -104,6 +105,7 @@ def test_calc_viral_load():
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -149,6 +151,7 @@ def test_calc_cd4_delta():
     pop.set_present_variable(col.CD4, 50)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.AGE, 20)
     pop.set_present_variable(col.SEX, SexType.Male)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
@@ -275,6 +278,7 @@ def test_calc_prob_new_mutation():
     pop.set_present_variable(col.VIRAL_LOAD, 20)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -900,6 +904,7 @@ def test_update_resistance():
     pop.set_present_variable(col.ON_ART, False)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.ART_ADHERENCE, 0.8)
 
     pop.resistance.update_resistance(pop)

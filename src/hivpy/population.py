@@ -246,8 +246,14 @@ class Population:
         if (self.variable_history[param] == 1):
             return param
         else:
-            col_index = (self.step + dt) % self.variable_history[param]
+            col_index = dt #(self.step + dt) % self.variable_history[param]
             return self.constructParamColumn(param, col_index)
+
+    def update_histories(self):
+        for (param, steps) in self.variable_history.items():
+            if steps > 1:
+                for i in range(steps-1, 0, -1):
+                    self.data[self.get_correct_column(param, i)] = self.data[self.get_correct_column(param, i-1)]
 
     def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
         """Sets the value of a population variable at the present time step
@@ -314,6 +320,7 @@ class Population:
         ages += time_step.month / 12
         self.set_present_variable(col.AGE, ages)
         n_deaths = 0
+        self.update_histories()
 
         self.hiv_status.reset_diagnoses(self)
 
