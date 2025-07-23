@@ -104,9 +104,9 @@ class Population:
 
         self.demographics.initialise_hard_reach(self.data)
         if self.circumcision.vmmc_disrup_covid:
-            self.circumcision.init_birth_circumcision_born(self.data, self.date)
+            self.circumcision.init_birth_circumcision_born(self, self.date)
         else:
-            self.circumcision.init_birth_circumcision_all(self.data, self.date)
+            self.circumcision.init_birth_circumcision_all(self, self.date)
         self.sexual_behaviour.assign_stp_ages(self)
 
         # If we are at the start of the epidemic, introduce HIV into the population.

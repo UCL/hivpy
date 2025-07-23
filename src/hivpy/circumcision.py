@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .population import Population
+
 import importlib.resources
 import operator as op
 
@@ -6,7 +13,8 @@ import numpy as np
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import SexType, date, diff_years, rng, timedelta
+from .common import SexType, date, diff_years, rng, timedelta, COND, AND
+import operator as op
 
 
 class CircumcisionModule:
@@ -42,28 +50,28 @@ class CircumcisionModule:
         self.vmmc_age_bound_2 = 30
         self.max_vmmc_age = 50
 
-    def init_birth_circumcision_all(self, population, date):
+    def init_birth_circumcision_all(self, pop: Population, date):
         """
         Initialise circumcision at birth for the entire male population,
         both born and unborn. COVID disruption is not factored in.
         """
-        male_population = population.index[population[col.SEX] == SexType.Male]
+        male_population = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
         r = rng.uniform(size=len(male_population))
         circumcision = r < self.prob_birth_circ
-        population.loc[male_population, col.CIRCUMCISED] = circumcision
+        pop.set_present_variable( col.CIRCUMCISED, circumcision, male_population)
         # split newly circumcised population into born and unborn
-        circ_born_population = population.index[population[col.CIRCUMCISED]
-                                                & (population[col.AGE] >= 0.25)]
-        circ_unborn_population = population.index[population[col.CIRCUMCISED]
-                                                  & (population[col.AGE] < 0.25)]
+        circ_born_population = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
+                                                (col.AGE, op.ge, 0.25)])
+        circ_unborn_population = pop.get_sub_pop([(col.CIRCUMCISED, op.eq, True),
+                                                  (col.AGE, op.lt, 0.25)])
         # use current simulation start date as circumcision date for born individuals
-        population.loc[circ_born_population, col.CIRCUMCISION_DATE] = date
+        pop.set_present_variable( col.CIRCUMCISION_DATE, date, circ_born_population)
         # find date where each unborn individual's age would be 0.25
-        population.loc[circ_unborn_population,
-                       col.CIRCUMCISION_DATE] = population[col.AGE].transform(
-                                                lambda x: date - timedelta(days=(x-0.25)*365))
+        ages = pop.get_variable(col.AGE, circ_unborn_population)
+        circumcision_dates = [date - timedelta(days=(a-0.25)*365) for a in ages]
+        pop.set_present_variable(col.CIRCUMCISION_DATE, circumcision_dates, circ_unborn_population)
 
-    def init_birth_circumcision_born(self, population, date):
+    def init_birth_circumcision_born(self, pop: Population, date):
         """
         Initialise circumcision at birth for all born males.
 
@@ -72,15 +80,15 @@ class CircumcisionModule:
         the use of `update_birth_circumcision` at every time step
         to work as expected.
         """
-        male_born_population = population.index[(population[col.SEX] == SexType.Male)
-                                                & (population[col.AGE] >= 0.25)]
+        male_born_population = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                                   COND(col.AGE, op.gt, 0)))
         r = rng.uniform(size=len(male_born_population))
         circumcision = r < self.prob_birth_circ
-        population.loc[male_born_population, col.CIRCUMCISED] = circumcision
+        pop.set_present_variable( col.CIRCUMCISED, circumcision, male_born_population)
         # all circumcised males get a circumcision date of the start of the simulation
-        population.loc[population[col.CIRCUMCISED], col.CIRCUMCISION_DATE] = date
+        pop.set_present_variable(col.CIRCUMCISION_DATE, date, pop.apply_bool_mask(circumcision, male_born_population))
 
-    def update_birth_circumcision(self, population, time_step, date):
+    def update_birth_circumcision(self, pop: Population, time_step, date):
         """
         Update birth circumcision for newly born males.
         COVID disruption is factored in.
@@ -92,18 +100,18 @@ class CircumcisionModule:
         # covid disruption causes circumcision probability to be 0
         if (not self.covid_disrup_affected) & (not self.vmmc_disrup_covid):
             # assumes ages have already been incremented
-            newborn_males = population.index[(population[col.SEX] == SexType.Male)
-                                             & (population[col.AGE] >= 0.25)
-                                             & (population[col.AGE] - time_step.month / 12 < 0.25)]
+            newborn_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                                COND(col.AGE, op.gt, 0),
+                                                COND(col.AGE, op.le, time_step.month/12)))
             r = rng.uniform(size=len(newborn_males))
             circumcision = r < self.prob_birth_circ
-            population.loc[newborn_males, col.CIRCUMCISED] = circumcision
+            pop.set_present_variable( col.CIRCUMCISED, circumcision, newborn_males)
             # newly circumcised males get the current date set as their circumcision date
-            circ_newborn_males = population.index[population[col.CIRCUMCISED]
-                                                  & population[col.CIRCUMCISION_DATE].isnull()]
-            population.loc[circ_newborn_males, col.CIRCUMCISION_DATE] = date
+            newly_circumcised = pop.get_sub_pop(AND(COND(col.CIRCUMCISED, op.eq, True),
+                                                     COND(col.CIRCUMCISION_DATE, op.eq, None)))
+            pop.set_present_variable(col.CIRCUMCISION_DATE, date, pop.get_sub_pop_intersection(newly_circumcised, newborn_males))
 
-    def update_vmmc(self, pop, time_step):
+    def update_vmmc(self, pop: Population, time_step):
         """
         Update voluntary medical male circumcision intervention.
         COVID disruption is factored in.
@@ -216,7 +224,7 @@ class CircumcisionModule:
 
         return min(prob_circ, 1)
 
-    def update_vmmc_after_test(self, pop, time_step):
+    def update_vmmc_after_test(self, pop: Population, time_step):
         """
         Update VMMC in individuals that tested HIV negative last time step.
         """

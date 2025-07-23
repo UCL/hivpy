@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .population import Population
+
 import importlib.resources
 import operator as op
 
@@ -162,7 +169,7 @@ class HIVTestingModule:
                 # set outcomes
                 pop.set_present_variable(col.TEST_MARK, marked, not_diag_tested_pop)
 
-    def test_mark_vmmc(self, pop, time_step):
+    def test_mark_vmmc(self, pop: Population, time_step):
         """
         Mark recently circumcised individuals to undergo testing this time step.
         """

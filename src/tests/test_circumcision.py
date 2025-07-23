@@ -4,7 +4,7 @@ from math import isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta
+from hivpy.common import SexType, date, rng, timedelta, AND, COND
 from hivpy.population import Population
 
 
@@ -31,15 +31,15 @@ def set_vmmc_default_dates(circ_module):
     circ_module.policy_intervention_year = date(2022)
 
 
-def general_circumcision_checks(mean, stdev, no_circumcised, data):
+def general_circumcision_checks(mean, stdev, no_circumcised, pop):
 
     # no female is marked as circumcised
-    assert sum((data[col.SEX] == SexType.Female)
-               & data[col.CIRCUMCISED]) == 0
+    assert sum((pop.get_variable(col.SEX) == SexType.Female)
+               & pop.get_variable(col.CIRCUMCISED)) == 0
 
     # no uncircumcised people have circumcision dates and
     # all circumcised people have circumcision dates
-    assert (data[col.CIRCUMCISED] == data[col.CIRCUMCISION_DATE].notnull()).all()
+    assert (pop.get_variable(col.CIRCUMCISED) == pop.get_variable(col.CIRCUMCISION_DATE).notnull()).all()
 
     # check circumcised value is within 3 standard deviations
     assert mean - 3 * stdev <= no_circumcised <= mean + 3 * stdev
@@ -47,7 +47,7 @@ def general_circumcision_checks(mean, stdev, no_circumcised, data):
 
 def get_birth_circ_stats(pop, no_male):
 
-    no_circumcised = sum(pop.data[col.CIRCUMCISED])
+    no_circumcised = sum(pop.get_variable(col.CIRCUMCISED))
     mean = no_male * pop.circumcision.prob_birth_circ
     stdev = sqrt(mean * (1 - pop.circumcision.prob_birth_circ))
 
@@ -56,12 +56,12 @@ def get_birth_circ_stats(pop, no_male):
 
 def get_vmmc_stats(pop, prob_circ):
 
-    no_vmmc = sum(pop.data[col.VMMC])
-    no_male = sum((pop.data[col.SEX] == SexType.Male)
-                  & ~pop.data[col.HARD_REACH]
-                  & ~pop.data[col.HIV_DIAGNOSED]
-                  & (pop.data[col.AGE] >= 10)
-                  & (pop.data[col.AGE] < 50))
+    no_vmmc = sum(pop.get_variable(col.VMMC))
+    no_male = sum((pop.get_variable(col.SEX) == SexType.Male)
+                  & ~pop.get_variable(col.HARD_REACH)
+                  & ~pop.get_variable(col.HIV_DIAGNOSED)
+                  & (pop.get_variable(col.AGE) >= 10)
+                  & (pop.get_variable(col.AGE) < 50))
     mean = no_male * prob_circ
     stdev = sqrt(mean * (1 - prob_circ))
 
@@ -74,15 +74,15 @@ def test_birth_circumcision_atonce():
     N = 100000
     pop = Population(size=N, start_date=date(1990, 1, 1))
     reset_pop_circ(pop)
-    pop.circumcision.init_birth_circumcision_all(pop.data, pop.date)
+    pop.circumcision.init_birth_circumcision_all(pop, pop.date)
 
     # get stats
-    no_male = sum(pop.data[col.SEX] == SexType.Male)
+    no_male = sum(pop.get_variable(col.SEX) == SexType.Male)
     no_circumcised, mean, stdev = get_birth_circ_stats(pop, no_male)
     # basic checks
-    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    general_circumcision_checks(mean, stdev, no_circumcised, pop)
     # check that no circumcised people have undergone VMMC
-    assert sum(pop.data[col.CIRCUMCISED] & pop.data[col.VMMC]) == 0
+    assert sum(pop.get_variable(col.CIRCUMCISED) & pop.get_variable(col.VMMC)) == 0
 
 
 def test_birth_circumcision_stages():
@@ -95,30 +95,30 @@ def test_birth_circumcision_stages():
     # build population
     pop = Population(size=N, start_date=start_date)
     reset_pop_circ(pop)
-    pop.circumcision.init_birth_circumcision_born(pop.data, pop.date)
+    pop.circumcision.init_birth_circumcision_born(pop, pop.date)
 
     # get stats
-    no_male = sum((pop.data[col.SEX] == SexType.Male)
-                  & (pop.data[col.AGE] > 0.25))
+    no_male = sum((pop.get_variable(col.SEX) == SexType.Male)
+                  & (pop.get_variable(col.AGE) > 0.25))
     no_circumcised, mean, stdev = get_birth_circ_stats(pop, no_male)
     # basic checks
-    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    general_circumcision_checks(mean, stdev, no_circumcised, pop)
 
     # evolve population
     while pop.date <= stop_date:
         # advance ages and birth circumcision
-        pop.data.age += time_step.month / 12
-        pop.circumcision.update_birth_circumcision(pop.data, time_step, pop.date)
+        pop.inc_variable(col.AGE, time_step.month / 12)
+        pop.circumcision.update_birth_circumcision(pop, time_step, pop.date)
         pop.date += time_step
 
     # get stats
-    no_male = sum((pop.data[col.SEX] == SexType.Male)
-                  & (pop.data[col.AGE] > 0.25))
+    no_male = sum((pop.get_variable(col.SEX) == SexType.Male)
+                  & (pop.get_variable(col.AGE) > 0.0))
     no_circumcised, mean, stdev = get_birth_circ_stats(pop, no_male)
     # basic checks
-    general_circumcision_checks(mean, stdev, no_circumcised, pop.data)
+    general_circumcision_checks(mean, stdev, no_circumcised, pop)
     # check that no circumcised people have undergone VMMC
-    assert sum(pop.data[col.CIRCUMCISED] & pop.data[col.VMMC]) == 0
+    assert sum(pop.get_variable(col.CIRCUMCISED) & pop.get_variable(col.VMMC)) == 0
 
 
 def test_calc_prob_circ():
@@ -191,41 +191,41 @@ def test_vmmc_case_0():
 
         # evolve population for a year
         for i in range(0, 5):
-            pop.data.age += time_step.month / 12
+            pop.inc_variable(col.AGE, time_step.month / 12)
             pop.circumcision.update_vmmc(pop, time_step)
             pop.date += time_step
         # check no VMMC occurs until vmmc_start_year
-        assert sum(pop.data[col.VMMC]) == 0
+        assert sum(pop.get_variable(col.VMMC)) == 0
 
         # evolve population during vmmc_start_year
-        pop.data.age += time_step.month / 12
+        pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
 
         # get stats
         prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
         no_vmmc, mean, stdev = get_vmmc_stats(pop, prob_circ)
         # basic checks
-        general_circumcision_checks(mean, stdev, no_vmmc, pop.data)
+        general_circumcision_checks(mean, stdev, no_vmmc, pop)
         # no hard to reach people have undergone VMMC
-        assert sum(pop.data[col.HARD_REACH] & pop.data[col.VMMC]) == 0
+        assert sum(pop.get_variable(col.HARD_REACH) & pop.get_variable(col.VMMC)) == 0
         # nobody over 50 has been circumcised
-        assert sum((pop.data[col.AGE] >= 50) & (pop.data[col.VMMC])) == 0
+        assert sum((pop.get_variable(col.AGE) >= 50) & (pop.get_variable(col.VMMC))) == 0
 
         # evolve population for a few more years
         while pop.date <= stop_date:
-            circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                        & pop.data[col.CIRCUMCISED]]
+            circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                             COND(col.CIRCUMCISED, op.eq, True)))
             # advance ages and vmmc
-            pop.data.age += time_step.month / 12
+            pop.inc_variable(col.AGE, time_step.month/12)
             pop.circumcision.update_vmmc(pop, time_step)
             pop.date += time_step
             # check circumcisied people remain circumcised each step
-            new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                            & pop.data[col.CIRCUMCISED]]
+            new_circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                                 COND(col.CIRCUMCISED, op.eq, True)))
             assert circ_males.isin(new_circ_males).all()
 
         # nobody under 10 has been circumcised
-        assert sum((pop.data[col.AGE] < 10) & (pop.data[col.VMMC])) == 0
+        assert sum((pop.get_variable(col.AGE) < 10) & (pop.get_variable(col.VMMC))) == 0
 
 
 def test_vmmc_case_1():
@@ -251,11 +251,11 @@ def test_vmmc_case_1():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.month / 12
+        pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
         # nobody under 15 has been circumcised
         if age < 15:
-            assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
+            assert sum((pop.get_variable(col.AGE) < 15) & (pop.get_variable(col.VMMC))) == 0
 
         if age >= 15:
             # get stats
@@ -282,14 +282,15 @@ def test_vmmc_case_2():
     set_vmmc_default_dates(pop.circumcision)
 
     # evolve population
-    pop.data.age += time_step.month / 12
+    pop.inc_variable(col.AGE, time_step.month / 12)
     pop.circumcision.update_vmmc(pop, time_step)
-    circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
+    circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                     COND(col.CIRCUMCISED, op.eq, True)))
     pop.date += time_step
-    pop.data.age += time_step.month / 12
+    pop.inc_variable(col.AGE, time_step.month / 12)
     pop.circumcision.update_vmmc(pop, time_step)
-    new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                    & pop.data[col.CIRCUMCISED]]
+    new_circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                         COND(col.CIRCUMCISED, op.eq, True)))
     # check that circumcision has stopped
     assert circ_males.tolist() == new_circ_males.tolist()
 
@@ -317,10 +318,10 @@ def test_vmmc_case_3():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.month / 12
+        pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
         # nobody under 15 has been circumcised
-        assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
+        assert sum((pop.get_variable(col.AGE) < 15) & (pop.get_variable(col.VMMC))) == 0
 
         # get stats
         prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
@@ -353,11 +354,12 @@ def test_vmmc_case_4():
         set_vmmc_default_dates(pop.circumcision)
 
         # evolve population
-        pop.data.age += time_step.month / 12
+        pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
-        circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male) & pop.data[col.CIRCUMCISED]]
+        circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                             COND(col.CIRCUMCISED, op.eq, True)))
         # nobody under 15 has been circumcised
-        assert sum((pop.data[col.AGE] < 15) & (pop.data[col.VMMC])) == 0
+        assert sum((pop.get_variable(col.AGE) < 15) & (pop.get_variable(col.VMMC))) == 0
 
         # get stats
         prob_circ = pop.circumcision.calc_prob_circ(test_ages.index(age)+1)
@@ -367,10 +369,10 @@ def test_vmmc_case_4():
 
         # evolve population
         pop.date += time_step
-        pop.data.age += time_step.month / 12
+        pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
-        new_circ_males = pop.data.index[(pop.data[col.SEX] == SexType.Male)
-                                        & pop.data[col.CIRCUMCISED]]
+        new_circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
+                                             COND(col.CIRCUMCISED, op.eq, True)))
         # check that circumcision has stopped
         assert circ_males.tolist() == new_circ_males.tolist()
 
@@ -391,11 +393,11 @@ def test_circ_covid():
     set_vmmc_default_dates(pop.circumcision)
 
     # evolve population
-    pop.circumcision.update_birth_circumcision(pop.data, time_step, pop.date)
+    pop.circumcision.update_birth_circumcision(pop, time_step, pop.date)
     pop.circumcision.update_vmmc(pop, time_step)
 
     # check there was no circumcision
-    assert sum(pop.data[col.CIRCUMCISED]) == 0
+    assert sum(pop.get_variable(col.CIRCUMCISED)) == 0
 
 
 def test_vmmc_after_testing():
