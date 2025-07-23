@@ -246,7 +246,7 @@ class Population:
         if (self.variable_history[param] == 1):
             return param
         else:
-            col_index = dt #(self.step + dt) % self.variable_history[param]
+            col_index = dt
             return self.constructParamColumn(param, col_index)
 
     def update_histories(self):
