@@ -239,6 +239,12 @@ class Population:
         else:
             self.data.loc[sub_pop, present_col] = value
 
+    def set_variable_range(self, target: str, value, begin=0, end=None):
+        if end is None:
+            end = self.size - 1
+        present_col = self.get_correct_column(target, 0)
+        self.data.loc[begin:end, present_col] = value
+
     def set_variable_with_condition(self, target: str, value, cond):
         sub_pop = self.get_sub_pop(cond)
         self.set_present_variable(target, value, sub_pop)
