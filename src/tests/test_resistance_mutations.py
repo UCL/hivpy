@@ -21,6 +21,7 @@ def test_matrix_value_retrieval():
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -29,7 +30,7 @@ def test_matrix_value_retrieval():
 
     res = pop.resistance
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # get vl_matrix[0][0][0] -> (1, 0, 0) -> max_viral_load
     assert res.get_matrix_value(res.viral_load_matrix, 0) == (1, 0, 0)
@@ -45,7 +46,7 @@ def test_matrix_value_retrieval():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
     pop.set_present_variable(col.ON_NEV, True)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # get vl_matrix[5][1][0][1] -> (1, -0.05, 0) -> max_viral_load - 0.05
     assert res.get_matrix_value(res.viral_load_matrix, 0) == (1, -0.05, 0)
@@ -59,7 +60,7 @@ def test_matrix_value_retrieval():
     pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=7)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # get nm_matrix[5][2][2] -> 0.3
     assert res.get_matrix_value(res.new_mutation_matrix, 0, on_nev=pop.data.loc[0, col.ON_NEV],
@@ -70,7 +71,7 @@ def test_matrix_value_retrieval():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 1.2
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # get vl_matrix[9][1][2][2] -> (0, 1.4, 0) -> 1.4
     assert res.get_matrix_value(res.viral_load_matrix, 0) == (0, 1.4, 0)
@@ -85,7 +86,7 @@ def test_matrix_value_retrieval():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # get vl_matrix[12][2][2] -> (0, 0, 1) -> min_vl_on_art
     assert res.get_matrix_value(res.viral_load_matrix, 0) == (0, 0, 1)
@@ -104,6 +105,7 @@ def test_calc_viral_load():
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -112,7 +114,7 @@ def test_calc_viral_load():
 
     res = pop.resistance
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # max_viral_load + vl_stdev_on_art * rng.normal()
     outliers = 0
@@ -128,7 +130,7 @@ def test_calc_viral_load():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # min_vl_on_art + vl_stdev_on_art * rng.normal()
     outliers = 0
@@ -149,6 +151,7 @@ def test_calc_cd4_delta():
     pop.set_present_variable(col.CD4, 50)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.AGE, 20)
     pop.set_present_variable(col.SEX, SexType.Male)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
@@ -169,7 +172,7 @@ def test_calc_cd4_delta():
     res.hindered_cd4_recovery = -3
     res.cd4_tm1_col = pop.get_correct_column(col.CD4, dt=1)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # check basic case at age 20
     # 6 + 0.1 * -18 = 4.2
@@ -183,7 +186,7 @@ def test_calc_cd4_delta():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # 6 + 0.1 * 30 = 9
     # 50 + 9 = 59
@@ -207,7 +210,7 @@ def test_calc_cd4_delta():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0
     pop.set_present_variable(col.ON_NEV, True)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # check hindered cd4 recovery
     # 3 + 0.1 * -18 = 1.2
@@ -223,7 +226,7 @@ def test_calc_cd4_delta():
     pop.set_present_variable(col.ON_NEV, False)
     pop.set_present_variable(col.ON_DAR, True)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # check improved cd4 recovery with pi recovery factor
     # 9 + 0.1 * 30 = 12
@@ -275,6 +278,7 @@ def test_calc_prob_new_mutation():
     pop.set_present_variable(col.VIRAL_LOAD, 20)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
     pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
@@ -287,7 +291,7 @@ def test_calc_prob_new_mutation():
     res.viral_load_col = pop.get_correct_column(col.VIRAL_LOAD, dt=0)
     res.viral_load_tm1_col = pop.get_correct_column(col.VIRAL_LOAD, dt=1)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # 0.05 * (50 + 20) / 2 * 0.5 = 0.875
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.875)
@@ -298,7 +302,7 @@ def test_calc_prob_new_mutation():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
     pop.set_present_variable(col.ON_EFA, True)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # 0.30 * (50 + 20) / 2 * 0.5 = 5.25 >> min(5.25, 1) = 1
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 1)
@@ -309,7 +313,7 @@ def test_calc_prob_new_mutation():
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     pop.set_present_variable(col.ON_EFA, False)
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
 
     # 0.002 * (50 + 20) / 2 * 0.5 = 0.035
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.035)
@@ -334,9 +338,9 @@ def test_rttams():
     res.risk_change_tams_resist = 1
     res.resist_rate_tams_higher = 0.2
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 1)]))
     mean = N * 0.20
@@ -355,7 +359,7 @@ def test_rttams():
     pop.set_present_variable(col.ON_ZDV, True)
     pop.set_present_variable(col.ON_3TC, True)
     pop.set_present_variable(col.RTTA_MUTATIONS, 0)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RTTA_MUTATIONS, op.eq, 1)]))
     mean = N * 0.12
@@ -370,7 +374,7 @@ def test_rttams():
     assert mean - 3 * stdev <= mutated <= mean + 3 * stdev
 
     pop.set_present_variable(col.RTTA_MUTATIONS, [5, 6] * (N // 2))
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     # check that the tams cap is not exceeded
     assert all(pop.get_variable(col.RTTA_MUTATIONS) <= 6)
@@ -394,9 +398,9 @@ def test_rt184m():
     # 80% chance of rt184m
     res.resist_rate_3tc = 0.8
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT184_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.80
@@ -423,9 +427,9 @@ def test_rt151m():
     res.risk_change_151_resist = 1
     res.resist_rate_zdv = 0.02
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT151_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
@@ -452,9 +456,9 @@ def test_rt65m():
     # 2% chance of rt65m
     res.resist_rate_zdv = 0.02
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
@@ -466,7 +470,7 @@ def test_rt65m():
     res.resist_rate_ten = 0.3
     pop.set_present_variable(col.ON_ZDV, False)
     pop.set_present_variable(col.RT65_MUTATION, MutationStatus.Absent)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT65_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.30
@@ -495,9 +499,9 @@ def test_rt103m():
     res.resist_rate_nev_lower = 0.2
     res.resist_rate_efa_higher = 0.6
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT103_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.68
@@ -526,9 +530,9 @@ def test_rt181m():
     res.resist_rate_nev_higher = 0.4
     res.resist_rate_efa_lower = 0.1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT181_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.46
@@ -557,9 +561,9 @@ def test_rt190m():
     res.resist_rate_nev_lower = 0.2
     res.resist_rate_efa_lower = 0.1
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.RT190_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.28
@@ -584,7 +588,7 @@ def test_nnrtim():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
 
     # check rt103m blockers
@@ -593,7 +597,7 @@ def test_nnrtim():
             pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Absent)
             pop.set_present_variable(col.RT181_MUTATION, rt181_status)
             pop.set_present_variable(col.RT190_MUTATION, rt190_status)
-            res.update_new_mutations_arising_art(pop, pop.data.index)
+            res.update_new_mutations_arising_art(pop.data.index)
 
             # expecting no rt103m if either rt181m or rt190m are present in majority
             if (rt181_status != MutationStatus.Majority and rt190_status != MutationStatus.Majority):
@@ -607,7 +611,7 @@ def test_nnrtim():
             pop.set_present_variable(col.RT103_MUTATION, rt103_status)
             pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Absent)
             pop.set_present_variable(col.RT190_MUTATION, rt190_status)
-            res.update_new_mutations_arising_art(pop, pop.data.index)
+            res.update_new_mutations_arising_art(pop.data.index)
 
             # expecting no rt181m if either rt103m or rt190m are present in majority
             if (rt103_status != MutationStatus.Majority and rt190_status != MutationStatus.Majority):
@@ -621,7 +625,7 @@ def test_nnrtim():
             pop.set_present_variable(col.RT103_MUTATION, rt103_status)
             pop.set_present_variable(col.RT181_MUTATION, rt181_status)
             pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Absent)
-            res.update_new_mutations_arising_art(pop, pop.data.index)
+            res.update_new_mutations_arising_art(pop.data.index)
 
             # expecting no rt190m if either rt103m or rt181m are present in majority
             if (rt103_status != MutationStatus.Majority and rt181_status != MutationStatus.Majority):
@@ -644,9 +648,9 @@ def test_pr32m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR32_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
@@ -669,9 +673,9 @@ def test_pr46m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR46_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
@@ -694,9 +698,9 @@ def test_pr47m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR47_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
@@ -719,9 +723,9 @@ def test_pr50lm():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR50L_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
@@ -744,9 +748,9 @@ def test_pr50vm():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR50V_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.01
@@ -770,9 +774,9 @@ def test_pr54m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR54_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
@@ -796,9 +800,9 @@ def test_pr76m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR76_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
@@ -821,9 +825,9 @@ def test_pr82m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR82_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.02
@@ -847,9 +851,9 @@ def test_pr84m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR84_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.04
@@ -872,9 +876,9 @@ def test_pr88m():
     res = pop.resistance
     res.mutation_risk_change = 0.5
     res.active_drug_indices, res.cont_on_art_tm1_indices, \
-        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop, pop.data.index)
+        res.adherence_indices, res.adherence_tm1_indices = res.get_all_matrix_indices(pop.data.index)
     pop.set_present_variable(col.RESISTANCE_INDEX, range(len(pop.data.index)), pop.data.index)
-    res.update_new_mutations_arising_art(pop, pop.data.index)
+    res.update_new_mutations_arising_art(pop.data.index)
 
     mutated = len(pop.get_sub_pop([(col.PR88_MUTATION, op.eq, MutationStatus.Majority)]))
     mean = N * 0.03
@@ -900,9 +904,10 @@ def test_update_resistance():
     pop.set_present_variable(col.ON_ART, False)
     pop.date += time_step
     pop.step += 1
+    pop.update_histories()
     pop.set_present_variable(col.ART_ADHERENCE, 0.8)
 
-    pop.resistance.update_resistance(pop)
+    pop.resistance.update_resistance()
 
     # check changes for HIV+ people
     assert all(pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True)) ==

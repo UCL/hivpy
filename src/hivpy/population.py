@@ -45,7 +45,7 @@ class Population:
         self.sexual_behaviour = SexualBehaviourModule()
         self.pregnancy = PregnancyModule()
         self.hiv_status = HIVStatusModule()
-        self.resistance = ResistanceMutationsModule()
+        self.resistance = ResistanceMutationsModule(self)
         self.hiv_testing = HIVTestingModule()
         self.hiv_diagnosis = HIVDiagnosisModule()
         self.prep = PrEPModule()
@@ -82,7 +82,7 @@ class Population:
         self.init_variable(col.AGE_GROUP, 0)
 
         self.hiv_status.init_HIV_variables(self)
-        self.resistance.init_resistance_variables(self)
+        self.resistance.init_resistance_variables()
         self.prep.init_prep_variables(self)
         self.init_variable(col.TEST_MARK, False)
         self.init_variable(col.EVER_TESTED, False)
@@ -246,8 +246,14 @@ class Population:
         if (self.variable_history[param] == 1):
             return param
         else:
-            col_index = (self.step + dt) % self.variable_history[param]
+            col_index = dt
             return self.constructParamColumn(param, col_index)
+
+    def update_histories(self):
+        for (param, steps) in self.variable_history.items():
+            if steps > 1:
+                for i in range(steps-1, 0, -1):
+                    self.data[self.get_correct_column(param, i)] = self.data[self.get_correct_column(param, i-1)]
 
     def set_variable_by_group(self, target, groups, func, use_size=True, sub_pop=None):
         """Sets the value of a population variable at the present time step
@@ -314,6 +320,7 @@ class Population:
         ages += time_step.month / 12
         self.set_present_variable(col.AGE, ages)
         n_deaths = 0
+        self.update_histories()
 
         self.hiv_status.reset_diagnoses(self)
 
@@ -341,7 +348,7 @@ class Population:
                 self.drop_from_population(HIV_deaths)
             self.hiv_diagnosis.update_HIV_diagnosis(self)
             self.prep.prep_usage(self, time_step)
-            self.resistance.update_resistance(self)
+            self.resistance.update_resistance()
 
         # Some population cleanup
         self.pregnancy.reset_anc_at_birth(self)
