@@ -18,11 +18,11 @@ def resetRandomState():
 def test_primary_infection_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.IN_PRIMARY_INFECTION] = True
-    pop.data[col.DATE_HIV_INFECTION] = pop.date
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.NoPrEP
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
     # test sensitivities
     pop.hiv_diagnosis.test_sens_primary_ab = 0.50
     test_sens_primary_na = 0.86
@@ -40,7 +40,7 @@ def test_primary_infection_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA primary infection outcomes
     pop.hiv_diagnosis.hiv_test_type = HIVTestType.NA
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -53,7 +53,7 @@ def test_primary_infection_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # AgAb primary infection outcomes
     pop.hiv_diagnosis.hiv_test_type = HIVTestType.AgAb
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -69,12 +69,12 @@ def test_primary_infection_diagnosis():
 def test_primary_infection_prep_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.IN_PRIMARY_INFECTION] = True
-    pop.data[col.DATE_HIV_INFECTION] = pop.date
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.Cabotegravir
-    pop.data[col.PREP_JUST_STARTED] = False
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.Cabotegravir)
+    pop.set_present_variable(col.PREP_JUST_STARTED, False)
     # test sensitivities
     pop.hiv_diagnosis.test_sens_prep_inj_primary_ab = 0.1
     pop.hiv_diagnosis.test_sens_prep_inj_primary_na = 0.3
@@ -92,7 +92,7 @@ def test_primary_infection_prep_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA + PrEP primary infection outcomes
     pop.hiv_diagnosis.hiv_test_type = HIVTestType.NA
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -105,7 +105,7 @@ def test_primary_infection_prep_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # AgAb + PrEP primary infection outcomes
     pop.hiv_diagnosis.hiv_test_type = HIVTestType.AgAb
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -121,12 +121,12 @@ def test_primary_infection_prep_diagnosis():
 def test_general_population_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.HIV_STATUS] = True
-    pop.data[col.IN_PRIMARY_INFECTION] = False
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.NoPrEP
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 1, 1))
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
 
     # general outcomes
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
@@ -142,11 +142,11 @@ def test_general_population_diagnosis():
 def test_general_population_prep_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.HIV_STATUS] = True
-    pop.data[col.IN_PRIMARY_INFECTION] = False
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.Lenacapavir
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.Lenacapavir)
     # test sensitivities
     pop.hiv_diagnosis.test_sens_prep_inj_3m_ab = 0.2
     pop.hiv_diagnosis.test_sens_prep_inj_ge6m_ab = 0.5
@@ -155,7 +155,7 @@ def test_general_population_prep_diagnosis():
 
     # Ab + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = False
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 9, 1)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 9, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -166,9 +166,9 @@ def test_general_population_prep_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # Ab + PrEP general outcomes (older infection)
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 6, 1)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 6, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -179,10 +179,10 @@ def test_general_population_prep_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = True
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 9, 1)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 9, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -193,9 +193,9 @@ def test_general_population_prep_diagnosis():
     assert mean - 3 * stdev <= diag_pop <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA + PrEP general outcomes (older infection)
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 6, 1)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 6, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -209,12 +209,12 @@ def test_general_population_prep_diagnosis():
 def test_primary_loss_at_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.IN_PRIMARY_INFECTION] = True
-    pop.data[col.DATE_HIV_INFECTION] = pop.date
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.NoPrEP
-    pop.data[col.SEX_WORKER] = False
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
+    pop.set_present_variable(col.SEX_WORKER, False)
     # adjust probabilities
     pop.hiv_diagnosis.test_sens_primary_ab = 1  # diagnose everyone
     pop.hiv_diagnosis.prob_loss_at_diag = 0.50
@@ -233,9 +233,9 @@ def test_primary_loss_at_diagnosis():
     assert mean - 3 * stdev <= lost <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # Ab primary infection loss of care (sex workers)
-    pop.data[col.SEX_WORKER] = True
+    pop.set_present_variable(col.SEX_WORKER, True)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -249,17 +249,17 @@ def test_primary_loss_at_diagnosis():
 def test_general_loss_at_diagnosis():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.data[col.HIV_STATUS] = True
-    pop.data[col.IN_PRIMARY_INFECTION] = False
-    pop.data[col.DATE_HIV_INFECTION] = date(1988, 1, 1)
-    pop.data[col.LAST_TEST_DATE] = pop.date
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.PREP_TYPE] = PrEPType.NoPrEP
-    pop.data[col.SEX_WORKER] = False
-    pop.data[col.ADC] = False
-    pop.data[col.TB] = False
-    pop.data[col.NON_TB_WHO3] = False
-    pop.data[col.NUM_PARTNERS] = 2
+    pop.set_present_variable(col.HIV_STATUS, True)
+    pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
+    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 1, 1))
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
+    pop.set_present_variable(col.SEX_WORKER, False)
+    pop.set_present_variable(col.ADC, False)
+    pop.set_present_variable(col.TB, False)
+    pop.set_present_variable(col.NON_TB_WHO3, False)
+    pop.set_present_variable(col.NUM_PARTNERS, 2)
     # adjust probabilities
     pop.hiv_diagnosis.test_sens_general = 1  # diagnose everyone
     pop.hiv_diagnosis.prob_loss_at_diag = 0.50
@@ -278,9 +278,9 @@ def test_general_loss_at_diagnosis():
     assert mean - 3 * stdev <= lost <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # general outcomes (less engaged but no stp)
-    pop.data[col.NUM_PARTNERS] = 0
+    pop.set_present_variable(col.NUM_PARTNERS, 0)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -291,9 +291,9 @@ def test_general_loss_at_diagnosis():
     assert mean - 3 * stdev <= lost <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # general outcomes (adc or tb)
-    pop.data[col.ADC] = True
+    pop.set_present_variable(col.ADC, True)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -304,10 +304,10 @@ def test_general_loss_at_diagnosis():
     assert mean - 3 * stdev <= lost <= mean + 3 * stdev
 
     # reset diagnosis
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # general outcomes (non-tb who3)
-    pop.data[col.ADC] = False
-    pop.data[col.NON_TB_WHO3] = True
+    pop.set_present_variable(col.ADC, False)
+    pop.set_present_variable(col.NON_TB_WHO3, True)
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
