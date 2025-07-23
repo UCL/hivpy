@@ -33,7 +33,7 @@ def test_hiv_testing_before_start():
     # build population
     N = 100
     pop = Population(size=N, start_date=date(2003, 1, 1))
-    pop.data[col.ADC] = True
+    pop.set_present_variable(col.ADC, True)
     # start date is before testing begins
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
 
@@ -48,12 +48,12 @@ def test_hiv_symptomatic_testing():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2003, 1, 1))
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.ADC] = True
-    pop.data[col.TB_INITIAL_INFECTION] = False
-    pop.data[col.NON_TB_WHO3] = False
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.ADC, True)
+    pop.set_present_variable(col.TB_INITIAL_INFECTION, False)
+    pop.set_present_variable(col.NON_TB_WHO3, False)
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -85,10 +85,10 @@ def test_hiv_symptomatic_testing():
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
     # reset some columns
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.ADC] = False
-    pop.data[col.TB_INITIAL_INFECTION] = True
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.ADC, False)
+    pop.set_present_variable(col.TB_INITIAL_INFECTION, True)
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -104,10 +104,10 @@ def test_hiv_symptomatic_testing():
     assert mean - 3 * stdev <= tested_population <= mean + 3 * stdev
 
     # reset some columns
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.TB_INITIAL_INFECTION] = False
-    pop.data[col.NON_TB_WHO3] = True
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.TB_INITIAL_INFECTION, False)
+    pop.set_present_variable(col.NON_TB_WHO3, True)
 
     # re-evolve population
     pop.hiv_testing.test_mark_hiv_symptomatic(pop)
@@ -128,9 +128,9 @@ def test_non_hiv_symptomatic_testing():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2003, 1, 1))
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.HIV_DIAGNOSED] = False
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -168,10 +168,10 @@ def test_general_sex_worker_testing():
     N = 100
     start_date = date(2010, 1, 1)
     pop = Population(size=N, start_date=start_date)
-    pop.data[col.AGE] = 20
-    pop.data[col.SEX_WORKER] = True
-    pop.data[col.HIV_DIAGNOSED] = False
-    pop.data[col.LAST_TEST_DATE] = start_date - timedelta(days=150)
+    pop.set_present_variable(col.AGE, 20)
+    pop.set_present_variable(col.SEX_WORKER, True)
+    pop.set_present_variable(col.HIV_DIAGNOSED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, start_date - timedelta(days=150))
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -203,11 +203,11 @@ def test_general_testing_conditions():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2008, 1, 1))
-    pop.data[col.AGE] = 20
-    pop.data[col.HARD_REACH] = False
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.NP_LAST_TEST] = 1
+    pop.set_present_variable(col.AGE, 20)
+    pop.set_present_variable(col.HARD_REACH, False)
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.NP_LAST_TEST, 1)
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -233,8 +233,8 @@ def test_general_testing_conditions():
         assert (d is None)
 
     pop.date = date(2010, 1, 1)
-    pop.data[col.LAST_TEST_DATE] = date(2009)
-    pop.data[col.EVER_TESTED] = True
+    pop.set_present_variable(col.LAST_TEST_DATE, date(2009))
+    pop.set_present_variable(col.EVER_TESTED, True)
     # re-evolve population
     pop.hiv_testing.test_mark_general_pop(pop)
     marked_population = pop.get_sub_pop([(col.TEST_MARK, op.eq, True)])
@@ -259,11 +259,11 @@ def test_first_time_testers():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
-    pop.data[col.AGE] = 20
-    pop.data[col.EVER_TESTED] = False
-    pop.data[col.LAST_TEST_DATE] = None
-    pop.data[col.CIRCUMCISED] = False
-    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.set_present_variable(col.AGE, 20)
+    pop.set_present_variable(col.EVER_TESTED, False)
+    pop.set_present_variable(col.LAST_TEST_DATE, None)
+    pop.set_present_variable(col.CIRCUMCISED, False)
+    pop.set_present_variable(col.CIRCUMCISION_DATE, None)
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -296,11 +296,11 @@ def test_repeat_testers():
     # build population
     N = 100000
     pop = Population(size=N, start_date=date(2010, 1, 1))
-    pop.data[col.AGE] = 20
-    pop.data[col.EVER_TESTED] = True
-    pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
-    pop.data[col.CIRCUMCISED] = False
-    pop.data[col.CIRCUMCISION_DATE] = None
+    pop.set_present_variable(col.AGE, 20)
+    pop.set_present_variable(col.EVER_TESTED, True)
+    pop.set_present_variable(col.LAST_TEST_DATE, date(2008, 1, 1))
+    pop.set_present_variable(col.CIRCUMCISED, False)
+    pop.set_present_variable(col.CIRCUMCISION_DATE, None)
     # fixing some values
     pop.hiv_testing.date_start_testing = float_to_date(2003.5)
     pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -335,12 +335,12 @@ def test_partner_reset_after_test():
         # build population
         N = 100000
         pop = Population(size=N, start_date=date(2010, 1, 1))
-        pop.data[col.AGE] = 20
-        pop.data[col.EVER_TESTED] = ever_tested
+        pop.set_present_variable(col.AGE, 20)
+        pop.set_present_variable(col.EVER_TESTED, ever_tested)
         if ever_tested:
-            pop.data[col.LAST_TEST_DATE] = date(2008, 1, 1)
-        pop.data[col.NP_LAST_TEST] = 2
-        pop.data[col.NSTP_LAST_TEST] = 1
+            pop.set_present_variable(col.LAST_TEST_DATE, date(2008, 1, 1))
+        pop.set_present_variable(col.NP_LAST_TEST, 2)
+        pop.set_present_variable(col.NSTP_LAST_TEST, 1)
         # fixing some values
         pop.hiv_testing.date_start_testing = float_to_date(2003.5)
         pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
@@ -372,13 +372,13 @@ def test_max_frequency_testing():
         # build population
         N = 100
         pop = Population(size=N, start_date=start_date)
-        pop.data[col.AGE] = 20
-        pop.data[col.HIV_DIAGNOSED] = False
-        pop.data[col.HARD_REACH] = False
-        pop.data[col.EVER_TESTED] = True
-        pop.data[col.LAST_TEST_DATE] = start_date - timedelta(months=pop.hiv_testing.months_to_wait[index]-1)
-        pop.data[col.NP_LAST_TEST] = 1
-        pop.data[col.NSTP_LAST_TEST] = 1
+        pop.set_present_variable(col.AGE, 20)
+        pop.set_present_variable(col.HIV_DIAGNOSED, False)
+        pop.set_present_variable(col.HARD_REACH, False)
+        pop.set_present_variable(col.EVER_TESTED, True)
+        pop.set_present_variable(col.LAST_TEST_DATE, start_date - timedelta(months=pop.hiv_testing.months_to_wait[index]-1))
+        pop.set_present_variable(col.NP_LAST_TEST, 1)
+        pop.set_present_variable(col.NSTP_LAST_TEST, 1)
         # fixing some values
         pop.hiv_testing.date_start_testing = float_to_date(2003.5)
         pop.hiv_testing.date_rate_testing_incr = float_to_date(2009)
