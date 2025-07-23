@@ -25,7 +25,9 @@ class MutationStatus(IntEnum):
 
 class ResistanceMutationsModule:
 
-    def __init__(self):
+    def __init__(self, pop: Population):
+
+        self.pop = pop
 
         # init resistance data
         with importlib.resources.path("hivpy.data", "resistance_mutations.yaml") as data_path:
@@ -225,62 +227,62 @@ class ResistanceMutationsModule:
                                      [[0.05, 0.05, 0.05], [0.10, 0.10, 0.10], [0.05, 0.002, 0.002]],
                                      [0.05, 0.15, 0.002]]]  # active drugs >= 3.00
 
-    def init_resistance_variables(self, pop: Population):
+    def init_resistance_variables(self):
         # FIXME: move drugs and other ART-related columns to ART module
-        pop.init_variable(col.CONT_ON_ART, timedelta(months=0), n_prev_steps=1)
-        pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
-        pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
-        pop.init_variable(col.RESISTANCE_INDEX, -1)
-        self.init_arv_drugs(pop)
-        pop.init_variable(col.RESISTANCE_MUTATIONS, 0)
-        self.init_resistance_mutations(pop)
+        self.pop.init_variable(col.CONT_ON_ART, timedelta(months=0), n_prev_steps=1)
+        self.pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
+        self.pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
+        self.pop.init_variable(col.RESISTANCE_INDEX, -1)
+        self.init_arv_drugs()
+        self.pop.init_variable(col.RESISTANCE_MUTATIONS, 0)
+        self.init_resistance_mutations()
 
-    def init_arv_drugs(self, pop: Population):
+    def init_arv_drugs(self):
         """
         Initialise antiretroviral drugs at the start of the simulation to False.
         """
-        pop.init_variable(col.ON_ZDV, False)
-        pop.init_variable(col.ON_3TC, False)
-        pop.init_variable(col.ON_TEN, False)
-        pop.init_variable(col.ON_NEV, False)
-        pop.init_variable(col.ON_DAR, False)
-        pop.init_variable(col.ON_EFA, False)
-        pop.init_variable(col.ON_LPR, False)
-        pop.init_variable(col.ON_TAZ, False)
-        pop.init_variable(col.ON_DOL, False)
-        pop.init_variable(col.ON_CAB, False)
-        pop.init_variable(col.ON_LEN, False)
-        pop.init_variable(col.ON_OLE, False)
-        pop.init_variable(col.ON_ISL, False)
+        self.pop.init_variable(col.ON_ZDV, False)
+        self.pop.init_variable(col.ON_3TC, False)
+        self.pop.init_variable(col.ON_TEN, False)
+        self.pop.init_variable(col.ON_NEV, False)
+        self.pop.init_variable(col.ON_DAR, False)
+        self.pop.init_variable(col.ON_EFA, False)
+        self.pop.init_variable(col.ON_LPR, False)
+        self.pop.init_variable(col.ON_TAZ, False)
+        self.pop.init_variable(col.ON_DOL, False)
+        self.pop.init_variable(col.ON_CAB, False)
+        self.pop.init_variable(col.ON_LEN, False)
+        self.pop.init_variable(col.ON_OLE, False)
+        self.pop.init_variable(col.ON_ISL, False)
 
-    def init_resistance_mutations(self, pop: Population):
+    def init_resistance_mutations(self):
         """
         Initialise drug resistance mutations at the start of the simulation to False.
         """
-        pop.init_variable(col.RTTA_MUTATIONS, 0)  # only tams are tracked with integers
-        pop.init_variable(col.RT184_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.RT151_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.RT65_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.RT103_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.RT181_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.RT190_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR32_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR46_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR47_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR50L_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR50V_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR54_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR76_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR82_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR84_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR88_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.PR90_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.IN118_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.IN140_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.IN148_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.IN155_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.IN263_MUTATION, MutationStatus.Absent)
-        pop.init_variable(col.CA66_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RTTA_MUTATIONS, 0)  # only tams are tracked with integers
+        self.pop.init_variable(col.RT184_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RT151_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RT65_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RT103_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RT181_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.RT190_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR32_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR46_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR47_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR50L_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR50V_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR54_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR76_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR82_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR84_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR88_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.PR90_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.IN118_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.IN140_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.IN148_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.IN155_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.IN263_MUTATION, MutationStatus.Absent)
+        self.pop.init_variable(col.CA66_MUTATION, MutationStatus.Absent)
 
     def get_mutation_presence(self, mutation: MutationStatus):
         """
@@ -288,17 +290,17 @@ class ResistanceMutationsModule:
         """
         return True if mutation != MutationStatus.Absent else False
 
-    def get_all_matrix_indices(self, pop, sub_pop):
+    def get_all_matrix_indices(self, sub_pop):
         """
         Returns all active drug, continuous ART usage, and adherence indices for the HIV+ sub-population.
         These indices are used to look up values in the viral load, CD4 delta, and new mutation matrices.
         """
         # find matrix indices
-        active_drug_indices = np.digitize(pop.get_variable(col.NUM_ACTIVE_DRUGS, sub_pop), self.active_drug_bins)
-        cont_on_art_tm1_indices = np.digitize([x.years() for x in pop.get_variable(col.CONT_ON_ART, sub_pop, dt=1)],
+        active_drug_indices = np.digitize(self.pop.get_variable(col.NUM_ACTIVE_DRUGS, sub_pop), self.active_drug_bins)
+        cont_on_art_tm1_indices = np.digitize([x.years() for x in self.pop.get_variable(col.CONT_ON_ART, sub_pop, dt=1)],
                                               self.cont_on_art_bins)
-        adherence_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop), self.adherence_bins)
-        adherence_tm1_indices = np.digitize(pop.get_variable(col.ART_ADHERENCE, sub_pop, dt=1), self.adherence_bins)
+        adherence_indices = np.digitize(self.pop.get_variable(col.ART_ADHERENCE, sub_pop), self.adherence_bins)
+        adherence_tm1_indices = np.digitize(self.pop.get_variable(col.ART_ADHERENCE, sub_pop, dt=1), self.adherence_bins)
         # discount adherence last time step when not on ART for 3-6 months
         adherence_tm1_indices = np.where(cont_on_art_tm1_indices != 1, -1, adherence_tm1_indices)
 
@@ -330,13 +332,13 @@ class ResistanceMutationsModule:
 
         return active_drug_index, cont_on_art_tm1_index, adherence_index, adherence_tm1_index
 
-    def update_viral_load_art(self, pop: Population, sub_pop):
+    def update_viral_load_art(self, sub_pop):
         """
         Update viral load in HIV+ individuals.
         """
         # get viral load outcomes
-        viral_load = pop.apply_function(self.calc_viral_load, 1, sub_pop)
-        pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
+        viral_load = self.pop.apply_function(self.calc_viral_load, 1, sub_pop)
+        self.pop.set_present_variable(col.VIRAL_LOAD, viral_load, sub_pop)
 
     def calc_viral_load(self, person):
         """
@@ -354,16 +356,16 @@ class ResistanceMutationsModule:
 
         return viral_load
 
-    def update_cd4_art(self, pop: Population, sub_pop):
+    def update_cd4_art(self, sub_pop):
         """
         Update CD4 count in HIV+ individuals.
         """
         # get cd4 outcomes
-        cd4_outcomes = pop.apply_function(lambda x: self.calc_cd4_delta(x, pop), 1, sub_pop)
-        pop.set_present_variable(col.CD4, [i[0] for i in cd4_outcomes], sub_pop)
-        pop.set_present_variable(col.CD4_DELTA, [i[1] for i in cd4_outcomes], sub_pop)
+        cd4_outcomes = self.pop.apply_function(self.calc_cd4_delta, 1, sub_pop)
+        self.pop.set_present_variable(col.CD4, [i[0] for i in cd4_outcomes], sub_pop)
+        self.pop.set_present_variable(col.CD4_DELTA, [i[1] for i in cd4_outcomes], sub_pop)
 
-    def calc_cd4_delta(self, person, pop: Population):
+    def calc_cd4_delta(self, person):
         """
         Returns an individual's change in CD4 levels this time step.
         Affected by age, sex, number of active ART drugs, how long an individual has been on ART,
@@ -372,7 +374,7 @@ class ResistanceMutationsModule:
         """
         # use resistance index to lookup cd4 delta multiplier
         x = self.get_matrix_value(self.cd4_delta_matrix, person[col.RESISTANCE_INDEX])
-        prev_cd4 = person[pop.get_correct_column(col.CD4, dt=1)]
+        prev_cd4 = person[self.pop.get_correct_column(col.CD4, dt=1)]
         # find base cd4 recovery
         base_cd4_recovery_on_art = 0
         # recovery is hindered by a failing nnrti (or possibly insti) regimen
@@ -411,33 +413,33 @@ class ResistanceMutationsModule:
 
         return cd4, cd4_delta
 
-    def update_new_mutations_arising_art(self, pop: Population, sub_pop):
+    def update_new_mutations_arising_art(self, sub_pop):
         """
         Update new resistance mutations arising in HIV+ individuals.
         """
         # get new mutation probabilities
-        new_mutation_probs = pop.apply_function(self.calc_prob_new_mutation, 1, sub_pop)
+        new_mutation_probs = self.pop.apply_function(self.calc_prob_new_mutation, 1, sub_pop)
         # outcomes
         r = rng.uniform(size=len(sub_pop))
         possible_mutations = r < new_mutation_probs
 
         # people who may develop a new mutation
-        possible_mutation_pop = pop.apply_bool_mask(possible_mutations, sub_pop)
+        possible_mutation_pop = self.pop.apply_bool_mask(possible_mutations, sub_pop)
         if len(possible_mutation_pop) > 0:
 
             # tams
-            tams = pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
+            tams = self.pop.transform_group([col.ON_ZDV, col.ON_3TC, col.RTTA_MUTATIONS],
                                        self.calc_rttams_outcomes, sub_pop=possible_mutation_pop)
-            pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
+            self.pop.set_present_variable(col.RTTA_MUTATIONS, tams, possible_mutation_pop)
 
             # calculate and set a new majority mutation
             def set_new_majority_mutation(mutation_col: str, drug_cols: list[str], calc_func):
                 # find people undergoing a given mutation this time step
-                mutation_mask = pop.transform_group(drug_cols, calc_func, sub_pop=possible_mutation_pop)
-                mutation_pop = pop.apply_bool_mask(mutation_mask, possible_mutation_pop)
+                mutation_mask = self.pop.transform_group(drug_cols, calc_func, sub_pop=possible_mutation_pop)
+                mutation_pop = self.pop.apply_bool_mask(mutation_mask, possible_mutation_pop)
                 # set outcomes
                 if len(mutation_pop) > 0:
-                    pop.set_present_variable(mutation_col, MutationStatus.Majority, mutation_pop)
+                    self.pop.set_present_variable(mutation_col, MutationStatus.Majority, mutation_pop)
 
             # m184
             set_new_majority_mutation(col.RT184_MUTATION, [col.ON_3TC, col.ON_ISL, col.RT184_MUTATION],
@@ -450,23 +452,23 @@ class ResistanceMutationsModule:
                                       self.calc_rt65m_outcomes)
 
             # k103, y181, and g190 (nnrti mutations)
-            k103 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
+            k103 = self.pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT181_MUTATION, col.RT190_MUTATION],
                                        self.calc_rt103m_outcomes, sub_pop=possible_mutation_pop)
-            y181 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT190_MUTATION],
+            y181 = self.pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT190_MUTATION],
                                        self.calc_rt181m_outcomes, sub_pop=possible_mutation_pop)
-            g190 = pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT181_MUTATION],
+            g190 = self.pop.transform_group([col.ON_NEV, col.ON_EFA, col.RT103_MUTATION, col.RT181_MUTATION],
                                        self.calc_rt190m_outcomes, sub_pop=possible_mutation_pop)
             # make all calculations before setting outcomes to prevent changes
             # this time step from affecting each other
-            if len(pop.apply_bool_mask(k103, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(k103, possible_mutation_pop))
-            if len(pop.apply_bool_mask(y181, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(y181, possible_mutation_pop))
-            if len(pop.apply_bool_mask(g190, possible_mutation_pop)) > 0:
-                pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority,
-                                         pop.apply_bool_mask(g190, possible_mutation_pop))
+            if len(self.pop.apply_bool_mask(k103, possible_mutation_pop)) > 0:
+                self.pop.set_present_variable(col.RT103_MUTATION, MutationStatus.Majority,
+                                         self.pop.apply_bool_mask(k103, possible_mutation_pop))
+            if len(self.pop.apply_bool_mask(y181, possible_mutation_pop)) > 0:
+                self.pop.set_present_variable(col.RT181_MUTATION, MutationStatus.Majority,
+                                         self.pop.apply_bool_mask(y181, possible_mutation_pop))
+            if len(self.pop.apply_bool_mask(g190, possible_mutation_pop)) > 0:
+                self.pop.set_present_variable(col.RT190_MUTATION, MutationStatus.Majority,
+                                         self.pop.apply_bool_mask(g190, possible_mutation_pop))
 
             # p32
             set_new_majority_mutation(col.PR32_MUTATION, [col.ON_LPR], self.calc_pr32m_outcomes)
@@ -490,8 +492,8 @@ class ResistanceMutationsModule:
             set_new_majority_mutation(col.PR88_MUTATION, [col.ON_TAZ], self.calc_pr88m_outcomes)
 
             # tally up all mutations
-            resistance_mutations = pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
-            pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
+            resistance_mutations = self.pop.apply_function(self.calc_total_mutations, 1, possible_mutation_pop)
+            self.pop.set_present_variable(col.RESISTANCE_MUTATIONS, resistance_mutations, possible_mutation_pop)
 
     def calc_prob_new_mutation(self, person):
         """
@@ -750,19 +752,19 @@ class ResistanceMutationsModule:
                 self.get_mutation_presence(MutationStatus(person[col.IN263_MUTATION])) +
                 self.get_mutation_presence(MutationStatus(person[col.CA66_MUTATION])))
 
-    def update_resistance(self, pop: Population):
+    def update_resistance(self):
         """
         Update the viral load, CD4 count, and resistance mutations of HIV+ individuals.
         """
-        infected_pop = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
+        infected_pop = self.pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))
         if len(infected_pop) > 0:
 
             # find matrix indices
             self.active_drug_indices, self.cont_on_art_tm1_indices, \
-                self.adherence_indices, self.adherence_tm1_indices = self.get_all_matrix_indices(pop, infected_pop)
-            pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
+                self.adherence_indices, self.adherence_tm1_indices = self.get_all_matrix_indices(infected_pop)
+            self.pop.set_present_variable(col.RESISTANCE_INDEX, range(len(infected_pop)), infected_pop)
 
             # update values
-            self.update_viral_load_art(pop, infected_pop)
-            self.update_cd4_art(pop, infected_pop)
-            self.update_new_mutations_arising_art(pop, infected_pop)
+            self.update_viral_load_art(infected_pop)
+            self.update_cd4_art(infected_pop)
+            self.update_new_mutations_arising_art(infected_pop)
