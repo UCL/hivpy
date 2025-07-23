@@ -177,6 +177,9 @@ class ARTModule:
         pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
         pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
         pop.init_variable(col.CD4_MEASUREMENT, None, 2)
+        pop.init_variable(col.ART_INTERRUPT, False)
+        pop.init_variable(col.ART_STOP_TOXICITY, False)
+        pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
 
     def init_strategies(self, pop: Population):
         pop.init_variable(
@@ -357,7 +360,7 @@ class ARTModule:
         pop.set_present_variable(col.DATE_LAST_CD4_MEASURE, current_date, measured)
 
     def initiate_ART(
-        self, current_date: date, date_pmtct: date, prob_pmtct, pop: Population
+        self, current_date: date, pop: Population
     ):
         hiv_pos_never_art = pop.get_sub_pop(
             AND(
@@ -446,3 +449,16 @@ class ARTModule:
                         probabilistically_set_ART_init()
 
         pop.apply_function(init_art, sub_pop=hiv_pos_never_art)
+
+    def ART_interruption(self, pop: Population):
+        # reset any interruption data
+        pop.set_present_variable(col.ART_INTERRUPT, False)
+
+        # Interruption due to "choice" as opposed to drug toxicity
+        #prev_on_art = pop.get_correct_column(col.ON_ART, dt=1)
+        #not_toxicity = pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+        #                                   COND(col.ART_STOP_TOXICITY, op.eq, False),
+        #                                   COND(prev_on_art, op.eq, True)))
+#
+        #def stop_toxicity(person):
+        #    prev_adherence = person[pop.get_correct_column(col.ART_ADHERENCE, dt=1)]
