@@ -24,12 +24,12 @@ def test_HIV_prevalence():
     # build population
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
-    pop.data.loc[:int(N/2)-1, col.SEX] = SexType.Female
-    pop.data.loc[int(N/2):, col.SEX] = SexType.Male
+    pop.set_variable_range( col.SEX, SexType.Female, 0, int(N/2)-1)
+    pop.set_variable_range( col.SEX, SexType.Male, int(N/2))
     pop.data[col.AGE] = 25
     pop.data[col.SEX_WORKER] = False
-    pop.data.loc[:int(N/4)-1, col.SEX_WORKER] = True
-    pop.data.loc[:int(N/4)-1, col.HIV_STATUS] = True
+    pop.set_variable_range( col.SEX_WORKER, True, 0, int(N/4)-1)
+    pop.set_variable_range( col.HIV_STATUS, True, 0, int(N/4)-1)
 
     out = SimulationOutput(date(1990, 1, 1), date(1990, 3, 1), timedelta(days=90))
     out._update_HIV_prevalence(pop)
@@ -51,18 +51,18 @@ def test_HIV_incidence():
     N = 1000
     pop = Population(size=N, start_date=date(1990, 1, 1))
     pop.data[col.SEX] = SexType.Female
-    pop.data.loc[:int(N*0.2)-1, col.AGE] = 20
-    pop.data.loc[int(N*0.2):int(N*0.4)-1, col.AGE] = 30
-    pop.data.loc[int(N*0.4):int(N*0.6)-1, col.AGE] = 40
-    pop.data.loc[int(N*0.6):int(N*0.8)-1, col.AGE] = 50
-    pop.data.loc[int(N*0.8):, col.AGE] = 60
+    pop.set_variable_range( col.AGE, 20, 0, int(N*0.2)-1)
+    pop.set_variable_range( col.AGE, 30, int(N*0.2), int(N*0.4)-1)
+    pop.set_variable_range( col.AGE, 40, int(N*0.4), int(N*0.6)-1)
+    pop.set_variable_range( col.AGE, 50, int(N*0.6), int(N*0.8)-1)
+    pop.set_variable_range( col.AGE, 60, int(N*0.8))
 
     pop.data[col.HIV_STATUS] = False
     pop.data[col.IN_PRIMARY_INFECTION] = False
-    pop.data.loc[:int(N*0.2)-1, col.IN_PRIMARY_INFECTION] = True
-    pop.data.loc[int(N*0.2):int(N*0.35)-1, col.IN_PRIMARY_INFECTION] = True
-    pop.data.loc[int(N*0.4):int(N*0.5)-1, col.IN_PRIMARY_INFECTION] = True
-    pop.data.loc[int(N*0.6):int(N*0.65)-1, col.IN_PRIMARY_INFECTION] = True
+    pop.set_variable_range( col.IN_PRIMARY_INFECTION, True, 0, int(N*0.2)-1)
+    pop.set_variable_range( col.IN_PRIMARY_INFECTION, True, int(N*0.2), int(N*0.35)-1)
+    pop.set_variable_range( col.IN_PRIMARY_INFECTION, True, int(N*0.4), int(N*0.5)-1)
+    pop.set_variable_range( col.IN_PRIMARY_INFECTION, True, int(N*0.6), int(N*0.65)-1)
 
     out = SimulationOutput(date(1990, 1, 1), date(1990, 3, 1), timedelta(days=90))
     out._update_HIV_incidence(pop)

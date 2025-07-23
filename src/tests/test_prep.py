@@ -948,9 +948,9 @@ def test_stopping_prep():
     pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_ELIGIBLE, False)
-    pop.data.loc[N*0.9:N-1, col.PREP_ELIGIBLE] = True
+    pop.set_variable_range( col.PREP_ELIGIBLE, True, N*0.9, N-1)
     pop.set_present_variable(col.EVER_PREP, True)
-    pop.data.loc[N*0.9:N-1, col.EVER_PREP] = False
+    pop.set_variable_range( col.EVER_PREP, False, N*0.9, N-1)
     pop.set_present_variable(col.ON_PREP, True)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, None)
@@ -1009,7 +1009,7 @@ def test_stopping_prep():
 
     pop.date += time_step
     pop.set_present_variable(col.HIV_DIAGNOSED, True)
-    pop.data.loc[N*0.9:N-1, col.HIV_DIAGNOSED] = False
+    pop.set_variable_range( col.HIV_DIAGNOSED, False, N*0.9, N-1)
     pop.prep.prep_usage(pop, time_step)
     # expecting the diagnosed to stop prep
     assert sum(pop.get_variable(col.ON_PREP)) == N*0.1
