@@ -148,7 +148,6 @@ IN_CAB_TAIL = "in_cab_tail"                     # bool: True if an individual is
 IN_LEN_TAIL = "in_len_tail"                     # bool: True if an individual is in the tail period of injectable Len PrEP after stopping usage (DUMMY)
 
 ART_NAIVE = "ART_NAIVE"                         # bool: True if person has never been on antiretroviral therapy
-ART_START_DATE = "art_start_date"               # date: Date of starting ART
 ON_ART = "on_art"                               # bool: True if a person is currently on ART
 CONT_ON_ART = "cont_on_art"                     # None | timedelta: total length of continuous time on current line of ART
 CONT_ON_ARV = "cont_on_arv"                     # None | timedelta: total length of continuous time on antiretroviral drugs (PrEP or ART)
@@ -164,6 +163,7 @@ INJECTION_SITE_REACTION = "injection_site_reaction"     # bool: True if there is
 TIME_ON_ART = "time_on_art"                     # float: amount of time (in years) currently on ART
 SW_INTERRUPT_FACTOR = "SW_interrupt_factor"     # float: increase in probability for interrupting ART for a given sex worker (dependent on interaction with SW programs)
 CLINIC_UNAWARE_INTERRUPT = "clinic_unaware_interrupt"   # bool: True if clinic is unaware of patient interruption
+ART_LINE = "art_line"                           # int: whether on first/second/third line of therapy. 0 if none yet.
 
 ART_MONITORING_STRATEGY = "art_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring ART for individuals
 HIV_MONITORING_STRATEGY = "hiv_monitoring_strategy"     # enum: used to distinguish different approaches to monitoring HIV progression

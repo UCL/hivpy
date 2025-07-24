@@ -16,6 +16,7 @@ import hivpy.column_names as col
 from .art_data import ARTData
 from .common import AND, COND, OR, Date, TimeDelta, is_in, past, rng
 from .prep import PrEPType
+from .resistance_mutations import MutationStatus
 
 
 class HivMonitoringStrategy(Enum):
@@ -241,7 +242,6 @@ class ARTModule:
         self.pop.init_variable(col.ART_REGIMEN_OPT, 0)
         self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
         self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
-        self.pop.init_variable(col.ART_START_DATE, None)
         self.init_strategies()
         self.init_arv_drugs()
         self.pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
@@ -274,6 +274,7 @@ class ARTModule:
         self.pop.init_variable(col.LOST, False)
         self.pop.init_variable(col.CLINIC_RETURN, False)
         self.pop.init_variable(col.ART_RESTART, False)
+        self.pop.init_variable(col.ART_LINE, 0)
 
     def init_adherences(self):
         self.pop.init_variable(col.ART_ADHERENCE, 0, dt=2)
@@ -426,7 +427,7 @@ class ARTModule:
 
         def set_absence_vl_strategy_by_regim(person):
             art_reg = person[col.ART_REGIMEN_OPT]
-            art_start = person[col.ART_START_DATE]
+            art_start = person[col.DATE_START_ART]
             monitoring_strategy = 1  # default if nothing else modifies it
             if art_reg in [101, 102, 103, 104, 107, 110, 113, 116, 120, 121, 125, 130]:
                 monitoring_strategy = 1500
@@ -761,3 +762,77 @@ class ARTModule:
         self.pop.apply_function(
             restart_ART, self.pop.apply_bool_mask(supply_restarted, supply_interrupts)
         )
+
+    def set_drugs(self, person, drug_list):
+        for drug in drug_list:
+            person[self.on_drug(drug)] = True
+
+    def unset_drugs(self, person, drug_list):
+        for drug in drug_list:
+            person[self.on_drug(drug)] = False
+
+    def initiate_first_line_therapy(self):
+        # People who have started ART this timestep
+        current_date = self.pop.date
+        if current_date > self.art_intro_date:
+            starters = self.pop.get_sub_pop(
+                AND(
+                    COND(col.DATE_START_ART, op.eq, current_date),
+                    COND(col.ON_ART, op.eq, False),
+                )
+            )
+
+            def initiate_starter(person):
+                person[col.ON_ART] = True
+                person[col.TIME_ON_ART] = 0
+                person[col.ART_NAIVE] = False
+                for drug in self.ARVs:
+                    person[self.on_drug(drug)] = False
+                person[col.ART_LINE] = 1
+
+                if current_date < Date(year=2010, month=6):
+                    self.set_drugs(person, ["zdv", "3tc", "efa"])
+
+                reg_opt = person[col.ART_REGIMEN_OPT]
+
+                if (
+                    current_date > Date(year=2010, month=6) and reg_opt < 100
+                ) or reg_opt in [101, 108, 109, 110, 111, 112, 114]:
+                    self.set_drugs(person, ["ten", "3tc", "efa"])
+
+                if reg_opt == 130:
+                    person[col.FIRST_LINE_REGIMEN] = 3
+
+                if person[col.FIRST_LINE_REGIMEN] == 1:
+                    self.set_drugs(person, ["ten", "3tc", "taz"])
+                    self.unset_drugs(person, ["zdv", "dol"])
+                elif person[col.FIRST_LINE_REGIMEN] == 2:
+                    self.set_drugs(person, ["ten", "3tc", "dol"])
+                    self.unset_drugs(person, ["taz", "efa"])
+                elif person[col.FIRST_LINE_REGIMEN] == 3:
+                    self.set_drugs(person, ["len", "cab"])
+
+                if all(
+                    person[mut] != MutationStatus.Majority
+                    for mut in [
+                        col.RT103_MUTATION,
+                        col.RT181_MUTATION,
+                        col.RT190_MUTATION,
+                    ]
+                ):
+                    self.set_drugs(person, ["ten", "3tc", "efa"])
+                elif all(
+                    person[mut] == MutationStatus.Majority
+                    for mut in [
+                        col.RT103_MUTATION,
+                        col.RT181_MUTATION,
+                        col.RT190_MUTATION,
+                    ]
+                ):
+                    self.set_drugs(person, ["ten", "3tc", "dol"])
+                    self.unset_drugs(person, ["efa"])
+
+            self.pop.apply_function(initiate_starter, starters)
+
+    def initiate_second_line_therapy(self):
+        pass
