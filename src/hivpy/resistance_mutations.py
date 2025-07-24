@@ -363,27 +363,8 @@ class ResistanceMutationsModule:
         self.pop.init_variable(col.CONT_ON_ARV, TimeDelta(months=0))
         self.pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
         self.pop.init_variable(col.RESISTANCE_INDEX, -1)
-        self.init_arv_drugs()
         self.pop.init_variable(col.RESISTANCE_MUTATIONS, 0)
         self.init_resistance_mutations()
-
-    def init_arv_drugs(self):
-        """
-        Initialise antiretroviral drugs at the start of the simulation to False.
-        """
-        self.pop.init_variable(col.ON_ZDV, False)
-        self.pop.init_variable(col.ON_3TC, False)
-        self.pop.init_variable(col.ON_TEN, False)
-        self.pop.init_variable(col.ON_NEV, False)
-        self.pop.init_variable(col.ON_DAR, False)
-        self.pop.init_variable(col.ON_EFA, False)
-        self.pop.init_variable(col.ON_LPR, False)
-        self.pop.init_variable(col.ON_TAZ, False)
-        self.pop.init_variable(col.ON_DOL, False)
-        self.pop.init_variable(col.ON_CAB, False)
-        self.pop.init_variable(col.ON_LEN, False)
-        self.pop.init_variable(col.ON_OLE, False)
-        self.pop.init_variable(col.ON_ISL, False)
 
     def init_resistance_mutations(self):
         """

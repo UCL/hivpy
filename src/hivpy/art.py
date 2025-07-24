@@ -198,6 +198,19 @@ class ARTModule:
             else 1
         )
 
+        self.ARVs = ["zdv", "3tc", "ten", "nev", "dar", "efa", "lpr", "taz", "dol", "cab", "len", "ole", "isl"]
+        self.selected_art_adherence_pattern = self.art_data.selected_art_adherence_pattern.sample()
+        self.adherence_pattern = self.art_data.art_adherence_patterns[self.selected_art_adherence_pattern]
+    
+    def on_drug(self, name):
+        return "on_" + name
+
+    def recent_drug(self, name):
+        return "recent_" + name
+
+    def time_since_drug(self, name):
+        return "time_since_" + name
+
     def init_ART_columns(self):
         self.pop.init_variable(col.DATE_START_ART, None)
         self.pop.init_variable(col.CLINIC_VISIT, False)
@@ -208,6 +221,7 @@ class ARTModule:
         self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
         self.pop.init_variable(col.ART_START_DATE, None)
         self.init_strategies()
+        self.init_arv_drugs()
         self.pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
         self.pop.init_variable(
             col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption
@@ -228,12 +242,23 @@ class ARTModule:
         self.pop.init_variable(col.CD4_MEASUREMENT, None, 2)
         self.pop.init_variable(col.ART_INTERRUPT, 0)
         self.pop.init_variable(col.ART_STOP_TOXICITY, False)
-        self.pop.init_variable(col.ART_ADHERENCE, 0, dt=1)
+        self.pop.init_variable(col.ART_ADHERENCE, 0, dt=2)
+        self.pop.init_variable(col.ART_ADHERENCE_MEAN, 0)
+        self.pop.init_variable(col.ART_ADHERENCE_STDEV, 0)
         self.pop.init_variable(col.CURRENT_TOXICITY, False, dt=1)
         self.pop.init_variable(col.INJECTION_SITE_REACTION, False, dt=1)
         self.pop.init_variable(col.TIME_ON_ART, 0)
         self.pop.init_variable(col.SW_INTERRUPT_FACTOR, self.sw_interrupt_factor)
         self.pop.init_variable(col.CLINIC_UNAWARE_INTERRUPT, False)
+
+    def init_arv_drugs(self):
+        """
+        Initialise antiretroviral drugs at the start of the simulation to False.
+        """
+        for drug in self.ARVs:
+            self.pop.init_variable(self.on_drug(drug), False)
+            self.pop.init_variable(self.recent_drug(drug), False)
+            self.pop.init_variable(self.time_since_drug(drug), 0)
 
     def init_strategies(self):
         self.pop.init_variable(
@@ -581,4 +606,12 @@ class ARTModule:
             Interrupts.Supply,
             self.pop.apply_bool_mask(supply_interruptions, art_clinic_visitors),
         )
+
+        # Update drug usage due to interrupt
+        interrupts = self.pop.get_sub_pop(COND(col.ART_INTERRUPT, op.gt, 0))
+        for drug in self.ARVs:
+            interrupts_on_drug = self.pop.get_sub_pop_intersection(interrupts, self.pop.get_sub_pop(COND(self.on_drug(drug), op.eq, True)))
+            self.pop.set_present_variable(self.recent_drug(drug), True, interrupts_on_drug)
+            self.pop.set_present_variable(self.time_since_drug(drug), 0, interrupts_on_drug)
+            self.pop.set_present_variable(self.on_drug(drug), False, interrupts_on_drug)
 

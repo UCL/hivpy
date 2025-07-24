@@ -19,7 +19,14 @@ class DataReader(ABC):
             N = max - min + 1
             return DiscreteChoice(np.arange(min, max+1, 1), np.array([1./N]*N))
         else:
-            return self._extract_discrete_dist(prob_dict)
+            # count number of params (not including Probability)
+            n_params = 0
+            for k in prob_dict:
+                n_params = n_params + 1 if k!="Probability" else n_params
+            if n_params==1:
+                return self._extract_discrete_dist(prob_dict)
+            else:
+                return self._extract_multi_distribution(prob_dict)
 
     def _get_discrete_dist_list(self, *keys):
         dist_list = self.data
@@ -32,7 +39,30 @@ class DataReader(ABC):
         for k in keys:
             dist_data = dist_data[k]
         return self._extract_discrete_dist(dist_data)
-
+    
+    def _extract_multi_distribution(self, dist_data):
+        length = -1
+        for k in dist_data:
+            if (length == -1):
+                length = len(dist_data[k])
+            else:
+                assert (length == len(dist_data[k]))
+        vals = []
+        for i in range(length):
+            valmap = {}
+            for k in dist_data:
+                if(k == "Probability"): 
+                    pass
+                else:
+                    valmap[k] = dist_data[k][i]
+            vals.append(valmap)
+        if "Probability" in dist_data:
+            probs = np.array(dist_data["Probability"], dtype=float)
+        else:
+            probs = np.ones(size=length)
+        probs /= sum(probs)
+        return DiscreteChoice(vals, probs)
+        
     def _extract_discrete_dist(self, dist_data):
         vals = np.array(dist_data["Value"])
         if "Probability" in dist_data:

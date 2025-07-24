@@ -40,7 +40,9 @@ class ARTData(DataReader):
             self.vl_monitoring_interrupt_factor = self._get_discrete_dist("vl_monitoring_interrupt_factor")
             self.higher_newp_less_engagement = self._get_discrete_dist("higher_newp_less_engagement")
             self.prob_clinic_unaware_interrupt = self._get_discrete_dist("prob_clinic_unaware_interrupt")
-            
+            self.selected_art_adherence_pattern = self._get_discrete_dist("selected_art_adherence_pattern")
+            self.art_adherence_patterns = self._get_discrete_dist_list("art_adherence_patterns")
+
         except KeyError as ke:
             print(ke.args)
             raise DataLoadException

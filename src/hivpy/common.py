@@ -33,8 +33,8 @@ class DiscreteChoice:
         if len(probs) != N:
             raise Exception
         index_range = np.arange(0, N, 1)
-        self.probs = probs
-        self.data = vals
+        self.probs = np.array(probs)
+        self.data = np.array(vals)
         seed = seedManager.UniversalSeed if seedManager.FixSeed else None
         self.dist = stat.rv_discrete(values=(index_range, probs), seed=seed)
 

@@ -188,8 +188,10 @@ ABSENCE_CD4_YEAR_I = "absence_c4_year_i"            # bool: TODO find out a prop
 ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence
 ART_ADHERENCE_STDEV = "art_adherence_stdev"         # float: variation (i.e. standard deviation) in art adherence (timestep to timestep)
 PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in current timestep ~ N(art_adherence_mean, art_adherence_stdev**2) clamped to interval [0,1]
-ART_ADHERENCE = "art_adherence"                     # float, 2 timesteps: effective adherence for mutations etc.
-ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug (TODO: all currently DUMMIED)
+ART_ADHERENCE = "art_adherence"                     # float, 2 timesteps: adherence to ART in a given time step
+
+# Antiretrovirals
+ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug 
 ON_3TC = "on_3tc"
 ON_TEN = "on_ten"
 ON_NEV = "on_nev"
@@ -202,6 +204,34 @@ ON_CAB = "on_cab"
 ON_LEN = "on_len"
 ON_OLE = "on_ole"
 ON_ISL = "on_isl"
+
+RECENT_ZDV = "recent_zdv"                               # RECENT_X: True if particular ARV was part of a person's most recent regimen
+RECENT_3TC = "recent_3tc"
+RECENT_TEN = "recent_ten"
+RECENT_NEV = "recent_nev"
+RECENT_DAR = "recent_dar"
+RECENT_EFA = "recent_efa"
+RECENT_LPR = "recent_lpr"
+RECENT_TAZ = "recent_taz"
+RECENT_DOL = "recent_dol"
+RECENT_CAB = "recent_cab"
+RECENT_LEN = "recent_len"
+RECENT_OLE = "recent_ole"
+RECENT_ISL = "recent_isl"
+
+TIME_SINCE_ZDV = "time_since_zdv"                               # TIME_SINCE_X: float: time (in years) since stopping a given drug
+TIME_SINCE_3TC = "time_since_3tc"
+TIME_SINCE_TEN = "time_since_ten"
+TIME_SINCE_NEV = "time_since_nev"
+TIME_SINCE_DAR = "time_since_dar"
+TIME_SINCE_EFA = "time_since_efa"
+TIME_SINCE_LPR = "time_since_lpr"
+TIME_SINCE_TAZ = "time_since_taz"
+TIME_SINCE_DOL = "time_since_dol"
+TIME_SINCE_CAB = "time_since_cab"
+TIME_SINCE_LEN = "time_since_len"
+TIME_SINCE_OLE = "time_since_ole"
+TIME_SINCE_ISL = "time_since_isl"
 
 RESISTANCE_MUTATIONS = "resistance_mutations"   # int: total number of resistance mutations in an individual
 RTTA_MUTATIONS = "rttams"                       # int: number of RT (reverse transcriptase) gene thymidine analog mutations (TAMs)
