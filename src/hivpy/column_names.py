@@ -177,6 +177,8 @@ RATE_RETURN = "rate_return"
 PROB_ART_INIT = "prob_art_init"
 PROB_RETURN_ADC = "prob_return_adc"
 CLINIC_VISIT = "clinic_visit"                       # bool: true if a person visits a clinic in this time step
+LOST = "lost"                                       # bool: true if a person is lost to clinic follow up?
+CLINIC_RETURN = "clinic_return"
 
 DATE_START_ART = "date_start_art"                   # date: date of first accessing ART (not reset due to interruptions). "None" if never accessed ART yet.
 ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for distinguishing between various treatment options. Between 101 and 121 (at present). Use 0 for none.
@@ -191,7 +193,7 @@ PRESENT_ART_ADHERENCE = "present_art_adherence"     # float: ART adherence in cu
 ART_ADHERENCE = "art_adherence"                     # float, 2 timesteps: adherence to ART in a given time step
 
 # Antiretrovirals
-ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug 
+ON_ZDV = "on_zdv"                               # ON_X: True if individual is on a particular antiretroviral drug
 ON_3TC = "on_3tc"
 ON_TEN = "on_ten"
 ON_NEV = "on_nev"
