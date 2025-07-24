@@ -230,6 +230,9 @@ class ARTModule:
     def time_since_drug(self, name):
         return "time_since_" + name
 
+    def toxicity_drug(self, name):
+        return "toxicity_" + name
+
     def init_ART_columns(self):
         self.pop.init_variable(col.DATE_START_ART, None)
         self.pop.init_variable(col.CLINIC_VISIT, False)
@@ -288,6 +291,7 @@ class ARTModule:
             self.pop.init_variable(self.on_drug(drug), False)
             self.pop.init_variable(self.recent_drug(drug), False)
             self.pop.init_variable(self.time_since_drug(drug), 0)
+            self.pop.init_variable(self.toxicity_drug(drug), False)
 
     def init_strategies(self):
         self.pop.init_variable(
@@ -672,6 +676,50 @@ class ARTModule:
             person[col.ON_ART] = True
             person[col.TIME_ON_ART] = 0
             person[col.ART_INTERRUPT] = 0
+            for drug in self.ARVs:
+                person[self.on_drug(drug)] = person[self.recent_drug(drug)]
+
+            reg_opt = person[col.ART_REGIMEN_OPT]
+            if (
+                reg_opt in [104, 105, 106, 116, 117, 118, 125]
+                and (person[col.ON_EFA] or person[col.ON_NEV])
+                and not person[col.TOXICITY_DOL]
+            ):
+                person[col.ON_EFA] = False
+                person[col.ON_NEV] = False
+                person[col.ON_DOL] = True
+
+            if (
+                reg_opt in [104, 105, 118, 125]
+                and (person[col.ON_TAZ] or person[col.ON_LPR])
+                and not person[col.TOXICITY_DOL]
+            ):
+                person[col.ON_TAZ] = False
+                person[col.ON_LPR] = False
+                person[col.ON_DOL] = True
+
+            if (
+                reg_opt in [106]
+                and (person[col.ON_TAZ] or person[col.ON_LPR])
+                and not (person[col.TOXICITY_DOL] or person[col.TOXICITY_ZDV])
+            ):
+                person[col.ON_TAZ] = False
+                person[col.ON_LPR] = False
+                person[col.ON_TEN] = False
+                person[col.ON_DOL] = True
+                person[col.ON_ZDV] = True
+
+            if reg_opt in [104, 105, 118, 125] and not person[col.TOXICITY_TEN]:
+                person[col.ON_TEN] = True
+                person[col.ON_ZDV] = False
+
+            if reg_opt in [130]:
+                for drug in self.ARVs:
+                    person[self.on_drug(drug)] = (
+                        True if drug in ["len", "cab"] else False
+                    )
+
+            # TODO: ART "LINES" (i.e. first / second / third line therapy assignment)
 
         # after interruption due to choice
         choice_interrupts = self.pop.get_sub_pop(

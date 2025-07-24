@@ -237,6 +237,21 @@ TIME_SINCE_LEN = "time_since_len"
 TIME_SINCE_OLE = "time_since_ole"
 TIME_SINCE_ISL = "time_since_isl"
 
+TOXICITY_ZDV = "toxicityt_zdv"                               # TOXICITY_X: bool: true if person is experiencing drug toxicity for a given drug
+TOXICITY_3TC = "toxicityt_3tc"
+TOXICITY_TEN = "toxicityt_ten"
+TOXICITY_NEV = "toxicityt_nev"
+TOXICITY_DAR = "toxicityt_dar"
+TOXICITY_EFA = "toxicityt_efa"
+TOXICITY_LPR = "toxicityt_lpr"
+TOXICITY_TAZ = "toxicityt_taz"
+TOXICITY_DOL = "toxicityt_dol"
+TOXICITY_CAB = "toxicityt_cab"
+TOXICITY_LEN = "toxicityt_len"
+TOXICITY_OLE = "toxicityt_ole"
+TOXICITY_ISL = "toxicityt_isl"
+
+
 RESISTANCE_MUTATIONS = "resistance_mutations"   # int: total number of resistance mutations in an individual
 RTTA_MUTATIONS = "rttams"                       # int: number of RT (reverse transcriptase) gene thymidine analog mutations (TAMs)
 RT184_MUTATION = "rt184m"                       # resistance_mutations.MutationStatus(enum): presence of an individual's RT gene M184 mutation
