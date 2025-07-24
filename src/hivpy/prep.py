@@ -865,7 +865,7 @@ class PrEPModule:
             # unpause prep
             pop.set_present_variable(col.PREP_PAUSED, False, perm_ineligible)
 
-    def update_lencab_cols(pop: Population):
+    def update_lencab_cols(self, pop: Population):
         on_prep = pop.get_sub_pop(COND(col.ON_PREP, op.eq, True))
         prep_len = pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir))
         prep_cab = pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir))
