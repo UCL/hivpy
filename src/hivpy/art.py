@@ -179,6 +179,7 @@ class ARTModule:
         self.prob_clinic_unaware_interrupt = (
             self.art_data.prob_clinic_unaware_interrupt.sample()
         )
+        self.prob_supply_interrupt = 0.003
 
         self.sw_art_disadvantage = self.art_data.sw_art_disadvantage.sample()
         self.sw_interrupt_factor = (
@@ -564,10 +565,20 @@ class ARTModule:
         self.pop.apply_function(stop_by_choice, not_toxicity)
 
         # interruption due to interruption of drug supply
+        art_clinic_visitors = self.pop.get_sub_pop_intersection(
+            not_toxicity,
+            self.pop.get_sub_pop(
+                AND(
+                    COND(col.CLINIC_VISIT, op.eq, True),
+                    COND(col.ART_INTERRUPT, op.eq, 0),
+                )
+            ),
+        )
+        n_visitors = len(art_clinic_visitors)
+        supply_interruptions = rng.uniform(size=n_visitors) < self.prob_supply_interrupt
+        self.pop.set_present_variable(
+            col.ART_INTERRUPT,
+            Interrupts.Supply,
+            self.pop.apply_bool_mask(supply_interruptions, art_clinic_visitors),
+        )
 
-        # interruption of prep prior to diagnosis (should this be elsewhere?)
-
-
-#
-# def stop_toxicity(person):
-#    prev_adherence = person[pop.get_correct_column(col.ART_ADHERENCE, dt=1)]
