@@ -4,7 +4,7 @@ from math import isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta, AND, COND
+from hivpy.common import AND, COND, SexType, date, rng, timedelta
 from hivpy.population import Population
 
 
@@ -357,7 +357,7 @@ def test_vmmc_case_4():
         pop.inc_variable(col.AGE, time_step.month / 12)
         pop.circumcision.update_vmmc(pop, time_step)
         circ_males = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Male),
-                                             COND(col.CIRCUMCISED, op.eq, True)))
+                                         COND(col.CIRCUMCISED, op.eq, True)))
         # nobody under 15 has been circumcised
         assert sum((pop.get_variable(col.AGE) < 15) & (pop.get_variable(col.VMMC))) == 0
 

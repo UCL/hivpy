@@ -171,7 +171,7 @@ def test_HIV_risk_vector():
     male_HIV_status = pop.transform_group([col.SEX_MIX_AGE_GROUP, col.SEX], lambda x, y: np.array(
         [True] * (2 * N_group // HIV_ratio) +
         [False] * (N_group - 2*N_group // HIV_ratio)), False, males)
-    pop.set_present_variable( col.HIV_STATUS, male_HIV_status, males)
+    pop.set_present_variable(col.HIV_STATUS, male_HIV_status, males)
     hiv_module.update_partner_risk_vectors(pop)
     assert np.allclose(hiv_module.ratio_infected_stp[SexType.Male], 2*expectation)
     assert np.allclose(hiv_module.ratio_infected_stp[SexType.Female], expectation)

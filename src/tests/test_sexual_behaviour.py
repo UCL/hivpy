@@ -2,18 +2,18 @@ import importlib.resources
 import itertools
 # import logging
 import operator
+import operator as op
 
 import numpy as np
 import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, seedManager, timedelta, AND, COND
+from hivpy.common import AND, COND, SexType, date, rng, seedManager, timedelta
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)
 
-import operator as op
 
 @pytest.fixture(autouse=True)
 def resetRandomState():
@@ -32,7 +32,7 @@ def check_prob_sums(sex, trans_matrix):
     (dim, _) = trans_matrix.shape
     for i in range(0, dim):
         ages = np.array([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65])
-        sexes = np.array([sex]*len(ages))
+        sexes = np.array([sex] * len(ages))
         population = Population(11, date(1989, 1, 1))
         population.set_present_variable(col.AGE, ages)
         population.set_present_variable(col.SEX, sexes)
@@ -41,19 +41,21 @@ def check_prob_sums(sex, trans_matrix):
         SBM.init_risk_factors(population)
         risk = population.get_variable(col.RISK)
         assert len(risk) == 11
-        assert (0 < SBM.new_partner_factor <= 2)
-        tot_prob = np.array([0.0]*len(ages))  # probability for each age range
+        assert 0 < SBM.new_partner_factor <= 2
+        tot_prob = np.array([0.0] * len(ages))  # probability for each age range
         for j in range(0, dim):
             tot_prob += SBM.prob_transition(sex, risk, i, j)
-        assert (np.allclose(tot_prob, 1.0))
+        assert np.allclose(tot_prob, 1.0)
 
 
 def test_transition_probabilities(yaml_data):
     for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Male"]):
-        assert (trans_matrix.shape == (4, 4))
+        assert trans_matrix.shape == (4, 4)
         check_prob_sums(SexType.Male, trans_matrix)
-    for trans_matrix in np.array(yaml_data["sex_behaviour_transition_options"]["Female"]):
-        assert (trans_matrix.shape == (2, 2))
+    for trans_matrix in np.array(
+        yaml_data["sex_behaviour_transition_options"]["Female"]
+    ):
+        assert trans_matrix.shape == (2, 2)
         check_prob_sums(SexType.Female, trans_matrix)
 
 
@@ -73,10 +75,10 @@ def test_sex_behaviour_transition(yaml_data):
                 num = sum(pop.get_variable(col.SEX_BEHAVIOUR) == g2)
                 p = trans_matrix[s][g][g2] / (sum(trans_matrix[s][g]))
                 E = p * N
-                sig = np.sqrt(E * (1-p))
-                lower = E - 5*sig
-                upper = E + 5*sig
-                assert (lower <= num <= upper)
+                sig = np.sqrt(E * (1 - p))
+                lower = E - 5 * sig
+                upper = E + 5 * sig
+                assert lower <= num <= upper
 
 
 def check_num_partners(row):
@@ -127,18 +129,16 @@ def test_num_partners():
     # test sex worker program separately
     pop.sexual_behaviour.sex_worker_program = False
     pop.sexual_behaviour.num_short_term_partners(pop)
-    assert (any(pop.get_variable(col.NUM_PARTNERS) > 0))
+    assert any(pop.get_variable(col.NUM_PARTNERS) > 0)
     # Check the num_partners column
     checks = pop.data.apply(check_num_partners, axis=1)
     assert np.all(checks)
 
     # set all women to sex workers
     pop.set_present_variable(col.AGE, 35)
-    pop.set_present_variable(col.SEX_WORKER,
-                             True,
-                             pop.get_sub_pop([(col.SEX,
-                                               operator.eq,
-                                               SexType.Female)]))
+    pop.set_present_variable(
+        col.SEX_WORKER, True, pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
+    )
     pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
     pop.sexual_behaviour.num_short_term_partners(pop)
@@ -170,10 +170,14 @@ def test_num_partner_for_behaviour_group():
                             i += 1
                     prob_ge_30 = sum(np_probs[g].probs[i:])
 
-            for (n, p) in zip(np_probs[g].data, np_probs[g].probs):
-                sub_pop = pop.get_sub_pop(AND(COND(col.SEX_BEHAVIOUR_CLASS, op.eq, sex_class),
-                                              COND(col.SEX_BEHAVIOUR, op.eq, g),
-                                              COND(col.AGE, op.ge, 15)))
+            for n, p in zip(np_probs[g].data, np_probs[g].probs):
+                sub_pop = pop.get_sub_pop(
+                    AND(
+                        COND(col.SEX_BEHAVIOUR_CLASS, op.eq, sex_class),
+                        COND(col.SEX_BEHAVIOUR, op.eq, g),
+                        COND(col.AGE, op.ge, 15),
+                    )
+                )
                 if sex_class == SexBehaviourClass.SEX_WORKER_O30:
                     if n > 30:
                         p = 0
@@ -182,9 +186,9 @@ def test_num_partner_for_behaviour_group():
 
                 N_g = len(sub_pop)
                 E = p * N_g
-                sig = np.sqrt(p * (1-p) * N)
+                sig = np.sqrt(p * (1 - p) * N)
                 X = sum(pop.get_variable(col.NUM_PARTNERS, sub_pop) == n)
-                assert (E - 3*sig <= X <= E + 3*sig)
+                assert E - 3 * sig <= X <= E + 3 * sig
 
 
 def test_behaviour_updates():
@@ -196,7 +200,7 @@ def test_behaviour_updates():
     for i in range(5):
         pop.sexual_behaviour.update_sex_groups(pop)
     subsequent_groupings = pop.get_variable(col.SEX_BEHAVIOUR)
-    assert (any(initial_groupings != subsequent_groupings))
+    assert any(initial_groupings != subsequent_groupings)
 
 
 def test_initial_sex_behaviour_groups(yaml_data):
@@ -206,10 +210,14 @@ def test_initial_sex_behaviour_groups(yaml_data):
     """
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    probs = {SexType.Male:
-             yaml_data["initial_sex_behaviour_probabilities"]["Male"]["Probability"],
-             SexType.Female:
-             yaml_data["initial_sex_behaviour_probabilities"]["Female"]["Probability"]}
+    probs = {
+        SexType.Male: yaml_data["initial_sex_behaviour_probabilities"]["Male"][
+            "Probability"
+        ],
+        SexType.Female: yaml_data["initial_sex_behaviour_probabilities"]["Female"][
+            "Probability"
+        ],
+    }
     for sex in SexType:
         sex_sub_pop = pop.get_sub_pop([(col.SEX, operator.eq, sex)])
         n_sex = len(sex_sub_pop)
@@ -218,10 +226,10 @@ def test_initial_sex_behaviour_groups(yaml_data):
         for g in SexBehaviours[sex]:
             group_sub_pop = pop.get_sub_pop([(col.SEX_BEHAVIOUR, operator.eq, g)])
             p = Prob_sex[g]
-            sigma = np.sqrt(p*(1-p)*float(n_sex))
-            Expectation = float(n_sex)*p
+            sigma = np.sqrt(p * (1 - p) * float(n_sex))
+            Expectation = float(n_sex) * p
             N_g = len(pop.get_sub_pop_intersection(sex_sub_pop, group_sub_pop))
-            assert Expectation - sigma*3 <= N_g <= Expectation + sigma*3
+            assert Expectation - sigma * 3 <= N_g <= Expectation + sigma * 3
 
 
 def test_risk_long_term_partner():
@@ -239,11 +247,13 @@ def test_risk_long_term_partner():
 def test_risk_adc():
     N = 20
     pop = Population(size=N, start_date=date(1989, 1, 1))
-    pop.set_present_variable(col.HIV_STATUS, False)  # make test independent of how HIV is initialised
+    pop.set_present_variable(
+        col.HIV_STATUS, False
+    )  # make test independent of how HIV is initialised
     init_HIV_idx = rng.integers(0, N, size=5)
     init_ADC_idx = init_HIV_idx[[0, 2, 4]]
-    pop.set_present_variable( col.HIV_STATUS, True, init_HIV_idx)
-    pop.set_present_variable( col.ADC, True, init_ADC_idx)
+    pop.set_present_variable(col.HIV_STATUS, True, init_HIV_idx)
+    pop.set_present_variable(col.ADC, True, init_ADC_idx)
     expected_risk = np.ones(N)
     expected_risk[init_ADC_idx] = 0.2
     SBM = SexualBehaviourModule()
@@ -254,8 +264,8 @@ def test_risk_adc():
     # Assign more people with HIV
     add_HIV_idx = rng.integers(0, N, size=5)
     add_ADC_idx = add_HIV_idx[[0, 1, 2]]
-    pop.set_present_variable( col.HIV_STATUS, True, add_HIV_idx)
-    pop.set_present_variable( col.ADC, True, add_ADC_idx)
+    pop.set_present_variable(col.HIV_STATUS, True, add_HIV_idx)
+    pop.set_present_variable(col.ADC, True, add_ADC_idx)
     # Update risk factors
     SBM.update_sex_behaviour(pop)
     expected_risk[add_ADC_idx] = 0.2
@@ -273,18 +283,18 @@ def test_risk_diagnosis():
     assert np.all(pop.get_variable(col.RISK_DIAGNOSIS) == 1)
     # give up some people HIV and advance the date
     HIV_idx = rng.integers(0, N, size=5)
-    pop.set_present_variable( col.HIV_STATUS, True, HIV_idx)
-    pop.set_present_variable( col.HIV_DIAGNOSIS_DATE, pop.date, HIV_idx)
+    pop.set_present_variable(col.HIV_STATUS, True, HIV_idx)
+    pop.set_present_variable(col.HIV_DIAGNOSIS_DATE, pop.date, HIV_idx)
     SBM.update_risk_diagnosis(pop)
-    assert all(pop.get_variable( col.RISK_DIAGNOSIS, HIV_idx) == 4)
+    assert all(pop.get_variable(col.RISK_DIAGNOSIS, HIV_idx) == 4)
     pop.date += timedelta(days=365)
     SBM.update_risk_diagnosis(pop)
-    assert all(pop.get_variable( col.RISK_DIAGNOSIS, HIV_idx) == 4)
+    assert all(pop.get_variable(col.RISK_DIAGNOSIS, HIV_idx) == 4)
     pop.date += timedelta(days=500)
     SBM.update_risk_diagnosis(pop)
-    assert all(pop.get_variable( col.RISK_DIAGNOSIS, HIV_idx) == 2)
+    assert all(pop.get_variable(col.RISK_DIAGNOSIS, HIV_idx) == 2)
     undiagnosed = [x for x in range(0, N) if x not in HIV_idx]
-    assert all(pop.get_variable( col.RISK_DIAGNOSIS, undiagnosed) == 1)
+    assert all(pop.get_variable(col.RISK_DIAGNOSIS, undiagnosed) == 1)
 
 
 def test_risk_balance():
@@ -299,25 +309,29 @@ def test_risk_balance():
     def test_partner_ratios(male_ratio, balance_male, balance_female):
         pop.set_present_variable(col.NUM_PARTNERS, 0)
         n_partners_men = int(n_partners * male_ratio)
-        n_partners_women = int(n_partners * (1-male_ratio))
+        n_partners_women = int(n_partners * (1 - male_ratio))
         # distribute partners amongst the men and women
         random_men = rng.choice(men, size=n_partners_men, replace=False)
-        pop.set_present_variable(col.NUM_PARTNERS,
-                                 pop.get_variable(col.NUM_PARTNERS, random_men) + 1,
-                                 random_men)
+        pop.set_present_variable(
+            col.NUM_PARTNERS,
+            pop.get_variable(col.NUM_PARTNERS, random_men) + 1,
+            random_men,
+        )
         random_women = rng.choice(women, size=n_partners_women, replace=False)
-        pop.set_present_variable(col.NUM_PARTNERS,
-                                 pop.get_variable(col.NUM_PARTNERS, random_women) + 1,
-                                 random_women)
+        pop.set_present_variable(
+            col.NUM_PARTNERS,
+            pop.get_variable(col.NUM_PARTNERS, random_women) + 1,
+            random_women,
+        )
         SBM.update_risk_balance(pop)
-        assert np.all(pop.get_variable( col.RISK_BALANCE, men) == balance_male)
-        assert np.all(pop.get_variable( col.RISK_BALANCE, women) == balance_female)
+        assert np.all(pop.get_variable(col.RISK_BALANCE, men) == balance_male)
+        assert np.all(pop.get_variable(col.RISK_BALANCE, women) == balance_female)
 
     # equal numbers of partners
     test_partner_ratios(0.5, 1, 1)
 
     # ~ -1 % discrepancy
-    test_partner_ratios(0.495, 1/0.7, 0.7)
+    test_partner_ratios(0.495, 1 / 0.7, 0.7)
 
     # > 10 % discrepancy
     test_partner_ratios(0.6, 0.1, 10)
@@ -351,7 +365,7 @@ def test_risk_art_adherence_usage():
     for i in range(N):
         SBM_temp = SexualBehaviourModule()
         count += SBM_temp.use_risk_art_adherence
-    assert 0.1 < count/N < 0.3
+    assert 0.1 < count / N < 0.3
 
 
 def test_risk_population():
@@ -359,7 +373,7 @@ def test_risk_population():
     pop = Population(size=N, start_date=date(1989, 1, 1))
     SBM = SexualBehaviourModule()
     SBM.init_risk_factors(pop)
-    assert (SBM.risk_population == 1)
+    assert SBM.risk_population == 1
     pop.date = date(1995, 1, 1)
     SBM.update_risk(pop)
     assert np.isclose(SBM.risk_population, 1)
@@ -368,28 +382,34 @@ def test_risk_population():
     assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"], 0.001)
     pop.date = date(1998, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**3, 0.001)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"] ** 3, 0.001)
     pop.date = date(2000, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"] ** 5, 0.001)
     pop.date = date(2010, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"]**5, 0.001)
+    assert np.isclose(SBM.risk_population, SBM.yearly_risk_change["1990s"] ** 5, 0.001)
     pop.date = date(2011, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population,
-                      SBM.yearly_risk_change["1990s"]**5 *
-                      SBM.yearly_risk_change["2010s"], 0.001)
+    assert np.isclose(
+        SBM.risk_population,
+        SBM.yearly_risk_change["1990s"] ** 5 * SBM.yearly_risk_change["2010s"],
+        0.001,
+    )
     pop.date = date(2020, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population,
-                      SBM.yearly_risk_change["1990s"]**5 *
-                      SBM.yearly_risk_change["2010s"]**10, 0.001)
+    assert np.isclose(
+        SBM.risk_population,
+        SBM.yearly_risk_change["1990s"] ** 5 * SBM.yearly_risk_change["2010s"] ** 10,
+        0.001,
+    )
     pop.date = date(2022, 1, 1)
     SBM.update_risk(pop)
-    assert np.isclose(SBM.risk_population,
-                      SBM.yearly_risk_change["1990s"]**5 *
-                      SBM.yearly_risk_change["2010s"]**11, 0.001)
+    assert np.isclose(
+        SBM.risk_population,
+        SBM.yearly_risk_change["1990s"] ** 5 * SBM.yearly_risk_change["2010s"] ** 11,
+        0.001,
+    )
 
 
 def test_risk_personal():
@@ -403,25 +423,33 @@ def test_risk_personal():
         SBM = SexualBehaviourModule()
         SBM.init_risk_factors(pop)
         risk_count = len(pop.get_sub_pop([(col.RISK_PERSONAL, operator.lt, 1)]))
-        count03 += (0.2 < (risk_count/N) < 0.4)  # check consistency with threshold
-        count05 += (0.4 < (risk_count/N) < 0.6)  # check consistency with threshold
-        count07 += (0.6 < (risk_count/N) < 0.8)  # check consistency with threshold
+        count03 += 0.2 < (risk_count / N) < 0.4  # check consistency with threshold
+        count05 += 0.4 < (risk_count / N) < 0.6  # check consistency with threshold
+        count07 += 0.6 < (risk_count / N) < 0.8  # check consistency with threshold
         seedManager.UniversalSeed = universal_seed  # put seed back in case assert fails
-        assert ([x == 1 or x == 1e-5 for x in pop.get_variable(col.RISK_PERSONAL)])
-    assert (1/6 < count03/100 < 1/2)  # check frequency of threshold from initialisations
-    assert (1/6 < count05/100 < 1/2)  # check frequency of threshold from initialisations
-    assert (1/6 < count07/100 < 1/2)  # check frequency of threshold from initialisations
+        assert [x == 1 or x == 1e-5 for x in pop.get_variable(col.RISK_PERSONAL)]
+    assert (
+        1 / 6 < count03 / 100 < 1 / 2
+    )  # check frequency of threshold from initialisations
+    assert (
+        1 / 6 < count05 / 100 < 1 / 2
+    )  # check frequency of threshold from initialisations
+    assert (
+        1 / 6 < count07 / 100 < 1 / 2
+    )  # check frequency of threshold from initialisations
 
 
 def test_risk_age():
     N = 11
     # rng.set_seed(42)
-    pop = Population(size=2*N, start_date=date(1989, 1, 1))
+    pop = Population(size=2 * N, start_date=date(1989, 1, 1))
     pop.apply_death = False
-    ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62]*2)
+    ages = np.array([12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62] * 2)
     pop.set_present_variable(col.SEX_BEHAVIOUR_CLASS, 0)
     pop.set_present_variable(col.AGE, ages)
-    pop.set_present_variable(col.SEX, np.array([SexType.Male]*N + [SexType.Female]*N))
+    pop.set_present_variable(
+        col.SEX, np.array([SexType.Male] * N + [SexType.Female] * N)
+    )
     # pop.set_present_variable(col.SEX_WORKER, False)
     pop.sexual_behaviour.update_sex_behaviour_class(pop)
     pop.sexual_behaviour.init_sex_behaviour_groups(pop)
@@ -442,52 +470,85 @@ def test_age_sex_balance():
     prior_age_factors = pop.sexual_behaviour.age_based_risk.copy()
     pop.sexual_behaviour.update_sex_age_balance(pop)
     for sex in [SexType.Male, SexType.Female]:
-        partners_of_men = pop.get_variable(col.STP_AGE_GROUPS,
-                                           pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)]))
-        partners_of_women = pop.get_variable(col.STP_AGE_GROUPS,
-                                             pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)]))
+        partners_of_men = pop.get_variable(
+            col.STP_AGE_GROUPS, pop.get_sub_pop([(col.SEX, operator.eq, SexType.Male)])
+        )
+        partners_of_women = pop.get_variable(
+            col.STP_AGE_GROUPS,
+            pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)]),
+        )
 
         def get_partners_in_groups(partners_of_group):
-            a, f = np.unique(list(itertools.chain.from_iterable(partners_of_group)), return_counts=True)
+            a, f = np.unique(
+                list(itertools.chain.from_iterable(partners_of_group)),
+                return_counts=True,
+            )
             return dict(zip(a, f))
 
         female_partners_in_groups = get_partners_in_groups(partners_of_men)
         male_partners_in_groups = get_partners_in_groups(partners_of_women)
-        partners_in_groups = {SexType.Male: male_partners_in_groups,
-                              SexType.Female: female_partners_in_groups}
+        partners_in_groups = {
+            SexType.Male: male_partners_in_groups,
+            SexType.Female: female_partners_in_groups,
+        }
         for i in range(5):
             age_min = 15 + 10 * i
             age_max = age_min + 10
-            group_subpop = pop.get_sub_pop([(col.SEX, operator.eq, sex),
-                                            (col.AGE, operator.ge, age_min),
-                                            (col.AGE, operator.lt, age_max)])
-            num_partners_of_group = sum(pop.get_variable(col.NUM_PARTNERS, group_subpop))
+            group_subpop = pop.get_sub_pop(
+                [
+                    (col.SEX, operator.eq, sex),
+                    (col.AGE, operator.ge, age_min),
+                    (col.AGE, operator.lt, age_max),
+                ]
+            )
+            num_partners_of_group = sum(
+                pop.get_variable(col.NUM_PARTNERS, group_subpop)
+            )
             num_partners_in_group = partners_in_groups[sex].get(i)
-            if (num_partners_in_group is None):
+            if num_partners_in_group is None:
                 num_partners_in_group = 0
-            if (num_partners_of_group == 0):
-                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex])
-                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex])
+            if num_partners_of_group == 0:
+                assert (
+                    pop.sexual_behaviour.age_based_risk[2 * i][sex]
+                    == prior_age_factors[2 * i][sex]
+                )
+                assert (
+                    pop.sexual_behaviour.age_based_risk[2 * i + 1][sex]
+                    == prior_age_factors[2 * i + 1][sex]
+                )
             else:
-                assert (pop.sexual_behaviour.age_based_risk[2*i][sex] == prior_age_factors[2*i][sex] *
-                        num_partners_in_group / num_partners_of_group)
-                assert (pop.sexual_behaviour.age_based_risk[2*i + 1][sex] == prior_age_factors[2*i + 1][sex] *
-                        num_partners_in_group / num_partners_of_group)
+                assert (
+                    pop.sexual_behaviour.age_based_risk[2 * i][sex]
+                    == prior_age_factors[2 * i][sex]
+                    * num_partners_in_group
+                    / num_partners_of_group
+                )
+                assert (
+                    pop.sexual_behaviour.age_based_risk[2 * i + 1][sex]
+                    == prior_age_factors[2 * i + 1][sex]
+                    * num_partners_in_group
+                    / num_partners_of_group
+                )
 
 
 # Test long term partnerships
 # test the start of new ltps, end of ltps, and longevity.
 
+
 def test_start_ltp():
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
     sb_mod = pop.sexual_behaviour
-    assert (0.1 * np.exp(0.25 * (-5))) <= sb_mod.new_ltp_rate <= (0.1 * np.exp(0.25 * 5))
+    assert (
+        (0.1 * np.exp(0.25 * (-5))) <= sb_mod.new_ltp_rate <= (0.1 * np.exp(0.25 * 5))
+    )
 
-    for age, modifier, longevity_prob in [(20, 1, [0.3, 0.3, 0.4]),
-                                          (40, 2, [0.3, 0.3, 0.4]),
-                                          (50, 3, [0.3, 0.5, 0.2]),
-                                          (60, 5, [0.3, 0.7, 0.0])]:
+    for age, modifier, longevity_prob in [
+        (20, 1, [0.3, 0.3, 0.4]),
+        (40, 2, [0.3, 0.3, 0.4]),
+        (50, 3, [0.3, 0.5, 0.2]),
+        (60, 5, [0.3, 0.7, 0.0]),
+    ]:
         pop.set_present_variable(col.LONG_TERM_PARTNER, False)
         pop.set_present_variable(col.AGE, age)
 
@@ -497,21 +558,32 @@ def test_start_ltp():
         num_ltp = sum(pop.get_variable(col.LONG_TERM_PARTNER))
         expected_ltp = sb_mod.new_ltp_rate * N / modifier
         sigma_ltp = np.sqrt(expected_ltp * (1 - sb_mod.new_ltp_rate / modifier))
-        assert (expected_ltp - 3 * sigma_ltp) <= num_ltp <= (expected_ltp + 3 * sigma_ltp)
+        assert (
+            (expected_ltp - 3 * sigma_ltp) <= num_ltp <= (expected_ltp + 3 * sigma_ltp)
+        )
 
         # test longevity
         partnered_subpop = pop.get_sub_pop(COND(col.LONG_TERM_PARTNER, op.eq, True))
         n_partnered = len(partnered_subpop)
-        longevity_totals = [sum(pop.get_variable(col.LTP_LONGEVITY, partnered_subpop) == v) for v in [1, 2, 3]]
+        longevity_totals = [
+            sum(pop.get_variable(col.LTP_LONGEVITY, partnered_subpop) == v)
+            for v in [1, 2, 3]
+        ]
         for prob, total in zip(longevity_prob, longevity_totals):
             expected_total = prob * n_partnered
             sigma_total = np.sqrt((1 - prob) * expected_total)
-            assert (expected_total - 3 * sigma_total) <= total <= (expected_total + 3 * sigma_total)
+            assert (
+                (expected_total - 3 * sigma_total)
+                <= total
+                <= (expected_total + 3 * sigma_total)
+            )
 
         # TODO: add checks for correct balancing factors & dates
 
 
-@pytest.mark.parametrize(["longevity", "rate_change"], [(1, 0.25), (2, 0.05), (3, 0.02)])
+@pytest.mark.parametrize(
+    ["longevity", "rate_change"], [(1, 0.25), (2, 0.05), (3, 0.02)]
+)
 def test_end_ltp(longevity, rate_change):
     # TODO: will need to be updated when addition ltp factors added
     # e.g. for diagnosis & balancing
@@ -528,15 +600,22 @@ def test_end_ltp(longevity, rate_change):
     sigma_ends = (1 - expected_end_prob) * expected_ends
     sb_mod.update_long_term_partners(pop)
     n_ends = N - sum(pop.get_variable(col.LONG_TERM_PARTNER))
-    assert (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
+    assert (
+        (expected_ends - 3 * sigma_ends) <= n_ends <= (expected_ends + 3 * sigma_ends)
+    )
 
 
 # Test Sex Work related code
 
-@pytest.mark.parametrize(["life_sex_risk", "p_start"],
-                         [(1, np.array([0., 0., 0., 0.])),
-                          (2, np.array([0.005, 0.01, 0.02, 0.03])),
-                          (3, np.array([0.05, 0.1, 0.2, 0.3]))])
+
+@pytest.mark.parametrize(
+    ["life_sex_risk", "p_start"],
+    [
+        (1, np.array([0.0, 0.0, 0.0, 0.0])),
+        (2, np.array([0.005, 0.01, 0.02, 0.03])),
+        (3, np.array([0.05, 0.1, 0.2, 0.3])),
+    ],
+)
 def test_start_sex_work(life_sex_risk, p_start):
     N = 10000
     pop = Population(size=N, start_date=date(1989, 1, 1))
@@ -544,7 +623,7 @@ def test_start_sex_work(life_sex_risk, p_start):
     pop.set_present_variable(col.SEX_WORKER, False)
     pop.set_present_variable(col.LIFE_SEX_RISK, life_sex_risk)
     # dummy sex behaviour variables
-    pop.set_present_variable(col.AGE, [17, 22, 27, 37, 50]*2000)
+    pop.set_present_variable(col.AGE, [17, 22, 27, 37, 50] * 2000)
     sb_module.risk_population = 4
     sb_module.base_start_sw = 0.005
     sb_module.risk_sex_worker_age = np.array([0.5, 1.0, 2.0, 3.0])
@@ -562,16 +641,26 @@ def test_start_sex_work(life_sex_risk, p_start):
     assert not any(pop.get_variable(col.SEX_WORKER, over_50s))
 
     # Proportion of sex workers
-    n_15to19 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 17)])))
-    n_20to24 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 22)])))
-    n_25to34 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 27)])))
-    n_34to49 = sum(pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 37)])))
-    E = p_start * (N * 0.1)  # only 1/5 of the population in each age group and half female
-    sigma = np.sqrt(E * (1-p_start))
-    assert (E[0] - 3*sigma[0] <= n_15to19 <= E[0] + 3*sigma[0])
-    assert (E[1] - 3*sigma[1] <= n_20to24 <= E[1] + 3*sigma[1])
-    assert (E[2] - 3*sigma[2] <= n_25to34 <= E[2] + 3*sigma[2])
-    assert (E[3] - 3*sigma[3] <= n_34to49 <= E[3] + 3*sigma[3])
+    n_15to19 = sum(
+        pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 17)]))
+    )
+    n_20to24 = sum(
+        pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 22)]))
+    )
+    n_25to34 = sum(
+        pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 27)]))
+    )
+    n_34to49 = sum(
+        pop.get_variable(col.SEX_WORKER, pop.get_sub_pop([(col.AGE, operator.eq, 37)]))
+    )
+    E = p_start * (
+        N * 0.1
+    )  # only 1/5 of the population in each age group and half female
+    sigma = np.sqrt(E * (1 - p_start))
+    assert E[0] - 3 * sigma[0] <= n_15to19 <= E[0] + 3 * sigma[0]
+    assert E[1] - 3 * sigma[1] <= n_20to24 <= E[1] + 3 * sigma[1]
+    assert E[2] - 3 * sigma[2] <= n_25to34 <= E[2] + 3 * sigma[2]
+    assert E[3] - 3 * sigma[3] <= n_34to49 <= E[3] + 3 * sigma[3]
 
 
 def test_stopping_sex_work():
@@ -601,7 +690,7 @@ def test_stopping_sex_work():
     P_stop_over40 = 0.15  # based on dummy variables above
     E = P_stop_over40 * N
     sigma = np.sqrt(E * (1 - P_stop_over40))
-    assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))
+    assert (E - 3 * sigma) < num_stop < (E + 3 * sigma)
 
     # Test for ages under 40
     pop.set_present_variable(col.SEX_WORKER, True)
@@ -611,7 +700,7 @@ def test_stopping_sex_work():
     P_stop_under40 = 0.05  # based on dummy variables above
     E = P_stop_under40 * N
     sigma = np.sqrt(E * (1 - P_stop_under40))
-    assert ((E - 3 * sigma) < num_stop < (E + 3 * sigma))
+    assert (E - 3 * sigma) < num_stop < (E + 3 * sigma)
 
 
 def test_sex_balancing_calculation():
@@ -629,19 +718,19 @@ def test_sex_balancing_calculation():
     sb_module.sex_mixing_matrix[SexType.Female] = sex_mix_matrix
 
     # Determine the ages and sexes of everyone involved (3/4 male, 1/4 female for imbalance)
-    pop.set_variable_range( col.SEX, SexType.Female, 0, int(N/4)-1)
-    pop.set_variable_range( col.SEX, SexType.Male, int(N/4))
+    pop.set_variable_range(col.SEX, SexType.Female, 0, int(N / 4) - 1)
+    pop.set_variable_range(col.SEX, SexType.Male, int(N / 4))
     pop.set_present_variable(col.AGE, 30)
     pop.set_present_variable(col.NUM_PARTNERS, 1)
 
     # Check that the numbers of partners in / of a group are calculated correctly
     sb_module.assign_stp_ages(pop)
 
-    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N/4))
-    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N/4)))
+    assert sb_module.num_stp_in_age_sex_group[1][SexType.Male] == int(N / 4)
+    assert sb_module.num_stp_of_age_sex_group[1][SexType.Male] == (N - int(N / 4))
 
-    assert (sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N/4)))
-    assert (sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N/4))
+    assert sb_module.num_stp_in_age_sex_group[1][SexType.Female] == (N - int(N / 4))
+    assert sb_module.num_stp_of_age_sex_group[1][SexType.Female] == int(N / 4)
 
     # Check that the risk factor updates correctly in response
     # Fix the risk factor to a known value first and then run the update
@@ -649,7 +738,7 @@ def test_sex_balancing_calculation():
     sb_module.age_based_risk[3][0] = 1  # female (30-34)
     sb_module.update_sex_age_balance(pop)
 
-    assert np.isclose(sb_module.age_based_risk[3][0], 1/3, atol=1e-4)
+    assert np.isclose(sb_module.age_based_risk[3][0], 1 / 3, atol=1e-4)
     assert np.isclose(sb_module.age_based_risk[3][1], 3, atol=1e-4)
 
 
@@ -673,11 +762,16 @@ def test_sex_balancing_effect():
         sb_module.update_sex_behaviour(pop)
         for a in range(5):
             for s in range(2):
-                if (sb_module.num_stp_of_age_sex_group[a][s] == 0 or sb_module.num_stp_in_age_sex_group[a][s] == 0):
+                if (
+                    sb_module.num_stp_of_age_sex_group[a][s] == 0
+                    or sb_module.num_stp_in_age_sex_group[a][s] == 0
+                ):
                     ratio = 1
                 else:
-                    ratio = (sb_module.num_stp_in_age_sex_group[a][s] /
-                             sb_module.num_stp_of_age_sex_group[a][s])
+                    ratio = (
+                        sb_module.num_stp_in_age_sex_group[a][s]
+                        / sb_module.num_stp_of_age_sex_group[a][s]
+                    )
                 balance[a][s][i] = np.log(ratio)
 
     for a in range(5):
