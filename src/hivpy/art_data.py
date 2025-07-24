@@ -30,7 +30,17 @@ class ARTData(DataReader):
             self.base_rate_return = self._get_discrete_dist("rate_return")
             self.rate_return_adc = self._get_discrete_dist("rate_return_adc")
             self.base_rate_return_lencab = self._get_discrete_dist("rate_return_lencab")
-
+            self.toxicity_interrupt_factor = self._get_discrete_dist("toxicity_interrupt_factor")
+            self.prob_interrupt_choice = self._get_discrete_dist("prob_interrupt_choice")
+            self.lencab_interrupt_factor = self._get_discrete_dist("lencab_interrupt_factor")
+            self.sw_art_disadvantage = self._get_discrete_dist("sw_art_disadvantage")
+            self.sw_interrupt_factor = self._get_discrete_dist("sw_interrupt_factor")
+            self.sw_adherence_factor = self._get_discrete_dist("sw_adherence_factor")
+            self.sw_loss_diagnosis_factor = self._get_discrete_dist("sw_loss_diagnosis_factor")
+            self.vl_monitoring_interrupt_factor = self._get_discrete_dist("vl_monitoring_interrupt_factor")
+            self.higher_newp_less_engagement = self._get_discrete_dist("higher_newp_less_engagement")
+            self.prob_clinic_unaware_interrupt = self._get_discrete_dist("prob_clinic_unaware_interrupt")
+            
         except KeyError as ke:
             print(ke.args)
             raise DataLoadException

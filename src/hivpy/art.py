@@ -14,7 +14,8 @@ import numpy as np
 import hivpy.column_names as col
 
 from .art_data import ARTData
-from .common import AND, COND, OR, date, is_in, rng, timedelta
+from .common import AND, COND, OR, Date, is_in, rng, TimeDelta, past
+from .prep import PrEPType
 
 
 class HivMonitoringStrategy(Enum):
@@ -93,6 +94,11 @@ class ARV(Enum):
     dolutegravir = 9
     cabotegravir = 10  # long acting PrEP
 
+class Interrupts(Enum):
+    Not = 0
+    Choice = 1
+    Supply = 2
+    Toxicity = 3
 
 class ARTModule:
     vm_format = VmFormat.whb_lab  # TODO: check correct initial value?
@@ -155,11 +161,25 @@ class ARTModule:
             self.art_data.higher_future_prep_oral_coverage.sample()
         )
 
+        #interrupt
+        self.toxicity_interrupt_factor = self.art_data.toxicity_interrupt_factor.sample()
+        self.prob_interrupt_choice = self.art_data.prob_interrupt_choice.sample()
+        self.lencab_interrupt_factor = self.art_data.lencab_interrupt_factor.sample()
+        self.vl_monitoring_interrupt_factor = self.art_data.vl_monitoring_interrupt_factor.sample()
+        self.higher_newp_less_engagement = self.art_data.higher_newp_less_engagement.sample()
+        self.higher_newp_interrupt_factor = 1.5
+        self.prob_clinic_unaware_interrupt = self.art_data.prob_clinic_unaware_interrupt.sample()
+
+        self.sw_art_disadvantage = self.art_data.sw_art_disadvantage.sample()
+        self.sw_interrupt_factor = self.art_data.sw_interrupt_factor.sample() if self.sw_art_disadvantage else 1
+        self.sw_adherence_factor = self.art_data.sw_adherence_factor.sample() if self.sw_art_disadvantage else 1
+        self.sw_loss_diagnosis_factor = self.art_data.sw_loss_diagnosis_factor.sample() if self.sw_art_disadvantage else 1
+
     def init_ART_columns(self):
         self.pop.init_variable(col.DATE_START_ART, None)
         self.pop.init_variable(col.CLINIC_VISIT, False)
         self.pop.init_variable(col.ART_NAIVE, True, 1)
-        self.pop.init_variable(col.ON_ART, False, n_prev_steps=1)
+        self.pop.init_variable(col.ON_ART, False, dt=1)
         self.pop.init_variable(col.ART_REGIMEN_OPT, 0)
         self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
         self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
@@ -179,9 +199,14 @@ class ARTModule:
         self.pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
         self.pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
         self.pop.init_variable(col.CD4_MEASUREMENT, None, 2)
-        self.pop.init_variable(col.ART_INTERRUPT, False)
+        self.pop.init_variable(col.ART_INTERRUPT, 0)
         self.pop.init_variable(col.ART_STOP_TOXICITY, False)
-        self.pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
+        self.pop.init_variable(col.ART_ADHERENCE, 0, dt=1)
+        self.pop.init_variable(col.CURRENT_TOXICITY, False, dt=1)
+        self.pop.init_variable(col.INJECTION_SITE_REACTION, False, dt=1)
+        self.pop.init_variable(col.TIME_ON_ART, 0)
+        self.pop.init_variable(col.SW_INTERRUPT_FACTOR, self.sw_interrupt_factor)
+        self.pop.init_variable(col.CLINIC_UNAWARE_INTERRUPT, False)
 
     def init_strategies(self):
         self.pop.init_variable(
@@ -194,14 +219,14 @@ class ARTModule:
             col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_clinical
         )
 
-    def update_strategies(self, current_date: date):
+    def update_strategies(self, current_date: Date):
         """Update strategies for HIV monitoring, ART initiation, and ART monitoring
         for all members of the population"""
 
         def apply_initiation_strategy(
             art_strategy: ArtInitiationStrategy,
-            start_date: date,
-            end_date: date,
+            start_date: Date,
+            end_date: Date,
             hiv_strategy=None,
         ):
             if (start_date <= current_date) and (
@@ -221,31 +246,31 @@ class ARTModule:
 
         apply_initiation_strategy(
             ArtInitiationStrategy.cd4_lt_200_who4,
-            date(2008, 1, 1),
-            date(2011, 6, 1),
+            Date(2008, 1, 1),
+            Date(2011, 6, 1),
             HivMonitoringStrategy.cd4_6_monthly,
         )
 
         apply_initiation_strategy(
             ArtInitiationStrategy.cd4_lt_350_pregnant,
-            date(2011, 6, 1),
-            date(2014, 1, 1),
+            Date(2011, 6, 1),
+            Date(2014, 1, 1),
         )
 
         apply_initiation_strategy(
             ArtInitiationStrategy.cd4_lt_500_pregnant,
-            date(2014, 1, 1),
-            date(2016, 6, 1),
+            Date(2014, 1, 1),
+            Date(2016, 6, 1),
         )
 
         apply_initiation_strategy(
             ArtInitiationStrategy.all_hiv_diagnosed,
-            date(2016, 6, 1),
+            Date(2016, 6, 1),
             None,
             HivMonitoringStrategy.presence_tb_who4,
         )
 
-        if current_date >= date(2016, 3, 1):
+        if current_date >= Date(2016, 3, 1):
             self.pop.set_present_variable(
                 col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.vl_monitor_who
             )
@@ -256,12 +281,12 @@ class ARTModule:
             if self.poc_vl_monitoring:
                 self.vm_format = VmFormat.whb_poc
 
-        if (current_date >= date(2016, 6, 1)) and self.cd4_monitoring:
+        if (current_date >= Date(2016, 6, 1)) and self.cd4_monitoring:
             self.pop.set_present_variable(
                 col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_cd4_monitor
             )
 
-        if current_date >= date(2026, 1, 1):
+        if current_date >= Date(2026, 1, 1):
             people_on_cab_len = pop.get_sub_pop(
                 OR(COND(col.ON_CAB, op.eq, True), COND(col.ON_LEN, op.eq, True))
             )
@@ -274,7 +299,7 @@ class ARTModule:
         # Changes in ART converage and oral PrEP coverage after year of intervention
         # only happens once
         # FIXME: what if the timestep doesn't divide the year exactly so we don't fulfil this equality?
-        if current_date == date(self.pop.policy_intervention_year, 1, 1):
+        if current_date == Date(self.pop.policy_intervention_year, 1, 1):
             if self.lower_future_art_coverage:
                 self.pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
                 self.pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
@@ -288,11 +313,11 @@ class ARTModule:
                 self.pop.scale_present_variable(col.PROB_ART_INIT, 0.8)
                 self.pop.scale_present_variable(col.PROB_RETURN_ADC, 0.8)
 
-    def update_regimens(self, current_date: date):
-        if date(2019, 6, 1) <= current_date <= date(2021, 1, 1):
+    def update_regimens(self, current_date: Date):
+        if Date(2019, 6, 1) <= current_date <= Date(2021, 1, 1):
             self.pop.set_present_variable(col.ART_REGIMEN_OPT, 120)
 
-        if current_date >= date(2021, 1, 1):
+        if current_date >= Date(2021, 1, 1):
             self.pop.set_present_variable(col.ART_REGIMEN_OPT, 125)
 
         flr_1 = self.pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 107))
@@ -336,8 +361,8 @@ class ARTModule:
         absence_vl_pop = self.pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
         self.pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
 
-    def measure_CD4(self, current_date: date):
-        subpop = pop.get_sub_pop(
+    def measure_CD4(self, current_date: Date):
+        subpop = self.pop.get_sub_pop(
             AND(
                 COND(col.HIV_MONITORING_STRATEGY, op.eq, 2),
                 COND(col.HIV_STATUS, op.eq, True),
@@ -346,7 +371,7 @@ class ARTModule:
                 COND(
                     col.DATE_LAST_CD4_MEASURE,
                     lambda t, dt: (t is None) or (current_date - t) > dt,
-                    timedelta(months=3),
+                    TimeDelta(months=3),
                 ),
             )
         )
@@ -361,7 +386,7 @@ class ARTModule:
         self.pop.set_present_variable(col.CD4_MEASUREMENT, cd4_measured, measured)
         self.pop.set_present_variable(col.DATE_LAST_CD4_MEASURE, current_date, measured)
 
-    def initiate_ART(self, current_date: date):
+    def initiate_ART(self, current_date: Date):
         hiv_pos_never_art = self.pop.get_sub_pop(
             AND(
                 COND(col.HIV_STATUS, op.eq, True), COND(col.DATE_START_ART, op.eq, None)
@@ -375,7 +400,7 @@ class ARTModule:
             recent_tb = (
                 True
                 if (person[col.TB_INFECTION_DATE] is not None)
-                and (person.col[col.TB_INFECTION_DATE] < timedelta(months=6))
+                and (person.col[col.TB_INFECTION_DATE] < TimeDelta(months=6))
                 else False
             )
 
@@ -452,13 +477,52 @@ class ARTModule:
 
     def ART_interruption(self):
         # reset any interruption data
-        self.pop.set_present_variable(col.ART_INTERRUPT, False)
+        self.pop.set_present_variable(col.ART_INTERRUPT, Interrupts.Not)
 
         # Interruption due to "choice" as opposed to drug toxicity
-        # prev_on_art = pop.get_correct_column(col.ON_ART, dt=1)
-        # not_toxicity = pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
-        #                                   COND(col.ART_STOP_TOXICITY, op.eq, False),
-        #                                   COND(prev_on_art, op.eq, True)))
+        not_toxicity = self.pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
+                                          COND(col.ART_STOP_TOXICITY, op.eq, False),
+                                          COND(past(col.ON_ART, dt=1), op.eq, True)))
+        def stop_by_choice(person):
+            prev_adherence = person[past(col.ART_ADHERENCE, dt=1)]
+            recent_len = (person[col.PREP_TYPE] == PrEPType.Lenacapavir and person[col.LAST_PREP_USE_DATE] > (self.pop.date - TimeDelta(months=5)))
+            prev_toxicity = person[past(col.CURRENT_TOXICITY, dt=1)]
+
+            prob_interrupt = self.prob_interrupt_choice
+            if not recent_len:
+                if (0.5 <= prev_adherence < 0.8):
+                    prob_interrupt *= 1.5
+                elif (prev_adherence < 0.5):
+                    prob_interrupt *= 2
+            
+            if prev_toxicity: prob_interrupt *= self.toxicity_interrupt_factor
+
+            if person[col.ON_LEN]:
+                prob_interrupt *= self.lencab_interrupt_factor
+                if person[col.INJECTION_SITE_REACTION]: prob_interrupt *= 1.1
+            
+            if person[col.PREGNANT]: prob_interrupt *= 0.01
+
+            if person[col.TIME_ON_ART] > 0.25: prob_interrupt *= 0.5            
+
+            if person[col.SEX_WORKER]: prob_interrupt = min(1, prob_interrupt*person[col.SW_INTERRUPT_FACTOR])
+
+            if person[col.ART_MONITORING_STRATEGY]==150 and self.vm_format in [3,4]:
+                prob_interrupt *= self.vl_monitoring_interrupt_factor
+            
+            if self.higher_newp_less_engagement:
+                prob_interrupt *= self.higher_newp_interrupt_factor
+
+            if rng.uniform() < prob_interrupt:
+                person[col.ART_INTERRUPT] = Interrupts.Choice
+                person[col.CLINIC_UNAWARE_INTERRUPT] = (rng.uniform() < self.prob_clinic_unaware_interrupt)
+        
+        self.pop.apply_function(stop_by_choice, not_toxicity)
+
+        # interruption due to interruption of drug supply
+        
+
+        # interruption of prep prior to diagnosis (should this be elsewhere?)
 
 
 #

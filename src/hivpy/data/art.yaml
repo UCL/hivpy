@@ -60,3 +60,36 @@ rate_return_adc:
 
 rate_return_lencab:
   Value: [0.5, 0.7, 0.9]
+
+toxicity_interrupt_factor:
+  Value: [1.5, 3, 10]
+
+prob_interrupt_choice:
+  Value: [0.001, 0.004, 0.008, 0.012]
+  Probability: [0.3, 0.3, 0.3, 0.1]
+
+lencab_interrupt_factor:
+  Value: [0.5, 0.8, 1.0, 1.25, 2]
+
+sw_art_disadvantage:
+  Value: [False, True]
+  Probability: [0.15, 0.85]
+
+sw_interrupt_factor:
+  Value: [2, 3]
+
+sw_adherence_factor:
+  Value: [0.8, 0.9]
+
+sw_loss_diagnosis_factor:
+  Value: [2, 3]
+
+vl_monitoring_interrupt_factor:
+  Value: [0.7, 0.8, 0.9]
+
+higher_newp_less_engagement:
+  Value: [False, True]
+  Probability: [0.8, 0.2]
+
+prob_clinic_unaware_interrupt:
+  Value: [0.1, 0.3, 0.5, 0.7, 0.9]
