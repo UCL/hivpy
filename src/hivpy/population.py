@@ -49,7 +49,7 @@ class Population:
         self.hiv_testing = HIVTestingModule()
         self.hiv_diagnosis = HIVDiagnosisModule()
         self.prep = PrEPModule()
-        self.art = ARTModule()
+        self.art = ARTModule(self)
         self.HIV_introduced = False
         self._sample_parameters()
         self._create_population_data()
@@ -91,7 +91,7 @@ class Population:
         self.init_variable(col.NP_LAST_TEST, 0)
         self.init_variable(col.STI, False)
 
-        self.art.init_ART_columns(self)
+        self.art.init_ART_columns()
 
         self.sexual_behaviour.init_sex_behaviour(self)
 
@@ -113,8 +113,6 @@ class Population:
         if self.date >= HIV_APPEARANCE and not self.HIV_introduced:
             self.hiv_status.introduce_HIV(self)
             self.HIV_introduced = True
-
-        self.art.init_strategies(self)
 
         self.data = self.data.copy(deep=True)
 

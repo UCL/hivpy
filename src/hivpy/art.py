@@ -112,10 +112,12 @@ class ARTModule:
         ArtInitiationStrategy.all_hiv_diagnosed: 0.4,
     }
 
-    def __init__(self):
+    def __init__(self, pop: Population):
         # set cd4_monitoring
         with importlib.resources.path("hivpy.data", "art.yaml") as data_path:
             self.art_data = ARTData(data_path)
+
+        self.pop = pop  # module has a reference to the population data
 
         self.art_intro_date = 2004
         self.prob_cd4_measure_done = 0.85
@@ -153,46 +155,46 @@ class ARTModule:
             self.art_data.higher_future_prep_oral_coverage.sample()
         )
 
-    def init_ART_columns(self, pop: Population):
-        pop.init_variable(col.DATE_START_ART, None)
-        pop.init_variable(col.CLINIC_VISIT, False)
-        pop.init_variable(col.ART_NAIVE, True, 1)
-        pop.init_variable(col.ON_ART, False, n_prev_steps=1)
-        pop.init_variable(col.ART_REGIMEN_OPT, 0)
-        pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
-        pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
-        pop.init_variable(col.ART_START_DATE, None)
-        self.init_strategies(pop)
-        pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
-        pop.init_variable(col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption)
-        pop.init_variable(col.PROB_LOSS_DIAGNOSIS, self.base_prob_loss_at_diagnosis)
-        pop.init_variable(col.PROB_LOSS_ADC_TB, self.base_prob_loss_adc_tb)
-        pop.init_variable(col.PROB_LOSS_WHO3, self.base_prob_loss_who3)
-        pop.init_variable(col.PROB_LOSS_ART, self.base_prob_lost_ART)
-        pop.init_variable(col.RATE_LOST, self.base_rate_lost)
-        pop.init_variable(col.RATE_RESTART, self.base_rate_restart_ART)
-        pop.init_variable(col.RATE_RETURN, self.base_rate_return)
-        pop.init_variable(col.PROB_ART_INIT, self.base_prob_init_ART)
-        pop.init_variable(col.PROB_RETURN_ADC, self.base_rate_return_adc)
-        pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
-        pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
-        pop.init_variable(col.CD4_MEASUREMENT, None, 2)
-        pop.init_variable(col.ART_INTERRUPT, False)
-        pop.init_variable(col.ART_STOP_TOXICITY, False)
-        pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
+    def init_ART_columns(self):
+        self.pop.init_variable(col.DATE_START_ART, None)
+        self.pop.init_variable(col.CLINIC_VISIT, False)
+        self.pop.init_variable(col.ART_NAIVE, True, 1)
+        self.pop.init_variable(col.ON_ART, False, n_prev_steps=1)
+        self.pop.init_variable(col.ART_REGIMEN_OPT, 0)
+        self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
+        self.pop.init_variable(col.ABSENCE_CD4_YEAR_I, False)
+        self.pop.init_variable(col.ART_START_DATE, None)
+        self.init_strategies()
+        self.pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
+        self.pop.init_variable(col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption)
+        self.pop.init_variable(col.PROB_LOSS_DIAGNOSIS, self.base_prob_loss_at_diagnosis)
+        self.pop.init_variable(col.PROB_LOSS_ADC_TB, self.base_prob_loss_adc_tb)
+        self.pop.init_variable(col.PROB_LOSS_WHO3, self.base_prob_loss_who3)
+        self.pop.init_variable(col.PROB_LOSS_ART, self.base_prob_lost_ART)
+        self.pop.init_variable(col.RATE_LOST, self.base_rate_lost)
+        self.pop.init_variable(col.RATE_RESTART, self.base_rate_restart_ART)
+        self.pop.init_variable(col.RATE_RETURN, self.base_rate_return)
+        self.pop.init_variable(col.PROB_ART_INIT, self.base_prob_init_ART)
+        self.pop.init_variable(col.PROB_RETURN_ADC, self.base_rate_return_adc)
+        self.pop.init_variable(col.PROB_SWITCH_LINE, self.base_prob_switch_line)
+        self.pop.init_variable(col.PROB_VL_MEASURE, self.prob_vl_measurement_done)
+        self.pop.init_variable(col.CD4_MEASUREMENT, None, 2)
+        self.pop.init_variable(col.ART_INTERRUPT, False)
+        self.pop.init_variable(col.ART_STOP_TOXICITY, False)
+        self.pop.init_variable(col.ART_ADHERENCE, 0, n_prev_steps=1)
 
-    def init_strategies(self, pop: Population):
-        pop.init_variable(
+    def init_strategies(self):
+        self.pop.init_variable(
             col.HIV_MONITORING_STRATEGY, HivMonitoringStrategy.presence_tb_who4
         )
-        pop.init_variable(
+        self.pop.init_variable(
             col.ART_INITIATION_STRATEGY, ArtInitiationStrategy.all_tb_who4
         )
-        pop.init_variable(
+        self.pop.init_variable(
             col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_clinical
         )
 
-    def update_strategies(self, current_date: date, pop: Population):
+    def update_strategies(self, current_date: date):
         """Update strategies for HIV monitoring, ART initiation, and ART monitoring
         for all members of the population"""
 
@@ -205,15 +207,15 @@ class ARTModule:
             if (start_date <= current_date) and (
                 (end_date is not None) and (current_date < end_date)
             ):
-                r = rng.uniform(size=pop.size)
-                new_strategy = pop.apply_bool_mask(
+                r = rng.uniform(size=self.pop.size)
+                new_strategy = self.pop.apply_bool_mask(
                     r < self.rate_change_art_init_strategy[art_strategy]
                 )
-                pop.set_present_variable(
+                self.pop.set_present_variable(
                     col.ART_INITIATION_STRATEGY, art_strategy, new_strategy
                 )
                 if hiv_strategy is not None:
-                    pop.set_present_variable(
+                    self.pop.set_present_variable(
                         col.HIV_MONITORING_STRATEGY, hiv_strategy, new_strategy
                     )
 
@@ -244,7 +246,7 @@ class ARTModule:
         )
 
         if current_date >= date(2016, 3, 1):
-            pop.set_present_variable(
+            self.pop.set_present_variable(
                 col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.vl_monitor_who
             )
             self.vm_format = VmFormat.whb_lab
@@ -255,7 +257,7 @@ class ARTModule:
                 self.vm_format = VmFormat.whb_poc
 
         if (current_date >= date(2016, 6, 1)) and self.cd4_monitoring:
-            pop.set_present_variable(
+            self.pop.set_present_variable(
                 col.ART_MONITORING_STRATEGY, ArtMonitoringStrategy.only_cd4_monitor
             )
 
@@ -263,7 +265,7 @@ class ARTModule:
             people_on_cab_len = pop.get_sub_pop(
                 OR(COND(col.ON_CAB, op.eq, True), COND(col.ON_LEN, op.eq, True))
             )
-            pop.set_present_variable(
+            self.pop.set_present_variable(
                 col.ART_MONITORING_STRATEGY,
                 ArtMonitoringStrategy.on_len_cab,
                 people_on_cab_len,
@@ -272,45 +274,45 @@ class ARTModule:
         # Changes in ART converage and oral PrEP coverage after year of intervention
         # only happens once
         # FIXME: what if the timestep doesn't divide the year exactly so we don't fulfil this equality?
-        if current_date == date(pop.policy_intervention_year, 1, 1):
+        if current_date == date(self.pop.policy_intervention_year, 1, 1):
             if self.lower_future_art_coverage:
-                pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
-                pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
-                pop.scale_present_variable(col.PROB_LOSS_ADC_TB, 1.25)
-                pop.scale_present_variable(col.PROB_LOSS_WHO3, 1.25)
-                pop.scale_present_variable(col.PROB_LOSS_ART, 1.25)
-                pop.scale_present_variable(col.RATE_LOST, 1.25)
+                self.pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
+                self.pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
+                self.pop.scale_present_variable(col.PROB_LOSS_ADC_TB, 1.25)
+                self.pop.scale_present_variable(col.PROB_LOSS_WHO3, 1.25)
+                self.pop.scale_present_variable(col.PROB_LOSS_ART, 1.25)
+                self.pop.scale_present_variable(col.RATE_LOST, 1.25)
 
-                pop.scale_present_variable(col.RATE_RESTART, 0.8)
-                pop.scale_present_variable(col.RATE_RETURN, 0.8)
-                pop.scale_present_variable(col.PROB_ART_INIT, 0.8)
-                pop.scale_present_variable(col.PROB_RETURN_ADC, 0.8)
+                self.pop.scale_present_variable(col.RATE_RESTART, 0.8)
+                self.pop.scale_present_variable(col.RATE_RETURN, 0.8)
+                self.pop.scale_present_variable(col.PROB_ART_INIT, 0.8)
+                self.pop.scale_present_variable(col.PROB_RETURN_ADC, 0.8)
 
-    def update_regimens(self, current_date: date, pop: Population):
+    def update_regimens(self, current_date: date):
         if date(2019, 6, 1) <= current_date <= date(2021, 1, 1):
-            pop.set_present_variable(col.ART_REGIMEN_OPT, 120)
+            self.pop.set_present_variable(col.ART_REGIMEN_OPT, 120)
 
         if current_date >= date(2021, 1, 1):
-            pop.set_present_variable(col.ART_REGIMEN_OPT, 125)
+            self.pop.set_present_variable(col.ART_REGIMEN_OPT, 125)
 
-        flr_1 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 107))
-        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 1, flr_1)
+        flr_1 = self.pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 107))
+        self.pop.set_present_variable(col.FIRST_LINE_REGIMEN, 1, flr_1)
 
-        flr_2 = pop.get_sub_pop(
+        flr_2 = self.pop.get_sub_pop(
             COND(
                 col.ART_REGIMEN_OPT,
                 is_in,
                 [102, 103, 104, 105, 106, 113, 115, 116, 117, 118, 119, 120, 121, 125],
             )
         )
-        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 2, flr_2)
+        self.pop.set_present_variable(col.FIRST_LINE_REGIMEN, 2, flr_2)
 
-        flr_3 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 130))
-        pop.set_present_variable(col.FIRST_LINE_REGIMEN, 3, flr_3)
+        flr_3 = self.pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 130))
+        self.pop.set_present_variable(col.FIRST_LINE_REGIMEN, 3, flr_3)
 
-        reg_108 = pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 108))
-        pop.set_present_variable(col.PROB_SWITCH_LINE, 0.85, reg_108)
-        pop.set_present_variable(col.PROB_VL_MEASURE, 0.85, reg_108)
+        reg_108 = self.pop.get_sub_pop(COND(col.ART_REGIMEN_OPT, op.eq, 108))
+        self.pop.set_present_variable(col.PROB_SWITCH_LINE, 0.85, reg_108)
+        self.pop.set_present_variable(col.PROB_VL_MEASURE, 0.85, reg_108)
 
         def set_absence_vl_strategy_by_regim(person):
             art_reg = person[col.ART_REGIMEN_OPT]
@@ -331,10 +333,10 @@ class ARTModule:
 
             person[col.ART_MONITORING_STRATEGY] = monitoring_strategy
 
-        absence_vl_pop = pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
-        pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
+        absence_vl_pop = self.pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
+        self.pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
 
-    def measure_CD4(self, current_date: date, pop: Population):
+    def measure_CD4(self, current_date: date):
         subpop = pop.get_sub_pop(
             AND(
                 COND(col.HIV_MONITORING_STRATEGY, op.eq, 2),
@@ -348,19 +350,19 @@ class ARTModule:
                 ),
             )
         )
-        measured = pop.apply_bool_mask(
+        measured = self.pop.apply_bool_mask(
             rng.uniform(size=len(subpop)) < self.prob_cd4_measure_done, subpop
         )
         n_measured = len(measured)
-        cd4s = pop.get_variable(col.CD4, measured)
+        cd4s = self.pop.get_variable(col.CD4, measured)
         cd4_measured = (
             np.sqrt(cd4s) + rng.normal(0, self.sigma_measured_cd4, size=n_measured)
         ) ** 2
-        pop.set_present_variable(col.CD4_MEASUREMENT, cd4_measured, measured)
-        pop.set_present_variable(col.DATE_LAST_CD4_MEASURE, current_date, measured)
+        self.pop.set_present_variable(col.CD4_MEASUREMENT, cd4_measured, measured)
+        self.pop.set_present_variable(col.DATE_LAST_CD4_MEASURE, current_date, measured)
 
-    def initiate_ART(self, current_date: date, pop: Population):
-        hiv_pos_never_art = pop.get_sub_pop(
+    def initiate_ART(self, current_date: date):
+        hiv_pos_never_art = self.pop.get_sub_pop(
             AND(
                 COND(col.HIV_STATUS, op.eq, True), COND(col.DATE_START_ART, op.eq, None)
             )
@@ -383,7 +385,7 @@ class ARTModule:
 
             def check_cd4_measurements(limit):
                 for dt in range(3):
-                    cd4_column = pop.get_correct_column(col.CD4_MEASUREMENT, dt)
+                    cd4_column = self.pop.get_correct_column(col.CD4_MEASUREMENT, dt)
                     cd4_measurement = person[cd4_column]
                     if cd4_measurement is not None and cd4_measurement < limit:
                         return True
@@ -446,11 +448,11 @@ class ARTModule:
                     ):
                         probabilistically_set_ART_init()
 
-        pop.apply_function(init_art, sub_pop=hiv_pos_never_art)
+        self.pop.apply_function(init_art, sub_pop=hiv_pos_never_art)
 
-    def ART_interruption(self, pop: Population):
+    def ART_interruption(self):
         # reset any interruption data
-        pop.set_present_variable(col.ART_INTERRUPT, False)
+        self.pop.set_present_variable(col.ART_INTERRUPT, False)
 
         # Interruption due to "choice" as opposed to drug toxicity
         # prev_on_art = pop.get_correct_column(col.ON_ART, dt=1)
