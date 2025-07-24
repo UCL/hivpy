@@ -180,6 +180,7 @@ class ARTModule:
             self.art_data.prob_clinic_unaware_interrupt.sample()
         )
         self.prob_supply_interrupt = 0.003
+        self.prob_supply_resumed = 0.8
 
         self.sw_art_disadvantage = self.art_data.sw_art_disadvantage.sample()
         self.sw_interrupt_factor = (
@@ -269,6 +270,7 @@ class ARTModule:
         self.pop.init_variable(col.CLINIC_UNAWARE_INTERRUPT, False)
         self.pop.init_variable(col.LOST, False)
         self.pop.init_variable(col.CLINIC_RETURN, False)
+        self.pop.init_variable(col.ART_RESTART, False)
 
     def init_adherences(self):
         self.pop.init_variable(col.ART_ADHERENCE, 0, dt=2)
@@ -661,3 +663,53 @@ class ARTModule:
             self.pop.set_present_variable(col.LOST, True, lost)
             self.pop.set_present_variable(col.CLINIC_VISIT, False, lost)
             self.pop.set_present_variable(col.CLINIC_RETURN, False, lost)
+
+    def ART_reinitiation(self):
+        self.pop.set_present_variable(col.ART_RESTART, False)
+
+        def restart_ART(person):
+            person[col.ART_RESTART] = True
+            person[col.ON_ART] = True
+            person[col.TIME_ON_ART] = 0
+            person[col.ART_INTERRUPT] = 0
+
+        # after interruption due to choice
+        choice_interrupts = self.pop.get_sub_pop(
+            AND(
+                COND(col.ART_INTERRUPT, op.eq, Interrupts.Choice),
+                COND(col.LOST, op.eq, False),
+                COND(col.CLINIC_VISIT, op.eq, True),
+                COND(col.ON_ART, op.eq, False),
+            )
+        )
+
+        def restart_after_choice_interrupt(person):
+            prob_restart = self.base_rate_restart_ART
+            if person[col.EVER_NON_TB_WHO3]:
+                prob_restart *= 3
+            if person[col.ADC]:  # this should still be set from the previous timestep
+                prob_restart *= 5
+            if person[col.PREGNANT]:
+                prob_restart *= 3
+            if person[col.CLINIC_RETURN]:
+                prob_restart = 1
+
+            if rng.uniform() < prob_restart:
+                restart_ART(person)
+
+        self.pop.apply_function(restart_after_choice_interrupt, choice_interrupts)
+
+        supply_interrupts = self.pop.get_sub_pop(
+            AND(
+                COND(col.ART_INTERRUPT, op.eq, Interrupts.Supply),
+                COND(col.CLINIC_VISIT, op.eq, True),
+                COND(col.ON_ART, op.eq, False),
+            )
+        )
+
+        supply_restarted = (
+            rng.uniform(size=len(supply_interrupts)) < self.prob_supply_resumed
+        )
+        self.pop.apply_function(
+            restart_ART, self.pop.apply_bool_mask(supply_restarted, supply_interrupts)
+        )

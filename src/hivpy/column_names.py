@@ -103,6 +103,7 @@ WHO4_OTHER = "who4_other"                       # bool: True if other WHO4 disea
 WHO4_OTHER_DIAGNOSED = "who4_other_diagnosed"   # bool: True if other WHO4 disease diagnosed this timestep
 ADC = "AIDS_defining_condition"                 # bool: presence of AIDS defining condition (any WHO4) in current time step
 EVER_WHO4 = "ever_WHO4"                         # bool: True if a person has ever had a WHO4 condition, even if they do not currently
+EVER_NON_TB_WHO3 = "ever_non_tb_who3"           # bool: True if a person has ever had a non-tb who3 condition
 
 R_PREP = "r_prep"                               # float: a semi-permanent random personal variable that determines whether someone is risk informed or suspects they are at risk enough to take PrEP
 PREP_ORAL_PREF = "prep_oral_pref"               # float: a value that determines and individual's preference for oral PrEP
@@ -156,6 +157,7 @@ ART_ADHERENCE = "art_adherence"                 # float: percentage of ART intak
 RESISTANCE_INDEX = "resistance_index"           # float: an index used to identify an individual's resistance profile for various calculations
 TIME_OFF_ART = "time_off_art"                   # time: time since stopping ART (if not currently on ART)
 ART_INTERRUPT = "art_interrupt"                 # ART.Interrupts: 0 if no interrupt; >0 for interrupted. 1, 2, 3 for choice, supply, and toxicity.
+ART_RESTART = "art_restart"                     # bool: True if restarting ART in this time step
 ART_STOP_TOXICITY = "art_stop_toxicity"         # bool: True if choosing to stop due to ART side effects
 CURRENT_TOXICITY = "current_toxicity"           # bool: True if currently experiencing symptoms of drug toxicity
 INJECTION_SITE_REACTION = "injection_site_reaction"     # bool: True if there is an ISR this timestep

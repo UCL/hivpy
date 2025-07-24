@@ -148,6 +148,7 @@ class HIVStatusModule:
         population.init_variable(col.TB_INITIAL_INFECTION, False)
         population.init_variable(col.ADC, False)
         population.init_variable(col.EVER_WHO4, False)
+        population.init_variable(col.EVER_NON_TB_WHO3, False)
         population.init_variable(col.C_MENINGITIS, False)
         population.init_variable(col.C_MENINGITIS_DIAGNOSED, False)
         population.init_variable(col.SBI, False)
@@ -905,6 +906,7 @@ class HIVStatusModule:
         r_non_tb = rng.uniform(size=len(HIV_pos))
         who3_disease = r_non_tb < non_tb_who3_per_timestep
         pop.set_present_variable(col.NON_TB_WHO3, who3_disease, HIV_pos)
+        pop.set_present_variable(col.EVER_NON_TB_WHO3, True, pop.apply_bool_mask(who3_disease, HIV_pos))
 
         # TB WHO3
         (tb, _) = disease_and_diagnosis(col.TB, col.TB_DIAGNOSED, tb_rate, self.tb_base_diagnosis_prob)
