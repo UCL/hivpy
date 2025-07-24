@@ -198,10 +198,28 @@ class ARTModule:
             else 1
         )
 
-        self.ARVs = ["zdv", "3tc", "ten", "nev", "dar", "efa", "lpr", "taz", "dol", "cab", "len", "ole", "isl"]
-        self.selected_art_adherence_pattern = self.art_data.selected_art_adherence_pattern.sample()
-        self.adherence_pattern = self.art_data.art_adherence_patterns[self.selected_art_adherence_pattern]
-    
+        self.ARVs = [
+            "zdv",
+            "3tc",
+            "ten",
+            "nev",
+            "dar",
+            "efa",
+            "lpr",
+            "taz",
+            "dol",
+            "cab",
+            "len",
+            "ole",
+            "isl",
+        ]
+        self.selected_art_adherence_pattern = (
+            self.art_data.selected_art_adherence_pattern.sample()
+        )
+        self.adherence_pattern = self.art_data.art_adherence_patterns[
+            self.selected_art_adherence_pattern
+        ]
+
     def on_drug(self, name):
         return "on_" + name
 
@@ -242,14 +260,23 @@ class ARTModule:
         self.pop.init_variable(col.CD4_MEASUREMENT, None, 2)
         self.pop.init_variable(col.ART_INTERRUPT, 0)
         self.pop.init_variable(col.ART_STOP_TOXICITY, False)
-        self.pop.init_variable(col.ART_ADHERENCE, 0, dt=2)
-        self.pop.init_variable(col.ART_ADHERENCE_MEAN, 0)
-        self.pop.init_variable(col.ART_ADHERENCE_STDEV, 0)
+        self.init_adherences()
+
         self.pop.init_variable(col.CURRENT_TOXICITY, False, dt=1)
         self.pop.init_variable(col.INJECTION_SITE_REACTION, False, dt=1)
         self.pop.init_variable(col.TIME_ON_ART, 0)
         self.pop.init_variable(col.SW_INTERRUPT_FACTOR, self.sw_interrupt_factor)
         self.pop.init_variable(col.CLINIC_UNAWARE_INTERRUPT, False)
+        self.pop.init_variable(col.LOST, False)
+        self.pop.init_variable(col.CLINIC_RETURN, False)
+
+    def init_adherences(self):
+        self.pop.init_variable(col.ART_ADHERENCE, 0, dt=2)
+        adherences = self.adherence_pattern.sample(size=self.pop.size)
+        self.pop.init_variable(col.ART_ADHERENCE_MEAN, [x["Mean"] for x in adherences])
+        self.pop.init_variable(
+            col.ART_ADHERENCE_STDEV, [x["StdDev"] for x in adherences]
+        )
 
     def init_arv_drugs(self):
         """
@@ -339,7 +366,7 @@ class ARTModule:
             )
 
         if current_date >= Date(2026, 1, 1):
-            people_on_cab_len = pop.get_sub_pop(
+            people_on_cab_len = self.pop.get_sub_pop(
                 OR(COND(col.ON_CAB, op.eq, True), COND(col.ON_LEN, op.eq, True))
             )
             self.pop.set_present_variable(
@@ -610,8 +637,27 @@ class ARTModule:
         # Update drug usage due to interrupt
         interrupts = self.pop.get_sub_pop(COND(col.ART_INTERRUPT, op.gt, 0))
         for drug in self.ARVs:
-            interrupts_on_drug = self.pop.get_sub_pop_intersection(interrupts, self.pop.get_sub_pop(COND(self.on_drug(drug), op.eq, True)))
-            self.pop.set_present_variable(self.recent_drug(drug), True, interrupts_on_drug)
-            self.pop.set_present_variable(self.time_since_drug(drug), 0, interrupts_on_drug)
+            interrupts_on_drug = self.pop.get_sub_pop_intersection(
+                interrupts, self.pop.get_sub_pop(COND(self.on_drug(drug), op.eq, True))
+            )
+            self.pop.set_present_variable(
+                self.recent_drug(drug), True, interrupts_on_drug
+            )
+            self.pop.set_present_variable(
+                self.time_since_drug(drug), 0, interrupts_on_drug
+            )
             self.pop.set_present_variable(self.on_drug(drug), False, interrupts_on_drug)
 
+        # people lost to clinic after interrupting
+        average_adh = self.pop.get_variable(col.ART_ADHERENCE_MEAN, interrupts)
+        adherence_groups = np.digitize(average_adh, [0.5, 0.8])
+        loss_probabilties = self.base_prob_lost_ART * np.array([1, 1.5, 2])
+        for i in range(3):
+            adh_group = adherence_groups == i  # find people in this adherence group
+            num_people = sum(adh_group)
+            lost = self.pop.apply_bool_mask(
+                rng.uniform(size=num_people) < loss_probabilties[i], interrupts
+            )
+            self.pop.set_present_variable(col.LOST, True, lost)
+            self.pop.set_present_variable(col.CLINIC_VISIT, False, lost)
+            self.pop.set_present_variable(col.CLINIC_RETURN, False, lost)
