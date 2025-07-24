@@ -7,7 +7,7 @@ import hivpy.column_names as col
 
 from .art import ARTModule
 from .circumcision import CircumcisionModule
-from .common import LogicExpr, Date, TimeDelta, past
+from .common import Date, LogicExpr, TimeDelta, past
 from .demographics import DemographicsModule
 from .hiv_diagnosis import HIVDiagnosisModule
 from .hiv_status import HIVStatusModule

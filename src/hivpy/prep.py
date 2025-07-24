@@ -13,7 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, Date, rng, TimeDelta
+from .common import AND, COND, OR, Date, SexType, TimeDelta, rng
 from .prep_data import PrEPData
 
 

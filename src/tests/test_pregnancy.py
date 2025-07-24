@@ -4,7 +4,7 @@ from math import ceil, isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, Date, diff_years, rng, TimeDelta
+from hivpy.common import Date, SexType, TimeDelta, diff_years, rng
 from hivpy.population import Population
 from hivpy.resistance_mutations import MutationStatus
 

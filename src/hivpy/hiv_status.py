@@ -13,8 +13,8 @@ import pandas as pd
 import hivpy.column_names as col
 
 from . import output
-from .common import (AND, COND, SexType, opposite_sex, rng, safe_ratio,
-                     TimeDelta)
+from .common import (AND, COND, SexType, TimeDelta, opposite_sex, rng,
+                     safe_ratio)
 
 
 class HIVStatusModule:

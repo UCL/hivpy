@@ -13,7 +13,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import AND, COND, SexType, Date, diff_years, rng, TimeDelta
+from .common import AND, COND, Date, SexType, TimeDelta, diff_years, rng
 
 
 class CircumcisionModule:

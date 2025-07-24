@@ -13,7 +13,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import COND, SexType, rng, TimeDelta
+from .common import COND, SexType, TimeDelta, rng
 from .resistance_mutations_data import ResistanceMutationsData
 
 

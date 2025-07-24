@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 import hivpy.column_names as col
-from hivpy.common import AND, COND, SexType, Date, rng, seedManager, TimeDelta
+from hivpy.common import AND, COND, Date, SexType, TimeDelta, rng, seedManager
 from hivpy.population import Population
 from hivpy.sexual_behaviour import (SexBehaviourClass, SexBehaviours,
                                     SexualBehaviourModule)

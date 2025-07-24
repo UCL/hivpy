@@ -15,7 +15,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, TimeDelta
+from hivpy.common import SexType, TimeDelta, rng
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 

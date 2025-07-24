@@ -10,7 +10,7 @@ import operator as op
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, float_to_date, rng, TimeDelta
+from .common import AND, COND, OR, TimeDelta, float_to_date, rng
 from .hiv_testing_data import HIVTestingData
 
 

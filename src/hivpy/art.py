@@ -14,7 +14,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .art_data import ARTData
-from .common import AND, COND, OR, Date, is_in, rng, TimeDelta, past
+from .common import AND, COND, OR, Date, TimeDelta, is_in, past, rng
 from .prep import PrEPType
 
 
@@ -94,11 +94,13 @@ class ARV(Enum):
     dolutegravir = 9
     cabotegravir = 10  # long acting PrEP
 
+
 class Interrupts(Enum):
     Not = 0
     Choice = 1
     Supply = 2
     Toxicity = 3
+
 
 class ARTModule:
     vm_format = VmFormat.whb_lab  # TODO: check correct initial value?
@@ -161,19 +163,39 @@ class ARTModule:
             self.art_data.higher_future_prep_oral_coverage.sample()
         )
 
-        #interrupt
-        self.toxicity_interrupt_factor = self.art_data.toxicity_interrupt_factor.sample()
+        # interrupt
+        self.toxicity_interrupt_factor = (
+            self.art_data.toxicity_interrupt_factor.sample()
+        )
         self.prob_interrupt_choice = self.art_data.prob_interrupt_choice.sample()
         self.lencab_interrupt_factor = self.art_data.lencab_interrupt_factor.sample()
-        self.vl_monitoring_interrupt_factor = self.art_data.vl_monitoring_interrupt_factor.sample()
-        self.higher_newp_less_engagement = self.art_data.higher_newp_less_engagement.sample()
+        self.vl_monitoring_interrupt_factor = (
+            self.art_data.vl_monitoring_interrupt_factor.sample()
+        )
+        self.higher_newp_less_engagement = (
+            self.art_data.higher_newp_less_engagement.sample()
+        )
         self.higher_newp_interrupt_factor = 1.5
-        self.prob_clinic_unaware_interrupt = self.art_data.prob_clinic_unaware_interrupt.sample()
+        self.prob_clinic_unaware_interrupt = (
+            self.art_data.prob_clinic_unaware_interrupt.sample()
+        )
 
         self.sw_art_disadvantage = self.art_data.sw_art_disadvantage.sample()
-        self.sw_interrupt_factor = self.art_data.sw_interrupt_factor.sample() if self.sw_art_disadvantage else 1
-        self.sw_adherence_factor = self.art_data.sw_adherence_factor.sample() if self.sw_art_disadvantage else 1
-        self.sw_loss_diagnosis_factor = self.art_data.sw_loss_diagnosis_factor.sample() if self.sw_art_disadvantage else 1
+        self.sw_interrupt_factor = (
+            self.art_data.sw_interrupt_factor.sample()
+            if self.sw_art_disadvantage
+            else 1
+        )
+        self.sw_adherence_factor = (
+            self.art_data.sw_adherence_factor.sample()
+            if self.sw_art_disadvantage
+            else 1
+        )
+        self.sw_loss_diagnosis_factor = (
+            self.art_data.sw_loss_diagnosis_factor.sample()
+            if self.sw_art_disadvantage
+            else 1
+        )
 
     def init_ART_columns(self):
         self.pop.init_variable(col.DATE_START_ART, None)
@@ -186,8 +208,12 @@ class ARTModule:
         self.pop.init_variable(col.ART_START_DATE, None)
         self.init_strategies()
         self.pop.init_variable(col.FIRST_LINE_REGIMEN, 0)
-        self.pop.init_variable(col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption)
-        self.pop.init_variable(col.PROB_LOSS_DIAGNOSIS, self.base_prob_loss_at_diagnosis)
+        self.pop.init_variable(
+            col.RATE_CHOOSE_INTERRUPTION, self.base_rate_interruption
+        )
+        self.pop.init_variable(
+            col.PROB_LOSS_DIAGNOSIS, self.base_prob_loss_at_diagnosis
+        )
         self.pop.init_variable(col.PROB_LOSS_ADC_TB, self.base_prob_loss_adc_tb)
         self.pop.init_variable(col.PROB_LOSS_WHO3, self.base_prob_loss_who3)
         self.pop.init_variable(col.PROB_LOSS_ART, self.base_prob_lost_ART)
@@ -359,7 +385,9 @@ class ARTModule:
             person[col.ART_MONITORING_STRATEGY] = monitoring_strategy
 
         absence_vl_pop = self.pop.get_sub_pop(COND(col.ABSENCE_VL_YEAR_I, op.eq, True))
-        self.pop.apply_function(set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop)
+        self.pop.apply_function(
+            set_absence_vl_strategy_by_regim, sub_pop=absence_vl_pop
+        )
 
     def measure_CD4(self, current_date: Date):
         subpop = self.pop.get_sub_pop(
@@ -480,47 +508,62 @@ class ARTModule:
         self.pop.set_present_variable(col.ART_INTERRUPT, Interrupts.Not)
 
         # Interruption due to "choice" as opposed to drug toxicity
-        not_toxicity = self.pop.get_sub_pop(AND(COND(col.HIV_STATUS, op.eq, True),
-                                          COND(col.ART_STOP_TOXICITY, op.eq, False),
-                                          COND(past(col.ON_ART, dt=1), op.eq, True)))
+        not_toxicity = self.pop.get_sub_pop(
+            AND(
+                COND(col.HIV_STATUS, op.eq, True),
+                COND(col.ART_STOP_TOXICITY, op.eq, False),
+                COND(past(col.ON_ART, dt=1), op.eq, True),
+            )
+        )
+
         def stop_by_choice(person):
             prev_adherence = person[past(col.ART_ADHERENCE, dt=1)]
-            recent_len = (person[col.PREP_TYPE] == PrEPType.Lenacapavir and person[col.LAST_PREP_USE_DATE] > (self.pop.date - TimeDelta(months=5)))
+            recent_len = person[col.PREP_TYPE] == PrEPType.Lenacapavir and person[
+                col.LAST_PREP_USE_DATE
+            ] > (self.pop.date - TimeDelta(months=5))
             prev_toxicity = person[past(col.CURRENT_TOXICITY, dt=1)]
 
             prob_interrupt = self.prob_interrupt_choice
             if not recent_len:
-                if (0.5 <= prev_adherence < 0.8):
+                if 0.5 <= prev_adherence < 0.8:
                     prob_interrupt *= 1.5
-                elif (prev_adherence < 0.5):
+                elif prev_adherence < 0.5:
                     prob_interrupt *= 2
-            
-            if prev_toxicity: prob_interrupt *= self.toxicity_interrupt_factor
+
+            if prev_toxicity:
+                prob_interrupt *= self.toxicity_interrupt_factor
 
             if person[col.ON_LEN]:
                 prob_interrupt *= self.lencab_interrupt_factor
-                if person[col.INJECTION_SITE_REACTION]: prob_interrupt *= 1.1
-            
-            if person[col.PREGNANT]: prob_interrupt *= 0.01
+                if person[col.INJECTION_SITE_REACTION]:
+                    prob_interrupt *= 1.1
 
-            if person[col.TIME_ON_ART] > 0.25: prob_interrupt *= 0.5            
+            if person[col.PREGNANT]:
+                prob_interrupt *= 0.01
 
-            if person[col.SEX_WORKER]: prob_interrupt = min(1, prob_interrupt*person[col.SW_INTERRUPT_FACTOR])
+            if person[col.TIME_ON_ART] > 0.25:
+                prob_interrupt *= 0.5
 
-            if person[col.ART_MONITORING_STRATEGY]==150 and self.vm_format in [3,4]:
+            if person[col.SEX_WORKER]:
+                prob_interrupt = min(
+                    1, prob_interrupt * person[col.SW_INTERRUPT_FACTOR]
+                )
+
+            if person[col.ART_MONITORING_STRATEGY] == 150 and self.vm_format in [3, 4]:
                 prob_interrupt *= self.vl_monitoring_interrupt_factor
-            
+
             if self.higher_newp_less_engagement:
                 prob_interrupt *= self.higher_newp_interrupt_factor
 
             if rng.uniform() < prob_interrupt:
                 person[col.ART_INTERRUPT] = Interrupts.Choice
-                person[col.CLINIC_UNAWARE_INTERRUPT] = (rng.uniform() < self.prob_clinic_unaware_interrupt)
-        
+                person[col.CLINIC_UNAWARE_INTERRUPT] = (
+                    rng.uniform() < self.prob_clinic_unaware_interrupt
+                )
+
         self.pop.apply_function(stop_by_choice, not_toxicity)
 
         # interruption due to interruption of drug supply
-        
 
         # interruption of prep prior to diagnosis (should this be elsewhere?)
 

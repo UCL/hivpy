@@ -6,7 +6,7 @@ import pytest
 import scipy.integrate
 
 import hivpy.column_names as col
-from hivpy.common import SexType, Date, rng, TimeDelta
+from hivpy.common import Date, SexType, TimeDelta, rng
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData

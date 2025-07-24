@@ -10,8 +10,8 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import (AND, COND, SexType, Date, diff_years, opposite_sex, rng,
-                     TimeDelta)
+from .common import (AND, COND, Date, SexType, TimeDelta, diff_years,
+                     opposite_sex, rng)
 from .sex_behaviour_data import SexualBehaviourData
 
 # import warnings

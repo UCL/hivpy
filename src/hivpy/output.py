@@ -10,7 +10,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, Date, TimeDelta
+from .common import Date, SexType, TimeDelta
 from .population import Population
 
 

@@ -1,7 +1,7 @@
 import pytest
 
 from hivpy import SimulationConfig, SimulationException
-from hivpy.common import Date, rng, TimeDelta
+from hivpy.common import Date, TimeDelta, rng
 from hivpy.simulation import SimulationHandler
 
 

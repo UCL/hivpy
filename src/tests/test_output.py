@@ -3,7 +3,7 @@ from math import isclose
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, Date, rng, TimeDelta
+from hivpy.common import Date, SexType, TimeDelta, rng
 from hivpy.output import SimulationOutput
 from hivpy.population import Population
 

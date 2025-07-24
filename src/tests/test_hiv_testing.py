@@ -4,7 +4,7 @@ from math import isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import Date, float_to_date, rng, TimeDelta
+from hivpy.common import Date, TimeDelta, float_to_date, rng
 from hivpy.population import Population
 
 

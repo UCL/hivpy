@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from hivpy import column_names as col
-from hivpy.common import AND, COND, OR, SexType, Date, rng
+from hivpy.common import AND, COND, OR, Date, SexType, rng
 from hivpy.population import Population
 
 

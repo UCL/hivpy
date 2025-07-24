@@ -95,6 +95,7 @@ def not_none_and_compare(fn):
 def past(name, dt):
     return name + "_t-" + str(dt) if (dt > 0) else name
 
+
 class Date:
     def __init__(self, year, month=1, day=1):
         self.year = year

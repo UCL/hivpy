@@ -11,7 +11,7 @@ from enum import IntEnum
 
 import hivpy.column_names as col
 
-from .common import rng, TimeDelta
+from .common import TimeDelta, rng
 from .hiv_diagnosis_data import HIVDiagnosisData
 from .prep import PrEPType
 
