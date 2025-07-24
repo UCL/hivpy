@@ -14,7 +14,7 @@ import hivpy.column_names as col
 
 from . import output
 from .common import (AND, COND, SexType, opposite_sex, rng, safe_ratio,
-                     timedelta)
+                     TimeDelta)
 
 
 class HIVStatusModule:
@@ -114,7 +114,7 @@ class HIVStatusModule:
         population.init_variable(col.DATE_HIV_INFECTION, None)
         population.init_variable(col.IN_PRIMARY_INFECTION, False)
         population.init_variable(col.HIV_INFECTION_GE6M, False)  # FIXME: DUMMY variable
-        population.init_variable(col.CD4, 0.0, n_prev_steps=1)
+        population.init_variable(col.CD4, 0.0, dt=1)
         population.init_variable(col.CD4_DELTA, 0.0)
         population.init_variable(col.MAX_CD4, 6.6 + rng.normal(0, 0.25, size=population.size))
         population.init_variable(col.CD4_RECOVERY_ON_ART, 0)
@@ -122,7 +122,7 @@ class HIVStatusModule:
         population.init_variable(col.HIV_DIAGNOSIS_DATE, None)
         population.init_variable(col.UNDER_CARE, False)
         population.init_variable(col.VIRAL_LOAD_GROUP, None)
-        population.init_variable(col.VIRAL_LOAD, 0.0, n_prev_steps=1)
+        population.init_variable(col.VIRAL_LOAD, 0.0, dt=1)
         population.init_variable(col.MAX_VIRAL_LOAD, 0)
         population.init_variable(col.VIRAL_SUPPRESSION, False)
         population.init_variable(col.X4_VIRUS, False)
@@ -654,7 +654,7 @@ class HIVStatusModule:
                                                            (col.LTP_STATUS, op.eq, True)])
 
         ltp_infection_date = population.get_variable(col.LTP_INFECTION_DATE, people_with_infected_ltp)
-        ltp_primary_infection = ltp_infection_date > (population.date - timedelta(days=90))
+        ltp_primary_infection = ltp_infection_date > (population.date - TimeDelta(days=90))
         population.set_present_variable(col.LTP_IN_PRIMARY, ltp_primary_infection, people_with_infected_ltp)
 
         transmissions = population.apply_function(calculate_transmission, 1, people_with_infected_ltp)
@@ -736,10 +736,10 @@ class HIVStatusModule:
     def set_primary_infection(self, population: Population):
         # Update primary infection status
         past_primary_infection = population.get_sub_pop(
-            [(col.DATE_HIV_INFECTION, op.le, population.date - timedelta(months=3))])
+            [(col.DATE_HIV_INFECTION, op.le, population.date - TimeDelta(months=3))])
         population.set_present_variable(col.IN_PRIMARY_INFECTION, False, past_primary_infection)
         ltp_past_primary_infection = population.get_sub_pop(
-            [(col.LTP_INFECTION_DATE, op.le, population.date - timedelta(months=3))])
+            [(col.LTP_INFECTION_DATE, op.le, population.date - TimeDelta(months=3))])
         population.set_present_variable(col.LTP_IN_PRIMARY, False, ltp_past_primary_infection)
 
     def set_viral_load_groups(self, population: Population):
@@ -875,7 +875,7 @@ class HIVStatusModule:
         pop.set_present_variable(col.SBI_DIAGNOSED, False)
         pop.set_present_variable(col.WHO4_OTHER_DIAGNOSED, False)
 
-    def HIV_related_disease_risk(self, pop: Population, time_step: timedelta):
+    def HIV_related_disease_risk(self, pop: Population, time_step: TimeDelta):
         # TODO: does disease risk apply to everyone who is alive?
         # calculate disease base rate
         HIV_pos = pop.get_sub_pop(COND(col.HIV_STATUS, op.eq, True))

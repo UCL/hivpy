@@ -10,8 +10,8 @@ import numpy as np
 import hivpy.column_names as col
 
 from . import output
-from .common import (AND, COND, SexType, date, diff_years, float_to_date, rng,
-                     timedelta)
+from .common import (AND, COND, SexType, Date, diff_years, float_to_date, rng,
+                     TimeDelta)
 from .pregnancy_data import PregnancyData
 from .resistance_mutations import MutationStatus
 
@@ -115,7 +115,7 @@ class PregnancyModule:
         # give everyone with a child a pregnancy date before the start of the simulation
         pop.set_present_variable(
             col.LAST_PREGNANCY_DATE,
-            pop.date - timedelta(days=270),
+            pop.date - TimeDelta(days=270),
             sub_pop=pop.get_sub_pop([(col.NUM_CHILDREN, op.gt, 0)]),
         )
 
@@ -148,7 +148,7 @@ class PregnancyModule:
                 [(col.NUM_PARTNERS, op.gt, 0), (col.LONG_TERM_PARTNER, op.eq, True)],
                 [
                     (col.LAST_PREGNANCY_DATE, op.eq, None),
-                    (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=450)),
+                    (col.LAST_PREGNANCY_DATE, op.le, pop.date - TimeDelta(days=450)),
                 ],
             ]
         )
@@ -216,7 +216,7 @@ class PregnancyModule:
         current_date = pop.date
 
         pop.set_present_variable(col.PMTCT, False)
-        if current_date >= self.date_pmtct and current_date < date(year=2012, month=6):
+        if current_date >= self.date_pmtct and current_date < Date(year=2012, month=6):
             # probability of prevention of mother to child transmission care
             self.prob_pmtct = min(
                 diff_years(current_date, self.date_pmtct) * self.pmtct_inc_rate, 0.975
@@ -230,7 +230,7 @@ class PregnancyModule:
             n_pmtct = len(pmtct_pop)
             mutations = rng.uniform(size=n_pmtct) < (
                 self.prob_resistance_sd_nvp
-                if current_date < date(year=2010, month=6)
+                if current_date < Date(year=2010, month=6)
                 else self.prob_resistance_dual_nvp
             )
             pop.set_present_variable(
@@ -248,7 +248,7 @@ class PregnancyModule:
         birthing_population = pop.get_sub_pop(
             [
                 (col.PREGNANT, op.eq, True),
-                (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=270)),
+                (col.LAST_PREGNANCY_DATE, op.le, pop.date - TimeDelta(days=270)),
             ]
         )
 
@@ -318,7 +318,7 @@ class PregnancyModule:
         third_trimester_pop = pop.get_sub_pop(
             [
                 (col.ANC, op.eq, True),
-                (col.LAST_PREGNANCY_DATE, op.le, pop.date - timedelta(days=270)),
+                (col.LAST_PREGNANCY_DATE, op.le, pop.date - TimeDelta(days=270)),
             ]
         )
         if len(third_trimester_pop) > 0:

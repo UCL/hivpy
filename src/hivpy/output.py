@@ -10,13 +10,13 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import SexType, date, timedelta
+from .common import SexType, Date, TimeDelta
 from .population import Population
 
 
 class SimulationOutput:
 
-    def __init__(self, start_date=date(1989, 1, 1), stop_date=date(2025, 1, 1), time_step=timedelta(months=3)):
+    def __init__(self, start_date=Date(1989, 1, 1), stop_date=Date(2025, 1, 1), time_step=TimeDelta(months=3)):
         # current step
         self.step = 0
         # age boundaries
@@ -334,7 +334,7 @@ class SimulationOutput:
         women_idx = pop.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
         giving_birth_this_step = pop.get_sub_pop([(col.PREGNANT, operator.eq, True),
                                                   (col.LAST_PREGNANCY_DATE, operator.le,
-                                                   pop.date - timedelta(days=270))])
+                                                   pop.date - TimeDelta(days=270))])
         self.output_stats.loc[self.step, "Births (ratio)"] = self._ratio(giving_birth_this_step, women_idx)
         self.output_stats.loc[self.step, "Births to infected women (tot)"] = len(
             pop.get_sub_pop_intersection(pop.get_sub_pop([(col.HIV_STATUS, operator.eq, True)]),

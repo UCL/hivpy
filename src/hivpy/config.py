@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from os import path
 from pathlib import Path
 
-from .common import date, timedelta
+from .common import Date, TimeDelta
 from .exceptions import SimulationException
 
 LEVELS = {
@@ -50,12 +50,12 @@ class SimulationConfig:
     A class holding the parameters required for running a simulation.
     """
     population_size: int
-    start_date: date
-    stop_date: date
+    start_date: Date
+    stop_date: Date
     output_dir: Path
     graph_outputs: list
-    time_step: timedelta = field(default_factory=lambda: timedelta(days=90))
-    intervention_date: date = None
+    time_step: TimeDelta = field(default_factory=lambda: TimeDelta(days=90))
+    intervention_date: Date = None
     intervention_option: int = 0
     recurrent_intervention: bool = False
 
@@ -65,7 +65,7 @@ class SimulationConfig:
         """
         try:
             assert self.stop_date >= self.start_date + self.time_step
-            assert self.time_step > timedelta(days=0)
+            assert self.time_step > TimeDelta(days=0)
             if self.intervention_date:
                 assert self.intervention_date >= self.start_date + self.time_step
                 assert self.intervention_date <= self.stop_date - self.time_step

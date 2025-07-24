@@ -13,7 +13,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, SexType, date, rng, timedelta
+from .common import AND, COND, OR, SexType, Date, rng, TimeDelta
 from .prep_data import PrEPData
 
 
@@ -34,10 +34,10 @@ class PrEPModule:
             self.p_data = PrEPData(data_path)
 
         self.prep_strategy = self.p_data.prep_strategy.sample()
-        self.date_prep_intro = [date(self.p_data.date_prep_oral_intro),
-                                date(self.p_data.date_prep_cab_intro),
-                                date(self.p_data.date_prep_len_intro),
-                                date(self.p_data.date_prep_vr_intro)]
+        self.date_prep_intro = [Date(self.p_data.date_prep_oral_intro),
+                                Date(self.p_data.date_prep_cab_intro),
+                                Date(self.p_data.date_prep_len_intro),
+                                Date(self.p_data.date_prep_vr_intro)]
         self.cab_available = True
         self.prob_risk_informed_prep = self.p_data.prob_risk_informed_prep
         self.prob_greater_risk_informed_prep = self.p_data.prob_greater_risk_informed_prep
@@ -86,7 +86,7 @@ class PrEPModule:
         pop.init_variable(col.FAVOURED_PREP_TYPE, PrEPType.NoPrEP)
         pop.init_variable(col.R_PREP, 1.0)
         pop.init_variable(col.PREP_ELIGIBLE, False)
-        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrEP, n_prev_steps=1)
+        pop.init_variable(col.PREP_TYPE, PrEPType.NoPrEP, dt=1)
         pop.init_variable(col.PREP_ORAL_TESTED, False)
         pop.init_variable(col.PREP_CAB_TESTED, False)
         pop.init_variable(col.PREP_LEN_TESTED, False)
@@ -101,14 +101,14 @@ class PrEPModule:
         pop.init_variable(col.LAST_PREP_USE_DATE, None)
         pop.init_variable(col.LAST_PREP_STOP_DATE, None)
         pop.init_variable(col.PREP_PAUSED, False)
-        pop.init_variable(col.ON_PREP, False, n_prev_steps=1)
-        pop.init_variable(col.CONT_ON_PREP, timedelta(months=0))
-        pop.init_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0))
-        pop.init_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
-        pop.init_variable(col.CUMULATIVE_PREP_ORAL, timedelta(months=0))
-        pop.init_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
-        pop.init_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
-        pop.init_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
+        pop.init_variable(col.ON_PREP, False, dt=1)
+        pop.init_variable(col.CONT_ON_PREP, TimeDelta(months=0))
+        pop.init_variable(col.CONT_INTENT_ON_PREP, TimeDelta(months=0))
+        pop.init_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_ORAL, TimeDelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_CAB, TimeDelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_LEN, TimeDelta(months=0))
+        pop.init_variable(col.CUMULATIVE_PREP_VR, TimeDelta(months=0))
         pop.init_variable(col.LTP_ON_ART, False)
 
     # FIXME: should this function be in another module?
@@ -176,7 +176,7 @@ class PrEPModule:
         if not pop.hiv_diagnosis.init_prep_inj_na:
             # infected up to 3 months ago
             recently_infected_pop = pop.get_sub_pop_intersection(
-                pop.get_sub_pop(COND(col.DATE_HIV_INFECTION, op.ge, pop.date - timedelta(months=3))), false_neg_pop)
+                pop.get_sub_pop(COND(col.DATE_HIV_INFECTION, op.ge, pop.date - TimeDelta(months=3))), false_neg_pop)
 
             # expand sensitivity into a list
             eff_test_sens = [pop.hiv_diagnosis.test_sens_general] * len(false_neg_pop)
@@ -205,9 +205,9 @@ class PrEPModule:
         return pop.get_sub_pop(OR(COND(col.PREP_TYPE, op.eq, PrEPType.Oral),
                                   COND(col.PREP_TYPE, op.eq, PrEPType.VaginalRing),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=3))),
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - TimeDelta(months=3))),
                                   AND(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir),
-                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - timedelta(months=6)))))
+                                      COND(col.LAST_PREP_USE_DATE, op.le, pop.date - TimeDelta(months=6)))))
 
     def prep_preference(self, pop: Population):
         """
@@ -429,7 +429,7 @@ class PrEPModule:
                 gen_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                               COND(col.AGE, op.ge, 15),
                                               COND(col.AGE, op.lt, 50)))
-                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9)))
+                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - TimeDelta(months=9)))
                 # gen AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_pop, pop.get_sub_pop_union(
@@ -455,7 +455,7 @@ class PrEPModule:
                                                   COND(col.SEX, op.eq, SexType.Female),
                                                   COND(col.AGE, op.ge, 15),
                                                   COND(col.AGE, op.lt, 50)))
-                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9)))
+                active_stp_pop = pop.get_sub_pop(COND(col.LAST_STP_DATE, op.gt, pop.date - TimeDelta(months=9)))
                 # gen_fem AND (active_stp OR risk_informed OR suspect_risk)
                 prep_eligible_pop = pop.get_sub_pop_intersection(
                     gen_fem_pop, pop.get_sub_pop_union(
@@ -466,7 +466,7 @@ class PrEPModule:
             elif self.prep_strategy == 12:
                 gen_pop = pop.get_sub_pop(COND(col.HIV_DIAGNOSED, op.eq, False))
                 active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
+                                                COND(col.LAST_STP_DATE, op.gt, pop.date - TimeDelta(months=9))))
                 # gen AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(gen_pop, active_pop)
             # recently active women
@@ -474,7 +474,7 @@ class PrEPModule:
                 gen_fem_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                   COND(col.SEX, op.eq, SexType.Female)))
                 active_pop = pop.get_sub_pop(OR(COND(col.LONG_TERM_PARTNER, op.eq, True),
-                                                COND(col.LAST_STP_DATE, op.gt, pop.date - timedelta(months=9))))
+                                                COND(col.LAST_STP_DATE, op.gt, pop.date - TimeDelta(months=9))))
                 # gen_fem AND active
                 prep_eligible_pop = pop.get_sub_pop_intersection(gen_fem_pop, active_pop)
             # general active at risk population and informed women
@@ -485,7 +485,7 @@ class PrEPModule:
                                                   COND(col.AGE, op.lt, 50)))
                 active_at_risk_pop = pop.get_sub_pop(AND(COND(col.HIV_DIAGNOSED, op.eq, False),
                                                          OR(COND(col.LAST_STP_DATE, op.gt,
-                                                                 pop.date - timedelta(months=6)),
+                                                                 pop.date - TimeDelta(months=6)),
                                                             AND(COND(col.LTP_DIAGNOSED, op.eq, True),
                                                                 COND(col.LTP_ON_ART, op.eq, False)))))
                 # active_at_risk OR (gen_fem AND (risk_informed OR suspect_risk))
@@ -740,9 +740,9 @@ class PrEPModule:
             if len(stopping_prep_pop) > 0:
                 pop.set_present_variable(col.ON_PREP, False, stopping_prep_pop)
                 # stop continuous use
-                pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0), stopping_prep_pop)
-                pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0), stopping_prep_pop)
-                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), stopping_prep_pop)
+                pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=0), stopping_prep_pop)
+                pop.set_present_variable(col.CONT_INTENT_ON_PREP, TimeDelta(months=0), stopping_prep_pop)
+                pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0), stopping_prep_pop)
                 # set stop date
                 pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, stopping_prep_pop)
 
@@ -834,7 +834,7 @@ class PrEPModule:
         if len(ineligible) > 0:
             pop.set_present_variable(col.ON_PREP, False, ineligible)
             # reset active continuous use
-            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), ineligible)
+            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0), ineligible)
             # set stop date
             pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, ineligible)
             # pause prep
@@ -857,13 +857,21 @@ class PrEPModule:
         if len(perm_ineligible) > 0:
             pop.set_present_variable(col.ON_PREP, False, perm_ineligible)
             # stop continuous use
-            pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0), perm_ineligible)
-            pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=0), perm_ineligible)
-            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0), perm_ineligible)
+            pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=0), perm_ineligible)
+            pop.set_present_variable(col.CONT_INTENT_ON_PREP, TimeDelta(months=0), perm_ineligible)
+            pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0), perm_ineligible)
             # set stop date
             pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date, perm_ineligible)
             # unpause prep
             pop.set_present_variable(col.PREP_PAUSED, False, perm_ineligible)
+
+    def update_lencab_cols(pop: Population):
+        on_prep = pop.get_sub_pop(COND(col.ON_PREP, op.eq, True))
+        prep_len = pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Lenacapavir))
+        prep_cab = pop.get_sub_pop(COND(col.PREP_TYPE, op.eq, PrEPType.Cabotegravir))
+
+        pop.set_present_variable(col.ON_LEN, True, pop.get_sub_pop_intersection(on_prep, prep_len))
+        pop.set_present_variable(col.ON_CAB, True, pop.get_sub_pop_intersection(on_prep, prep_cab))
 
     def prep_usage(self, pop: Population, time_step):
         """
@@ -877,3 +885,5 @@ class PrEPModule:
         self.restart_prep(pop, time_step)
         # stopping prep
         self.stop_prep(pop, time_step)
+        # making sure on_len/on_cab columns are up to date for prep users
+        self.update_lencab_cols(pop)

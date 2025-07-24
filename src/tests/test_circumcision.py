@@ -4,7 +4,7 @@ from math import isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import AND, COND, SexType, date, rng, timedelta
+from hivpy.common import AND, COND, SexType, Date, rng, TimeDelta
 from hivpy.population import Population
 
 
@@ -25,10 +25,10 @@ def set_covid(circ_module, truth_val):
 
 
 def set_vmmc_default_dates(circ_module):
-    circ_module.vmmc_start_year = date(2008)
-    circ_module.circ_rate_change_year = date(2013)
-    circ_module.prob_circ_calc_cutoff_year = date(2019)
-    circ_module.policy_intervention_year = date(2022)
+    circ_module.vmmc_start_year = Date(2008)
+    circ_module.circ_rate_change_year = Date(2013)
+    circ_module.prob_circ_calc_cutoff_year = Date(2019)
+    circ_module.policy_intervention_year = Date(2022)
 
 
 def general_circumcision_checks(mean, stdev, no_circumcised, pop):
@@ -72,7 +72,7 @@ def test_birth_circumcision_atonce():
 
     # build population
     N = 100000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     reset_pop_circ(pop)
     pop.circumcision.init_birth_circumcision_all(pop, pop.date)
 
@@ -88,9 +88,9 @@ def test_birth_circumcision_atonce():
 def test_birth_circumcision_stages():
 
     N = 100000
-    start_date = date(2000, 1, 1)
-    stop_date = date(2020, 1, 1)
-    time_step = timedelta(days=90)
+    start_date = Date(2000, 1, 1)
+    stop_date = Date(2020, 1, 1)
+    time_step = TimeDelta(days=90)
 
     # build population
     pop = Population(size=N, start_date=start_date)
@@ -124,7 +124,7 @@ def test_birth_circumcision_stages():
 def test_calc_prob_circ():
 
     # setup
-    pop = Population(size=1, start_date=date(2010, 1, 1))
+    pop = Population(size=1, start_date=Date(2010, 1, 1))
     pop.circumcision.date = pop.date
     pop.circumcision.circ_policy_scenario = 0
     set_covid(pop.circumcision, False)
@@ -149,7 +149,7 @@ def test_calc_prob_circ():
     pop.circumcision.circ_rate_change_20_29 = 0.2
     pop.circumcision.circ_rate_change_30_49 = 0.1
 
-    pop.circumcision.date = date(2019, 1, 1)
+    pop.circumcision.date = Date(2019, 1, 1)
     # check basic case post 2013
     # ((5 + 6 * 1.5) * 0.1) = 1.4
     assert isclose(pop.circumcision.calc_prob_circ(1), 1)
@@ -158,7 +158,7 @@ def test_calc_prob_circ():
     # ((5 + 6 * 1.5) * 0.1 * 0.1) = 14
     assert isclose(pop.circumcision.calc_prob_circ(3), 0.14)
 
-    pop.circumcision.date = date(2022, 1, 1)
+    pop.circumcision.date = Date(2022, 1, 1)
     # check the year is capped at 2019 as expected
     # (repeat last assert)
     assert isclose(pop.circumcision.calc_prob_circ(3), 0.14)
@@ -175,9 +175,9 @@ def test_vmmc_case_0():
     for age in test_ages:
 
         N = 100000
-        start_date = date(2007, 1, 1)
-        stop_date = date(2010, 1, 1)
-        time_step = timedelta(days=90)
+        start_date = Date(2007, 1, 1)
+        stop_date = Date(2010, 1, 1)
+        time_step = TimeDelta(days=90)
 
         # build artificial population
         pop = Population(size=N, start_date=start_date)
@@ -234,8 +234,8 @@ def test_vmmc_case_1():
     for age in test_ages:
 
         N = 100000
-        start_date = date(2022, 1, 1)
-        time_step = timedelta(days=90)
+        start_date = Date(2022, 1, 1)
+        time_step = TimeDelta(days=90)
 
         # build population
         pop = Population(size=N, start_date=start_date)
@@ -268,8 +268,8 @@ def test_vmmc_case_1():
 def test_vmmc_case_2():
 
     N = 100000
-    start_date = date(2021, 12, 1)
-    time_step = timedelta(days=90)
+    start_date = Date(2021, 12, 1)
+    time_step = TimeDelta(days=90)
 
     # build population
     pop = Population(size=N, start_date=start_date)
@@ -301,8 +301,8 @@ def test_vmmc_case_3():
     for age in test_ages:
 
         N = 100000
-        start_date = date(2022, 1, 1)
-        time_step = timedelta(days=90)
+        start_date = Date(2022, 1, 1)
+        time_step = TimeDelta(days=90)
 
         # build population
         pop = Population(size=N, start_date=start_date)
@@ -336,8 +336,8 @@ def test_vmmc_case_4():
     for age in test_ages:
 
         N = 100000
-        start_date = date(2026, 12, 1)
-        time_step = timedelta(days=90)
+        start_date = Date(2026, 12, 1)
+        time_step = TimeDelta(days=90)
 
         # build population
         pop = Population(size=N, start_date=start_date)
@@ -380,8 +380,8 @@ def test_vmmc_case_4():
 def test_circ_covid():
 
     N = 100000
-    start_date = date(2010, 1, 1)
-    time_step = timedelta(days=90)
+    start_date = Date(2010, 1, 1)
+    time_step = TimeDelta(days=90)
 
     # build population
     pop = Population(size=N, start_date=start_date)
@@ -403,8 +403,8 @@ def test_circ_covid():
 def test_vmmc_after_testing():
 
     N = 10000
-    start_date = date(2014, 12, 1)
-    time_step = timedelta(days=30)
+    start_date = Date(2014, 12, 1)
+    time_step = TimeDelta(days=30)
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)
@@ -440,8 +440,8 @@ def test_vmmc_after_testing():
 def test_vmmc_testing():
 
     N = 10000
-    start_date = date(2014, 12, 1)
-    time_step = timedelta(days=30)
+    start_date = Date(2014, 12, 1)
+    time_step = TimeDelta(days=30)
 
     # build artificial population
     pop = Population(size=N, start_date=start_date)

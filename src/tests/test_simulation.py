@@ -1,7 +1,7 @@
 import pytest
 
 from hivpy import SimulationConfig, SimulationException
-from hivpy.common import date, rng, timedelta
+from hivpy.common import Date, rng, TimeDelta
 from hivpy.simulation import SimulationHandler
 
 
@@ -33,8 +33,8 @@ def test_error_end_before_start(tmp_path):
     """
     Ensure that we throw an error if the end date is before the start.
     """
-    today = date(1989, 1)
-    yesterday = today - timedelta(days=30)
+    today = Date(1989, 1)
+    yesterday = today - TimeDelta(days=30)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=today, stop_date=yesterday, output_dir=tmp_path,
                          graph_outputs=[], population_size=100)
@@ -44,9 +44,9 @@ def test_error_end_before_first_step(tmp_path):
     """
     Ensure that we throw an error if the simulation would end before the first step.
     """
-    start = date(1989, 1)
-    end = start + timedelta(days=30)
-    step = timedelta(days=90)
+    start = Date(1989, 1)
+    end = start + TimeDelta(days=30)
+    step = TimeDelta(days=90)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path, graph_outputs=[],
                          time_step=step, population_size=100)
@@ -58,8 +58,8 @@ def test_death_occurs(tmp_path):
     """
     # FIXME This will not necessarily be true once we add in births
     size = 10000
-    start = date(1989, 1)
-    step = timedelta(days=90)
+    start = Date(1989, 1)
+    step = TimeDelta(days=90)
     end = start + 200 * step
     config = SimulationConfig(size, start, end, tmp_path, [], step)
     simulation_handler = SimulationHandler(config)
@@ -81,9 +81,9 @@ def test_error_intervention_before_start(tmp_path):
     """
     Ensure that we throw an error if the intervention date is before the start.
     """
-    start = date(1989, 1)
-    end = date(1995, 1)
-    intervention = start - timedelta(days=365)
+    start = Date(1989, 1)
+    end = Date(1995, 1)
+    intervention = start - TimeDelta(days=365)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
                          graph_outputs=[], intervention_date=intervention, population_size=100)
@@ -93,9 +93,9 @@ def test_error_intervention_after_end(tmp_path):
     """
     Ensure that we throw an error if the intervention date is after the end.
     """
-    start = date(1989, 1)
-    end = date(1995, 1)
-    intervention = end + timedelta(days=365)
+    start = Date(1989, 1)
+    end = Date(1995, 1)
+    intervention = end + TimeDelta(days=365)
     with pytest.raises(SimulationException):
         SimulationConfig(start_date=start, stop_date=end, output_dir=tmp_path,
                          graph_outputs=[], intervention_date=intervention, population_size=100)
@@ -107,10 +107,10 @@ def test_intervention_option(tmp_path):
     In this case for the sexual worker program start date
     """
     size = 1000
-    start = date(1989, 1)
-    step = timedelta(days=90)
-    end = date(1995, 1)
-    intervention = date(1992, 1)
+    start = Date(1989, 1)
+    step = TimeDelta(days=90)
+    end = Date(1995, 1)
+    intervention = Date(1992, 1)
     option = -1
     config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option)
     simulation_handler = SimulationHandler(config)
@@ -127,10 +127,10 @@ def test_recurrent_intervention(tmp_path):
     And with a different option number and date
     """
     size = 1000
-    start = date(1989, 1)
-    step = timedelta(days=90)
-    end = date(2005, 1)
-    intervention = date(2000, 1)
+    start = Date(1989, 1)
+    step = TimeDelta(days=90)
+    end = Date(2005, 1)
+    intervention = Date(2000, 1)
     option = -2
     repeat_interv = True
     config = SimulationConfig(size, start, end, tmp_path, [], step, intervention, option, repeat_interv)
@@ -138,4 +138,4 @@ def test_recurrent_intervention(tmp_path):
 
     simulation_handler.run()
 
-    assert simulation_handler.modified_population.circumcision.policy_intervention_year == date(2002, 1, 1)
+    assert simulation_handler.modified_population.circumcision.policy_intervention_year == Date(2002, 1, 1)

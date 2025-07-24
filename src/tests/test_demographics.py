@@ -6,7 +6,7 @@ import pytest
 import scipy.integrate
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta
+from hivpy.common import SexType, Date, rng, TimeDelta
 from hivpy.demographics import (ContinuousAgeDistribution, DemographicsModule,
                                 StepwiseAgeDistribution)
 from hivpy.demographics_data import DemographicsData
@@ -85,7 +85,7 @@ def get_hard_reach_stats(pop, sex: SexType, prob_hard_reach):
 def test_hard_reach():
 
     N = 100000
-    start_date = date(2000, 1, 1)
+    start_date = Date(2000, 1, 1)
 
     # build population
     pop = Population(size=N, start_date=start_date)
@@ -111,7 +111,7 @@ def test_death_rate():
     group_size = N // 2 // len(ages_to_try)
     ages = sum(([age] * group_size for age in ages_to_try), []) * 2
     sexes = [SexType.Female] * (N // 2) + [SexType.Male] * (N // 2)
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.init_variable(col.AGE, ages)
     pop.init_variable(col.SEX, sexes)
 
@@ -124,7 +124,7 @@ def test_death_rate():
     # Simulate for a year
     n_steps = 4  # currently death determination assumes 3-month step
     for _ in range(n_steps):
-        time_step = timedelta(months=3)
+        time_step = TimeDelta(months=3)
         deaths = module.determine_deaths(pop, time_step)
         print("Num deaths = ", sum(deaths))
         # We only care about recording the death here, not its date

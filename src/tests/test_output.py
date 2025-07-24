@@ -3,7 +3,7 @@ from math import isclose
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta
+from hivpy.common import SexType, Date, rng, TimeDelta
 from hivpy.output import SimulationOutput
 from hivpy.population import Population
 
@@ -23,7 +23,7 @@ def test_HIV_prevalence():
 
     # build population
     N = 1000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_variable_range(col.SEX, SexType.Female, 0, int(N / 2) - 1)
     pop.set_variable_range(col.SEX, SexType.Male, int(N / 2))
     pop.set_present_variable(col.AGE, 25)
@@ -31,7 +31,7 @@ def test_HIV_prevalence():
     pop.set_variable_range(col.SEX_WORKER, True, 0, int(N / 4) - 1)
     pop.set_variable_range(col.HIV_STATUS, True, 0, int(N / 4) - 1)
 
-    out = SimulationOutput(date(1990, 1, 1), date(1990, 3, 1), timedelta(days=90))
+    out = SimulationOutput(Date(1990, 1, 1), Date(1990, 3, 1), TimeDelta(days=90))
     out._update_HIV_prevalence(pop)
 
     # a quarter of all people have HIV
@@ -49,7 +49,7 @@ def test_HIV_incidence():
 
     # build population
     N = 1000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_variable_range(col.AGE, 20, 0, int(N * 0.2) - 1)
     pop.set_variable_range(col.AGE, 30, int(N * 0.2), int(N * 0.4) - 1)
@@ -70,7 +70,7 @@ def test_HIV_incidence():
         col.IN_PRIMARY_INFECTION, True, int(N * 0.6), int(N * 0.65) - 1
     )
 
-    out = SimulationOutput(date(1990, 1, 1), date(1990, 3, 1), timedelta(days=90))
+    out = SimulationOutput(Date(1990, 1, 1), Date(1990, 3, 1), TimeDelta(days=90))
     out._update_HIV_incidence(pop)
 
     # get age stats

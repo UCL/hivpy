@@ -4,7 +4,7 @@ from math import isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import AND, COND, SexType, date, rng, timedelta
+from hivpy.common import AND, COND, SexType, Date, rng, TimeDelta
 from hivpy.population import Population
 from hivpy.resistance_mutations import MutationStatus
 
@@ -15,15 +15,15 @@ def resetRandomState():
 
 
 def test_matrix_value_retrieval():
-    time_step = timedelta(months=1)
-    pop = Population(size=1, start_date=date(2000, 1, 1))
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    time_step = TimeDelta(months=1)
+    pop = Population(size=1, start_date=Date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
     pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.ON_NEV, False)
     pop.set_present_variable(col.ON_EFA, False)
@@ -52,7 +52,7 @@ def test_matrix_value_retrieval():
     )
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(
         months=4
     )  # fudging the data access to modify past values
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.2
@@ -81,7 +81,7 @@ def test_matrix_value_retrieval():
     )
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=7)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=7)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
     (
         res.active_drug_indices,
@@ -102,7 +102,7 @@ def test_matrix_value_retrieval():
     )
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 2.25)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=5)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=5)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 1.2
     (
@@ -128,7 +128,7 @@ def test_matrix_value_retrieval():
     )
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     (
@@ -155,16 +155,16 @@ def test_matrix_value_retrieval():
 
 
 def test_calc_viral_load():
-    time_step = timedelta(months=1)
+    time_step = TimeDelta(months=1)
     N = 100
-    pop = Population(size=N, start_date=date(2000, 1, 1))
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop = Population(size=N, start_date=Date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.date += time_step
     pop.step += 1
     pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     max_viral_load = 4
     pop.set_present_variable(col.MAX_VIRAL_LOAD, max_viral_load)
@@ -189,7 +189,7 @@ def test_calc_viral_load():
     assert outliers <= 1
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     (
@@ -212,10 +212,10 @@ def test_calc_viral_load():
 
 
 def test_calc_cd4_delta():
-    time_step = timedelta(months=1)
+    time_step = TimeDelta(months=1)
     N = 100
-    pop = Population(size=N, start_date=date(2000, 1, 1))
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop = Population(size=N, start_date=Date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.CD4, 50)
     pop.date += time_step
@@ -224,7 +224,7 @@ def test_calc_cd4_delta():
     pop.set_present_variable(col.AGE, 20)
     pop.set_present_variable(col.SEX, SexType.Male)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.ON_NEV, False)
     pop.set_present_variable(col.ON_EFA, False)
@@ -255,7 +255,7 @@ def test_calc_cd4_delta():
     assert isclose(delta, 4.2)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     (
@@ -282,7 +282,7 @@ def test_calc_cd4_delta():
 
     pop.set_present_variable(col.SEX, SexType.Male)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0
     pop.set_present_variable(col.ON_NEV, True)
@@ -301,7 +301,7 @@ def test_calc_cd4_delta():
     assert isclose(delta, 1.2)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     pop.set_present_variable(col.ON_NEV, False)
@@ -360,16 +360,16 @@ def test_calc_cd4_delta():
 
 
 def test_calc_prob_new_mutation():
-    time_step = timedelta(months=1)
-    pop = Population(size=1, start_date=date(2000, 1, 1))
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    time_step = TimeDelta(months=1)
+    pop = Population(size=1, start_date=Date(2000, 1, 1))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.VIRAL_LOAD, 20)
     pop.date += time_step
     pop.step += 1
     pop.update_histories()
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.set_present_variable(col.CONT_ON_ART, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_ART, TimeDelta(months=0))
     pop.set_present_variable(col.ART_ADHERENCE, 0)
     pop.set_present_variable(col.ON_NEV, False)
     pop.set_present_variable(col.ON_EFA, False)
@@ -390,7 +390,7 @@ def test_calc_prob_new_mutation():
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 0.875)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 1.25)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=2)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=2)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 1
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.6
     pop.set_present_variable(col.ON_EFA, True)
@@ -405,7 +405,7 @@ def test_calc_prob_new_mutation():
     assert isclose(res.calc_prob_new_mutation(pop.data.loc[0]), 1)
 
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 3)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=6)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=6)
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=0)] = 0.8
     pop.data[pop.get_correct_column(col.ART_ADHERENCE, dt=1)] = 0.8
     pop.set_present_variable(col.ON_EFA, False)
@@ -422,10 +422,10 @@ def test_calc_prob_new_mutation():
 
 def test_rttams():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -489,10 +489,10 @@ def test_rttams():
 
 def test_rt184m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -526,10 +526,10 @@ def test_rt184m():
 
 def test_rt151m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -563,10 +563,10 @@ def test_rt151m():
 
 def test_rt65m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -614,10 +614,10 @@ def test_rt65m():
 
 def test_rt103m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -653,10 +653,10 @@ def test_rt103m():
 
 def test_rt181m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -692,10 +692,10 @@ def test_rt181m():
 
 def test_rt190m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -731,10 +731,10 @@ def test_rt190m():
 
 def test_nnrtim():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -820,10 +820,10 @@ def test_nnrtim():
 
 def test_pr32m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -853,10 +853,10 @@ def test_pr32m():
 
 def test_pr46m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -886,10 +886,10 @@ def test_pr46m():
 
 def test_pr47m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -919,10 +919,10 @@ def test_pr47m():
 
 def test_pr50lm():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -952,10 +952,10 @@ def test_pr50lm():
 
 def test_pr50vm():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -985,10 +985,10 @@ def test_pr50vm():
 
 def test_pr54m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -1019,10 +1019,10 @@ def test_pr54m():
 
 def test_pr76m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -1053,10 +1053,10 @@ def test_pr76m():
 
 def test_pr82m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -1086,10 +1086,10 @@ def test_pr82m():
 
 def test_pr84m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -1120,10 +1120,10 @@ def test_pr84m():
 
 def test_pr88m():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, 0)
-    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = timedelta(months=0)
+    pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = TimeDelta(months=0)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     # the entire population has a chance to gain mutations
     pop.set_present_variable(col.VIRAL_LOAD, 10)
@@ -1153,15 +1153,15 @@ def test_pr88m():
 
 def test_update_resistance():
     N = 100
-    time_step = timedelta(months=1)
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    time_step = TimeDelta(months=1)
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, [True, True, True, False] * (N // 4))
     pop.set_present_variable(col.NUM_ACTIVE_DRUGS, [0.5, 1.5, 2.5, 3.5] * (N // 4))
     pop.data[pop.get_correct_column(col.CONT_ON_ART, dt=1)] = [
-        timedelta(months=0),
-        timedelta(months=3),
-        timedelta(months=6),
-        timedelta(months=9),
+        TimeDelta(months=0),
+        TimeDelta(months=3),
+        TimeDelta(months=6),
+        TimeDelta(months=9),
     ] * (N // 4)
     pop.set_present_variable(col.ART_ADHERENCE, 0.5)
     pop.set_present_variable(col.MAX_VIRAL_LOAD, 100)

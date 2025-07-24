@@ -10,7 +10,7 @@ import operator as op
 
 import hivpy.column_names as col
 
-from .common import AND, COND, OR, float_to_date, rng, timedelta
+from .common import AND, COND, OR, float_to_date, rng, TimeDelta
 from .hiv_testing_data import HIVTestingData
 
 
@@ -65,7 +65,7 @@ class HIVTestingModule:
         # sex workers regularly test every 6 months
         self.sw_test_regularly = False
 
-    def update_hiv_testing(self, pop, time_step: timedelta):
+    def update_hiv_testing(self, pop, time_step: TimeDelta):
         """
         Update which individuals in the population have been tested.
         COVID disruption is factored in.
@@ -194,32 +194,32 @@ class HIVTestingModule:
             first_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.ANC, op.eq, True),
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
-                                                    - timedelta(days=90)),
+                                                    - TimeDelta(days=90)),
                                                    (col.LAST_PREGNANCY_DATE, op.gt, pop.date
-                                                    - (timedelta(days=90) + time_step))])
+                                                    - (TimeDelta(days=90) + time_step))])
             self.update_sub_pop_test_mark(pop, first_trimester_pop, self.prob_anc_test_trim1)
 
             # get population at the end of the second trimester
             second_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                     (col.ANC, op.eq, True),
                                                     (col.LAST_PREGNANCY_DATE, op.le, pop.date
-                                                     - timedelta(days=180)),
+                                                     - TimeDelta(days=180)),
                                                     (col.LAST_PREGNANCY_DATE, op.gt, pop.date
-                                                     - (timedelta(days=180) + time_step))])
+                                                     - (TimeDelta(days=180) + time_step))])
             self.update_sub_pop_test_mark(pop, second_trimester_pop, self.prob_anc_test_trim2)
 
             # get population at the end of the third trimester
             third_trimester_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                    (col.ANC, op.eq, True),
                                                    (col.LAST_PREGNANCY_DATE, op.le, pop.date
-                                                    - timedelta(days=270))])
+                                                    - TimeDelta(days=270))])
             self.update_sub_pop_test_mark(pop, third_trimester_pop, self.prob_anc_test_trim3)
 
             # get post-delivery population tested during the previous time step
             post_delivery_pop = pop.get_sub_pop([(col.HIV_DIAGNOSED, op.eq, False),
                                                  (col.LAST_TEST_DATE, op.eq, pop.date - time_step),
                                                  (col.LAST_PREGNANCY_DATE, op.eq, pop.date
-                                                  - (timedelta(days=270) + time_step))])
+                                                  - (TimeDelta(days=270) + time_step))])
             self.update_sub_pop_test_mark(pop, post_delivery_pop, self.prob_test_postdel)
 
     def update_sub_pop_test_mark(self, pop, sub_pop, prob_test):
@@ -254,7 +254,7 @@ class HIVTestingModule:
                                                      COND(col.AGE, op.ge, 15),
                                                      COND(col.HIV_DIAGNOSED, op.eq, False),
                                                      OR(COND(col.LAST_TEST_DATE, op.le, pop.date -
-                                                             timedelta(months=self.months_to_wait[
+                                                             TimeDelta(months=self.months_to_wait[
                                                                  self.eff_max_freq_testing])),
                                                         COND(col.LAST_TEST_DATE, op.eq, None)),
                                                      COND(col.TEST_MARK, op.eq, False)))
@@ -276,7 +276,7 @@ class HIVTestingModule:
             testing_population = pop.get_sub_pop(AND(COND(col.SEX_WORKER, op.eq, True),
                                                      COND(col.HIV_DIAGNOSED, op.eq, False),
                                                      OR(COND(col.LAST_TEST_DATE, op.le, pop.date -
-                                                             timedelta(days=180)),
+                                                             TimeDelta(days=180)),
                                                         COND(col.LAST_TEST_DATE, op.eq, None)),
                                                      COND(col.TEST_MARK, op.eq, False)))
             # mark people for testing

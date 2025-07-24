@@ -4,7 +4,7 @@ from math import sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, rng, timedelta
+from hivpy.common import SexType, Date, rng, TimeDelta
 from hivpy.population import Population
 from hivpy.prep import PrEPType
 
@@ -33,7 +33,7 @@ def reset_prep_propensity_cols(pop: Population):
 
 def test_at_risk_pop():
     N = 100
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     # at_risk = num_stp >= 1 OR (ltp_diag AND not ltp_on_art)
     pop.set_present_variable(col.NUM_PARTNERS, [0, 1] * (N // 2))
     pop.set_present_variable(col.LTP_DIAGNOSED, [True, False, False, False] * (N // 4))
@@ -44,7 +44,7 @@ def test_at_risk_pop():
 
 def test_risk_informed_pop():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     # risk_informed = ltp AND not ltp_on_art AND r < prob_risk_informed_prep
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_ON_ART, False)
@@ -70,7 +70,7 @@ def test_risk_informed_pop():
 
 def test_suspect_risk_pop():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     # suspect_risk = ltp AND not ltp_on_art AND ltp_infected AND r < prob_suspect_risk_prep
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_ON_ART, [True, False] * (N // 2))
@@ -88,11 +88,11 @@ def test_suspect_risk_pop():
 
 def test_presumed_hiv_neg_pop():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.EVER_TESTED, True)
     pop.set_present_variable(col.HIV_DIAGNOSED, True)
     pop.set_present_variable(col.HIV_STATUS, True)
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(2019, 12, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(2019, 12, 1))
     pop.hiv_diagnosis.init_prep_inj_na = True
     pop.hiv_diagnosis.test_sens_general = 0.8
     pop.hiv_diagnosis.test_sens_primary_ab = 0.5
@@ -119,11 +119,11 @@ def test_presumed_hiv_neg_pop():
 
 def test_prep_propensity():
     N = 100
-    pop = Population(size=N, start_date=date(1999, 1, 1))
+    pop = Population(size=N, start_date=Date(1999, 1, 1))
     pop.set_present_variable(col.AGE, [10, 20] * (N // 2))
     pop.set_present_variable(col.VIRAL_LOAD, 5.0)
     # all prep types have different intro dates
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(5000)]
     # adjust chances of higher preference
     pop.prep.prep_oral_pref_beta = 3
     pop.prep.prep_cab_pref_beta = 3.3
@@ -141,7 +141,7 @@ def test_prep_propensity():
     under_15s = pop.get_sub_pop([(col.AGE, op.lt, 15)])
     over_15s = pop.get_sub_pop([(col.AGE, op.ge, 15)])
     # willingness calculated for under and over 15s
-    pop.date = date(2000, 1, 1)
+    pop.date = Date(2000, 1, 1)
     pop.prep.prep_propensity(pop)
 
     # no willingness established for under 15s
@@ -157,7 +157,7 @@ def test_prep_propensity():
     assert all(pop.get_variable(col.PREP_ORAL_RANK, over_15s) == 1)
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(3000, 1, 1)
+    pop.date = Date(3000, 1, 1)
     pop.prep.prep_propensity(pop)
 
     # no willingness established for under 15s
@@ -173,7 +173,7 @@ def test_prep_propensity():
     assert all(pop.get_variable(col.PREP_CAB_RANK, over_15s) == 1)
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(4000, 1, 1)
+    pop.date = Date(4000, 1, 1)
     pop.prep.prep_propensity(pop)
 
     # no willingness established for under 15s
@@ -189,7 +189,7 @@ def test_prep_propensity():
     assert all(pop.get_variable(col.PREP_LEN_RANK, over_15s) == 1)
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(5000, 1, 1)
+    pop.date = Date(5000, 1, 1)
     pop.prep.prep_propensity(pop)
 
     # no willingness established for under 15s
@@ -223,7 +223,7 @@ def test_prep_propensity():
 
     # willingness calculated for those who turned 15 this time step
     reset_prep_propensity_cols(pop)
-    pop.date = date(2020, 1, 1)
+    pop.date = Date(2020, 1, 1)
     pop.set_present_variable(col.AGE, 15)
     pop.prep.prep_propensity(pop)
     # some oral willingness established
@@ -233,7 +233,7 @@ def test_prep_propensity():
     assert sum(pop.get_variable(col.PREP_VR_WILLING)) == 0
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(3020, 1, 1)
+    pop.date = Date(3020, 1, 1)
     pop.prep.prep_propensity(pop)
     # some oral + cab willingness established
     assert sum(pop.get_variable(col.PREP_ORAL_WILLING)) > 0
@@ -242,7 +242,7 @@ def test_prep_propensity():
     assert sum(pop.get_variable(col.PREP_VR_WILLING)) == 0
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(4020, 1, 1)
+    pop.date = Date(4020, 1, 1)
     pop.prep.prep_propensity(pop)
     # some oral + cab + len willingness established
     assert sum(pop.get_variable(col.PREP_ORAL_WILLING)) > 0
@@ -251,7 +251,7 @@ def test_prep_propensity():
     assert sum(pop.get_variable(col.PREP_VR_WILLING)) == 0
 
     reset_prep_propensity_cols(pop)
-    pop.date = date(5020, 1, 1)
+    pop.date = Date(5020, 1, 1)
     pop.prep.prep_propensity(pop)
     # some oral + cab + len + vr willingness established
     assert sum(pop.get_variable(col.PREP_ORAL_WILLING)) > 0
@@ -269,7 +269,7 @@ def test_prep_propensity():
 @pytest.mark.parametrize("prep_strategy", [i for i in range(1, 17)])
 def test_prep_ineligible(prep_strategy):
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.HIV_DIAGNOSED, [True, False] * (N // 2))
     pop.prep.prep_strategy = prep_strategy
     pop.prep.prep_eligibility(pop)
@@ -312,7 +312,7 @@ def test_prep_ineligible(prep_strategy):
 
 def test_prep_eligibility_continuity():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
     pop.set_present_variable(col.AGE, 30)
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_ON_ART, False)
@@ -342,7 +342,7 @@ def test_prep_eligibility_continuity():
 
 def test_prep_eligibility_women_only():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
 
     pop.set_present_variable(col.PREP_ELIGIBLE, False)
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
@@ -427,7 +427,7 @@ def test_prep_eligibility_women_only():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(
         col.LAST_STP_DATE,
-        [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10),
+        [pop.date - TimeDelta(months=x) for x in range(1, 11)] * (N // 10),
     )
     pop.prep.prep_eligibility(pop)
 
@@ -452,7 +452,7 @@ def test_prep_eligibility_women_only():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(
         col.LAST_STP_DATE,
-        [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10),
+        [pop.date - TimeDelta(months=x) for x in range(1, 11)] * (N // 10),
     )
     pop.prep.prep_eligibility(pop)
 
@@ -489,7 +489,7 @@ def test_prep_eligibility_women_only():
 
 def test_prep_eligibility_all():
     N = 1000
-    pop = Population(size=N, start_date=date(2020, 1, 1))
+    pop = Population(size=N, start_date=Date(2020, 1, 1))
 
     pop.set_present_variable(col.PREP_ELIGIBLE, False)
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
@@ -580,7 +580,7 @@ def test_prep_eligibility_all():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(
         col.LAST_STP_DATE,
-        [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10),
+        [pop.date - TimeDelta(months=x) for x in range(1, 11)] * (N // 10),
     )
     pop.prep.prep_eligibility(pop)
 
@@ -605,7 +605,7 @@ def test_prep_eligibility_all():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(
         col.LAST_STP_DATE,
-        [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10),
+        [pop.date - TimeDelta(months=x) for x in range(1, 11)] * (N // 10),
     )
     pop.prep.prep_eligibility(pop)
 
@@ -650,7 +650,7 @@ def test_prep_eligibility_all():
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
     pop.set_present_variable(
         col.LAST_STP_DATE,
-        [pop.date - timedelta(months=x) for x in range(1, 11)] * (N // 10),
+        [pop.date - TimeDelta(months=x) for x in range(1, 11)] * (N // 10),
     )
     pop.prep.prep_eligibility(pop)
 
@@ -678,9 +678,9 @@ def test_prep_eligibility_all():
 
 def test_starting_prep():
     N = 1000
-    time_step = timedelta(months=1)
-    pop = Population(size=N, start_date=date(5000, 1, 1))
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    time_step = TimeDelta(months=1)
+    pop = Population(size=N, start_date=Date(5000, 1, 1))
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(5000)]
     pop.set_present_variable(col.HARD_REACH, False)
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.HIV_STATUS, False)
@@ -691,10 +691,10 @@ def test_starting_prep():
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
     pop.set_present_variable(col.CONT_ON_PREP, None)
     pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, None)
-    pop.set_present_variable(col.CUMULATIVE_PREP_ORAL, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_ORAL, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_CAB, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_VR, TimeDelta(months=0))
     # tested explicitly to start prep
     pop.set_present_variable(
         col.PREP_ORAL_TESTED, [True, False, False, False] * (N // 4)
@@ -806,10 +806,10 @@ def test_starting_prep():
     pop.set_present_variable(col.ON_PREP, False)
     pop.set_present_variable(col.CONT_ON_PREP, None)
     pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, None)
-    pop.set_present_variable(col.CUMULATIVE_PREP_ORAL, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_CAB, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=0))
-    pop.set_present_variable(col.CUMULATIVE_PREP_VR, timedelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_ORAL, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_CAB, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, TimeDelta(months=0))
+    pop.set_present_variable(col.CUMULATIVE_PREP_VR, TimeDelta(months=0))
     # 100% chance to start prep
     pop.prep.prob_oral_prep_start = 1
     pop.prep.prob_cab_prep_start = 1
@@ -879,7 +879,7 @@ def test_starting_prep():
 
     pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
     pop.set_present_variable(col.EVER_PREP, False)
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(6000)]
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(6000)]
     pop.prep.favoured_prep(pop, None)
     pop.prep.start_prep(pop, time_step)
     # everyone is on len because vr is not yet available
@@ -889,28 +889,28 @@ def test_starting_prep():
 
 def test_continuing_prep():
     N = 100
-    time_step = timedelta(months=1)
-    pop = Population(size=N, start_date=date(5000, 1, 1))
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    time_step = TimeDelta(months=1)
+    pop = Population(size=N, start_date=Date(5000, 1, 1))
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(5000)]
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_ELIGIBLE, True)
     pop.set_present_variable(col.EVER_PREP, True)
     pop.set_present_variable(col.ON_PREP, True)
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, None)
     pop.set_present_variable(col.PREP_JUST_STARTED, False)
-    pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=3))
-    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=2))
+    pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=3))
+    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=2))
     pop.set_present_variable(col.CUMULATIVE_PREP_ORAL, time_step)
     pop.set_present_variable(col.CUMULATIVE_PREP_CAB, time_step)
     pop.set_present_variable(col.CUMULATIVE_PREP_LEN, time_step)
     pop.set_present_variable(col.CUMULATIVE_PREP_VR, time_step)
-    pop.set_present_variable(col.LAST_TEST_DATE, pop.date - timedelta(months=3))
+    pop.set_present_variable(col.LAST_TEST_DATE, pop.date - TimeDelta(months=3))
     pop.set_present_variable(
         col.LAST_PREP_USE_DATE,
         [
             pop.date - time_step,
-            pop.date - timedelta(months=3),
-            pop.date - timedelta(months=6),
+            pop.date - TimeDelta(months=3),
+            pop.date - TimeDelta(months=6),
             pop.date - time_step,
         ]
         * (N // 4),
@@ -946,7 +946,7 @@ def test_continuing_prep():
 
     pop.prep.continue_prep(pop, time_step)
     # expecting 90% of people to continue prep
-    no_on_prep = sum(pop.get_variable(col.CONT_ACTIVE_ON_PREP) == timedelta(months=3))
+    no_on_prep = sum(pop.get_variable(col.CONT_ACTIVE_ON_PREP) == TimeDelta(months=3))
     mean = N * (1 - prob_base_prep_stop)
     stdev = sqrt(mean * prob_base_prep_stop)
     assert mean - 3 * stdev <= no_on_prep <= mean + 3 * stdev
@@ -959,7 +959,7 @@ def test_continuing_prep():
     # check cumulative prep usage (those that stopped should not be incremented)
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_ORAL) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_ORAL) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Oral)
         )
         | (
@@ -969,7 +969,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_CAB) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_CAB) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Cabotegravir)
         )
         | (
@@ -979,7 +979,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_LEN) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_LEN) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Lenacapavir)
         )
         | (
@@ -989,7 +989,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_VR) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_VR) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.VaginalRing)
         )
         | (
@@ -999,15 +999,15 @@ def test_continuing_prep():
     )
 
     pop.set_present_variable(col.ON_PREP, True)
-    pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=3))
-    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=2))
+    pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=3))
+    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=2))
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, None)
     pop.set_present_variable(
         col.LAST_PREP_USE_DATE,
         [
             pop.date - time_step,
-            pop.date - timedelta(months=3),
-            pop.date - timedelta(months=6),
+            pop.date - TimeDelta(months=3),
+            pop.date - TimeDelta(months=6),
             pop.date - time_step,
         ]
         * (N // 4),
@@ -1039,7 +1039,7 @@ def test_continuing_prep():
     # check cumulative prep usage (those that stopped should not be incremented)
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_ORAL) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_ORAL) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Oral)
         )
         | (
@@ -1049,7 +1049,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_CAB) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_CAB) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Cabotegravir)
         )
         | (
@@ -1059,7 +1059,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_LEN) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_LEN) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.Lenacapavir)
         )
         | (
@@ -1069,7 +1069,7 @@ def test_continuing_prep():
     )
     assert all(
         (
-            (pop.get_variable(col.CUMULATIVE_PREP_VR) == timedelta(months=2))
+            (pop.get_variable(col.CUMULATIVE_PREP_VR) == TimeDelta(months=2))
             == (pop.get_variable(col.PREP_TYPE) == PrEPType.VaginalRing)
         )
         | (
@@ -1080,7 +1080,7 @@ def test_continuing_prep():
 
     pop.set_present_variable(col.ON_PREP, True)
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, None)
-    pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date - timedelta(months=3))
+    pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date - TimeDelta(months=3))
     pop.set_present_variable(
         col.PREP_TYPE, [PrEPType.Cabotegravir, PrEPType.Lenacapavir] * (N // 2)
     )
@@ -1096,7 +1096,7 @@ def test_continuing_prep():
     # len prep not updated because last prep usage is too recent
     assert all(
         (pop.get_variable(col.PREP_TYPE) == PrEPType.Lenacapavir)
-        == (pop.get_variable(col.LAST_PREP_USE_DATE) == pop.date - timedelta(months=3))
+        == (pop.get_variable(col.LAST_PREP_USE_DATE) == pop.date - TimeDelta(months=3))
     )
     assert all(
         (pop.get_variable(col.PREP_TYPE) == PrEPType.Oral)
@@ -1132,21 +1132,21 @@ def test_continuing_prep():
     pop.set_present_variable(col.LAST_PREP_USE_DATE, pop.date - time_step)
     pop.set_present_variable(col.PREP_TYPE, PrEPType.Lenacapavir)
     pop.set_present_variable(col.CONT_ON_PREP, time_step)
-    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, timedelta(months=2))
+    pop.set_present_variable(col.CUMULATIVE_PREP_LEN, TimeDelta(months=2))
 
     pop.prep.continue_prep(pop, time_step)
     # everyone continues prep without choice
     assert all(pop.get_variable(col.PREP_TYPE) == PrEPType.Lenacapavir)
     assert all(pop.get_variable(col.LAST_PREP_USE_DATE) == pop.date - time_step)
-    assert all((pop.get_variable(col.CONT_ON_PREP) == timedelta(months=2)))
-    assert all((pop.get_variable(col.CUMULATIVE_PREP_LEN) == timedelta(months=3)))
+    assert all((pop.get_variable(col.CONT_ON_PREP) == TimeDelta(months=2)))
+    assert all((pop.get_variable(col.CUMULATIVE_PREP_LEN) == TimeDelta(months=3)))
 
 
 def test_restarting_prep():
     N = 100
-    time_step = timedelta(months=1)
-    pop = Population(size=N, start_date=date(5000, 1, 1))
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    time_step = TimeDelta(months=1)
+    pop = Population(size=N, start_date=Date(5000, 1, 1))
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(5000)]
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_ELIGIBLE, True)
     pop.set_present_variable(col.EVER_PREP, True)
@@ -1154,8 +1154,8 @@ def test_restarting_prep():
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, pop.date - time_step)
     pop.set_present_variable(col.PREP_PAUSED, False)
     pop.set_present_variable(col.PREP_JUST_STARTED, False)
-    pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=0))
-    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=0))
+    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0))
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
     pop.set_present_variable(col.PREP_TYPE, PrEPType.Oral)
     pop.set_present_variable(
@@ -1198,9 +1198,9 @@ def test_restarting_prep():
 
 def test_stopping_prep():
     N = 100
-    time_step = timedelta(months=1)
-    pop = Population(size=N, start_date=date(5000, 1, 1))
-    pop.prep.date_prep_intro = [date(2000), date(3000), date(4000), date(5000)]
+    time_step = TimeDelta(months=1)
+    pop = Population(size=N, start_date=Date(5000, 1, 1))
+    pop.prep.date_prep_intro = [Date(2000), Date(3000), Date(4000), Date(5000)]
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_ELIGIBLE, False)
     pop.set_variable_range(col.PREP_ELIGIBLE, True, N * 0.9, N - 1)
@@ -1211,9 +1211,9 @@ def test_stopping_prep():
     pop.set_present_variable(col.LAST_PREP_STOP_DATE, None)
     pop.set_present_variable(col.PREP_PAUSED, False)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
-    pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=2))
-    pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=2))
-    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=2))
+    pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=2))
+    pop.set_present_variable(col.CONT_INTENT_ON_PREP, TimeDelta(months=2))
+    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=2))
     pop.set_present_variable(col.PREP_TYPE, PrEPType.Oral)
     pop.set_present_variable(col.FAVOURED_PREP_TYPE, PrEPType.Oral)
 
@@ -1235,12 +1235,12 @@ def test_stopping_prep():
     # check continuous prep usage
     assert all(
         pop.get_variable(col.PREP_PAUSED)
-        == (pop.get_variable(col.CONT_ON_PREP) == timedelta(months=2))
+        == (pop.get_variable(col.CONT_ON_PREP) == TimeDelta(months=2))
     )
-    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == timedelta(months=3))
+    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == TimeDelta(months=3))
     assert all(
         pop.get_variable(col.PREP_PAUSED)
-        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == timedelta(months=0))
+        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == TimeDelta(months=0))
     )
 
     pop.date += time_step
@@ -1256,29 +1256,29 @@ def test_stopping_prep():
     # check continuous prep usage
     assert all(
         pop.get_variable(col.PREP_PAUSED)
-        == (pop.get_variable(col.CONT_ON_PREP) == timedelta(months=2))
+        == (pop.get_variable(col.CONT_ON_PREP) == TimeDelta(months=2))
     )
-    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == timedelta(months=4))
+    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == TimeDelta(months=4))
     assert all(
         pop.get_variable(col.PREP_PAUSED)
-        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == timedelta(months=0))
+        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == TimeDelta(months=0))
     )
 
     pop.date += time_step
     pop.inc_variable(col.LAST_TEST_DATE, time_step)
     pop.set_present_variable(col.PREP_ELIGIBLE, True)
-    pop.set_present_variable(col.CONT_ON_PREP, timedelta(months=2))
-    pop.set_present_variable(col.CONT_INTENT_ON_PREP, timedelta(months=4))
-    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, timedelta(months=0))
+    pop.set_present_variable(col.CONT_ON_PREP, TimeDelta(months=2))
+    pop.set_present_variable(col.CONT_INTENT_ON_PREP, TimeDelta(months=4))
+    pop.set_present_variable(col.CONT_ACTIVE_ON_PREP, TimeDelta(months=0))
     pop.prep.prep_usage(pop, time_step)
     # expecting everyone to automatically restart from pause
     assert all(pop.get_variable(col.ON_PREP))
     assert sum(pop.get_variable(col.PREP_PAUSED)) == 0
     assert all(pop.get_variable(col.LAST_PREP_STOP_DATE).isnull())
     # check continuous prep usage
-    assert all(pop.get_variable(col.CONT_ON_PREP) == timedelta(months=3))
-    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == timedelta(months=5))
-    assert all(pop.get_variable(col.CONT_ACTIVE_ON_PREP) == timedelta(months=1))
+    assert all(pop.get_variable(col.CONT_ON_PREP) == TimeDelta(months=3))
+    assert all(pop.get_variable(col.CONT_INTENT_ON_PREP) == TimeDelta(months=5))
+    assert all(pop.get_variable(col.CONT_ACTIVE_ON_PREP) == TimeDelta(months=1))
 
     pop.date += time_step
     pop.set_present_variable(col.HIV_DIAGNOSED, True)
@@ -1295,15 +1295,15 @@ def test_stopping_prep():
     # check continuous prep usage
     assert all(
         ~pop.get_variable(col.ON_PREP)
-        == (pop.get_variable(col.CONT_ON_PREP) == timedelta(months=0))
+        == (pop.get_variable(col.CONT_ON_PREP) == TimeDelta(months=0))
     )
     assert all(
         ~pop.get_variable(col.ON_PREP)
-        == (pop.get_variable(col.CONT_INTENT_ON_PREP) == timedelta(months=0))
+        == (pop.get_variable(col.CONT_INTENT_ON_PREP) == TimeDelta(months=0))
     )
     assert all(
         ~pop.get_variable(col.ON_PREP)
-        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == timedelta(months=0))
+        == (pop.get_variable(col.CONT_ACTIVE_ON_PREP) == TimeDelta(months=0))
     )
 
     pop.date += time_step

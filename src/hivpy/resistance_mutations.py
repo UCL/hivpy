@@ -13,7 +13,7 @@ import numpy as np
 
 import hivpy.column_names as col
 
-from .common import COND, SexType, rng, timedelta
+from .common import COND, SexType, rng, TimeDelta
 from .resistance_mutations_data import ResistanceMutationsData
 
 
@@ -51,8 +51,8 @@ class ResistanceMutationsModule:
             3,
         ]
         self.cont_on_art_bins = [
-            timedelta(months=3).years(),
-            timedelta(months=6).years(),
+            TimeDelta(months=3).years(),
+            TimeDelta(months=6).years(),
         ]
         self.adherence_bins = [0.5, 0.8]
 
@@ -359,8 +359,8 @@ class ResistanceMutationsModule:
 
     def init_resistance_variables(self):
         # FIXME: move drugs and other ART-related columns to ART module
-        self.pop.init_variable(col.CONT_ON_ART, timedelta(months=0), n_prev_steps=1)
-        self.pop.init_variable(col.CONT_ON_ARV, timedelta(months=0))
+        self.pop.init_variable(col.CONT_ON_ART, TimeDelta(months=0), dt=1)
+        self.pop.init_variable(col.CONT_ON_ARV, TimeDelta(months=0))
         self.pop.init_variable(col.NUM_ACTIVE_DRUGS, 0)
         self.pop.init_variable(col.RESISTANCE_INDEX, -1)
         self.init_arv_drugs()

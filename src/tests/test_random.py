@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from hivpy.common import date, rng
+from hivpy.common import Date, rng
 from hivpy.population import Population
 
 
@@ -67,7 +67,7 @@ def test_seed_context_switching():
 def test_rng_in_functions():
     rng.set_seed(50)
     N = 1000
-    pop1 = Population(size=N, start_date=date(1989, 1, 1))
+    pop1 = Population(size=N, start_date=Date(1989, 1, 1))
     rng.set_seed(50)
-    pop2 = Population(size=N, start_date=date(1989, 1, 1))
+    pop2 = Population(size=N, start_date=Date(1989, 1, 1))
     assert (pop1.data.equals(pop2.data))

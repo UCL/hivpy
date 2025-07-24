@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import AND, COND, SexType, date, rng, timedelta
+from hivpy.common import AND, COND, SexType, Date, rng, TimeDelta
 from hivpy.hiv_status import HIVStatusModule
 from hivpy.population import Population
 
@@ -18,7 +18,7 @@ def resetRandomState():
 @pytest.fixture
 def pop_with_initial_hiv():
     pop_size = 100000
-    pop = Population(size=pop_size, start_date=date(1989, 1, 1))
+    pop = Population(size=pop_size, start_date=Date(1989, 1, 1))
     partners = pop.get_variable(col.NUM_PARTNERS) > 0
     overThresh = pop.get_variable(col.NUM_PARTNERS) > pop.hiv_status.initial_hiv_newp_threshold
     print("total partnered", sum(partners))
@@ -33,7 +33,7 @@ def test_initial_hiv_threshold(pop_percentage):
     Check that HIV is initially introduced only to those with high enough newp.
     """
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1))
+    pop = Population(size=1000, start_date=Date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     threshold = HIV_module.initial_hiv_newp_threshold
     # select a proportion of the population to have high enough newp
@@ -58,7 +58,7 @@ def test_initial_hiv_probability():
     Check that HIV is initially assigned with the specified probability.
     """
     # Start before 1989 to avoid having HIV introduced when creating population
-    pop = Population(size=1000, start_date=date(1988, 1, 1))
+    pop = Population(size=1000, start_date=Date(1988, 1, 1))
     HIV_module = HIVStatusModule()
     # Have everyone be a candidate for initial introduction
     pop.set_present_variable(col.NUM_PARTNERS, HIV_module.initial_hiv_newp_threshold)
@@ -73,15 +73,15 @@ def test_hiv_introduced_only_once(mocker):
     """
     Check that we do not initialise HIV status repeatedly.
     """
-    pop = Population(size=10000, start_date=date(1988, 12, 1))
+    pop = Population(size=10000, start_date=Date(1988, 12, 1))
     spy = mocker.spy(pop.hiv_status, "introduce_HIV")
-    pop.evolve(timedelta(days=31))
+    pop.evolve(TimeDelta(days=31))
     spy.assert_not_called()
     # Starting from 1989/1/1, so HIV should now be introduced...
-    pop.evolve(timedelta(days=31))
+    pop.evolve(TimeDelta(days=31))
     spy.assert_called_once()
     # ...but should not be repeated at the next time step
-    pop.evolve(timedelta(days=31))
+    pop.evolve(TimeDelta(days=31))
     spy.assert_called_once()
 
 
@@ -89,12 +89,12 @@ def test_hiv_not_reintroduced_after_1989(mocker):
     """
     Check that we do not initialise HIV status repeatedly.
     """
-    pop = Population(size=1000, start_date=date(1989, 4, 1))
+    pop = Population(size=1000, start_date=Date(1989, 4, 1))
     assert pop.HIV_introduced
     # HIV has been introduced, so that should not be called again
     spy = mocker.spy(pop.hiv_status, "introduce_HIV")
     for _ in range(10):
-        pop.evolve(timedelta(days=31))
+        pop.evolve(TimeDelta(days=31))
     spy.assert_not_called()
 
 
@@ -117,7 +117,7 @@ def test_hiv_update(pop_with_initial_hiv: Population):
     prev_status = pop_with_initial_hiv.get_variable(col.HIV_STATUS).copy()
     initial_infected = pop_with_initial_hiv.get_sub_pop([(col.HIV_STATUS, op.eq, True)])
     for i in range(10):
-        pop_with_initial_hiv.date += timedelta(days=30)
+        pop_with_initial_hiv.date += TimeDelta(days=30)
         pop_with_initial_hiv.hiv_status.set_viral_load_groups(pop_with_initial_hiv)
         pop_with_initial_hiv.hiv_status.update_HIV_status(pop_with_initial_hiv)
 
@@ -137,7 +137,7 @@ def test_hiv_update(pop_with_initial_hiv: Population):
 
 def test_HIV_risk_vector():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     hiv_module = pop.hiv_status
     # Test probability of partnering with someone with HIV by sex and age group
     # 5 age groups (15-25, 25-35, 35-45, 45-55, 55-65) and 2 sexes = 10 groups
@@ -189,7 +189,7 @@ def test_HIV_risk_vector():
 
 def test_viral_group_risk_vector():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     hiv_module = pop.hiv_status
     # Test probability of partnering with someone with HIV by sex and age group
     # 5 age groups (15-25, 25-35, 35-45, 45-55, 55-65) and 2 sexes = 10 groups
@@ -204,7 +204,7 @@ def test_viral_group_risk_vector():
             age_group_list += [age_group] * N_group
             HIV_list += [True] * (N_group // HIV_ratio) + [False] * (N_group - N_group//HIV_ratio)
     pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
-    pop.date += timedelta(days=180)  # no one in primary infection
+    pop.date += TimeDelta(days=180)  # no one in primary infection
     hiv_module.set_primary_infection(pop)
     pop.set_present_variable(col.HIV_STATUS, HIV_list)
     pop.set_present_variable(col.SEX, np.array(sex_list))
@@ -236,7 +236,7 @@ def test_viral_group_risk_vector():
 
 def test_initial_vl():
     N = 1000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, [True, False] * 500)
     # Reset viral load for testing (original values affected by intro of HIV)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
@@ -273,7 +273,7 @@ def check_initial_vl_by_sex(pop: Population, hiv_module, hivpos_subpop, hivneg_s
 
 def test_naive_vl_progression():
     N = 1000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     init_vl = 5
     pop.set_present_variable(col.AGE, 35)
     pop.set_present_variable(col.VIRAL_LOAD, init_vl)
@@ -318,7 +318,7 @@ def check_vl_update(pop, init_vl, hiv_module, hivpos_subpop, hivneg_subpop, age_
 
 def test_initial_cd4():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, [True, False] * 5000)
     pop.set_present_variable(col.CD4, 0.0)
     pop.set_present_variable(col.VIRAL_LOAD, 0.0)
@@ -362,7 +362,7 @@ def check_init_cd4_by_sex_age(pop, hivpos_subpop, hivneg_subpop, hiv_module, sex
 
 def test_naive_cd4_progression():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.AGE, 35)
     pop.set_present_variable(col.HIV_STATUS, [True, False] * 5000)
     # Reset viral load for testing (original values affected by intro of HIV)
@@ -396,15 +396,15 @@ def check_cd4_progression(pop: Population, hiv_module, hivpos_subpop, change_fac
 
 def test_who3_tb():
     N = 1000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.AGE, 35)
     pop.set_present_variable(col.HIV_STATUS, True)
 
-    pop.hiv_status.HIV_related_disease_risk(pop, timedelta(0, 3, 0))
+    pop.hiv_status.HIV_related_disease_risk(pop, TimeDelta(0, 3, 0))
     tb_infected = pop.get_sub_pop(COND(col.TB, op.eq, True))
     assert len(tb_infected) > 0  # FIXME: figure out correct TB probability
     tb_infected_dates = pop.get_variable(col.TB_INFECTION_DATE, tb_infected)
-    assert all(tb_infected_dates == date(1989, 1, 1))
+    assert all(tb_infected_dates == Date(1989, 1, 1))
 
 
 def test_no_infection_in_nonmonogamous_ltp():
@@ -412,7 +412,7 @@ def test_no_infection_in_nonmonogamous_ltp():
     Check that the non-monogamous ltp transmission does not occur if noone has HIV.
     """
     N = 1000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
 
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_MONOGAMOUS, False)
@@ -429,7 +429,7 @@ def test_ltp_infected_by_third_party():
     by some third party
     """
     N = 10000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     HIVM = pop.hiv_status
 
     pop.set_present_variable(col.AGE, 25)
@@ -490,7 +490,7 @@ def test_ltp_infected_by_third_party():
 @pytest.mark.parametrize("vl_group", [0, 1, 2, 3, 4, 5])
 def test_ltp_infection_by_subject(vl_group):
     N = 10000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
 
     pop.set_present_variable(col.LONG_TERM_PARTNER, True)
     pop.set_present_variable(col.LTP_MONOGAMOUS, True)
@@ -539,7 +539,7 @@ def test_prob_infection_from_infected_ltp(risk_factors):
     circumcised = risk_factors[2]
 
     N = 10000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, [SexType.Male]*(N//2) + [SexType.Female]*(N//2))
     men = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
     women = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Female))
@@ -554,7 +554,7 @@ def test_prob_infection_from_infected_ltp(risk_factors):
     if (vl == 0):
         pop.set_present_variable(col.LTP_VIRAL_SUPPRESSED, True)
     elif (vl == 2):
-        pop.set_present_variable(col.LTP_INFECTION_DATE, date(1990, 1, 1))
+        pop.set_present_variable(col.LTP_INFECTION_DATE, Date(1990, 1, 1))
 
     HIVM = pop.hiv_status
     HIVM.set_infection_from_infected_ltp(pop)

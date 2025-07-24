@@ -4,7 +4,7 @@ from math import sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import date, rng
+from hivpy.common import Date, rng
 from hivpy.hiv_diagnosis import HIVTestType
 from hivpy.population import Population
 from hivpy.prep import PrEPType
@@ -17,7 +17,7 @@ def resetRandomState():
 
 def test_primary_infection_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
     pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
@@ -68,7 +68,7 @@ def test_primary_infection_diagnosis():
 
 def test_primary_infection_prep_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
     pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
@@ -120,10 +120,10 @@ def test_primary_infection_prep_diagnosis():
 
 def test_general_population_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 1, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 1, 1))
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)
@@ -141,7 +141,7 @@ def test_general_population_diagnosis():
 
 def test_general_population_prep_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
@@ -155,7 +155,7 @@ def test_general_population_prep_diagnosis():
 
     # Ab + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = False
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 9, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 9, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -168,7 +168,7 @@ def test_general_population_prep_diagnosis():
     # reset diagnosis
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # Ab + PrEP general outcomes (older infection)
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 6, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 6, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -182,7 +182,7 @@ def test_general_population_prep_diagnosis():
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA + PrEP general outcomes (recent infection)
     pop.hiv_diagnosis.prep_inj_na = True
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 9, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 9, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -195,7 +195,7 @@ def test_general_population_prep_diagnosis():
     # reset diagnosis
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     # NA + PrEP general outcomes (older infection)
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 6, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 6, 1))
     pop.hiv_diagnosis.update_HIV_diagnosis(pop)
 
     # get stats
@@ -208,7 +208,7 @@ def test_general_population_prep_diagnosis():
 
 def test_primary_loss_at_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, True)
     pop.set_present_variable(col.DATE_HIV_INFECTION, pop.date)
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
@@ -248,10 +248,10 @@ def test_primary_loss_at_diagnosis():
 
 def test_general_loss_at_diagnosis():
     N = 10000
-    pop = Population(size=N, start_date=date(1989, 1, 1))
+    pop = Population(size=N, start_date=Date(1989, 1, 1))
     pop.set_present_variable(col.HIV_STATUS, True)
     pop.set_present_variable(col.IN_PRIMARY_INFECTION, False)
-    pop.set_present_variable(col.DATE_HIV_INFECTION, date(1988, 1, 1))
+    pop.set_present_variable(col.DATE_HIV_INFECTION, Date(1988, 1, 1))
     pop.set_present_variable(col.LAST_TEST_DATE, pop.date)
     pop.set_present_variable(col.HIV_DIAGNOSED, False)
     pop.set_present_variable(col.PREP_TYPE, PrEPType.NoPrEP)

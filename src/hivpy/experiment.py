@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .common import date, timedelta
+from .common import Date, TimeDelta
 from .config import ExperimentConfig, LoggingConfig, SimulationConfig
 from .exceptions import OutputException
 from .simulation import SimulationHandler
@@ -56,16 +56,16 @@ class OutputHandler:
 
 def create_simulation(experiment_param):
     try:
-        start_date = date(int(experiment_param['start_year']), 1, 1)
-        end_date = date(int(experiment_param['end_year']), 12, 31)
+        start_date = Date(int(experiment_param['start_year']), 1, 1)
+        end_date = Date(int(experiment_param['end_year']), 12, 31)
         population_size = int(experiment_param['population'])
         graph_outputs = list(experiment_param['graph_outputs'])
-        interval = timedelta(days=int(experiment_param['time_interval_days']))
+        interval = TimeDelta(days=int(experiment_param['time_interval_days']))
         output_dir = Path(experiment_param['simulation_output_dir'])
         if not output_dir.exists():
             output_dir.mkdir()
         if 'intervention_year' in experiment_param.keys():
-            intervention_date = date(int(experiment_param['intervention_year']), 1, 1)
+            intervention_date = Date(int(experiment_param['intervention_year']), 1, 1)
             intervention_option = int(experiment_param['intervention_option'])
             recurrent_intervention = int(experiment_param['repeat_intervention'])
             simconfiguration = SimulationConfig(population_size, start_date, end_date, output_dir,

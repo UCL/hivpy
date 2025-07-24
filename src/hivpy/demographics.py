@@ -15,7 +15,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 
 import hivpy.column_names as col
-from hivpy.common import SexType, rng, timedelta
+from hivpy.common import SexType, rng, TimeDelta
 from hivpy.demographics_data import DemographicsData
 from hivpy.exceptions import SimulationException
 
@@ -227,7 +227,7 @@ class DemographicsModule:
         population.loc[female_pop, col.HARD_REACH] = hard_reach_f
         population.loc[male_pop, col.HARD_REACH] = hard_reach_m
 
-    def determine_deaths(self, pop: Population, time_step: timedelta) -> pd.Series:
+    def determine_deaths(self, pop: Population, time_step: TimeDelta) -> pd.Series:
         """
         Get which individuals die in a time step, as a boolean Series.
         """

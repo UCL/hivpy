@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from hivpy import column_names as col
-from hivpy.common import AND, COND, OR, SexType, date, rng
+from hivpy.common import AND, COND, OR, SexType, Date, rng
 from hivpy.population import Population
 
 
@@ -14,14 +14,14 @@ def resetRandomState():
 
 
 def test_population_init():
-    pop = Population(size=100, start_date=date(1989, 1, 1))
+    pop = Population(size=100, start_date=Date(1989, 1, 1))
     print(pop)
     assert (len(pop.data) == 100)
     assert ((col.HIV_STATUS) in pop.data.columns)
 
 
 def test_COND():
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=1000, start_date=Date(1989, 1, 1))
     pop.data[col.SEX] = np.array([SexType.Male, SexType.Female] * 500)
     males = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
     females = pop.get_sub_pop(COND(col.SEX, op.ne, SexType.Male))  # check different operator
@@ -37,7 +37,7 @@ def test_COND():
 
 
 def test_AND():
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=1000, start_date=Date(1989, 1, 1))
     pop.data[col.SEX] = np.concatenate((np.array([SexType.Male] * 500), np.array([SexType.Female] * 500)))
     pop.data[col.AGE] = np.array([10, 20, 30, 40] * 250)
     female_over_15 = pop.get_sub_pop(AND(COND(col.SEX, op.eq, SexType.Female),
@@ -61,7 +61,7 @@ def test_AND():
 
 
 def test_OR():
-    pop = Population(size=1500, start_date=date(1989, 1, 1))
+    pop = Population(size=1500, start_date=Date(1989, 1, 1))
     pop.data[col.SEX] = np.concatenate((np.array([SexType.Male] * 750), np.array([SexType.Female] * 750)))
     pop.data[col.AGE] = np.array([10, 20, 30, 40, 60, 80] * 250)
     women_or_children = pop.get_sub_pop(OR(COND(col.SEX, op.eq, SexType.Female),
@@ -85,7 +85,7 @@ def test_OR():
 
 
 def test_compound_expression():
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=1000, start_date=Date(1989, 1, 1))
     pop.data[col.SEX] = np.concatenate((np.array([SexType.Male] * 500), np.array([SexType.Female] * 500)))
     pop.data[col.AGE] = np.array([10, 20, 30, 40] * 250)
     female_over_25_or_male_under_25 = pop.get_sub_pop(
@@ -108,7 +108,7 @@ def test_compound_expression():
 
 
 def test_unions():
-    pop = Population(size=1000, start_date=date(1989, 1, 1))
+    pop = Population(size=1000, start_date=Date(1989, 1, 1))
 
     # males
     males = pop.get_sub_pop(COND(col.SEX, op.eq, SexType.Male))
@@ -132,7 +132,7 @@ def test_population_deep_copy():
     from copy import deepcopy
 
     size = 1000
-    pop = Population(size=size, start_date=date(1989, 1, 1))
+    pop = Population(size=size, start_date=Date(1989, 1, 1))
     pop_intervention = deepcopy(pop)
     pop_intervention.set_present_variable(col.TEST_MARK, True)
     pop_for_testing = pop.get_variable(col.TEST_MARK)

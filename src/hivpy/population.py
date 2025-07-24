@@ -7,7 +7,7 @@ import hivpy.column_names as col
 
 from .art import ARTModule
 from .circumcision import CircumcisionModule
-from .common import LogicExpr, date, timedelta
+from .common import LogicExpr, Date, TimeDelta, past
 from .demographics import DemographicsModule
 from .hiv_diagnosis import HIVDiagnosisModule
 from .hiv_status import HIVStatusModule
@@ -17,7 +17,7 @@ from .prep import PrEPModule
 from .resistance_mutations import ResistanceMutationsModule
 from .sexual_behaviour import SexualBehaviourModule
 
-HIV_APPEARANCE = date(1989, 1, 1)
+HIV_APPEARANCE = Date(1989, 1, 1)
 
 
 class Population:
@@ -27,7 +27,7 @@ class Population:
     size: int  # how many individuals to create in total
     data: pd.DataFrame  # the underlying data
     params: dict  # population-level parameters
-    date: date  # current date
+    date: Date  # current date
     HIV_introduced: bool  # whether HIV has been introduced yet
     variable_history: dict  # how many steps we need to store for each variable
     step: int
@@ -116,31 +116,35 @@ class Population:
 
         self.data = self.data.copy(deep=True)
 
-    def init_variable(self, name: str, init_val, n_prev_steps=0, data_type=None):
+    def init_variable(self, name: str, init_val, dt=0, data_type=None):
         """
            New variable will be initialised as a collection of columns.\\
-           Column names (keys) will be (name, 0) ... (name, n_prev_steps).\\
+           Column names (keys) will be "name", "name_t-1" ...\\
            Updates dictionary to keep track of number of time steps being stored for each
            variable.
            name: string, name of variable
-           n_prev_steps: integer, number of previous iterations of this variable which need
-           to be stored (default 0).
+           dt: integer, number of previous iterations of this variable which need to be stored
+               OR TimeDelta, the amount of time that the variable should be stored
         """
-        self.variable_history[name] = n_prev_steps + 1
-        if (n_prev_steps == 0):
+        if isinstance(dt, TimeDelta):
+            dt = int(dt.month / self.time_step.month)
+
+        self.variable_history[name] = dt + 1
+
+        if (dt == 0):
             if data_type is not None:
                 self.data[name] = pd.Series([init_val]*self.size, dtype=data_type)
             else:
                 self.data[name] = init_val
         else:
-            for i in range(0, n_prev_steps + 1):
+            for i in range(0, dt + 1):
                 if data_type is not None:
                     self.data[self.constructParamColumn(name, i)] = pd.Series([init_val]*self.size, dtype=data_type)
                 else:
                     self.data[self.constructParamColumn(name, i)] = init_val
 
     def constructParamColumn(self, name, i):
-        return name + "," + str(i)
+        return past(name, i)
 
     def get_sub_pop(self, conditions):
         """
@@ -325,7 +329,7 @@ class Population:
         # Lambda function used to extract param column contents
         return df.apply(lambda x: func(*[x[p] for p in param_list]), axis=1)
 
-    def evolve(self, time_step: timedelta):
+    def evolve(self, time_step: TimeDelta):
         """
         Advance the population by one time step.
         """

@@ -4,7 +4,7 @@ from math import ceil, isclose, sqrt
 import pytest
 
 import hivpy.column_names as col
-from hivpy.common import SexType, date, diff_years, rng, timedelta
+from hivpy.common import SexType, Date, diff_years, rng, TimeDelta
 from hivpy.population import Population
 from hivpy.resistance_mutations import MutationStatus
 
@@ -18,7 +18,7 @@ def test_fertility():
 
     # build population
     N = 10000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
 
     # get stats
     no_female = sum(pop.get_variable(col.SEX) == SexType.Female)
@@ -36,7 +36,7 @@ def test_num_children():
 
         # build artificial population
         N = 10000
-        pop = Population(size=N, start_date=date(1990, 1, 1))
+        pop = Population(size=N, start_date=Date(1990, 1, 1))
         pop.set_present_variable(col.SEX, SexType.Female)
         pop.set_present_variable(col.AGE, age)
         pop.set_present_variable(col.LAST_PREGNANCY_DATE, None)
@@ -82,12 +82,12 @@ def test_ltp_preg():
 
             # build artificial population
             N = 10000
-            pop = Population(size=N, start_date=date(1990, 1, 1))
+            pop = Population(size=N, start_date=Date(1990, 1, 1))
             pop.set_present_variable(col.SEX, SexType.Female)
             pop.set_present_variable(col.AGE, age)
             pop.set_present_variable(col.NUM_PARTNERS, 0)
             pop.set_present_variable(col.LONG_TERM_PARTNER, True)
-            pop.set_present_variable(col.LAST_PREGNANCY_DATE, [date(1980, 1, 1), None] * (N // 2))
+            pop.set_present_variable(col.LAST_PREGNANCY_DATE, [Date(1980, 1, 1), None] * (N // 2))
             pop.set_present_variable(col.NUM_CHILDREN, 0)
             pop.pregnancy.prob_pregnancy_base = 0.4
             pop.pregnancy.init_fertility(pop)
@@ -133,7 +133,7 @@ def test_stp_preg():
 
             # build artificial population
             N = 10000
-            pop = Population(size=N, start_date=date(1990, 1, 1))
+            pop = Population(size=N, start_date=Date(1990, 1, 1))
             pop.set_present_variable(col.SEX, SexType.Female)
             pop.set_present_variable(col.AGE, age)
             pop.set_present_variable(col.NUM_PARTNERS, stp)
@@ -163,10 +163,10 @@ def test_stp_preg():
 def test_childbirth():
 
     N = 100
-    time_step = timedelta(days=90)
+    time_step = TimeDelta(days=90)
 
     # build artificial population
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.LOW_FERTILITY, False)
@@ -178,7 +178,7 @@ def test_childbirth():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for _ in range(0, ceil(timedelta(days=270) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=270) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -206,10 +206,10 @@ def test_childbirth():
 def test_child_cap():
 
     N = 100
-    time_step = timedelta(days=90)
+    time_step = TimeDelta(days=90)
 
     # build artificial population
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.LOW_FERTILITY, False)
@@ -224,7 +224,7 @@ def test_child_cap():
 
     # evolve population
     # get through pregnancy, childbirth, and pregnancy pause period
-    for _ in range(0, ceil(timedelta(days=450) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=450) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -240,7 +240,7 @@ def test_want_no_children():
 
     # build artificial population
     N = 10000
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.LOW_FERTILITY, False)
@@ -277,7 +277,7 @@ def test_want_no_children():
 
 @pytest.mark.parametrize(
     ("test_date"),
-    [date(2000, 1, 1), date(2010, 1, 1), date(2012, 1, 1), date(2015, 1, 1)],
+    [Date(2000, 1, 1), Date(2010, 1, 1), Date(2012, 1, 1), Date(2015, 1, 1)],
 )
 def test_anc_and_pmtct(test_date):
 
@@ -296,7 +296,7 @@ def test_anc_and_pmtct(test_date):
     # guaranteed pregnancy
     pop.pregnancy.prob_pregnancy_base = 1
     pop.pregnancy.rate_test_anc_inc = 1
-    pop.pregnancy.date_pmtct = date(2004)
+    pop.pregnancy.date_pmtct = Date(2004)
     pop.pregnancy.pmtct_inc_rate = 0.2
 
     # advance pregnancy
@@ -310,8 +310,8 @@ def test_anc_and_pmtct(test_date):
     assert mean_pmtct - 3 * stdev <= no_anc <= mean_pmtct + 3 * stdev
 
     # get stats for PMTCT
-    sd_nvp_end_date = date(year=2010, month=6)
-    dual_nvp_end_date = date(year=2012, month=6)
+    sd_nvp_end_date = Date(year=2010, month=6)
+    dual_nvp_end_date = Date(year=2012, month=6)
     no_pmtct = sum(pop.get_variable(col.PMTCT))
     prob_pmtct = (
         0
@@ -344,10 +344,10 @@ def test_anc_and_pmtct(test_date):
 def test_anc_testing():
 
     N = 10000
-    time_step = timedelta(days=30)
+    time_step = TimeDelta(days=30)
 
     # build artificial population
-    pop = Population(size=N, start_date=date(2000, 1, 1))
+    pop = Population(size=N, start_date=Date(2000, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.LOW_FERTILITY, False)
@@ -375,7 +375,7 @@ def test_anc_testing():
 
     # advance pregnancy to start of second trimester
     pop.pregnancy.update_pregnancy(pop)
-    for _ in range(0, ceil(timedelta(days=90) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -394,7 +394,7 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # advance pregnancy to start of third trimester
-    for _ in range(0, ceil(timedelta(days=90) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -408,7 +408,7 @@ def test_anc_testing():
     assert mean - 3 * stdev <= no_tested <= mean + 3 * stdev
 
     # final advancement into childbirth
-    for _ in range(0, ceil(timedelta(days=90) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=90) / time_step)):
         pop.date += time_step
         pop.pregnancy.update_pregnancy(pop)
     update_anc_testing_outcomes(pop, time_step)
@@ -449,10 +449,10 @@ def test_anc_testing():
 def test_infected_births():
 
     N = 1000
-    time_step = timedelta(days=90)
+    time_step = TimeDelta(days=90)
 
     # build artificial population
-    pop = Population(size=N, start_date=date(1990, 1, 1))
+    pop = Population(size=N, start_date=Date(1990, 1, 1))
     pop.set_present_variable(col.SEX, SexType.Female)
     pop.set_present_variable(col.AGE, 18)
     pop.set_present_variable(col.LOW_FERTILITY, False)
@@ -467,7 +467,7 @@ def test_infected_births():
     pop.pregnancy.prob_pregnancy_base = 1
 
     # evolve population
-    for _ in range(0, ceil(timedelta(days=270) / time_step)):
+    for _ in range(0, ceil(TimeDelta(days=270) / time_step)):
         # advance pregnancy
         pop.pregnancy.update_pregnancy(pop)
         pop.date += time_step
@@ -487,7 +487,7 @@ def test_infected_births():
 def test_calc_prob_preg():
 
     # setup
-    pop = Population(size=1, start_date=date(1990, 1, 1))
+    pop = Population(size=1, start_date=Date(1990, 1, 1))
     # fixing some probabilities
     pop.pregnancy.can_be_pregnant = 0.95
     pop.pregnancy.fertility_factor = [2.0, 1.5, 1, 0.1]

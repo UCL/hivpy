@@ -92,7 +92,10 @@ def not_none_and_compare(fn):
     return lambda x, y: x is not None and fn(x, y)
 
 
-class date:
+def past(name, dt):
+    return name + "_t-" + str(dt) if (dt > 0) else name
+
+class Date:
     def __init__(self, year, month=1, day=1):
         self.year = year
         self.month = month
@@ -101,15 +104,15 @@ class date:
     def __add__(self, delta):
         year = self.year + delta.year + (self.month + delta.month) // 12
         month = (self.month + delta.month) % 12
-        return date(year, month, self.day)
+        return Date(year, month, self.day)
 
     def __sub__(self, delta):
-        if type(delta) is timedelta:
-            return self.__add__(timedelta(years=-delta.year, months=-delta.month))
-        elif type(delta) is date:
+        if type(delta) is TimeDelta:
+            return self.__add__(TimeDelta(years=-delta.year, months=-delta.month))
+        elif type(delta) is Date:
             month = (self.month - delta.month) % 12
             year = (self.year - delta.year) + (self.month - delta.month) // 12
-            return timedelta(year, month)
+            return TimeDelta(year, month)
 
     def __repr__(self):
         return f"({self.year}, {self.month}, {self.day})"
@@ -153,10 +156,10 @@ class date:
 def float_to_date(fp_year):
     int_year = int(fp_year)
     int_month = int((fp_year - int_year) * 12)
-    return date(int_year, int_month)
+    return Date(int_year, int_month)
 
 
-class timedelta:
+class TimeDelta:
     def __init__(self, years=0, months=0, days=0):
         self.year = years
         self.month = months + (days // 30)
@@ -168,7 +171,7 @@ class timedelta:
         months = (self.month * x) + (year_remainder * 12)
         years = years + int(months // 12)
         months = int(months % 12)
-        return timedelta(years=years, months=months)
+        return TimeDelta(years=years, months=months)
 
     def __rmul__(self, x):
         return self.__mul__(x)
@@ -176,12 +179,12 @@ class timedelta:
     def __add__(self, x):
         year = self.year + x.year + (self.month + x.month) // 12
         month = (self.month + x.month) % 12
-        return timedelta(years=year, months=month)
+        return TimeDelta(years=year, months=month)
 
     def __sub__(self, x):
         year = self.year - x.year + (self.month - x.month) // 12
         month = (self.month - x.month) % 12
-        return timedelta(years=year, months=month)
+        return TimeDelta(years=year, months=month)
 
     def __repr__(self) -> str:
         return f"dt({self.year, self.month, 0})"
@@ -189,10 +192,10 @@ class timedelta:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def __eq__(self, dt2: timedelta):
+    def __eq__(self, dt2: TimeDelta):
         return (self.year == dt2.year) and (self.month == dt2.month)
 
-    def __gt__(self, dt2: timedelta):
+    def __gt__(self, dt2: TimeDelta):
         if self.year != dt2.year:
             return self.year > dt2.year
         else:
@@ -219,7 +222,7 @@ class timedelta:
         return self.year + (self.month / 12)
 
 
-def diff_years(date_end: date, date_begin: date):
+def diff_years(date_end: Date, date_begin: Date):
     return (date_end.year - date_begin.year) + (date_end.month - date_begin.month) / 12
 
 

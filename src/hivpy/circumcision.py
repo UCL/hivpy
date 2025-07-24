@@ -13,7 +13,7 @@ import numpy as np
 import hivpy.column_names as col
 
 from .circumcision_data import CircumcisionData
-from .common import AND, COND, SexType, date, diff_years, rng, timedelta
+from .common import AND, COND, SexType, Date, diff_years, rng, TimeDelta
 
 
 class CircumcisionModule:
@@ -24,12 +24,12 @@ class CircumcisionModule:
         with importlib.resources.path("hivpy.data", "circumcision.yaml") as data_path:
             self.c_data = CircumcisionData(data_path)
 
-        self.vmmc_start_year = date(self.c_data.vmmc_start_year)
-        self.circ_rate_change_year = date(self.c_data.circ_rate_change_year)
-        self.prob_circ_calc_cutoff_year = date(self.c_data.prob_circ_calc_cutoff_year)
+        self.vmmc_start_year = Date(self.c_data.vmmc_start_year)
+        self.circ_rate_change_year = Date(self.c_data.circ_rate_change_year)
+        self.prob_circ_calc_cutoff_year = Date(self.c_data.prob_circ_calc_cutoff_year)
         self.circ_after_test = self.c_data.circ_after_test
         self.prob_circ_after_test = self.c_data.prob_circ_after_test
-        self.policy_intervention_year = date(self.c_data.policy_intervention_year)
+        self.policy_intervention_year = Date(self.c_data.policy_intervention_year)
         self.circ_policy_scenario = self.c_data.circ_policy_scenario
         # NOTE: the covid disrup field may not belong here
         self.covid_disrup_affected = self.c_data.covid_disrup_affected
@@ -71,7 +71,7 @@ class CircumcisionModule:
         pop.set_present_variable(col.CIRCUMCISION_DATE, date, circ_born_population)
         # find date where each unborn individual's age would be 0.25
         ages = pop.get_variable(col.AGE, circ_unborn_population)
-        circumcision_dates = [date - timedelta(days=(a - 0.25) * 365) for a in ages]
+        circumcision_dates = [date - TimeDelta(days=(a - 0.25) * 365) for a in ages]
         pop.set_present_variable(
             col.CIRCUMCISION_DATE, circumcision_dates, circ_unborn_population
         )
@@ -152,7 +152,7 @@ class CircumcisionModule:
                     & (self.circ_policy_scenario == 2)
                 )
                 | (
-                    ((self.policy_intervention_year + timedelta(5)) <= self.date)
+                    ((self.policy_intervention_year + TimeDelta(5)) <= self.date)
                     & (self.circ_policy_scenario == 4)
                 )
             )
