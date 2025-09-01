@@ -5,6 +5,8 @@ import math
 import operator
 from itertools import product
 
+import numbers
+
 import numpy as np
 import pandas as pd
 
@@ -100,16 +102,10 @@ class SimulationOutput:
         self.output_stats.loc[self.step, "Date"] = self.latest_date
 
     def _ratio(self, subpop, pop):
-        if type(pop) is int:
-            if pop != 0:
-                if type(subpop) is int:
-                    return subpop/pop
-                return len(subpop)/pop
-        elif len(pop) != 0:
-            if type(subpop) is int:
-                return subpop/len(pop)
-            return len(subpop)/len(pop)
-        return 0
+        a = subpop if isinstance(subpop, numbers.Integral) else len(subpop)
+        b = pop if isinstance(pop, numbers.Integral) else len(pop)
+
+        return (a/b) if (b != 0) else 0
 
     def _log(self, val):
         if val > 0:

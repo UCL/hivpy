@@ -474,23 +474,23 @@ class SexualBehaviourModule:
         pop.set_present_variable(col.RISK_AGE, self.age_based_risk[age_index, sex], over_15s)
 
     def update_risk_long_term_partnered(self, pop: Population):
-        pop.set_present_variable(col.RISK_LTP, 1)  # Unpartnered people
+        pop.set_present_variable(col.RISK_LTP, 1.0)  # Unpartnered people
         partnered_pop = pop.get_sub_pop([(col.LONG_TERM_PARTNER, operator.eq, True)])
         pop.set_present_variable(col.RISK_LTP, self.ltp_risk_factor, partnered_pop)
 
     def init_risk_personal(self, population: Population):
-        population.init_variable(col.RISK_PERSONAL, 1)  # personal risk doesn't update(?)
+        population.init_variable(col.RISK_PERSONAL, 1.0)  # personal risk doesn't update(?)
         r = rng.uniform(size=population.size)
         mask = r < self.p_risk_p
         population.set_present_variable(col.RISK_PERSONAL, 1e-5, mask)
 
         females = population.get_sub_pop([(col.SEX, operator.eq, SexType.Female)])
-        population.set_present_variable(col.LIFE_SEX_RISK, 2, females)
+        population.set_present_variable(col.LIFE_SEX_RISK, 2.0, females)
         low_risk_females = population.get_sub_pop_intersection(females, population.apply_bool_mask(mask))
-        population.set_present_variable(col.LIFE_SEX_RISK, 1, low_risk_females)
+        population.set_present_variable(col.LIFE_SEX_RISK, 1.0, low_risk_females)
         mask = r > (1 - self.prob_high_sex_risk)
         high_risk_females = population.get_sub_pop_intersection(females, population.apply_bool_mask(mask))
-        population.set_present_variable(col.LIFE_SEX_RISK, 3, high_risk_females)
+        population.set_present_variable(col.LIFE_SEX_RISK, 3.0, high_risk_females)
 
     def init_risk_adc(self, population: Population):
         population.init_variable(col.RISK_ADC, 1.0)
@@ -528,7 +528,7 @@ class SexualBehaviourModule:
             self.risk_population = yearly_change_90s**5 * yearly_change_10s**11
 
     def init_risk_diagnosis(self, population: Population):
-        population.init_variable(col.RISK_DIAGNOSIS, 1)  # do we want previous timesteps?
+        population.init_variable(col.RISK_DIAGNOSIS, 1.0)  # do we want previous timesteps?
 
     def update_risk_diagnosis(self, population: Population):
         new_HIV_pop = population.get_sub_pop(

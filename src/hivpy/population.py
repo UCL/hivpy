@@ -316,7 +316,7 @@ class Population:
         else:
             df = self.data
         # Use Dummy column to in order to enable transform method and avoid any risks to data
-        return df.groupby(param_list, dropna=dropna)["Dummy"].transform(general_func)
+        return df.groupby(param_list, observed=False, dropna=dropna)["Dummy"].transform(general_func)
 
     def col_apply(self, param_list, func, sub_pop=None):
         """
