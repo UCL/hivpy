@@ -384,8 +384,7 @@ class ARTModule:
 
         # Changes in ART converage and oral PrEP coverage after year of intervention
         # only happens once
-        # FIXME: what if the timestep doesn't divide the year exactly so we don't fulfil this equality?
-        if current_date == Date(self.pop.policy_intervention_year, 1, 1):
+        if (current_date >= Date(self.pop.policy_intervention_year, 1, 1) and current_date - self.pop.timestep < Date(self.pop.policy_intervention_year, 1, 1)):
             if self.lower_future_art_coverage:
                 self.pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
                 self.pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
@@ -763,6 +762,10 @@ class ARTModule:
             restart_ART, self.pop.apply_bool_mask(supply_restarted, supply_interrupts)
         )
 
+    def reset_drugs(self, person):
+        for drug in self.ARVs:
+            person[self.on_drug(drug)] = False
+
     def set_drugs(self, person, drug_list):
         for drug in drug_list:
             person[self.on_drug(drug)] = True
@@ -770,6 +773,57 @@ class ARTModule:
     def unset_drugs(self, person, drug_list):
         for drug in drug_list:
             person[self.on_drug(drug)] = False
+
+    def initiate_ART_simplified(self):
+        # Get people who are starting ART this timestep
+        current_date = self.pop.date
+        if current_date > self.art_intro_date:
+            starters = self.pop.get_sub_pop(
+                AND(
+                    COND(col.DATE_START_ART, op.eq, current_date),
+                    COND(col.ON_ART, op.eq, False),
+                )
+            )
+        
+        def initiate_starter(person):
+                person[col.ON_ART] = True
+                person[col.TIME_ON_ART] = 0
+                person[col.ART_NAIVE] = False
+                self.reset_drugs(person)
+                person[col.ART_LINE] = 1
+
+                if current_date < Date(year=2010):
+                    self.set_drugs(person, ["zdv", "3tc", "efa"])
+                elif current_date < Date(year=2020):
+                    self.set_drugs(person, ["ten", "3tc", "efa"])
+                else:
+                    self.set_drugs(person, ["ten", "3tc", "dol"])
+
+        self.pop.apply_function(initiate_starter, starters)
+
+    def check_ART_failure(self):
+        """
+        Checks for failure of first line therapy and switches to second line. 
+        Currently only models monitoring according to ART monitoring strategy 150 after 2015;
+        code can be expanded to handle other strategies by adding conditional statements
+        in this function. 
+        """
+        current_date = self.pop.date
+
+        if current_date < Date(year=2015):
+            return  # implicitly no monitoring for failure before 2015
+        else:
+            pass# modelling monitoring strategy 150 as the only option at present. 
+            
+
+        def initiate_second_line_therapy(person):
+            self.reset_drugs(person)
+            if current_date < Date(year=2020):
+                self.set_drugs(person, ["zdv", "3tc", "taz"])
+            else:
+                self.set_drugs(person, ["ten", "3tc", "dar"])
+        
+        self.pop.apply_function(initiate_second_line_therapy, failures)
 
     def initiate_first_line_therapy(self):
         # People who have started ART this timestep
@@ -832,7 +886,4 @@ class ARTModule:
                     self.set_drugs(person, ["ten", "3tc", "dol"])
                     self.unset_drugs(person, ["efa"])
 
-            self.pop.apply_function(initiate_starter, starters)
-
-    def initiate_second_line_therapy(self):
-        pass
+        self.pop.apply_function(initiate_starter, starters)
