@@ -235,13 +235,18 @@ def test_initial_sex_behaviour_groups(yaml_data):
 def test_risk_long_term_partner():
     N = 1000
     pop = Population(size=N, start_date=Date(1989, 1, 1))
+
     # pick some indices and give those people LTPs
-    indices = rng.integers(0, N, size=15)
+    partnered = pop.get_sub_pop_from_array(rng.integers(0, N, size=15))
     pop.set_present_variable(col.LONG_TERM_PARTNER, False)
-    pop.set_present_variable(col.LONG_TERM_PARTNER, True, indices)
-    SBM = SexualBehaviourModule()
+    pop.set_present_variable(col.LONG_TERM_PARTNER, True, partnered)
+    unpartnered = pop.get_sub_pop(COND(col.LONG_TERM_PARTNER, op.eq, False))
+
+    SBM = pop.sexual_behaviour
     SBM.update_risk_long_term_partnered(pop)
-    assert all(pop.get_variable(col.RISK_LTP, indices) == SBM.ltp_risk_factor)
+    
+    assert all(pop.get_variable(col.RISK_LTP, partnered) == SBM.ltp_risk_factor)
+    assert all(pop.get_variable(col.RISK_LTP, unpartnered) == 1.0)
 
 
 def test_risk_adc():
