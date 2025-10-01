@@ -12,7 +12,7 @@ import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import Date, SexType, TimeDelta
+from .common import Date, SexType, TimeDelta, COND
 from .population import Population
 
 
@@ -100,6 +100,9 @@ class SimulationOutput:
     def _update_date(self, date):
         self.latest_date = date
         self.output_stats.loc[self.step, "Date"] = self.latest_date
+
+    def _safediv(self, a, b):
+        return (a/b) if b > 0 else 0
 
     def _ratio(self, subpop, pop):
         a = subpop if isinstance(subpop, numbers.Integral) else len(subpop)
@@ -307,18 +310,18 @@ class SimulationOutput:
             n_male_stp = male_stp_in_age_groups.get(age_group)
             if n_male_stp is None:
                 n_male_stp = 0
-            self.output_stats.loc[self.step, key] = self._log(
-                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Male] /
-                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Male])
+            self.output_stats.loc[self.step, key] = self._log(self._safediv(
+                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Male],
+                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Male]))
 
             key = f"Partner sex balance ({age_bound}-{age_bound+(self.age_step-1)}, female)"
             # Count occurrences of current age group
             n_female_stp = female_stp_in_age_groups.get(age_group)
             if n_female_stp is None:
                 n_female_stp = 0
-            self.output_stats.loc[self.step, key] = self._log(
-                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Female] /
-                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Female])
+            self.output_stats.loc[self.step, key] = self._log(self._safediv(
+                pop.sexual_behaviour.num_stp_in_age_sex_group[age_group][SexType.Female],
+                pop.sexual_behaviour.num_stp_of_age_sex_group[age_group][SexType.Female]))
 
     def _update_births(self, pop: Population, time_step):
         # Update total births
