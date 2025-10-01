@@ -244,7 +244,7 @@ def test_risk_long_term_partner():
 
     SBM = pop.sexual_behaviour
     SBM.update_risk_long_term_partnered(pop)
-    
+
     assert all(pop.get_variable(col.RISK_LTP, partnered) == SBM.ltp_risk_factor)
     assert all(pop.get_variable(col.RISK_LTP, unpartnered) == 1.0)
 

@@ -1,4 +1,5 @@
 import operator
+import warnings
 from functools import reduce
 
 import pandas as pd
@@ -16,6 +17,8 @@ from .pregnancy import PregnancyModule
 from .prep import PrEPModule
 from .resistance_mutations import ResistanceMutationsModule
 from .sexual_behaviour import SexualBehaviourModule
+
+warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 HIV_APPEARANCE = Date(1989, 1, 1)
 

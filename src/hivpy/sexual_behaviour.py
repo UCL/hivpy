@@ -6,7 +6,6 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 
 import hivpy.column_names as col
 

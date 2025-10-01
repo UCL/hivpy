@@ -2,17 +2,16 @@ from __future__ import annotations
 
 import itertools
 import math
+import numbers
 import operator
 from itertools import product
-
-import numbers
 
 import numpy as np
 import pandas as pd
 
 import hivpy.column_names as col
 
-from .common import Date, SexType, TimeDelta, COND
+from .common import Date, SexType, TimeDelta
 from .population import Population
 
 

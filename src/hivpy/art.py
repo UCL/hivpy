@@ -387,7 +387,8 @@ class ARTModule:
 
         # Changes in ART converage and oral PrEP coverage after year of intervention
         # only happens once
-        if (current_date >= Date(self.pop.policy_intervention_year, 1, 1) and current_date - self.pop.timestep < Date(self.pop.policy_intervention_year, 1, 1)):
+        if (current_date >= Date(self.pop.policy_intervention_year, 1, 1) and
+                current_date - self.pop.timestep < Date(self.pop.policy_intervention_year, 1, 1)):
             if self.lower_future_art_coverage:
                 self.pop.scale_present_variable(col.RATE_CHOOSE_INTERRUPTION, 1.25)
                 self.pop.scale_present_variable(col.PROB_LOSS_DIAGNOSIS, 1.25)
@@ -787,29 +788,29 @@ class ARTModule:
                     COND(col.ON_ART, op.eq, False),
                 )
             )
-        
-        def initiate_starter(person):
-                person[col.ON_ART] = True
-                person[col.TIME_ON_ART] = 0
-                person[col.ART_NAIVE] = False
-                self.reset_drugs(person)
-                person[col.ART_LINE] = 1
 
-                if current_date < Date(year=2010):
-                    self.set_drugs(person, ["zdv", "3tc", "efa"])
-                elif current_date < Date(year=2020):
-                    self.set_drugs(person, ["ten", "3tc", "efa"])
-                else:
-                    self.set_drugs(person, ["ten", "3tc", "dol"])
+        def initiate_starter(person):
+            person[col.ON_ART] = True
+            person[col.TIME_ON_ART] = 0
+            person[col.ART_NAIVE] = False
+            self.reset_drugs(person)
+            person[col.ART_LINE] = 1
+
+            if current_date < Date(year=2010):
+                self.set_drugs(person, ["zdv", "3tc", "efa"])
+            elif current_date < Date(year=2020):
+                self.set_drugs(person, ["ten", "3tc", "efa"])
+            else:
+                self.set_drugs(person, ["ten", "3tc", "dol"])
 
         self.pop.apply_function(initiate_starter, starters)
 
     def check_ART_failure(self):
         """
-        Checks for failure of first line therapy and switches to second line. 
+        Checks for failure of first line therapy and switches to second line.
         Currently only models monitoring according to ART monitoring strategy 150 after 2015;
         code can be expanded to handle other strategies by adding conditional statements
-        in this function. 
+        in this function.
         """
         current_date = self.pop.date
 
@@ -825,16 +826,16 @@ class ARTModule:
 
         def check_failure(person):
             if (self.pop.date - person[col.DATE_START_ART] > self.time_of_first_vm and (person[col.DATE_LAST_VL_MEASURE] is None)) or \
-                (self.pop.date - person[col.DATE_START_ART] == TimeDelta(years=1)) or \
+                    (self.pop.date - person[col.DATE_START_ART] == TimeDelta(years=1)) or \
                     (self.pop.date - person[col.DATE_LAST_VL_MEASURE] > TimeDelta(months=9)) or \
-                        (self.pop.date - person[col.DATE_LAST_VL_MEASURE] > self.min_time_repeat_vm):  # these last two conflict
+                    (self.pop.date - person[col.DATE_LAST_VL_MEASURE] > self.min_time_repeat_vm):  # these last two conflict
                 vl = person[col.VIRAL_LOAD]
                 plasma_measure = max(0, vl + rng.normal(0, 0.22))
                 vm = plasma_measure
                 if self.vm_format in [VmFormat.whb_poc, VmFormat.whb_poc]:
                     sigma_whb = self.sigma_vl_whb + self.decrease_sigma_vl_whb*(4 - vl)
-                    vm = (0.5*vl) + (0.5 *plasma_measure) + self.vl_whb_offset + rng.normal(0, sigma_whb)
-                
+                    vm = (0.5*vl) + (0.5 * plasma_measure) + self.vl_whb_offset + rng.normal(0, sigma_whb)
+
                 if (vm > np.log10(self.vl_threshold)):
                     initiate_second_line_therapy(person)
 
@@ -844,7 +845,7 @@ class ARTModule:
                 self.set_drugs(person, ["zdv", "3tc", "taz"])
             else:
                 self.set_drugs(person, ["ten", "3tc", "dar"])
-        
+
         self.pop.apply_function(check_failure, potential_failures)
 
     def initiate_first_line_therapy(self):
