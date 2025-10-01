@@ -187,6 +187,7 @@ ART_REGIMEN_OPT = "art_regimen_option"              # int/enum: code for disting
 FIRST_LINE_REGIMEN = "first_line_regimen"           # int/enum: code for distinguishing between first line regimens (1-3; use 0 for none)
 PROB_SWITCH_LINE = "prob_switch_line"               # float: probability of switching from first line ART regimen
 PROB_VL_MEASURE = "prob_vl_measure"                 # float: probability that viral load is measured in a ART visit
+DATE_LAST_VL_MEASURE = "date_last_vl_measure"       # Date or None: date of most recent viral load measurement
 ABSENCE_VL_YEAR_I = "absence_vl_year_i"             # bool: TODO find out a proper definition for this property
 ABSENCE_CD4_YEAR_I = "absence_c4_year_i"            # bool: TODO find out a proper definition for this property
 ART_ADHERENCE_MEAN = "art_adherence_mean"           # float: a value between 0 and 1 representing mean art adherence

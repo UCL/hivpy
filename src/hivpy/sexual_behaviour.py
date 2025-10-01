@@ -156,17 +156,17 @@ class SexualBehaviourModule:
                           self.risk_age_grouping, self.risk_categories)
 
     def init_sex_behaviour(self, population: Population):
-        population.init_variable(col.NUM_PARTNERS, 0, data_type=pd.Int32Dtype)
+        population.init_variable(col.NUM_PARTNERS, 0)
         population.init_variable(col.LAST_STP_DATE, None)
-        population.init_variable(col.RISK, 1)
+        population.init_variable(col.RISK, 1.0)
         population.init_variable(col.LONG_TERM_PARTNER, False)
         population.init_variable(col.LTP_NEW, False)
         population.init_variable(col.LTP_AGE_GROUP, 0)
         population.init_variable(col.LTP_LONGEVITY, 0)
         population.init_variable(col.SEX_MIX_AGE_GROUP, 0)
         population.init_variable(col.STP_AGE_GROUPS, [np.array([])]*population.size)
-        population.init_variable(col.RISK_LTP, 1)
-        population.init_variable(col.LIFE_SEX_RISK, 1)
+        population.init_variable(col.RISK_LTP, 1.0)
+        population.init_variable(col.LIFE_SEX_RISK, 1.0)
         population.init_variable(col.SEX_WORKER, False)
         population.init_variable(col.SW_TEST_6MONTHLY, False)
         population.init_variable(col.SW_PROGRAM_VISIT, False)
@@ -416,7 +416,7 @@ class SexualBehaviourModule:
 
     def init_risk_factors(self, pop: Population):
         self.init_risk_personal(pop)
-        pop.init_variable(col.RISK_AGE, 1)  # Placeholder to be changed each time step
+        pop.init_variable(col.RISK_AGE, 1.0)  # Placeholder to be changed each time step
         self.update_risk_age(pop)
         pop.set_present_variable(col.RISK,
                                  pop.apply_vector_func([col.RISK_PERSONAL, col.RISK_AGE],

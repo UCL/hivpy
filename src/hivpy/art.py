@@ -105,9 +105,12 @@ class Interrupts(Enum):
 
 class ARTModule:
     vm_format = VmFormat.whb_lab  # TODO: check correct initial value?
+    vl_whb_offset = 0.0
+    sigma_vl_whb = 0.5
+    decrease_sigma_vl_whb = 0.05
     vl_threshold = 1000
-    time_of_first_vm = 0.5
-    min_time_repeat_vm = 0.25  # 3 months?
+    time_of_first_vm = TimeDelta(months=6)
+    min_time_repeat_vm = TimeDelta(months=3)
     poc_vl_monitoring = False
     cd4_monitoring = False
 
@@ -268,7 +271,7 @@ class ARTModule:
 
         self.pop.init_variable(col.CURRENT_TOXICITY, False, dt=1)
         self.pop.init_variable(col.INJECTION_SITE_REACTION, False, dt=1)
-        self.pop.init_variable(col.TIME_ON_ART, 0)
+        self.pop.init_variable(col.TIME_ON_ART, 0.0)
         self.pop.init_variable(col.SW_INTERRUPT_FACTOR, self.sw_interrupt_factor)
         self.pop.init_variable(col.CLINIC_UNAWARE_INTERRUPT, False)
         self.pop.init_variable(col.LOST, False)
@@ -362,8 +365,8 @@ class ARTModule:
             )
             self.vm_format = VmFormat.whb_lab
             self.vl_threshold = 1000
-            self.time_of_first_vm = 0.5
-            self.min_time_repeat_vm = 0.25
+            self.time_of_first_vm = TimeDelta(months=6)
+            self.min_time_repeat_vm = TimeDelta(months=3)
             if self.poc_vl_monitoring:
                 self.vm_format = VmFormat.whb_poc
 
@@ -813,8 +816,27 @@ class ARTModule:
         if current_date < Date(year=2015):
             return  # implicitly no monitoring for failure before 2015
         else:
-            pass# modelling monitoring strategy 150 as the only option at present. 
-            
+            # modelling monitoring strategy 150 as the only option at present.
+
+            # candidates are on first line regimen, visiting a clinic, and not just restarting
+            potential_failures = self.pop.get_sub_pop(AND(COND(col.ART_LINE, op.eq, 1),
+                                                          COND(col.CLINIC_VISIT, op.eq, True),
+                                                          COND(col.ART_RESTART, op.eq, False)))
+
+        def check_failure(person):
+            if (self.pop.date - person[col.DATE_START_ART] > self.time_of_first_vm and (person[col.DATE_LAST_VL_MEASURE] is None)) or \
+                (self.pop.date - person[col.DATE_START_ART] == TimeDelta(years=1)) or \
+                    (self.pop.date - person[col.DATE_LAST_VL_MEASURE] > TimeDelta(months=9)) or \
+                        (self.pop.date - person[col.DATE_LAST_VL_MEASURE] > self.min_time_repeat_vm):  # these last two conflict
+                vl = person[col.VIRAL_LOAD]
+                plasma_measure = max(0, vl + rng.normal(0, 0.22))
+                vm = plasma_measure
+                if self.vm_format in [VmFormat.whb_poc, VmFormat.whb_poc]:
+                    sigma_whb = self.sigma_vl_whb + self.decrease_sigma_vl_whb*(4 - vl)
+                    vm = (0.5*vl) + (0.5 *plasma_measure) + self.vl_whb_offset + rng.normal(0, sigma_whb)
+                
+                if (vm > np.log10(self.vl_threshold)):
+                    initiate_second_line_therapy(person)
 
         def initiate_second_line_therapy(person):
             self.reset_drugs(person)
@@ -823,7 +845,7 @@ class ARTModule:
             else:
                 self.set_drugs(person, ["ten", "3tc", "dar"])
         
-        self.pop.apply_function(initiate_second_line_therapy, failures)
+        self.pop.apply_function(check_failure, potential_failures)
 
     def initiate_first_line_therapy(self):
         # People who have started ART this timestep
